@@ -1,8 +1,5 @@
 set(name QUDARap)
 
-set(Custom4_VERBOSE ON)
-find_package(Custom4 CONFIG)
-
 set(DEV_SOURCES
     QSim_cerenkov_dev.cu
 )
@@ -137,11 +134,6 @@ add_library( ${name} ${SOURCES} )
 
 get_target_property(ILL ${name} INTERFACE_LINK_LIBRARIES)
 message(STATUS "${name} INTERFACE_LINK_LIBRARIES:${ILL} " )
-
-if(Custom4_FOUND)
-   target_compile_definitions( ${name} PUBLIC WITH_CUSTOM4 )
-   target_include_directories( ${name} PUBLIC ${Custom4_INCLUDE_DIR})
-endif()
 
 find_package(OpenSSL REQUIRED)
 

@@ -38,12 +38,6 @@ logging(){
 logging
 
 
-#custom4_prefix=${OPTICKS_PREFIX/_Debug}_externals/custom4/0.1.9
-custom4_prefix=$HOME/customgeant4
-CUSTOM4_PREFIX=${CUSTOM4_PREFIX:-$custom4_prefix}
-#CUSTOM4_INCLUDE=$CUSTOM4_PREFIX/include/Custom4
-CUSTOM4_INCLUDE=$CUSTOM4_PREFIX
-
 cuda_prefix=/usr/local/cuda
 CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 
@@ -52,7 +46,7 @@ GEOMDIR=$HOME/.opticks/GEOM/$GEOM
 JPMTDIR=$GEOMDIR/CSGFoundry/SSim/extra/jpmt
 
 
-vars="BASH_SOURCE REALDIR REALFOLD FOLD GEOM name CUSTOM4_PREFIX CUDA_PREFIX GEOMDIR JPMTDIR"
+vars="BASH_SOURCE REALDIR REALFOLD FOLD GEOM name CUDA_PREFIX GEOMDIR JPMTDIR"
 
 
 if [ "${arg/info}" != "$arg" ]; then
@@ -74,8 +68,6 @@ if [ "${arg/build}" != "$arg" ]; then
              -std=c++11 -lstdc++ \
              -I.. \
              -DWITH_THRUST \
-             -DWITH_CUSTOM4 \
-             -I$CUSTOM4_INCLUDE \
              -I$OPTICKS_PREFIX/include/SysRap \
              -o $cuo
         [ $? -ne 0 ] && echo $BASH_SOURCE : nvcc compile error cu $cu  && exit 1
@@ -92,9 +84,7 @@ if [ "${arg/build}" != "$arg" ]; then
         -g \
         -std=c++11 \
         -I.. \
-        -DWITH_CUSTOM4 \
         -DWITH_THRUST \
-        -I$CUSTOM4_INCLUDE \
         -I$OPTICKS_PREFIX/include/SysRap \
         -I$OPTICKS_PREFIX/include/OKConf \
         -I$OPTICKS_PREFIX/externals/plog/include \
@@ -114,9 +104,7 @@ if [ "${arg/build}" != "$arg" ]; then
          -g \
         -std=c++11 -lstdc++ \
         -I.. \
-        -DWITH_CUSTOM4 \
         -DWITH_THRUST \
-        -I$CUSTOM4_INCLUDE \
         -I$OPTICKS_PREFIX/include/SysRap \
         -I$OPTICKS_PREFIX/include/OKConf \
         -I$OPTICKS_PREFIX/externals/plog/include \

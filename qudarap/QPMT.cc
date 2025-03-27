@@ -54,11 +54,6 @@ inline std::string QPMT<T>::Desc() // static
 {
     std::stringstream ss ;
     ss << "QPMT<" << ( sizeof(T) == 4 ? "float" : "double" ) << "> " ;
-#ifdef WITH_CUSTOM4
-    ss << "WITH_CUSTOM4 " ;
-#else
-    ss << "NOT:WITH_CUSTOM4 " ;
-#endif
     ss << " INSTANCE:" << ( INSTANCE ? "YES" : "NO " ) << " " ;
     if(INSTANCE) ss << INSTANCE->desc() ;
     std::string str = ss.str();
@@ -409,13 +404,6 @@ mct means minus_cos_theta for an AOI scan
 4. upload lpmtid to d_lpmtid
 5. invoke launch QPMT_mct_lpmtid
 6. download d_lookup to h_lookup
-
-
-Q: Can dependency on CUSTOM4 be avoided ?
-A: NO, as using multilayer stack calc so need the
-   header with the TMM calc from CUSTOM4.
-   Dont want to duplicate that header.
-
 **/
 
 template<typename T>
@@ -462,63 +450,6 @@ NP* QPMT<T>::mct_lpmtid_scan(int etype, const NP* domain, const NP* lpmtid ) con
         << " lookup " << lookup->sstr()
         << " num_lookup " << num_lookup
         ;
-
-
-
-#ifdef WITH_CUSTOM4
-    T* h_lookup = lookup->values<T>() ;
-
-#if defined(MOCK_CURAND) || defined(MOCK_CUDA)
-    T* d_lookup = h_lookup ;
-#else
-    T* d_lookup = QU::device_alloc<T>(num_lookup,"QPMT::mct_lpmtid_scan/d_lookup") ;
-#endif
-
-    assert( lpmtid->uifc == 'i' && lpmtid->ebyte == 4 );
-
-#if defined(MOCK_CURAND) || defined(MOCK_CUDA)
-    const T*   d_domain = domain->cvalues<T>() ;
-    const int* d_lpmtid = lpmtid->cvalues<int>() ;
-#else
-    const char* label_0 = "QPMT::mct_lpmtid_scan/d_domain" ;
-    const char* label_1 = "QPMT::mct_lpmtid_scan/d_lpmtid" ;
-
-    const T*   d_domain = QU::UploadArray<T>(   domain->cvalues<T>(),   num_domain, label_0) ;
-    const int* d_lpmtid = QU::UploadArray<int>( lpmtid->cvalues<int>(), num_lpmtid, label_1) ;
-#endif
-
-
-
-#if defined(MOCK_CURAND) || defined(MOCK_CUDA)
-    QPMT_mct_lpmtid_MOCK( d_pmt, etype, d_lookup, d_domain, num_domain, d_lpmtid, num_lpmtid );
-#else
-
-    dim3 numBlocks ;
-    dim3 threadsPerBlock ;
-    QU::ConfigureLaunch1D( numBlocks, threadsPerBlock, num_domain, 512u );
-
-    QPMT_mct_lpmtid_scan(
-        numBlocks,
-        threadsPerBlock,
-        d_pmt,
-        etype,
-        d_lookup,
-        d_domain,
-        num_domain,
-        d_lpmtid,
-        num_lpmtid );
-
-    cudaDeviceSynchronize();
-
-    const char* label = "QPMT::mct_lpmtid_scan" ;
-    QU::copy_device_to_host_and_free<T>( h_lookup, d_lookup, num_lookup, label );
-    cudaDeviceSynchronize();
-#endif
-
-#else
-    LOG(fatal) << " QPMT::mct_lpmtid_scan requires compilation WITH_CUSTOM4 " ;
-    assert(0) ;
-#endif
 
     return lookup ;
 }
@@ -588,4 +519,3 @@ NP* QPMT<T>::spmtid_scan(int etype, const NP* spmtid ) const
 template struct QUDARAP_API QPMT<float>;
 //template struct QUDARAP_API QPMT<double>;
 //#pragma GCC diagnostic pop
-
