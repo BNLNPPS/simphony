@@ -38,7 +38,6 @@ gcc $name.cc -g -Wall -std=c++17 -lstdc++ -lm \
     -I$OPTICKS_PREFIX/externals/glm/glm \
     -I$OPTICKS_PREFIX/externals/plog/include \
     -I$CUDA_PREFIX/include \
-    -DWITH_CHILD \
     -o $bin
 
 [ $? -ne 0 ] && echo $msg compile error && exit 1
@@ -47,5 +46,3 @@ $bin
 [ $? -ne 0 ] && echo $msg run error && exit 2
 
 exit 0
-
-

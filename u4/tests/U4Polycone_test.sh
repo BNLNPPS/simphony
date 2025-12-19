@@ -6,21 +6,8 @@ U4Polycone_test.sh
 This compiles the needed parts of sysrap from source (not using libSysRap)
 in order to facilitate quick changes of compilation options.
 
-Compilation options:
-
-former -DWITH..SND
-     reverted to the old inflexible snd.hh CSG node impl
-     instead of the default more flexible sn.h impl
-
--DWITH_CHILD
-     switches sn.h node impl to use child vector instead of left right nodes,
-     this generalizes the node impl to n-ary instead of binary
-
 EOU
 }
-
-opt="-DWITH_CHILD"
-
 
 SDIR=$(cd $(dirname $BASH_SOURCE) && pwd)
 
@@ -46,7 +33,7 @@ get-cmake-prefix(){ echo $CMAKE_PREFIX_PATH | tr ":" "\n" | grep $1 ; }
 CLHEP_PREFIX=$(get-cmake-prefix CLHEP)
 GEANT4_PREFIX=$(get-cmake-prefix Geant4)
 
-vars="BASH_SOURCE arg SDIR FOLD bin script opt"
+vars="BASH_SOURCE arg SDIR FOLD bin script"
 
 if [ "${arg/info}" != "$arg" ]; then
     for var in $vars ; do printf "%20s : %s \n" "$var" "${!var}" ; done
@@ -55,7 +42,6 @@ fi
 if [ "${arg/build}" != "$arg" ]; then
 
     gcc \
-         $opt \
          $SDIR/$name.cc \
          $SDIR/../../sysrap/sn.cc \
          $SDIR/../../sysrap/s_pa.cc \
@@ -105,5 +91,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi
 
 exit 0
-
-

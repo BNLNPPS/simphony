@@ -97,7 +97,6 @@ CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 
 
 opt="-DWITH_PLACEHOLDER"
-opt="$opt -DWITH_CHILD"
 
 export stree_level=1
 #export stree__get_frame_dump=1
@@ -216,4 +215,3 @@ if [ "${arg/csg}" != "$arg" ]; then
 fi
 
 exit 0
-

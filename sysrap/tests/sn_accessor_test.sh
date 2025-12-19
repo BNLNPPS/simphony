@@ -20,9 +20,6 @@ script=$SDIR/$name.py
 defarg="info_build_run"
 arg=${1:-$defarg}
 
-opt=-DWITH_CHILD
-
-
 base=/tmp/blyth/opticks/U4TreeCreateTest/stree/_csg
 #base=/tmp/U4Polycone_test/_csg
 
@@ -31,7 +28,7 @@ export s_csg_level=0
 export s_pool_level=0
 
 
-vars="BASH_SOURCE SDIR bin script opt BASE"
+vars="BASH_SOURCE SDIR bin script BASE"
 
 if [ "${arg/info}" != "$arg" ]; then 
     for var in $vars ; do printf "%20s : %s \n" "$var" "${!var}" ; done 
@@ -46,7 +43,7 @@ if [ "${arg/build}" != "$arg" ]; then
         $SDIR/../s_csg.cc \
         -I$SDIR/.. \
         -I$OPTICKS_PREFIX/externals/glm/glm \
-        $opt -g -std=c++11 -lstdc++ -o $bin
+        -g -std=c++11 -lstdc++ -o $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE build error && exit 1 
 fi 
 
@@ -66,4 +63,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi 
 
 exit 0 
-

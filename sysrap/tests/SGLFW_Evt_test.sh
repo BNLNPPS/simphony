@@ -134,7 +134,6 @@ if [ "${arg/build}" != "$arg" ]; then
         -Wno-shadow \
         -Wsign-compare \
         -DWITH_CUDA_GL_INTEROP \
-        -DWITH_CHILD \
         -g -O0 -std=c++17 \
         -I$SYSRAP_DIR \
         -I$OPTICKS_PREFIX/externals/glm/glm \
@@ -172,4 +171,3 @@ fi
 
 
 exit 0
-

@@ -253,7 +253,6 @@ if [ "${arg/build}" != "$arg" ]; then
         -Wno-shadow \
         -Wsign-compare \
         -DWITH_CUDA_GL_INTEROP \
-        -DWITH_CHILD \
         -DCONFIG_Debug \
         -g -O0 -std=c++17 \
         -I$SYSRAP_DIR \
@@ -296,4 +295,3 @@ if [ "${arg/list}" != "$arg" -o "${arg/pub}" != "$arg" ]; then
 fi
 
 exit 0
-

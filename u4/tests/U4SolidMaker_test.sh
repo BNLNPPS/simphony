@@ -25,9 +25,6 @@ G4_PREFIX=$(get-cmake-prefix Geant4)
 
 bin=$FOLD/$name
 
-opt=-DWITH_CHILD
-
-
 vv="BASH_SOURCE name PWD bin FOLD arg defarg CLHEP_PREFIX G4_PREFIX"
 
 defarg="info_build_run"
@@ -41,7 +38,6 @@ fi
 if [ "${arg/build}" != "$arg" ]; then
 
     gcc \
-    $opt \
     $name.cc \
     ../U4SolidMaker.cc \
     ../../sysrap/sn.cc \
@@ -72,5 +68,3 @@ if [ "${arg/build}" != "$arg" ]; then
     [ $? -ne 0 ] && echo $BASH_SOURCE - build error && exit 1
 
 fi
-
-

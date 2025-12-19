@@ -42,7 +42,6 @@ if [ "${arg/build}" != "$arg" ]; then
           ../s_csg.cc \
           -std=c++11 -lstdc++ \
           -I.. \
-          -DWITH_CHILD \
           -I$CUDA_PREFIX/include \
           -I$OPTICKS_PREFIX/externals/glm/glm \
           -o $bin 
@@ -60,4 +59,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi 
 
 exit 0 
-

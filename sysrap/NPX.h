@@ -470,22 +470,21 @@ inline void NPX::VecFromArray(std::vector<S>& v, const NP* a )
    bool expected_sizeof_item = sizeof(S) == ib  ;
 
    if(!expected_sizeof_item)
-      std::cerr
-          << "NPX::VecFromArray"
-          << " expected_sizeof_item  " << ( expected_sizeof_item  ? "YES" : "NO" )
-          << " sizeof(S) " << sizeof(S)
-          << " a.item_bytes " << ib
-          << " a.sstr " << a->sstr()
-          << std::endl
-          << " a.lpath " << a->get_lpath()
-          << std::endl
-          << " CHECK FOR COMPILATION OPTIONS THAT CHANGE STRUCT SIZES "
-          << std::endl
-          << " FOR EXAMPLE WITH_CHILD CHANGES sysrap/sn.h "
-          << std::endl
-          << " ANOTHER POSSIBILITY IS LOADING AN ARRAY WRITTEN BEFORE STRUCT SIZE CHANGES "
-          << std::endl
-          ;
+       std::cerr
+           << "NPX::VecFromArray"
+           << " expected_sizeof_item  " << (expected_sizeof_item ? "YES" : "NO")
+           << " sizeof(S) " << sizeof(S)
+           << " a.item_bytes " << ib
+           << " a.sstr " << a->sstr()
+           << std::endl
+           << " a.lpath " << a->get_lpath()
+           << std::endl
+           << " CHECK FOR COMPILATION OPTIONS THAT CHANGE STRUCT SIZES "
+           << std::endl
+           << " FOR EXAMPLE STRUCT LAYOUT CHANGES IN sysrap/sn.h "
+           << std::endl
+           << " ANOTHER POSSIBILITY IS LOADING AN ARRAY WRITTEN BEFORE STRUCT SIZE CHANGES "
+           << std::endl;
 
    assert( expected_sizeof_item );
 
@@ -1370,10 +1369,3 @@ inline NP* NPX::BOA( NP* a, NP* b, NP::INT a_column, NP::INT b_column, std::ostr
     }
     return c ;
 }
-
-
-
-
-
-
-

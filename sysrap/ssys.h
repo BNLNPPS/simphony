@@ -1127,12 +1127,6 @@ inline std::string ssys::Desc()  // static
        << "NOT:PRODUCTION"
 #endif
        << std::endl
-#ifdef WITH_CHILD
-       << "WITH_CHILD"
-#else
-       << "NOT:WITH_CHILD"
-#endif
-       << std::endl
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else
@@ -1182,4 +1176,3 @@ inline void ssys::getenv_with_prefix(std::vector<std::pair<std::string,std::stri
         kvs.push_back( std::pair<std::string,std::string>( k, v ) );
     }
 }
-

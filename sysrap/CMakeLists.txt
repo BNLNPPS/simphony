@@ -528,12 +528,6 @@ former  WITH..SND
        WITH..SND uses snd.hh idx int as CSG root
        NOT:WITH..SND uses sn.h sn* pointer as CSG root 
     
-WITH_CHILD
-   sysrap/sn.h uses child vector of sn pointers supporting n-ary trees
-
-NOT:WITH_CHILD
-   sysrap/sn.h uses left, right sn pointers supporting only binary trees
-
 DEBUG_TAG 
    needed for random aligned running in multiple pkgs: sysrap, qudarap, u4  
    however making this PUBLIC makes rebuilding real heavy 
@@ -562,7 +556,6 @@ target_compile_definitions( ${name}
 
       OPTICKS_SYSRAP 
       GLM_ENABLE_EXPERIMENTAL
-      WITH_CHILD
       PLOG_LOCAL
       RNG_PHILOX
 

@@ -597,9 +597,9 @@ class RUN_META(object):
     @classmethod
     def _QSim__Switches(cls, fold):
         """
-        eg: 'CONFIG_Release PRODUCTION WITH_CHILD PLOG_LOCAL '
+        eg: 'CONFIG_Release PRODUCTION PLOG_LOCAL '
         """
-        SKIPS = "WITH_CHILD PLOG_LOCAL".split(); 
+        SKIPS = "PLOG_LOCAL".split();
         switches = list(filter(lambda _:not _.startswith("NOT-"), fold.run_meta.QSim__Switches.split(","))) 
         switches = list(filter(lambda _:not _ in SKIPS, switches )) 
         return switches 
@@ -607,7 +607,7 @@ class RUN_META(object):
     @classmethod
     def QSim__Switches(cls, fold):
         """
-        eg: 'CONFIG_Release PRODUCTION WITH_CHILD PLOG_LOCAL '
+        eg: 'CONFIG_Release PRODUCTION PLOG_LOCAL '
         """
         switches = cls._QSim__Switches(fold) 
         return " ".join(switches)  
@@ -796,4 +796,3 @@ if __name__ == '__main__':
     pass
     print("]sreport.py:PLOT[%s]" % PLOT ) 
 pass
-
