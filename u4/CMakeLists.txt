@@ -134,7 +134,6 @@ target_compile_definitions( ${name} PUBLIC GLM_ENABLE_EXPERIMENTAL )
 target_compile_definitions( ${name} PRIVATE G4USE_STD11 )
 target_compile_definitions( ${name} PRIVATE STANDALONE )
 
-
 if(PMTSim_standalone_FOUND)
     target_link_libraries( ${name} PUBLIC Opticks::PMTSim_standalone )
     target_compile_definitions( ${name} PRIVATE WITH_PMTSIM PMTSIM_STANDALONE WITH_NP )

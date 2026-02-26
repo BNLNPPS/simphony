@@ -9,8 +9,6 @@ find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-set(WITH_SLOG YES)
-
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 configure_file(sconfig.h.in inc/sconfig.h)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/sconfig.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
@@ -564,12 +562,8 @@ if(WITH_SIMG)
     list(APPEND HEADERS   SIMG_Frame.h  )   
 endif()
 
-
-set(WITH_STTF YES)
-if(WITH_STTF)
-    list(APPEND HEADERS stb_truetype.h)
-    list(APPEND HEADERS STTF.h)    
-endif()
+list(APPEND HEADERS stb_truetype.h)
+list(APPEND HEADERS STTF.h)    
 
 
 set(WITH_NP YES)
@@ -658,16 +652,6 @@ target_compile_definitions( ${name}
       $<$<CONFIG:Debug>:DEBUG_PIDXYZ>
       $<$<CONFIG:Release>:PRODUCTION>
 )
-
-
-
-
-if(WITH_STTF)
-target_compile_definitions( ${name} PUBLIC WITH_STTF)
-endif()
-if(WITH_SLOG)
-target_compile_definitions( ${name} PUBLIC WITH_SLOG)
-endif()
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
 

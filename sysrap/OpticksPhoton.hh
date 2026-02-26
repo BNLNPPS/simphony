@@ -14,9 +14,7 @@ The STANDALONE subset of methods can be used header only.
 #include <iostream>
 #include <sstream>
 
-#ifdef WITH_SLOG
 #include "plog/Severity.h"
-#endif
 
 #include "OpticksPhoton.h"
 
@@ -27,9 +25,7 @@ struct OpticksPhoton
 struct SYSRAP_API OpticksPhoton
 #endif
 {
-#ifdef WITH_SLOG
     static const plog::Severity LEVEL ;
-#endif
     static constexpr const char* ZERO_ = ".";
     static constexpr const char* CERENKOV_ = "CERENKOV";
     static constexpr const char* SCINTILLATION_ = "SCINTILLATION" ;
@@ -328,8 +324,3 @@ inline std::string OpticksPhoton::FlagMaskLabel(const unsigned mskhis, bool abbr
     for(unsigned i=0 ; i < nlab ; i++ ) ss << labels[i] << ( i < nlab - 1 ? "|" : ""  ) ;
     return ss.str();
 }
-
-
-
-
-
