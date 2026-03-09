@@ -10,7 +10,6 @@ set(OpticksGLFW_VERBOSE ON)
 #string(REPLACE ":" ";" INCLUDE_LIST $ENV{HOME}/np)
 #include_directories(${INCLUDE_LIST})
 
-include_directories($ENV{OPTICKS_PREFIX}/include/SysRap)  ## needed for the generated sconfig.h
 
 #include_directories($ENV{OPTICKS_HOME}/sysrap)   ## just header-only structs not the full shebang  
 #include_directories($ENV{HOME}/np)
@@ -33,4 +32,3 @@ target_link_libraries(${name}
     Opticks::OpticksGLFW 
 )
 install(TARGETS ${name}  DESTINATION lib)
-

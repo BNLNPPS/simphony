@@ -9,10 +9,7 @@ find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-configure_file(sconfig.h.in inc/sconfig.h)
-configure_file(config_path.h.in inc/config_path.h @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/sconfig.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+configure_file(config_path.h.in config_path.h @ONLY)
 
 set(SOURCES
     SYSRAP_LOG.cc 
@@ -508,7 +505,7 @@ target_link_libraries(${name}
 
 target_include_directories( ${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/sysrap/inc>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/sysrap>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap>
