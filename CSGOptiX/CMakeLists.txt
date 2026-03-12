@@ -2,10 +2,6 @@ set(name CSGOptiX)
 
 find_package(OptiX)
 
-set(buildenvpath ${CMAKE_CURRENT_BINARY_DIR}/buildenv.sh)
-file(WRITE ${buildenvpath} "export OPTIX_VERSION=${OptiX_VERSION}\n")
-message(STATUS "write to buildenvpath ${buildenvpath} ")
-
 set(SOURCES)
 set(OPTIX_SOURCES)
 

@@ -72,7 +72,6 @@ set(SOURCES
     SEnabled.cc
     SRand.cc
 
-    SMockViz.cc
     SRngSpec.cc
 
     CheckGeo.cc
@@ -131,8 +130,6 @@ set(HEADERS
 
     SYSRAP_LOG.hh
     SYSRAP_API_EXPORT.hh
-    SYSRAP_HEAD.hh
-    SYSRAP_TAIL.hh
     SLOG.hh
     slog.h 
 
@@ -282,7 +279,6 @@ set(HEADERS
     SEnabled.hh
     SRand.hh
 
-    SMockViz.hh
     SRngSpec.hh
 
     CheckGeo.hh
