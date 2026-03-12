@@ -3,10 +3,8 @@
 #include <iomanip>
 #include <cassert>
 
-#ifdef WITH_CUDA
 #include "cuda.h"
 #include "CU.h"
-#endif
 
 #include "scuda.h"
 #include "CSGPrim.h"
@@ -81,7 +79,6 @@ void test_partial( const std::vector<CSGPrim>& prim )
      ps1.dump();
 }
 
-#ifdef WITH_CUDA
 CSGPrim* test_upload( const CSGPrim* prim, unsigned num )
 {
      std::cout << "test_upload" << std::endl ;
@@ -146,7 +143,6 @@ void test_pointer( const void* d, const char* label )
      std::cout << "               (uintptr_t)d " << std::dec << ud << " " << std::hex << ud  << std::dec << std::endl ;
      std::cout << "  (CUdeviceptr)(uintptr_t)d " << std::dec << cd << " " << std::hex << cd  << std::dec << std::endl ;
 }
-#endif
 
 int main(int argc, char** argv)
 {
@@ -159,7 +155,6 @@ int main(int argc, char** argv)
      test_spec(prim);
      test_partial(prim);
 
-#ifdef WITH_CUDA
      CSGPrim* d_prim = test_upload(prim.data(), prim.size());
      test_download( d_prim, prim.size() );
 
@@ -168,8 +163,6 @@ int main(int argc, char** argv)
      test_pointer( d_prim, "d_prim" );
      test_pointer( d_ps.aabb ,           "d_ps.aabb" );
      test_pointer( d_ps.sbtIndexOffset , "d_ps.sbtIndexOffset" );
-#endif
 
      return 0 ;
 }
-

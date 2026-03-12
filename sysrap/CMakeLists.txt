@@ -685,7 +685,6 @@ target_compile_definitions( ${name}
       OPTICKS_SYSRAP 
       GLM_ENABLE_EXPERIMENTAL
       WITH_CHILD
-      WITH_CUDA
       PLOG_LOCAL
       RNG_PHILOX
 

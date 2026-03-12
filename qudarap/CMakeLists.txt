@@ -150,7 +150,7 @@ target_link_libraries( ${name} SysRap
     OpenSSL::Crypto
 )
 
-target_compile_definitions( ${name} PUBLIC OPTICKS_QUDARAP DEBUG_TAG WITH_CUDA)
+target_compile_definitions( ${name} PUBLIC OPTICKS_QUDARAP DEBUG_TAG)
 
 
 #[=[
