@@ -54,8 +54,8 @@
 #    define MAKE_LONGLONG4 make_longlong4_32a
 #    define MAKE_ULONGLONG4 make_ulonglong4_32a
 #else
-#    include <cuda.h>
-#    if (CUDA_VERSION >= 13000)
+#    include <cuda_runtime_api.h>
+#    if (CUDART_VERSION >= 13000)
 #        define LONGLONG4 longlong4_32a
 #        define ULONGLONG4 ulonglong4_32a
 #        define DOUBLE4 double4_32a
