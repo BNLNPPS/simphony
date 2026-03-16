@@ -7,11 +7,11 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
 endif()
 
 # Default CMAKE_BUILD_TYPE=Debug for single-config generators (Ninja/Makefiles) when not specified
-if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type")
-else()
+if(NOT CMAKE_CONFIGURATION_TYPES)
+  if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type")
   # Temp fix: Force RelWithDebInfo even if user specified Release
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
   endif()
 endif()
