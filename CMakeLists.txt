@@ -9,6 +9,11 @@ endif()
 # Default CMAKE_BUILD_TYPE=Debug for single-config generators (Ninja/Makefiles) when not specified
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type")
+else()
+  # Temp fix: Force RelWithDebInfo even if user specified Release
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+  endif()
 endif()
 
 project(eic-opticks VERSION 0.1.0 LANGUAGES CXX CUDA)
