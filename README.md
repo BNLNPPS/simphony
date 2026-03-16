@@ -18,6 +18,23 @@ hardware and software requirements listed below.
 * CMake 3.18+
 * Python 3.8+
 
+OptiX releases have specific [minimum NVIDIA driver
+requirements](https://developer.nvidia.com/designworks/optix/downloads/legacy):
+
+| OptiX version | Release date  | Minimum driver required |
+|---            |---:           |---                      |
+| 9.0.0         | February 2025 | 570                     |
+| 8.1.0         | October 2024  | 555                     |
+| 8.0.0         | August 2023   | 535                     |
+| 7.7.0         | March 2023    | 530.41                  |
+| 7.6.0         | October 2022  | 522.25                  |
+| 7.5.0         | June 2022     | 515.48                  |
+| 7.4.0         | November 2021 | 495.89                  |
+| 7.3.0         | April 2021    | 465.84                  |
+| 7.2.0         | October 2020  | 455.28                  |
+| 7.1.0         | June 2020     | 450                     |
+| 7.0.0         | August 2019   | 435.80                  |
+
 Optionally, if you plan to develop or run the simulation in a containerized
 environment, ensure that your system has the following tools installed:
 
