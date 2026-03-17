@@ -24,12 +24,7 @@ in qpmt.h
 #include "sstr.h"
 #include "SPMT.h"
 
-#ifdef WITH_CUSTOM4
-#include "C4IPMTAccessor.h"
-struct SPMTAccessor : public C4IPMTAccessor
-#else
 struct SPMTAccessor
-#endif
 {
     static constexpr const char* TYPENAME = "SPMTAccessor" ;
     static SPMTAccessor* Load(const char* path);

@@ -9,11 +9,6 @@ find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-set(Custom4_VERBOSE ON) 
-find_package(Custom4 CONFIG)
-
-message(STATUS "${name} Custom4_FOUND:${Custom4_FOUND}  " )
-
 set(WITH_SLOG YES)
 
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
@@ -663,11 +658,6 @@ RNG_XORWOW/RNG_PHILOX/RNG_PHILITEOX
 
 #]=]
 
-
-if(Custom4_FOUND)
-   target_compile_definitions( ${name} PUBLIC WITH_CUSTOM4 )
-   target_include_directories( ${name} PUBLIC ${Custom4_INCLUDE_DIR})
-endif()
 
 target_compile_definitions( ${name}
     PUBLIC
