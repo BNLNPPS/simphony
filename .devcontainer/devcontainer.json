@@ -4,6 +4,10 @@
     "dockerfile": "../Dockerfile",
     "context": "..",
     "target": "base",
+    // Uncomment to rebuild the devcontainer with custom build args, e.g. a different CUDA version.
+    //"args": {
+    //  "CUDA_VERSION": "12.5.1"
+    //},
     "cacheFrom": [
       "ghcr.io/bnlnpps/eic-opticks:base"
     ]
