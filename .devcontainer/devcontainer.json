@@ -8,6 +8,9 @@
       "ghcr.io/bnlnpps/eic-opticks:base"
     ]
   },
+  "remoteEnv": {
+    "CODEX_HOME": "${containerWorkspaceFolder}/.codex"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
