@@ -33,6 +33,7 @@
 #include "qpmt.h"
 #include "qdebug.h"
 #include "qscint.h"
+#include "qwls.h"
 #include "qcerenkov.h"
 #include "qcurandwrap.h"
 #include "scurandref.h"
@@ -171,6 +172,7 @@ template qbnd*          QU::UploadArray<qbnd>(const qbnd* array, unsigned num_it
 template sevent*        QU::UploadArray<sevent>(const sevent* array, unsigned num_items, const char* label) ;
 template qdebug*        QU::UploadArray<qdebug>(const qdebug* array, unsigned num_items, const char* label) ;
 template qscint*        QU::UploadArray<qscint>(const qscint* array, unsigned num_items, const char* label) ;
+template qwls*          QU::UploadArray<qwls>(const qwls* array, unsigned num_items, const char* label) ;
 template qcerenkov*     QU::UploadArray<qcerenkov>(const qcerenkov* array, unsigned num_items, const char* label) ;
 template qbase*         QU::UploadArray<qbase>(const qbase* array, unsigned num_items, const char* label) ;
 

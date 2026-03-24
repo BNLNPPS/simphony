@@ -51,6 +51,8 @@ set(SOURCES
     QScint.cc
     QScint.cu
 
+    QWls.cc
+
     QCerenkovIntegral.cc
     QCerenkov.cc
     QCerenkov.cu 
@@ -119,6 +121,9 @@ SET(HEADERS
 
     QScint.hh
     qscint.h
+
+    QWls.hh
+    qwls.h
 
     QCerenkovIntegral.hh
     QCerenkov.hh

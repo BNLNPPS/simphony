@@ -36,6 +36,7 @@
 #include "QRng.hh"
 #include "QTex.hh"
 #include "QScint.hh"
+#include "QWls.hh"
 #include "QCerenkov.hh"
 #include "QBnd.hh"
 #include "QProp.hh"
@@ -181,6 +182,28 @@ void QSim::UploadComponents( const SSim* ssim  )
     }
 
 
+    const NP* wls_icdf = ssim->get(snam::WLS_ICDF);
+    const NP* wls_mat_map = ssim->get(snam::WLS_MAT_MAP);
+    if( wls_icdf == nullptr || wls_mat_map == nullptr )
+    {
+        LOG(LEVEL) << " wls_icdf or wls_mat_map null — no WLS materials in geometry " ;
+    }
+    else
+    {
+        const NP* wls_tc = ssim->get(snam::WLS_TIME_CONSTANTS);
+        if( wls_tc )
+        {
+            unsigned hd_factor = 20u ;
+            QWls* qwls_ = new QWls( wls_icdf, wls_mat_map, wls_tc, hd_factor );
+            LOG(LEVEL) << qwls_->desc();
+        }
+        else
+        {
+            LOG(error) << " wls_icdf and wls_mat_map present but wls_time_constants missing " ;
+        }
+    }
+
+
     // TODO: make this more like the others : acting on the available inputs rather than the mode
     bool is_simtrace = SEventConfig::IsRGModeSimtrace() ;
     if(is_simtrace == false )
@@ -267,6 +290,7 @@ QSim::QSim()
     sev(qev->sev),
     rng(QRng::Get()),
     scint(QScint::Get()),
+    qwls(QWls::Get()),
     cerenkov(QCerenkov::Get()),
     bnd(QBnd::Get()),
     debug_(QDebug::Get()),
@@ -316,6 +340,7 @@ void QSim::init()
     sim->multifilm = multifilm ? multifilm->d_multifilm : nullptr ;
     sim->cerenkov = cerenkov ? cerenkov->d_cerenkov : nullptr ;
     sim->scint = scint ? scint->d_scint : nullptr ;
+    sim->wls = qwls ? qwls->d_wls : nullptr ;
     sim->pmt = pmt ? pmt->d_pmt : nullptr ;
 
 
