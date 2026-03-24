@@ -70,7 +70,7 @@ TODO:
 
 struct qcerenkov ;
 
-static QSIM_METHOD QSIM_NOINLINE float qsim_rng_uniform(RNG* rng)
+static QSIM_METHOD QSIM_NOINLINE float qsim_rng_uniform(RNG *rng)
 {
     return curand_uniform(rng);
 }
@@ -1099,7 +1099,7 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
     // spend pathological compile time when this curand state-machine is fully
     // inlined into this large function at high optimization. CUDA 13.0.2
     // compiles cleanly either way, but this preserves the original RNG stream.
-    const float u_reflect = qsim_rng_uniform(&rng) ;
+    const float u_reflect = qsim_rng_uniform(&rng);
     bool reflect = u_reflect > TransCoeff  ;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
