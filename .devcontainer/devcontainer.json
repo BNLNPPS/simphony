@@ -4,15 +4,23 @@
     "dockerfile": "../Dockerfile",
     "context": "..",
     "target": "base",
+    // Uncomment to rebuild the devcontainer with custom build args, e.g. a different CUDA version.
+    //"args": {
+    //  "CUDA_VERSION": "12.5.1"
+    //},
     "cacheFrom": [
       "ghcr.io/bnlnpps/eic-opticks:base"
     ]
+  },
+  "remoteEnv": {
+    "CODEX_HOME": "${containerWorkspaceFolder}/.codex"
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-vscode.cpptools",
-        "ms-vscode.cmake-tools"
+        "ms-vscode.cmake-tools",
+        "openai.chatgpt"
       ]
     }
   }
