@@ -34,18 +34,61 @@ jobs:
           echo "some linter checks failed. ${{ steps.linter.outputs.checks-failed }}"
           exit 1
 
-  build-n-test:
-    runs-on: [gpu]
+  build-release-smoke:
+    runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        target: [release, develop]
+        include: &build_variants
+          - os: ubuntu24.04
+            cuda_version: 13.0.2
+            optix_version: 9.0.0
+            geant4_version: 11.4.1
+          - os: ubuntu22.04
+            cuda_version: 12.1.1
+            optix_version: 8.0.0
+            geant4_version: 11.3.2
 
     steps:
       - name: Define environment variables
         run: |
           echo IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo IMAGE_TAG=$(echo "PR-${{ github.event.pull_request.number }}-${{ matrix.target }}") >> $GITHUB_ENV
+          echo IMAGE_TAG=$(echo "PR-${{ github.event.pull_request.number }}-release-cuda-${{ matrix.cuda_version }}-${{ matrix.os }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}") >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build release smoke image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          target: release
+          build-args: &common_build_args |
+            OS=${{ matrix.os }}
+            CUDA_VERSION=${{ matrix.cuda_version }}
+            OPTIX_VERSION=${{ matrix.optix_version }}
+            GEANT4_VERSION=${{ matrix.geant4_version }}
+          cache-from: type=gha,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
+          cache-to: type=gha,mode=max,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
+
+  build-develop-test:
+    runs-on: [gpu]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: *build_variants
+
+    steps:
+      - name: Define environment variables
+        run: |
+          echo IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          echo IMAGE_TAG=$(echo "PR-${{ github.event.pull_request.number }}-develop-cuda-${{ matrix.cuda_version }}-${{ matrix.os }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}") >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -58,7 +101,8 @@ jobs:
         with:
           context: .
           tags: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          target: ${{ matrix.target }}
+          target: develop
+          build-args: *common_build_args
           load: true
           cache-from: type=local,src=/home/runner/.buildx-cache
           cache-to: type=local,dest=/home/runner/.buildx-cache-new,mode=max
@@ -72,10 +116,14 @@ jobs:
           mv /home/runner/.buildx-cache-new /home/runner/.buildx-cache
 
       - name: Run tests
-        if: ${{ matrix.target == 'develop' }}
         run: |
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_opticks.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_simg4ox.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPURaytrace.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonFileSource.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonSource_8x8SiPM.sh
+
+      - name: Cleanup local test image
+        if: ${{ success() }}
+        run: |
+          docker image rm -f ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
