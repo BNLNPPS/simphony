@@ -18,6 +18,16 @@ namespace gphox {
 
 using namespace std;
 
+const char *Config::Version()
+{
+    return PROJECT_VERSION;
+}
+
+const char *Config::GitRevision()
+{
+    return PROJECT_GIT_REVISION;
+}
+
 constexpr const char *GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
 
 bool FileExists(const std::string &path)

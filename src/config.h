@@ -21,6 +21,12 @@ class Config
 
   static std::string PtxPath(const std::string &ptx_name = "CSGOptiX7.ptx");
 
+  /// Returns the project version (e.g. "0.3.0" or "0.3.0-2-gabcdef-dirty")
+  static const char *Version();
+
+  /// Returns the short git commit hash, or empty string if unavailable
+  static const char *GitRevision();
+
   /// A unique name associated with this Config
   std::string name;
 
