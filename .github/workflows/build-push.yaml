@@ -6,6 +6,10 @@ on:
       - main
       - test
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
 
   build-push:
@@ -13,16 +17,23 @@ jobs:
 
     strategy:
       matrix:
-        target: [release, develop]
+        include:
+          - target: develop
+            os: ubuntu24.04
+            cuda_version: 13.0.2
+            optix_version: 9.0.0
+          - target: develop
+            os: ubuntu22.04
+            cuda_version: 12.1.1
+            optix_version: 8.0.0
 
     steps:
       - name: Define environment variables
         run: |
+          CUDA_MAJOR=$(echo "${{ matrix.cuda_version }}" | cut -d. -f1)
           echo IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo IMAGE_TAG=$(echo ${{ matrix.target }}) >> $GITHUB_ENV
-          if [ "${{ matrix.target }}" = "release" ]; then
-            echo IMAGE_TAG=latest >> $GITHUB_ENV
-          fi
+          echo IMAGE_TAG=cuda-${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix-${{ matrix.optix_version }} >> $GITHUB_ENV
+          echo IMAGE_TAG_SHORT=cuda${CUDA_MAJOR} >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,11 +59,23 @@ jobs:
         with:
           push: true
           tags: |
-           ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-           docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
+            docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
           target: ${{ matrix.target }}
+          build-args: |
+            OS=${{ matrix.os }}
+            CUDA_VERSION=${{ matrix.cuda_version }}
+            OPTIX_VERSION=${{ matrix.optix_version }}
           cache-from: type=local,src=/home/runner/.buildx-cache
           cache-to: type=local,dest=/home/runner/.buildx-cache-new,mode=max
+
+      - name: Add devel alias tag for default CUDA
+        if: ${{ startsWith(matrix.cuda_version, '13.') }}
+        run: |
+          docker buildx imagetools create -t ghcr.io/${{ env.IMAGE_NAME }}:devel ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
+          docker buildx imagetools create -t docker.io/${{ env.IMAGE_NAME }}:devel docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
 
       - name: Move cache
         # Temp fix
