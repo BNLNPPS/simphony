@@ -339,38 +339,30 @@ def print_seq_table(arrays, n_show=15):
 
     seq = arrays["seq"]
     n = seq.shape[0]
-
     print("=" * 70)
     print(f"STEP SEQUENCE HISTORIES (top {n_show})")
     print("=" * 70)
-
-    # seqhis is seq[:, 0, :] as uint64
+    
+    # seqhis is seq[:, 0, :] as uint64, shape (N, 2)
     seqhis = seq[:, 0, :]
 
-    # Build string representation for each photon
-    labels = []
-    for i in range(n):
-        steps = decode_seq_history(seqhis[i])
-        label = " ".join(abbr for _, abbr in steps)
-        labels.append(label)
-
-    # Count unique sequences
-    unique_labels, inverse, counts = np.unique(
-        labels, return_inverse=True, return_counts=True
-    )
+    # Count unique sequences directly on raw uint64 pairs (fast, no Python loop)
+    unique_seqhis, counts = np.unique(seqhis, axis=0, return_counts=True)
     order = np.argsort(-counts)
 
+    # Only decode the top-N for display
     print(f"  {'#':>4s}  {'Count':>7s} {'%':>7s}  {'Sequence'}")
     print(f"  {'-'*4}  {'-'*7} {'-'*7}  {'-'*40}")
     for rank, idx in enumerate(order[:n_show]):
         c = counts[idx]
         pct = 100.0 * c / n
-        print(f"  {rank:4d}  {c:7d} {pct:6.1f}%  {unique_labels[idx]}")
+        steps = decode_seq_history(unique_seqhis[idx])
+        label = " ".join(abbr for _, abbr in steps)
+        print(f"  {rank:4d}  {c:7d} {pct:6.1f}%  {label}")
 
     if len(order) > n_show:
         print(f"  ... ({len(order)} unique sequences total)")
     print()
-
 
 def print_record_steps_table(arrays):
     """Print step count distribution from record.npy."""
@@ -610,8 +602,6 @@ def main():
                         help="Number of top sequence histories to show (default: 15)")
 
     args = parser.parse_args()
-
-    check_event_mode()
 
     path = resolve_event_path(args.path)
     if not os.path.exists(os.path.join(path, "photon.npy")):
