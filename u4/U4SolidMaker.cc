@@ -1617,7 +1617,8 @@ const G4VSolid* U4SolidMaker::GridMultiUnion_(const char* name, G4VSolid* item, 
         grid->AddNode(*item, tr);
 
     }
-    //grid->Voxelize();
+    // The Geant4 header in G4MultiUnion.hh explicitly says Voxelize() must be called once before navigation use.
+    grid->Voxelize();
     return grid ;
 }
 
@@ -3373,6 +3374,3 @@ const G4VSolid* U4SolidMaker::LProfileSectorPolycone( const char* )
 {
     return EMFCoil::Example(16);
 }
-
-
-
