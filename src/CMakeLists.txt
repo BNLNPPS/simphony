@@ -77,6 +77,14 @@ target_include_directories(GPUPhotonFileSource PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
+# StandAloneGeant4Validation - pure G4 optical photon simulation (no opticks GPU)
+add_executable(StandAloneGeant4Validation StandAloneGeant4Validation.cpp StandAloneGeant4Validation.h)
+target_link_libraries(StandAloneGeant4Validation gphox gphox_g4_deps)
+target_include_directories(StandAloneGeant4Validation PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+)
+
 # simtox creates a numpy file with initial photons for simulation
 add_executable(simtox simtox.cpp)
 
@@ -87,7 +95,7 @@ target_include_directories(simtox PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
-install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource simtox gphox gphox_g4_deps
+install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource StandAloneGeant4Validation simtox gphox gphox_g4_deps
     EXPORT ${PROJECT_NAME}Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
