@@ -156,12 +156,11 @@ def extract_photon_fields(photon):
 def count_record_steps(record):
     """Count non-zero steps per photon in record array (N, maxstep, 4, 4)."""
     n, maxstep = record.shape[:2]
-    nsteps = np.zeros(n, dtype=int)
     # A step is unused if all 16 floats are zero
     step_nonzero = np.any(record.reshape(n, maxstep, -1) != 0, axis=2)
-    for i in range(n):
-        nonzero_idx = np.where(step_nonzero[i])[0]
-        nsteps[i] = nonzero_idx[-1] + 1 if len(nonzero_idx) > 0 else 0
+    # Assuming used steps are contiguous from the start, the number of
+    # steps per photon is just the sum of non-zero-step indicators.
+    nsteps = step_nonzero.sum(axis=1).astype(int)
     return nsteps
 
 
