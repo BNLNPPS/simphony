@@ -479,22 +479,22 @@ For example, with defaults:
 
 ```bash
 # Basic summary tables:
-python ana/photon_table.py <event_folder>
+python ana/photon_history_summary.py <event_folder>
 
 # Auto-resolves A000 subfolder:
-python ana/photon_table.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
+python ana/photon_history_summary.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
 
 # Show step-by-step trace for specific photons:
-python ana/photon_table.py <path> --trace 0,227,235
+python ana/photon_history_summary.py <path> --trace 0,227,235
 
 # Show all non-detected (lost) photons with full traces:
-python ana/photon_table.py <path> --lost
+python ana/photon_history_summary.py <path> --lost
 
 # Filter by terminal flag:
-python ana/photon_table.py <path> --flag BULK_ABSORB
+python ana/photon_history_summary.py <path> --flag BULK_ABSORB
 
 # Show per-photon detail for first 20 photons:
-python ana/photon_table.py <path> --detail 20
+python ana/photon_history_summary.py <path> --detail 20
 ```
 
 #### Output tables
