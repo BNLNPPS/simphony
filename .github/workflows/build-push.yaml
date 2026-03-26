@@ -22,10 +22,12 @@ jobs:
             os: ubuntu24.04
             cuda_version: 13.0.2
             optix_version: 9.0.0
+            cmake_version: 4.2.1
           - target: develop
             os: ubuntu22.04
             cuda_version: 12.1.1
             optix_version: 8.0.0
+            cmake_version: 3.31.6
 
     steps:
       - name: Define environment variables
@@ -68,6 +70,7 @@ jobs:
             OS=${{ matrix.os }}
             CUDA_VERSION=${{ matrix.cuda_version }}
             OPTIX_VERSION=${{ matrix.optix_version }}
+            CMAKE_VERSION=${{ matrix.cmake_version }}
           cache-from: type=local,src=/home/runner/.buildx-cache
           cache-to: type=local,dest=/home/runner/.buildx-cache-new,mode=max
 

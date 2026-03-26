@@ -45,10 +45,12 @@ jobs:
             cuda_version: 13.0.2
             optix_version: 9.0.0
             geant4_version: 11.4.1
+            cmake_version: 4.2.1
           - os: ubuntu22.04
             cuda_version: 12.1.1
             optix_version: 8.0.0
             geant4_version: 11.3.2
+            cmake_version: 3.31.6
 
     steps:
       - name: Define environment variables
@@ -73,6 +75,7 @@ jobs:
             CUDA_VERSION=${{ matrix.cuda_version }}
             OPTIX_VERSION=${{ matrix.optix_version }}
             GEANT4_VERSION=${{ matrix.geant4_version }}
+            CMAKE_VERSION=${{ matrix.cmake_version }}
           cache-from: type=gha,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
           cache-to: type=gha,mode=max,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
 
