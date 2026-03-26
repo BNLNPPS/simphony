@@ -59,6 +59,8 @@ jobs:
         run: |
           echo IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
           echo IMAGE_TAG=$(echo "PR-${{ github.event.pull_request.number }}-release-cuda-${{ matrix.cuda_version }}-${{ matrix.os }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}") >> $GITHUB_ENV
+          echo CACHE_SCOPE=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }} >> $GITHUB_ENV
+          echo IS_FORK=${{ github.event.pull_request.head.repo.full_name != github.repository }} >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -77,8 +79,8 @@ jobs:
             CUDA_VERSION=${{ matrix.cuda_version }}
             OPTIX_VERSION=${{ matrix.optix_version }}
             GEANT4_VERSION=${{ matrix.geant4_version }}
-          cache-from: type=gha,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
-          cache-to: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('type=gha,mode=max,scope=build-release-smoke-{0}-cuda-{1}-optix-{2}-geant4-{3}', matrix.os, matrix.cuda_version, matrix.optix_version, matrix.geant4_version) || '' }}
+          cache-from: type=gha,scope=${{ env.CACHE_SCOPE }}
+          cache-to: ${{ env.IS_FORK == 'false' && format('type=gha,mode=max,scope={0}', env.CACHE_SCOPE) || '' }}
 
   build-develop-test:
     runs-on: [gpu]
