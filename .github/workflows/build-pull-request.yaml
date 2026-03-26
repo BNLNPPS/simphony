@@ -37,6 +37,10 @@ jobs:
   build-release-smoke:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      actions: write
+
     strategy:
       fail-fast: false
       matrix:
@@ -74,7 +78,7 @@ jobs:
             OPTIX_VERSION=${{ matrix.optix_version }}
             GEANT4_VERSION=${{ matrix.geant4_version }}
           cache-from: type=gha,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
-          cache-to: type=gha,mode=max,scope=build-release-smoke-${{ matrix.os }}-cuda-${{ matrix.cuda_version }}-optix-${{ matrix.optix_version }}-geant4-${{ matrix.geant4_version }}
+          cache-to: ${{ github.event.pull_request.head.repo.full_name == github.repository && format('type=gha,mode=max,scope=build-release-smoke-{0}-cuda-{1}-optix-{2}-geant4-{3}', matrix.os, matrix.cuda_version, matrix.optix_version, matrix.geant4_version) || '' }}
 
   build-develop-test:
     runs-on: [gpu]
