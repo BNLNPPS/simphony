@@ -423,7 +423,7 @@ docker build -t eic-opticks:perf-rel --target=release
 docker run --rm -t -v /tmp/out:/tmp/out eic-opticks:perf-rel run-performance -o /tmp/out/rel
 ```
 
-### Debug Analysis with `ana/photon_history_summary.py`
+### Debug Analysis with `optiphy/ana/photon_history_summary.py`
 
 The script analyzes GPU optical photon simulation output to debug where photons
 went and why: which were detected, absorbed, scattered, or trapped bouncing
@@ -479,22 +479,22 @@ For example, with defaults:
 
 ```bash
 # Basic summary tables:
-python ana/photon_history_summary.py <event_folder>
+python optiphy/ana/photon_history_summary.py <event_folder>
 
 # Auto-resolves A000 subfolder:
-python ana/photon_history_summary.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
+python optiphy/ana/photon_history_summary.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
 
 # Show step-by-step trace for specific photons:
-python ana/photon_history_summary.py <path> --trace 0,227,235
+python optiphy/ana/photon_history_summary.py <path> --trace 0,227,235
 
 # Show all non-detected (lost) photons with full traces:
-python ana/photon_history_summary.py <path> --lost
+python optiphy/ana/photon_history_summary.py <path> --lost
 
 # Filter by terminal flag:
-python ana/photon_history_summary.py <path> --flag BULK_ABSORB
+python optiphy/ana/photon_history_summary.py <path> --flag BULK_ABSORB
 
 # Show per-photon detail for first 20 photons:
-python ana/photon_history_summary.py <path> --detail 20
+python optiphy/ana/photon_history_summary.py <path> --detail 20
 ```
 
 #### Output tables
