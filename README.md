@@ -423,7 +423,7 @@ docker build -t eic-opticks:perf-rel --target=release
 docker run --rm -t -v /tmp/out:/tmp/out eic-opticks:perf-rel run-performance -o /tmp/out/rel
 ```
 
-### Debug Analysis with `photon_table.py`
+### Debug Analysis with `ana/photon_history_summary.py`
 
 The script analyzes GPU optical photon simulation output to debug where photons
 went and why: which were detected, absorbed, scattered, or trapped bouncing
