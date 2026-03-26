@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-photon_table.py : Debug analysis of opticks GPU simulation output
+photon_history_summary.py : Debug analysis of opticks GPU simulation output
 =================================================================
 
 Reads photon.npy, hit.npy, inphoton.npy, record.npy, seq.npy from
@@ -11,22 +11,22 @@ that photon and record arrays are actually saved to disk.
 
 Usage::
 
-    python ana/photon_table.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name/A000
+    python ana/photon_history_summary.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name/A000
 
     # or just the parent (auto-selects A000):
-    python ana/photon_table.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
+    python ana/photon_history_summary.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
 
     # show per-photon detail for first 20 photons:
-    python ana/photon_table.py <path> --detail 20
+    python ana/photon_history_summary.py <path> --detail 20
 
     # show step-by-step record for specific photons:
-    python ana/photon_table.py <path> --trace 0,227,235
+    python ana/photon_history_summary.py <path> --trace 0,227,235
 
     # filter by terminal flag:
-    python ana/photon_table.py <path> --flag BOUNDARY_REFLECT
+    python ana/photon_history_summary.py <path> --flag BOUNDARY_REFLECT
 
     # show all non-hit (absorbed/lost) photons:
-    python ana/photon_table.py <path> --lost
+    python ana/photon_history_summary.py <path> --lost
 """
 import sys
 import os
