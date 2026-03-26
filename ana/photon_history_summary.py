@@ -184,7 +184,17 @@ def read_hitmask(path):
     with open(meta_path) as f:
         for line in f:
             if line.startswith("hitmask:"):
-                return int(line.split(":")[1].strip())
+                parts = line.split(":", 1)
+                if len(parts) < 2:
+                    return None
+                value = parts[1].strip()
+                if not value:
+                    return None
+                try:
+                    # Use base=0 to allow decimal ("64") and hex ("0x40") encodings.
+                    return int(value, 0)
+                except ValueError:
+                    return None
     return None
 
 
