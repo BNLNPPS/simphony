@@ -8,6 +8,24 @@ FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS base
 ARG OPTIX_VERSION=9.0.0
 ARG GEANT4_VERSION=11.3.2
 ARG CMAKE_VERSION=4.2.1
+ARG GEANT4_INSTALL_DATA=OFF
+ARG GEANT4_DATA_URL=https://geant4-data.web.cern.ch/datasets
+ARG GEANT4_DATASETS="\
+G4NDL.4.7.1.tar.gz \
+G4EMLOW.8.6.1.tar.gz \
+G4PhotonEvaporation.6.1.tar.gz \
+G4RadioactiveDecay.6.1.2.tar.gz \
+G4PARTICLEXS.4.1.tar.gz \
+G4PII.1.3.tar.gz \
+G4RealSurface.2.2.tar.gz \
+G4SAIDDATA.2.0.tar.gz \
+G4ABLA.3.3.tar.gz \
+G4INCL.1.2.tar.gz \
+G4ENSDFSTATE.3.0.tar.gz \
+G4CHANNELING.1.0.tar.gz \
+G4TENDL.1.4.tar.gz \
+G4NUDEXLIB.1.0.tar.gz \
+G4URRPT.1.1.tar.gz"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -28,9 +46,16 @@ RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSI
     | tar -xz --strip-components=1 -C /usr/local
 
 RUN mkdir -p /opt/geant4/src && curl -sL https://github.com/Geant4/geant4/archive/refs/tags/v${GEANT4_VERSION}.tar.gz | tar -xz --strip-components 1 -C /opt/geant4/src \
- && cmake -S /opt/geant4/src -B /opt/geant4/build -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON -DGEANT4_USE_GDML=ON -DGEANT4_INSTALL_DATA=ON -DGEANT4_BUILD_MULTITHREADED=ON \
+ && cmake -S /opt/geant4/src -B /opt/geant4/build -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON -DGEANT4_USE_GDML=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR=share/Geant4/data -DGEANT4_BUILD_MULTITHREADED=ON \
  && cmake --build /opt/geant4/build --parallel --target install \
  && rm -fr /opt/geant4
+
+RUN if [ "${GEANT4_INSTALL_DATA}" = "ON" ]; then \
+      mkdir -p /usr/local/share/Geant4/data; \
+      for dataset in ${GEANT4_DATASETS}; do \
+        curl -fsSL "${GEANT4_DATA_URL}/${dataset}" | tar -xz -C /usr/local/share/Geant4/data; \
+      done; \
+    fi
 
 RUN mkdir -p /opt/clhep/src && curl -sL https://gitlab.cern.ch/CLHEP/CLHEP/-/archive/CLHEP_2_4_7_1/CLHEP-CLHEP_2_4_7_1.tar.gz | tar -xz --strip-components 1 -C /opt/clhep/src \
  && cmake -S /opt/clhep/src -B /opt/clhep/build \
