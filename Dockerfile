@@ -8,6 +8,7 @@ FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS base
 ARG OPTIX_VERSION=9.0.0
 ARG GEANT4_VERSION=11.3.2
 ARG CMAKE_VERSION=4.2.1
+ARG CMAKE_BUILD_JOBS=4
 ARG GEANT4_INSTALL_DATA=ON
 ARG GEANT4_DATA_URL=https://geant4-data.web.cern.ch/datasets
 ARG GEANT4_DATASETS="\
@@ -47,7 +48,7 @@ RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSI
 
 RUN mkdir -p /opt/geant4/src && curl -sL https://github.com/Geant4/geant4/archive/refs/tags/v${GEANT4_VERSION}.tar.gz | tar -xz --strip-components 1 -C /opt/geant4/src \
  && cmake -S /opt/geant4/src -B /opt/geant4/build -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON -DGEANT4_USE_GDML=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR=share/Geant4/data -DGEANT4_BUILD_MULTITHREADED=ON \
- && cmake --build /opt/geant4/build --parallel --target install \
+ && cmake --build /opt/geant4/build --parallel ${CMAKE_BUILD_JOBS} --target install \
  && rm -fr /opt/geant4
 
 RUN if [ "${GEANT4_INSTALL_DATA}" = "ON" ]; then \
@@ -109,7 +110,7 @@ FROM base AS release
 COPY . $OPTICKS_HOME
 
 RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Release \
- && cmake --build $OPTICKS_BUILD --parallel --target install
+ && cmake --build $OPTICKS_BUILD --parallel ${CMAKE_BUILD_JOBS} --target install
 
 
 FROM base AS develop
@@ -119,4 +120,4 @@ RUN apt update && apt install -y x11-apps mesa-utils vim
 COPY . $OPTICKS_HOME
 
 RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Debug \
- && cmake --build $OPTICKS_BUILD --parallel --target install
+ && cmake --build $OPTICKS_BUILD --parallel ${CMAKE_BUILD_JOBS} --target install
