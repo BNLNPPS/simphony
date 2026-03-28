@@ -44,6 +44,11 @@ int main(int argc, char **argv)
         .scan<'i', int>()
         .store_into(num_threads);
 
+    program.add_argument("--aligned")
+        .help("enable photon-by-photon aligned comparison with GPU (forces sequential)")
+        .default_value(false)
+        .implicit_value(true);
+
     try
     {
         program.parse_args(argc, argv);
@@ -61,8 +66,14 @@ int main(int argc, char **argv)
     else
         seed = static_cast<long>(time(nullptr));
 
+    bool aligned = program.get<bool>("--aligned");
+
     gphox::Config cfg(config_name);
     int total_photons = cfg.torch.numphoton;
+
+    // Aligned mode forces sequential (U4Random is single-threaded)
+    if (aligned)
+        num_threads = 0;
 
     // Determine threading mode
     bool use_mt = (num_threads != 0);
@@ -97,9 +108,16 @@ int main(int argc, char **argv)
            << G4endl;
 
     HitAccumulator accumulator;
+    PhotonFateAccumulator fate;
+
+    if (aligned)
+        fate.Resize(total_photons);
 
     G4VModularPhysicsList *physics = new FTFP_BERT;
-    physics->RegisterPhysics(new G4OpticalPhysics);
+    if (aligned)
+        physics->RegisterPhysics(new AlignedOpticalPhysics);
+    else
+        physics->RegisterPhysics(new G4OpticalPhysics);
 
     if (use_mt)
     {
@@ -108,7 +126,7 @@ int main(int argc, char **argv)
         run_mgr->SetUserInitialization(physics);
         run_mgr->SetUserInitialization(new G4OnlyDetectorConstruction(gdml_file, &accumulator));
         run_mgr->SetUserInitialization(
-            new G4OnlyActionInitialization(cfg, &accumulator, photons_per_event, num_events));
+            new G4OnlyActionInitialization(cfg, &accumulator, &fate, photons_per_event, num_events, aligned));
         run_mgr->Initialize();
 
         CLHEP::HepRandom::setTheSeed(seed);
@@ -124,7 +142,16 @@ int main(int argc, char **argv)
         run_mgr.SetUserInitialization(physics);
         run_mgr.SetUserInitialization(new G4OnlyDetectorConstruction(gdml_file, &accumulator));
         run_mgr.SetUserInitialization(
-            new G4OnlyActionInitialization(cfg, &accumulator, photons_per_event, num_events));
+            new G4OnlyActionInitialization(cfg, &accumulator, &fate, photons_per_event, num_events, aligned));
+
+        if (aligned)
+        {
+            G4cout << "G4: Aligned mode — configuring SEvt and U4Random" << G4endl;
+            setenv("SEvent__MakeGenstep_num_ph", std::to_string(total_photons).c_str(), 1);
+            setenv("OPTICKS_MAX_BOUNCE", "1000", 0);
+            U4Random::Create();
+        }
+
         run_mgr.Initialize();
 
         CLHEP::HepRandom::setTheSeed(seed);
