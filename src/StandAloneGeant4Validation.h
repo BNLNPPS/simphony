@@ -29,7 +29,11 @@
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4OpBoundaryProcess.hh"
 #include "G4ProcessManager.hh"
+#include "G4VPhysicsConstructor.hh"
+#include "G4OpWLS.hh"
 
+#include "ShimG4OpAbsorption.hh"
+#include "ShimG4OpRayleigh.hh"
 #include "U4Random.hh"
 
 #include "sysrap/NP.hh"
@@ -478,6 +482,22 @@ struct G4OnlyTrackingAction : G4UserTrackingAction
         if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
         U4Random::SetSequenceIndex(-1);
+    }
+};
+
+// ---- AlignedOpticalPhysics: uses Shim processes for precise RNILL matching ----
+
+struct AlignedOpticalPhysics : G4VPhysicsConstructor
+{
+    AlignedOpticalPhysics() : G4VPhysicsConstructor("AlignedOptical") {}
+    void ConstructParticle() override {}
+    void ConstructProcess() override
+    {
+        auto* pm = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
+        pm->AddDiscreteProcess(new ShimG4OpAbsorption());
+        pm->AddDiscreteProcess(new ShimG4OpRayleigh());
+        pm->AddDiscreteProcess(new G4OpBoundaryProcess());
+        pm->AddDiscreteProcess(new G4OpWLS());
     }
 };
 
