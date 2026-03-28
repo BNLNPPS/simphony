@@ -114,7 +114,10 @@ int main(int argc, char **argv)
         fate.Resize(total_photons);
 
     G4VModularPhysicsList *physics = new FTFP_BERT;
-    physics->RegisterPhysics(new G4OpticalPhysics);
+    if (aligned)
+        physics->RegisterPhysics(new AlignedOpticalPhysics);
+    else
+        physics->RegisterPhysics(new G4OpticalPhysics);
 
     if (use_mt)
     {
