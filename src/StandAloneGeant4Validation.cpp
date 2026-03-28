@@ -114,10 +114,7 @@ int main(int argc, char **argv)
         fate.Resize(total_photons);
 
     G4VModularPhysicsList *physics = new FTFP_BERT;
-    if (aligned)
-        physics->RegisterPhysics(new AlignedOpticalPhysics);
-    else
-        physics->RegisterPhysics(new G4OpticalPhysics);
+    physics->RegisterPhysics(new G4OpticalPhysics);
 
     if (use_mt)
     {
@@ -146,9 +143,7 @@ int main(int argc, char **argv)
 
         if (aligned)
         {
-            G4cout << "G4: Aligned mode — configuring SEvt and U4Random" << G4endl;
-            setenv("SEvent__MakeGenstep_num_ph", std::to_string(total_photons).c_str(), 1);
-            setenv("OPTICKS_MAX_BOUNCE", "1000", 0);
+            G4cout << "G4: Aligned mode — creating U4Random" << G4endl;
             U4Random::Create();
         }
 

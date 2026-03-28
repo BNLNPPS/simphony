@@ -29,16 +29,8 @@
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4OpBoundaryProcess.hh"
 #include "G4ProcessManager.hh"
-#include "G4VPhysicsConstructor.hh"
-#include "G4OpWLS.hh"
 
-#include "ShimG4OpAbsorption.hh"
-#include "ShimG4OpRayleigh.hh"
-#include "InstrumentedG4OpBoundaryProcess.hh"
 #include "U4Random.hh"
-#include "U4Recorder.hh"
-#include "SEvt.hh"
-#include "SEventConfig.hh"
 
 #include "sysrap/NP.hh"
 #include "sysrap/sphoton.h"
@@ -300,7 +292,6 @@ struct G4OnlySteppingAction : G4UserSteppingAction
 {
     PhotonFateAccumulator* fate;
     bool aligned;
-    U4Recorder* recorder = nullptr;
     std::map<std::string, int> proc_death_counts;
     std::map<int, int> boundary_status_counts;
     std::mutex count_mtx;
@@ -350,10 +341,6 @@ struct G4OnlySteppingAction : G4UserSteppingAction
 
     void UserSteppingAction(const G4Step* aStep) override
     {
-        // Forward to U4Recorder first for random alignment
-        if (recorder)
-            recorder->UserSteppingAction(aStep);
-
         G4Track* track = aStep->GetTrack();
         if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
@@ -478,36 +465,19 @@ struct G4OnlySteppingAction : G4UserSteppingAction
 
 struct G4OnlyTrackingAction : G4UserTrackingAction
 {
-    U4Recorder* recorder = nullptr;
-
     void PreUserTrackingAction(const G4Track* track) override
     {
-        if (recorder)
-            recorder->PreUserTrackingAction(track);
+        if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
+            return;
+        int photon_idx = track->GetTrackID() - 1;  // G4 trackIDs are 1-based
+        U4Random::SetSequenceIndex(photon_idx);
     }
 
     void PostUserTrackingAction(const G4Track* track) override
     {
-        if (recorder)
-            recorder->PostUserTrackingAction(track);
-    }
-};
-
-// ---- AlignedOpticalPhysics: replaces G4OpticalPhysics with instrumented processes ----
-
-struct AlignedOpticalPhysics : G4VPhysicsConstructor
-{
-    AlignedOpticalPhysics() : G4VPhysicsConstructor("AlignedOptical") {}
-
-    void ConstructParticle() override {}  // optical photon already defined by FTFP_BERT
-
-    void ConstructProcess() override
-    {
-        auto* pm = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
-        pm->AddDiscreteProcess(new ShimG4OpAbsorption());
-        pm->AddDiscreteProcess(new ShimG4OpRayleigh());
-        pm->AddDiscreteProcess(new InstrumentedG4OpBoundaryProcess());
-        pm->AddDiscreteProcess(new G4OpWLS());
+        if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
+            return;
+        U4Random::SetSequenceIndex(-1);
     }
 };
 
@@ -516,26 +486,14 @@ struct AlignedOpticalPhysics : G4VPhysicsConstructor
 struct G4OnlyEventAction : G4UserEventAction
 {
     int total_events;
-    U4Recorder* recorder = nullptr;
 
     G4OnlyEventAction(int total_events) : total_events(total_events) {}
-
-    void BeginOfEventAction(const G4Event *event) override
-    {
-        if (recorder)
-        {
-            SEvt::AddTorchGenstep();
-            recorder->BeginOfEventAction_(event->GetEventID());
-        }
-    }
 
     void EndOfEventAction(const G4Event *event) override
     {
         int id = event->GetEventID();
         if (id == 0 || (id + 1) % 10 == 0 || id + 1 == total_events)
             G4cout << "G4: Event " << id + 1 << "/" << total_events << G4endl;
-        if (recorder)
-            recorder->EndOfEventAction_(id);
     }
 };
 
@@ -591,25 +549,10 @@ struct G4OnlyActionInitialization : G4VUserActionInitialization
     void Build() const override
     {
         SetUserAction(new G4OnlyPrimaryGenerator(cfg, photons_per_event));
-
-        auto* evt_action = new G4OnlyEventAction(num_events);
-        auto* stepping = new G4OnlySteppingAction(fate, aligned);
-
-        if (aligned)
-        {
-            U4Recorder* rec = U4Recorder::Get();
-            if (!rec) rec = new U4Recorder();
-
-            evt_action->recorder = rec;
-            stepping->recorder = rec;
-
-            auto* tracking = new G4OnlyTrackingAction();
-            tracking->recorder = rec;
-            SetUserAction(tracking);
-        }
-
-        SetUserAction(evt_action);
+        SetUserAction(new G4OnlyEventAction(num_events));
         SetUserAction(new G4OnlyRunAction(accumulator, fate));
-        SetUserAction(stepping);
+        SetUserAction(new G4OnlySteppingAction(fate, aligned));
+        if (aligned)
+            SetUserAction(new G4OnlyTrackingAction());
     }
 };
