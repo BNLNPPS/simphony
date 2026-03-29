@@ -26,6 +26,8 @@ class Config
 
   storch torch;
 
+  bool savephotonhistory{false};
+
  private:
 
   std::string Locate(std::string filename) const;

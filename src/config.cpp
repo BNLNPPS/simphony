@@ -136,6 +136,9 @@ void Config::ReadConfig(std::string filepath)
 
     SEventConfig::SetEventMode( string(event_["mode"]).c_str() );
     SEventConfig::SetMaxSlot( event_["maxslot"] );
+
+    if (event_.contains("savephotonhistory"))
+      savephotonhistory = event_["savephotonhistory"].get<bool>();
   }
   catch (nlohmann::json::exception& e) {
     std::string errmsg{"Failed reading config parameters from " + filepath + "\n" + e.what()};
