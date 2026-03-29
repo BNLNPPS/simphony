@@ -78,9 +78,19 @@ target_include_directories(GPUPhotonFileSource PRIVATE
 )
 
 # StandAloneGeant4Validation - pure G4 optical photon simulation (no opticks GPU)
+# Links U4 for aligned mode (U4Random, InstrumentedG4OpBoundaryProcess, ShimG4Op*)
 add_executable(StandAloneGeant4Validation StandAloneGeant4Validation.cpp StandAloneGeant4Validation.h)
-target_link_libraries(StandAloneGeant4Validation gphox gphox_g4_deps)
+target_link_libraries(StandAloneGeant4Validation gphox gphox_g4_deps U4)
+target_compile_definitions(StandAloneGeant4Validation PRIVATE WITH_INSTRUMENTED_DEBUG)
 target_include_directories(StandAloneGeant4Validation PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+)
+
+# G4ValidationGenstep - pure G4 electron→scintillation/Cerenkov→optical photon simulation
+add_executable(G4ValidationGenstep G4ValidationGenstep.cpp G4ValidationGenstep.h)
+target_link_libraries(G4ValidationGenstep gphox gphox_g4_deps)
+target_include_directories(G4ValidationGenstep PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
@@ -95,7 +105,7 @@ target_include_directories(simtox PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
-install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource StandAloneGeant4Validation simtox gphox gphox_g4_deps
+install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource StandAloneGeant4Validation G4ValidationGenstep simtox gphox gphox_g4_deps
     EXPORT ${PROJECT_NAME}Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
