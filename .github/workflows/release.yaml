@@ -68,6 +68,7 @@ jobs:
             OPTIX_VERSION=${{ matrix.optix_version }}
             GEANT4_VERSION=${{ matrix.geant4_version }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
+            PROJECT_VERSION=${{ github.ref_name }}
           cache-from: type=local,src=/home/runner/.buildx-cache
           cache-to: type=local,dest=/home/runner/.buildx-cache-new,mode=max
 
