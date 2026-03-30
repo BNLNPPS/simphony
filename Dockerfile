@@ -8,6 +8,7 @@ FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS base
 ARG OPTIX_VERSION=9.0.0
 ARG GEANT4_VERSION=11.3.2
 ARG CMAKE_VERSION=4.2.1
+ARG CMAKE_BUILD_JOBS
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -29,17 +30,17 @@ RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSI
 
 RUN mkdir -p /opt/clhep/src && curl -sL https://gitlab.cern.ch/CLHEP/CLHEP/-/archive/CLHEP_2_4_7_1/CLHEP-CLHEP_2_4_7_1.tar.gz | tar -xz --strip-components 1 -C /opt/clhep/src \
  && cmake -S /opt/clhep/src -B /opt/clhep/build \
- && cmake --build /opt/clhep/build --parallel --target install \
+ && cmake --build /opt/clhep/build --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install \
  && rm -fr /opt/clhep
 
 RUN mkdir -p /opt/geant4/src && curl -sL https://github.com/Geant4/geant4/archive/refs/tags/v${GEANT4_VERSION}.tar.gz | tar -xz --strip-components 1 -C /opt/geant4/src \
  && cmake -S /opt/geant4/src -B /opt/geant4/build -DGEANT4_USE_SYSTEM_CLHEP=ON -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_QT=ON -DGEANT4_USE_QT_QT6=ON -DGEANT4_USE_GDML=ON -DGEANT4_INSTALL_DATA=ON -DGEANT4_BUILD_MULTITHREADED=ON \
- && cmake --build /opt/geant4/build --parallel --target install \
+ && cmake --build /opt/geant4/build --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install \
  && rm -fr /opt/geant4
 
 RUN mkdir -p /opt/plog/src && curl -sL https://github.com/SergiusTheBest/plog/archive/refs/tags/1.1.11.tar.gz | tar -xz --strip-components 1 -C /opt/plog/src \
  && cmake -S /opt/plog/src -B /opt/plog/build \
- && cmake --build /opt/plog/build --parallel --target install \
+ && cmake --build /opt/plog/build --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install \
  && rm -fr /opt/plog
 
 RUN mkdir -p /opt/optix && curl -sL https://github.com/NVIDIA/optix-dev/archive/refs/tags/v${OPTIX_VERSION}.tar.gz | tar -xz --strip-components 1 -C /opt/optix
@@ -81,17 +82,21 @@ RUN uv sync
 
 FROM base AS release
 
+ARG CMAKE_BUILD_JOBS
+
 COPY . $OPTICKS_HOME
 
 RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Release \
- && cmake --build $OPTICKS_BUILD --parallel --target install
+ && cmake --build $OPTICKS_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
 
 
 FROM base AS develop
+
+ARG CMAKE_BUILD_JOBS
 
 RUN apt update && apt install -y x11-apps mesa-utils vim
 
 COPY . $OPTICKS_HOME
 
 RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Debug \
- && cmake --build $OPTICKS_BUILD --parallel --target install
+ && cmake --build $OPTICKS_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
