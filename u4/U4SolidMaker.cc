@@ -28,6 +28,19 @@ using CLHEP::mm ;
 #include "U4SolidTree.hh"
 #include "SLOG.hh"
 
+namespace
+{
+    inline const G4VSolid* EnsureVoxelizedMultiUnion(const G4VSolid* solid)
+    {
+        const auto* mu = dynamic_cast<const G4MultiUnion*>(solid);
+        if(mu && mu->GetNumberOfSolids() > 0 && mu->GetVoxels().GetCountOfVoxels() == 0)
+        {
+            const_cast<G4MultiUnion*>(mu)->Voxelize();
+        }
+        return solid ;
+    }
+}
+
 const plog::Severity U4SolidMaker::LEVEL = SLOG::EnvLevel("U4SolidMaker", "DEBUG");
 
 const char* U4SolidMaker::NAMES = R"LITERAL(
@@ -187,7 +200,7 @@ const G4VSolid* U4SolidMaker::Make(const char* qname, std::string& meta )  // st
     else if(StartsWith("LProfileSectorPolycone",qname))               solid = LProfileSectorPolycone(qname);
     LOG(LEVEL) << " qname " << qname << " solid " << solid ;
     LOG_IF(error, solid==nullptr) << " Failed to create solid for qname " << qname << " CHECK U4SolidMaker::Make " ;
-    return solid ;
+    return EnsureVoxelizedMultiUnion(solid) ;
 }
 
 
