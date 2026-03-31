@@ -24,11 +24,9 @@ struct CSG_API CSGScan
     void initGeom_h(); 
     void initRays_h(const char* opts_); 
 
-#ifdef WITH_CUDA
     void initGeom_d(); 
     void initRays_d(); 
     void initParams_d(); 
-#endif
 
     void add_scan(std::vector<quad4>& qq, const char* opt);
     void add_axis_scan(std::vector<quad4>& qq); 
@@ -41,10 +39,8 @@ struct CSG_API CSGScan
 
     void intersect_h();
 
-#ifdef WITH_CUDA
     void intersect_d();
     void download(); 
-#endif
 
     std::string brief() const ;
     std::string brief(CSGParams* s) const ;
@@ -73,6 +69,5 @@ struct CSG_API CSGScan
 
  
 };
-
 
 

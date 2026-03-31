@@ -15,7 +15,6 @@ ssolid.h
 #include "sgeomdefs.h"
 
 #include "G4VSolid.hh"
-#include "G4MultiUnion.hh"
 #include "G4ThreeVector.hh"
 
 struct ssolid
@@ -25,9 +24,6 @@ struct ssolid
     static G4double Distance_(const G4VSolid* solid, const G4ThreeVector& pos, const G4ThreeVector& dir, EInside& in, 
              G4ThreeVector* isect=nullptr  
          ); 
-    static G4double DistanceMultiUnionNoVoxels_(
-                          const G4MultiUnion* solid, const G4ThreeVector& pos, const G4ThreeVector& dir, EInside& in ); 
-
     static G4double Distance(const G4VSolid* solid, const G4ThreeVector& pos, const G4ThreeVector& dir, bool dump ); 
     static void Simtrace( quad4& p, const G4VSolid* solid, bool dump=false); 
 }; 
@@ -86,26 +82,10 @@ inline G4double ssolid::Distance_(const G4VSolid* solid, const G4ThreeVector& po
 
 
 
-inline G4double ssolid::DistanceMultiUnionNoVoxels_(const G4MultiUnion* solid, const G4ThreeVector& pos, const G4ThreeVector& dir, EInside& in ) // static
-{
-    in =  solid->InsideNoVoxels(pos) ; 
-    G4double t = kInfinity ; 
-    switch( in )
-    {
-        case kInside:  t = solid->DistanceToOutNoVoxels( pos, dir, nullptr ) ; break ; 
-        case kSurface: t = solid->DistanceToOutNoVoxels( pos, dir, nullptr ) ; break ; 
-        case kOutside: t = solid->DistanceToInNoVoxels(  pos, dir ) ; break ; 
-        default:  assert(0) ; 
-    }
-    return t ; 
-}
-
-
 inline G4double ssolid::Distance(const G4VSolid* solid, const G4ThreeVector& pos, const G4ThreeVector& dir, bool dump ) // static
 {
     EInside in ; 
-    const G4MultiUnion* m = dynamic_cast<const G4MultiUnion*>(solid) ; 
-    G4double t = m ? DistanceMultiUnionNoVoxels_(m, pos, dir, in ) : Distance_( solid, pos, dir, in  );  
+    G4double t = Distance_( solid, pos, dir, in );
 
     if(dump && t != kInfinity)
     {

@@ -55,6 +55,7 @@ set(TEST_SOURCES
    U4SurfaceTest.cc
    U4SolidTest.cc
    U4SolidMakerTest.cc
+   U4SolidMakerTest2.cc
 
    U4SensitiveDetectorTest.cc 
 

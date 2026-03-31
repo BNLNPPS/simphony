@@ -24,10 +24,8 @@ TODO:
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
    #define QSIM_METHOD __device__
-   #define QSIM_NOINLINE __noinline__
 #else
    #define QSIM_METHOD
-   #define QSIM_NOINLINE
 #endif
 
 #include "OpticksGenstep.h"
@@ -69,11 +67,6 @@ TODO:
 
 
 struct qcerenkov ;
-
-static QSIM_METHOD QSIM_NOINLINE float qsim_rng_uniform(RNG *rng)
-{
-    return curand_uniform(rng);
-}
 
 struct qsim
 {
@@ -1093,13 +1086,9 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
 
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    const float u_boundary_burn = qsim_rng_uniform(&rng) ;  // needed for random consumption alignment with Geant4 G4OpBoundaryProcess::PostStepDoIt
+    const float u_boundary_burn = curand_uniform(&rng) ;  // needed for random consumption alignment with Geant4 G4OpBoundaryProcess::PostStepDoIt
 #endif
-    // Keep the scalar Philox draw behind a noinline helper. CUDA 12.5.1 can
-    // spend pathological compile time when this curand state-machine is fully
-    // inlined into this large function at high optimization. CUDA 13.0.2
-    // compiles cleanly either way, but this preserves the original RNG stream.
-    const float u_reflect = qsim_rng_uniform(&rng);
+    const float u_reflect = curand_uniform(&rng) ;
     bool reflect = u_reflect > TransCoeff  ;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
