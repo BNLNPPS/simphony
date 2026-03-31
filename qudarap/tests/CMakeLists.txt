@@ -74,7 +74,7 @@ if(PMTSim_standalone_FOUND)
 
         target_link_libraries(${TGT} QUDARap )
         target_link_libraries( ${TGT} Opticks::PMTSim_standalone )
-        target_compile_definitions( ${TGT} PRIVATE WITH_PMTSIM WITH_CUDA)
+        target_compile_definitions( ${TGT} PRIVATE WITH_PMTSIM)
     endforeach()
 
 else()
