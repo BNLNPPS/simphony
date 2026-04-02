@@ -10,6 +10,8 @@
 #include "G4VModularPhysicsList.hh"
 #include "G4UImanager.hh"
 
+#include "G4OpticalParameters.hh"
+
 #include "StandAloneGeant4Validation.h"
 #include "config.h"
 
@@ -118,6 +120,9 @@ int main(int argc, char **argv)
         physics->RegisterPhysics(new AlignedOpticalPhysics);
     else
         physics->RegisterPhysics(new G4OpticalPhysics);
+
+    // Use exponential WLS time profile (default is delta = zero delay)
+    G4OpticalParameters::Instance()->SetWLSTimeProfile("exponential");
 
     if (use_mt)
     {
