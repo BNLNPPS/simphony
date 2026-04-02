@@ -10,30 +10,31 @@ Geometry: Vacuum world > Lead(220mm) > Air(200mm) > Water(100mm)
 
 This uses the same geometry as eic-opticks's own raindrop test,
 but expressed as DD4hep compact XML instead of GDML.
+
+Prerequisites:
+  - Spack environment activated (ROOT, DD4hep, eic-opticks on PYTHONPATH/LD_LIBRARY_PATH)
+  - DD4hepINSTALL set (for elements.xml lookup)
+  - libddeicopticks.so and libRaindropGeo.so on DD4HEP_LIBRARY_PATH
 """
 import os
 import sys
 
-# Ensure ROOT python path is set for cppyy
-root_lib = "/opt/software/linux-x86_64_v2/root-6.38.00-cvtudlgre32tlweb6eekpvj7be6a357n/lib/root"
-if root_lib not in sys.path:
-    sys.path.insert(0, root_lib)
-os.environ.setdefault("PYTHONPATH", root_lib)
-
 import DDG4
 from g4units import GeV, MeV, mm
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def run():
     kernel = DDG4.Kernel()
 
-    compact_file = "/root/src/raindrop_dd4hep.xml"
+    compact_file = os.path.join(_SCRIPT_DIR, "geometry", "raindrop_dd4hep.xml")
     if not os.path.exists(compact_file):
         print(f"ERROR: Compact file not found: {compact_file}")
         sys.exit(1)
 
-    # Set DD4hep install for elements.xml
-    dd4hep_install = "/opt/software/linux-x86_64_v2/dd4hep-1.35-qvjf5ng3x75erurhplvh75igvhfjn2i5"
-    os.environ["DD4hepINSTALL"] = dd4hep_install
+    if "DD4hepINSTALL" not in os.environ:
+        print("ERROR: DD4hepINSTALL not set. Activate the spack environment first.")
+        sys.exit(1)
 
     print(f"Loading geometry: {compact_file}")
     kernel.loadGeometry(str("file:" + compact_file))
