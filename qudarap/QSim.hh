@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 #include "QUDARAP_API_EXPORT.hh"
 #include "plog/Severity.h"
@@ -23,196 +23,182 @@ HMM : MOST OF THIS API IS FOR TESTING ONLY  : TODO: Move lots to QSimTest perhap
 
 **/
 
-struct NP ;
-struct SSim ;
-struct SEvt ;
+struct NP;
+struct SSim;
+struct SEvt;
 
-template <typename T> struct QTex ;
-template <typename T> struct QBuf ;
-template <typename T> struct QProp ;
-template <typename T> struct QPMT ;
+template <typename T> struct QTex;
+template <typename T> struct QBuf;
+template <typename T> struct QProp;
+template <typename T> struct QPMT;
 
-struct qsim ;
+struct qsim;
 
-struct QBase ;
-struct QEvt ;
-struct QRng ;
-struct QScint ;
-struct QWls ;
-struct QCerenkov ;
-struct QBnd ;
+struct QBase;
+struct QEvt;
+struct QRng;
+struct QScint;
+struct QWls;
+struct QCerenkov;
+struct QBnd;
 struct QMultiFilm;
-struct QOptical ;
-struct QEvt ;
-struct QDebug ;
+struct QOptical;
+struct QEvt;
+struct QDebug;
 
-struct qdebug ;
-struct sstate ;
+struct qdebug;
+struct sstate;
 
-struct quad4 ;
-struct quad2 ;
-struct sphoton ;
-union  quad ;
+struct quad4;
+struct quad2;
+struct sphoton;
+union quad;
 
-struct SSimulator ;
+struct SSimulator;
 
 struct QUDARAP_API QSim
 {
-    static constexpr const int64_t M = 1000000 ;
-    static constexpr const int64_t G = 1000000000 ;
+    static constexpr const int64_t M = 1000000;
+    static constexpr const int64_t G = 1000000000;
 
-    static const plog::Severity LEVEL ;
-    static const char* PREFIX ;
-    static QSim* INSTANCE ;
-    static QSim* Get();
-    static QSim* Create();
+    static const plog::Severity LEVEL;
+    static const char *PREFIX;
+    static QSim *INSTANCE;
+    static QSim *Get();
+    static QSim *Create();
 
-    static void UploadComponents(const SSim* ssim);
+    static void UploadComponents(const SSim *ssim);
 
-    const QBase*     base ;
-    QEvt*            qev ;
-    SEvt*            sev ;
+    const QBase *base;
+    QEvt *qev;
+    SEvt *sev;
 
-    const QRng*      rng ;
-    const QScint*    scint ;
-    const QWls*      qwls ;
-    const QCerenkov* cerenkov ;
-    const QBnd*      bnd ;
-    const QOptical*  optical ;
-    const QDebug*    debug_ ;
+    const QRng *rng;
+    const QScint *scint;
+    const QWls *qwls;
+    const QCerenkov *cerenkov;
+    const QBnd *bnd;
+    const QOptical *optical;
+    const QDebug *debug_;
 
-    const QProp<float>*  prop ;
-    const QPMT<float>*   pmt ;
-    const QMultiFilm*    multifilm ;
+    const QProp<float> *prop;
+    const QPMT<float> *pmt;
+    const QMultiFilm *multifilm;
 
-    qsim*                 sim ;
-    qsim*               d_sim ;
+    qsim *sim;
+    qsim *d_sim;
 
-    qdebug*           dbg ;
-    qdebug*           d_dbg ;
+    qdebug *dbg;
+    qdebug *d_dbg;
 
-    SSimulator*        cx ;
+    SSimulator *cx;
 
+    dim3 numBlocks;
+    dim3 threadsPerBlock;
 
-    dim3 numBlocks ;
-    dim3 threadsPerBlock ;
-
-private:
+  private:
     QSim();
     void init();
 
-    static constexpr const char* _QSim__REQUIRE_PMT = "QSim__REQUIRE_PMT" ;
-    static const bool   REQUIRE_PMT;
+    static constexpr const char *_QSim__REQUIRE_PMT = "QSim__REQUIRE_PMT";
+    static const bool REQUIRE_PMT;
 
-    static constexpr const char* _QSim__SAVE_IGS_EVENTID = "QSim__SAVE_IGS_EVENTID" ;
-    static const int   SAVE_IGS_EVENTID ;
+    static constexpr const char *_QSim__SAVE_IGS_EVENTID = "QSim__SAVE_IGS_EVENTID";
+    static const int SAVE_IGS_EVENTID;
 
-    static constexpr const char* _QSim__SAVE_IGS_PATH    = "QSim__SAVE_IGS_PATH" ;
-    static const char* SAVE_IGS_PATH ;
+    static constexpr const char *_QSim__SAVE_IGS_PATH = "QSim__SAVE_IGS_PATH";
+    static const char *SAVE_IGS_PATH;
 
-    static constexpr const char* _QSim__CONCAT    = "QSim__CONCAT" ;
-    static const bool CONCAT ;
+    static constexpr const char *_QSim__CONCAT = "QSim__CONCAT";
+    static const bool CONCAT;
 
-    static constexpr const char* _QSim__ALLOC    = "QSim__ALLOC" ;
-    static const bool ALLOC ;
+    static constexpr const char *_QSim__ALLOC = "QSim__ALLOC";
+    static const bool ALLOC;
 
+  public:
+    void setLauncher(SSimulator *cx_);
 
-public:
-    void setLauncher(SSimulator* cx_ );
+    static constexpr const char *QSim__simulate_KEEP_SUBFOLD = "QSim__simulate_KEEP_SUBFOLD";
+    static bool KEEP_SUBFOLD;
 
-    static constexpr const char* QSim__simulate_KEEP_SUBFOLD = "QSim__simulate_KEEP_SUBFOLD" ;
-    static bool KEEP_SUBFOLD ;
+    double simulate(int eventID, bool reset_); // via cx launch
+    void simulate_final_merge(int64_t tot_ph, cudaStream_t stream);
 
-    double simulate(int eventID, bool reset_ );      // via cx launch
-    void   simulate_final_merge(int64_t tot_ph, cudaStream_t stream);
+    NP *simulate(const NP *gs, int eventID); // higher level API for use from CSGOptiXService.h
 
+    static void MaybeSaveIGS(int eventID, NP *igs);
 
+    unsigned long long get_photon_slot_offset() const;
 
-    NP*    simulate(const NP* gs, int eventID );     // higher level API for use from CSGOptiXService.h
-
-    static void MaybeSaveIGS(int eventID, NP* igs);
-
-    unsigned long long get_photon_slot_offset() const ;
-
-    void   reset( int eventID);
+    void reset(int eventID);
 
     double simtrace(int eventID);
 
-
-    qsim* getDevicePtr() const ;
-    std::string desc() const ;
-    std::string descFull() const ;
-    std::string descComponents() const ;
-
+    qsim *getDevicePtr() const;
+    std::string desc() const;
+    std::string descFull() const;
+    std::string descComponents() const;
 
     // TODO: relocate non-essential methods into tests or elsewhere
 
-    char getScintTexFilterMode() const ;
+    char getScintTexFilterMode() const;
 
     void configureLaunch16();
-    void configureLaunch( unsigned width, unsigned height );
-    void configureLaunch2D( unsigned width, unsigned height );
+    void configureLaunch(unsigned width, unsigned height);
+    void configureLaunch2D(unsigned width, unsigned height);
     void configureLaunch1D(unsigned num, unsigned threads_per_block);
-    std::string descLaunch() const ;
+    std::string descLaunch() const;
 
+    template <typename T>
+    void rng_sequence(dim3 numblocks, dim3 threadsPerBlock, qsim *d_sim, T *d_seq, unsigned ni_tranche, unsigned nv,
+                      unsigned ioffset);
 
-    template<typename T>
-    void rng_sequence( dim3 numblocks, dim3 threadsPerBlock, qsim* d_sim, T* d_seq, unsigned ni_tranche, unsigned nv, unsigned ioffset );
+    template <typename T> void rng_sequence(T *seq, unsigned ni, unsigned nj, unsigned ioffset);
 
-    template<typename T>
-    void rng_sequence( T* seq, unsigned ni, unsigned nj, unsigned ioffset );
+    template <typename T>
+    void rng_sequence(const char *dir, unsigned ni, unsigned nj, unsigned nk, unsigned ni_tranche_size);
 
-    template<typename T>
-    void rng_sequence( const char* dir, unsigned ni, unsigned nj, unsigned nk, unsigned ni_tranche_size );
+    NP *scint_wavelength(unsigned num_wavelength, unsigned &hd_factor);
 
-
-    NP* scint_wavelength( unsigned num_wavelength, unsigned& hd_factor );
-
-    NP* RandGaussQ_shoot(unsigned num_v );
-
+    NP *RandGaussQ_shoot(unsigned num_v);
 
     // NP* cerenkov_wavelength_rejection_sampled( unsigned num_wavelength );
-    void dump_wavelength(                       float* wavelength, unsigned num_wavelength, unsigned edgeitems=10 );
+    void dump_wavelength(float *wavelength, unsigned num_wavelength, unsigned edgeitems = 10);
 
+    NP *dbg_gs_generate(unsigned num_photon, unsigned type);
 
-    NP* dbg_gs_generate(unsigned num_photon, unsigned type );
-
-
-    void dump_photon(            quad4* photon, unsigned num_photon, const char* opt="f0,f1,f2,i3", unsigned egdeitems=10 );
+    void dump_photon(quad4 *photon, unsigned num_photon, const char *opt = "f0,f1,f2,i3", unsigned egdeitems = 10);
 
     void generate_photon();
-    void fill_state_0(quad6*  state, unsigned num_state);
-    void fill_state_1(sstate* state, unsigned num_state);
+    void fill_state_0(quad6 *state, unsigned num_state);
+    void fill_state_1(sstate *state, unsigned num_state);
 
-    NP* quad_launch_generate(unsigned num_quad, unsigned type );
-    NP* photon_launch_generate(unsigned num_photon, unsigned type );
+    NP *quad_launch_generate(unsigned num_quad, unsigned type);
+    NP *photon_launch_generate(unsigned num_photon, unsigned type);
 
-    static constexpr const char* _QSim__photon_launch_mutate_DEBUG_NUM_PHOTON = "QSim__photon_launch_mutate_DEBUG_NUM_PHOTON" ;
-    static constexpr const char* _QSim__photon_launch_mutate_SKIP_LAUNCH = "QSim__photon_launch_mutate_SKIP_LAUNCH" ;
-    void photon_launch_mutate(   sphoton* photon, unsigned num_photon, unsigned type );
+    static constexpr const char *_QSim__photon_launch_mutate_DEBUG_NUM_PHOTON =
+        "QSim__photon_launch_mutate_DEBUG_NUM_PHOTON";
+    static constexpr const char *_QSim__photon_launch_mutate_SKIP_LAUNCH = "QSim__photon_launch_mutate_SKIP_LAUNCH";
+    void photon_launch_mutate(sphoton *photon, unsigned num_photon, unsigned type);
 
+    static quad2 *UploadFakePRD(const NP *ip, const NP *prd);
+    void fake_propagate(const NP *prd, unsigned type);
 
-    static quad2* UploadFakePRD(const NP* ip, const NP* prd);
-    void fake_propagate(const NP* prd, unsigned type );
+    unsigned getBoundaryTexWidth() const;
+    unsigned getBoundaryTexHeight() const;
+    const NP *getBoundaryTexSrc() const;
 
-    unsigned getBoundaryTexWidth() const ;
-    unsigned getBoundaryTexHeight() const ;
-    const NP* getBoundaryTexSrc() const ;
+    NP *boundary_lookup_all(unsigned width, unsigned height);
+    NP *boundary_lookup_line(float *domain, unsigned num_lookup, unsigned line, unsigned k);
 
-    NP* boundary_lookup_all( unsigned width, unsigned height ) ;
-    NP* boundary_lookup_line( float* domain, unsigned num_lookup, unsigned line, unsigned k ) ;
+    template <typename T>
+    void prop_lookup(T *lookup, const T *domain, unsigned domain_width, const std::vector<unsigned> &pids);
 
+    template <typename T>
+    void prop_lookup_onebyone(T *lookup, const T *domain, unsigned domain_width, const std::vector<unsigned> &pids);
 
-    template<typename T>
-    void prop_lookup(          T* lookup, const T* domain, unsigned domain_width, const std::vector<unsigned>& pids ) ;
+    void multifilm_lookup_all(quad2 *sample, quad2 *result, unsigned width, unsigned height);
 
-    template<typename T>
-    void prop_lookup_onebyone( T* lookup, const T* domain, unsigned domain_width, const std::vector<unsigned>& pids ) ;
-
-    void multifilm_lookup_all( quad2* sample , quad2* result ,  unsigned width, unsigned height );
-
-    static std::string Desc(char delim='\n');
+    static std::string Desc(char delim = '\n');
     static std::string Switches();
 };
-
-
