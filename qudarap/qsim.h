@@ -23,181 +23,183 @@ TODO:
 **/
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-   #define QSIM_METHOD __device__
+#define QSIM_METHOD __device__
 #else
-   #define QSIM_METHOD
+#define QSIM_METHOD
 #endif
 
 #include "OpticksGenstep.h"
 #include "OpticksPhoton.h"
 
-#include "sflow.h"
-#include "sqat4.h"
 #include "sc4u.h"
-#include "sxyz.h"
+#include "sflow.h"
 #include "sphoton.h"
+#include "sqat4.h"
+#include "sxyz.h"
 
-#include "storch.h"
 #include "scarrier.h"
 #include "sevent.h"
-#include "sstate.h"
 #include "smatsur.h"
-
+#include "sstate.h"
+#include "storch.h"
 
 #ifndef PRODUCTION
 #include "srec.h"
 #include "sseq.h"
 #include "stag.h"
 #ifdef DEBUG_LOGF
-#define KLUDGE_FASTMATH_LOGF(u) (u < 0.998f ? __logf(u) : __logf(u) - 0.46735790f*1e-7f )
+#define KLUDGE_FASTMATH_LOGF(u) (u < 0.998f ? __logf(u) : __logf(u) - 0.46735790f * 1e-7f)
 #endif
 #endif
 
 #include "sctx.h"
 
-#include "qrng.h"
 #include "qbase.h"
-#include "qprop.h"
-#include "qmultifilm.h"
 #include "qbnd.h"
+#include "qcerenkov.h"
+#include "qmultifilm.h"
+#include "qpmt.h"
+#include "qprop.h"
+#include "qrng.h"
 #include "qscint.h"
 #include "qwls.h"
-#include "qcerenkov.h"
-#include "qpmt.h"
 #include "tcomplex.h"
 
-
-struct qcerenkov ;
+struct qcerenkov;
 
 struct qsim
 {
-    qbase*              base ;
-    sevent*             evt ;
-    qrng<RNG>*          rng ;
-    qbnd*               bnd ;
-    qmultifilm*         multifilm;
-    qcerenkov*          cerenkov ;
-    qscint*             scint ;
-    qwls*               wls ;
-    qpmt<float>*        pmt ;
+    qbase *base;
+    sevent *evt;
+    qrng<RNG> *rng;
+    qbnd *bnd;
+    qmultifilm *multifilm;
+    qcerenkov *cerenkov;
+    qscint *scint;
+    qwls *wls;
+    qpmt<float> *pmt;
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
     qsim(); // instanciated on CPU (see QSim::init_sim) and copied to device so no ctor in device code
 #endif
 
-    QSIM_METHOD void    generate_photon_dummy( sphoton& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
+    QSIM_METHOD void generate_photon_dummy(sphoton &p, RNG &rng, const quad6 &gs, unsigned long long photon_id,
+                                           unsigned genstep_id) const;
     QSIM_METHOD static float3 uniform_sphere(const float u0, const float u1);
-    QSIM_METHOD static float RandGaussQ_shoot( RNG& rng, float mean, float stdDev );
-    QSIM_METHOD static void SmearNormal_SigmaAlpha( RNG& rng, float3* smeared_normal, const float3* direction, const float3* normal, float sigma_alpha, const sctx& ctx );
-    QSIM_METHOD static void SmearNormal_Polish(     RNG& rng, float3* smeared_normal, const float3* direction, const float3* normal, float polish     , const sctx& ctx );
+    QSIM_METHOD static float RandGaussQ_shoot(RNG &rng, float mean, float stdDev);
+    QSIM_METHOD static void SmearNormal_SigmaAlpha(RNG &rng, float3 *smeared_normal, const float3 *direction,
+                                                   const float3 *normal, float sigma_alpha, const sctx &ctx);
+    QSIM_METHOD static void SmearNormal_Polish(RNG &rng, float3 *smeared_normal, const float3 *direction,
+                                               const float3 *normal, float polish, const sctx &ctx);
 
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
-    QSIM_METHOD static float3 uniform_sphere(RNG& rng);
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
+    QSIM_METHOD static float3 uniform_sphere(RNG &rng);
 #endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-    QSIM_METHOD float4  multifilm_lookup(unsigned pmtType, float nm, float aoi);
+    QSIM_METHOD float4 multifilm_lookup(unsigned pmtType, float nm, float aoi);
 #endif
 
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND )  || defined(MOCK_CUDA)
-    QSIM_METHOD static void lambertian_direction(float3* dir, const float3* normal, float orient, RNG& rng, sctx& ctx );
-    QSIM_METHOD static void random_direction_marsaglia(float3* dir, RNG& rng, sctx& ctx );
-    QSIM_METHOD void rayleigh_scatter(RNG& rng, sctx& ctx );
-    QSIM_METHOD int     propagate_to_boundary( unsigned& flag, RNG& rng, sctx& ctx );
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
+    QSIM_METHOD static void lambertian_direction(float3 *dir, const float3 *normal, float orient, RNG &rng, sctx &ctx);
+    QSIM_METHOD static void random_direction_marsaglia(float3 *dir, RNG &rng, sctx &ctx);
+    QSIM_METHOD void rayleigh_scatter(RNG &rng, sctx &ctx);
+    QSIM_METHOD int propagate_to_boundary(unsigned &flag, RNG &rng, sctx &ctx);
 #endif
 
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
-    QSIM_METHOD int     propagate_at_boundary(        unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance=-1.f ) const ;
-    QSIM_METHOD int     propagate_at_boundary_with_T( unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance ) const ;
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
+    QSIM_METHOD int propagate_at_boundary(unsigned &flag, RNG &rng, sctx &ctx, float theTransmittance = -1.f) const;
+    QSIM_METHOD int propagate_at_boundary_with_T(unsigned &flag, RNG &rng, sctx &ctx, float theTransmittance) const;
 #endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-    QSIM_METHOD int     propagate_at_surface_MultiFilm(unsigned& flag, RNG& rng, sctx& ctx );
+    QSIM_METHOD int propagate_at_surface_MultiFilm(unsigned &flag, RNG &rng, sctx &ctx);
 #endif
 
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
-    QSIM_METHOD int     propagate_at_surface(           unsigned& flag, RNG& rng, sctx& ctx );
-    QSIM_METHOD int     propagate_at_surface_Detect(    unsigned& flag, RNG& rng, sctx& ctx ) const ;
-#if defined( WITH_CUSTOM4 )
-    QSIM_METHOD int     propagate_at_surface_CustomART( unsigned& flag, RNG& rng, sctx& ctx ) const ;
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
+    QSIM_METHOD int propagate_at_surface(unsigned &flag, RNG &rng, sctx &ctx);
+    QSIM_METHOD int propagate_at_surface_Detect(unsigned &flag, RNG &rng, sctx &ctx) const;
+#if defined(WITH_CUSTOM4)
+    QSIM_METHOD int propagate_at_surface_CustomART(unsigned &flag, RNG &rng, sctx &ctx) const;
 #endif
 #endif
 
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
-    QSIM_METHOD void    reflect_diffuse(                       RNG& rng, sctx& ctx );
-    QSIM_METHOD void    reflect_specular(                      RNG& rng, sctx& ctx );
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
+    QSIM_METHOD void reflect_diffuse(RNG &rng, sctx &ctx);
+    QSIM_METHOD void reflect_specular(RNG &rng, sctx &ctx);
 
-    QSIM_METHOD void    fake_propagate( sphoton& p, const quad2* mock_prd, RNG& rng, unsigned long long idx );
-    QSIM_METHOD int     propagate(const int bounce, RNG& rng, sctx& ctx );
+    QSIM_METHOD void fake_propagate(sphoton &p, const quad2 *mock_prd, RNG &rng, unsigned long long idx);
+    QSIM_METHOD int propagate(const int bounce, RNG &rng, sctx &ctx);
 
-    QSIM_METHOD void    hemisphere_polarized( unsigned polz, bool inwards, RNG& rng, sctx& ctx );
-    QSIM_METHOD void    generate_photon_simtrace(         quad4&   p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
-    QSIM_METHOD void    generate_photon_simtrace_frame(   quad4&   p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
-    QSIM_METHOD void    generate_photon(                  sphoton& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
+    QSIM_METHOD void hemisphere_polarized(unsigned polz, bool inwards, RNG &rng, sctx &ctx);
+    QSIM_METHOD void generate_photon_simtrace(quad4 &p, RNG &rng, const quad6 &gs, unsigned long long photon_id,
+                                              unsigned genstep_id) const;
+    QSIM_METHOD void generate_photon_simtrace_frame(quad4 &p, RNG &rng, const quad6 &gs, unsigned long long photon_id,
+                                                    unsigned genstep_id) const;
+    QSIM_METHOD void generate_photon(sphoton &p, RNG &rng, const quad6 &gs, unsigned long long photon_id,
+                                     unsigned genstep_id) const;
 #endif
 };
 
 // CTOR
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
-inline qsim::qsim()    // instanciated on CPU (see QSim::init_sim) and copied to device so no ctor in device code
-        :
-        base(nullptr),
-        evt(nullptr),
-        rng(nullptr),
-        bnd(nullptr),
-        multifilm(nullptr),
-        cerenkov(nullptr),
-        scint(nullptr),
-        wls(nullptr),
-        pmt(nullptr)
-    {
-    }
+inline qsim::qsim() // instanciated on CPU (see QSim::init_sim) and copied to device so no ctor in device code
+    : base(nullptr), evt(nullptr), rng(nullptr), bnd(nullptr), multifilm(nullptr), cerenkov(nullptr), scint(nullptr),
+      wls(nullptr), pmt(nullptr)
+{
+}
 #endif
 
-inline QSIM_METHOD void qsim::generate_photon_dummy(sphoton& p_, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const
+inline QSIM_METHOD void qsim::generate_photon_dummy(sphoton &p_, RNG &rng, const quad6 &gs,
+                                                    unsigned long long photon_id, unsigned genstep_id) const
 {
-    quad4& p = (quad4&)p_ ;
+    quad4 &p = (quad4 &)p_;
 #ifndef PRODUCTION
     printf("//qsim::generate_photon_dummy  photon_id %3lld genstep_id %3d  gs.q0.i ( gencode:%3d %3d %3d %3d ) \n",
-       photon_id,
-       genstep_id,
-       gs.q0.i.x,
-       gs.q0.i.y,
-       gs.q0.i.z,
-       gs.q0.i.w
-      );
+           photon_id, genstep_id, gs.q0.i.x, gs.q0.i.y, gs.q0.i.z, gs.q0.i.w);
 #endif
-    p.q0.i.x = 1 ; p.q0.i.y = 2 ; p.q0.i.z = 3 ; p.q0.i.w = 4 ;
-    p.q1.i.x = 1 ; p.q1.i.y = 2 ; p.q1.i.z = 3 ; p.q1.i.w = 4 ;
-    p.q2.i.x = 1 ; p.q2.i.y = 2 ; p.q2.i.z = 3 ; p.q2.i.w = 4 ;
-    p.q3.i.x = 1 ; p.q3.i.y = 2 ; p.q3.i.z = 3 ; p.q3.i.w = 4 ;
+    p.q0.i.x = 1;
+    p.q0.i.y = 2;
+    p.q0.i.z = 3;
+    p.q0.i.w = 4;
+    p.q1.i.x = 1;
+    p.q1.i.y = 2;
+    p.q1.i.z = 3;
+    p.q1.i.w = 4;
+    p.q2.i.x = 1;
+    p.q2.i.y = 2;
+    p.q2.i.z = 3;
+    p.q2.i.w = 4;
+    p.q3.i.x = 1;
+    p.q3.i.y = 2;
+    p.q3.i.z = 3;
+    p.q3.i.w = 4;
 
     p.set_flag(TORCH);
 }
 
 inline QSIM_METHOD float3 qsim::uniform_sphere(const float u0, const float u1)
 {
-    float phi = u0*2.f*M_PIf;
-    float cosTheta = 2.f*u1 - 1.f ; // -1.f -> 1.f
-    float sinTheta = sqrtf(1.f-cosTheta*cosTheta);
-    return make_float3(cosf(phi)*sinTheta, sinf(phi)*sinTheta, cosTheta);
+    float phi = u0 * 2.f * M_PIf;
+    float cosTheta = 2.f * u1 - 1.f; // -1.f -> 1.f
+    float sinTheta = sqrtf(1.f - cosTheta * cosTheta);
+    return make_float3(cosf(phi) * sinTheta, sinf(phi) * sinTheta, cosTheta);
 }
 
-
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
 /**
 qsim::uniform_sphere
 ---------------------
 
 **/
-inline QSIM_METHOD float3 qsim::uniform_sphere(RNG& rng)
+inline QSIM_METHOD float3 qsim::uniform_sphere(RNG &rng)
 {
-    float phi = curand_uniform(&rng)*2.f*M_PIf;
-    float cosTheta = 2.f*curand_uniform(&rng) - 1.f ; // -1.f -> 1.f
-    float sinTheta = sqrtf(1.f-cosTheta*cosTheta);
-    return make_float3(cosf(phi)*sinTheta, sinf(phi)*sinTheta, cosTheta);
+    float phi = curand_uniform(&rng) * 2.f * M_PIf;
+    float cosTheta = 2.f * curand_uniform(&rng) - 1.f; // -1.f -> 1.f
+    float sinTheta = sqrtf(1.f - cosTheta * cosTheta);
+    return make_float3(cosf(phi) * sinTheta, sinf(phi) * sinTheta, cosTheta);
 }
 
 /**
@@ -213,14 +215,13 @@ See::
     g4-cls G4MTRandGaussQ
 
 **/
-inline QSIM_METHOD float qsim::RandGaussQ_shoot( RNG& rng, float mean, float stdDev )
+inline QSIM_METHOD float qsim::RandGaussQ_shoot(RNG &rng, float mean, float stdDev)
 {
-    float u2 = 2.f*curand_uniform(&rng) ;
-    float v = -M_SQRT2f*erfcinvf(u2)*stdDev + mean ;
-    //printf("//qsim.RandGaussQ_shoot mean %10.5f stdDev %10.5f u2 %10.5f v %10.5f \n", mean, stdDev, u2, v  ) ;
-    return v ;
+    float u2 = 2.f * curand_uniform(&rng);
+    float v = -M_SQRT2f * erfcinvf(u2) * stdDev + mean;
+    // printf("//qsim.RandGaussQ_shoot mean %10.5f stdDev %10.5f u2 %10.5f v %10.5f \n", mean, stdDev, u2, v  ) ;
+    return v;
 }
-
 
 /**
 qsim::SmearNormal_SigmaAlpha
@@ -254,70 +255,71 @@ TODO: full simulation run with breakpoint "BP=C4OpBoundaryProcess::GetFacetNorma
 
 **/
 
-inline QSIM_METHOD void qsim::SmearNormal_SigmaAlpha(
-    RNG& rng,
-    float3* smeared_normal,
-    const float3* direction,
-    const float3* normal,
-    float sigma_alpha,
-    const sctx& ctx
-   )
+inline QSIM_METHOD void qsim::SmearNormal_SigmaAlpha(RNG &rng, float3 *smeared_normal, const float3 *direction,
+                                                     const float3 *normal, float sigma_alpha, const sctx &ctx)
 {
 #if !defined(PRODUCTION) && defined(MOCK_CUDA_DEBUG)
-    bool dump = ctx.pidx == -1 ;
+    bool dump = ctx.pidx == -1;
 #endif
 
-    if(sigma_alpha == 0.f)
+    if (sigma_alpha == 0.f)
     {
-        *smeared_normal = *normal ;
-        return ;
+        *smeared_normal = *normal;
+        return;
     }
-    float f_max = fminf(1.f,4.f*sigma_alpha);
+    float f_max = fminf(1.f, 4.f * sigma_alpha);
 
 #if !defined(PRODUCTION) && defined(MOCK_CUDA_DEBUG)
-    if(dump) printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG sigma_alpha %10.5f f_max %10.5f  \n", sigma_alpha, f_max );
+    if (dump)
+        printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG sigma_alpha %10.5f f_max %10.5f  \n", sigma_alpha,
+               f_max);
 #endif
 
-    float alpha, sin_alpha, phi, u0, u1, u2 ;
-    bool reject_alpha ;
-    bool reject_dir ;
+    float alpha, sin_alpha, phi, u0, u1, u2;
+    bool reject_alpha;
+    bool reject_dir;
 
-    do {
-        do {
-            //alpha = RandGaussQ_shoot(rng, 0.f, sigma_alpha );  // mean:0.f stdDev:sigma_alpha
-            u0 = curand_uniform(&rng) ;
-            alpha = -M_SQRT2f*erfcinvf(2.f*u0)*sigma_alpha ;
+    do
+    {
+        do
+        {
+            // alpha = RandGaussQ_shoot(rng, 0.f, sigma_alpha );  // mean:0.f stdDev:sigma_alpha
+            u0 = curand_uniform(&rng);
+            alpha = -M_SQRT2f * erfcinvf(2.f * u0) * sigma_alpha;
 
             sin_alpha = sinf(alpha);
-            u1 = curand_uniform(&rng) ;
-            reject_alpha = alpha >= M_PIf/2.f || (u1*f_max > sin_alpha) ;
+            u1 = curand_uniform(&rng);
+            reject_alpha = alpha >= M_PIf / 2.f || (u1 * f_max > sin_alpha);
 
 #if !defined(PRODUCTION) && defined(MOCK_CUDA_DEBUG)
-            if(dump) printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG u0 %10.5f alpha %10.5f sin_alpha %10.5f u1 %10.5f u1*f_max %10.5f  (u1*f_max > sin_alpha) %d reject_alpha %d  \n",
-               u0, alpha, sin_alpha, u1, u1*f_max, (u1*f_max > sin_alpha), reject_alpha );
-            // theres lots of alpha rejected : eg all -ve sin_alpha
+            if (dump)
+                printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG u0 %10.5f alpha %10.5f sin_alpha %10.5f u1 "
+                       "%10.5f u1*f_max %10.5f  (u1*f_max > sin_alpha) %d reject_alpha %d  \n",
+                       u0, alpha, sin_alpha, u1, u1 * f_max, (u1 * f_max > sin_alpha), reject_alpha);
+                // theres lots of alpha rejected : eg all -ve sin_alpha
 #endif
 
-        } while( reject_alpha ) ;
+        } while (reject_alpha);
 
-        u2 = curand_uniform(&rng) ;
-        phi = u2*M_PIf*2.f ;
+        u2 = curand_uniform(&rng);
+        phi = u2 * M_PIf * 2.f;
 
-        smeared_normal->x = sin_alpha * cosf(phi) ;
-        smeared_normal->y = sin_alpha * sinf(phi) ;
-        smeared_normal->z = cosf(alpha) ;
+        smeared_normal->x = sin_alpha * cosf(phi);
+        smeared_normal->y = sin_alpha * sinf(phi);
+        smeared_normal->z = cosf(alpha);
 
         smath::rotateUz(*smeared_normal, *normal);
-        reject_dir = dot(*smeared_normal, *direction ) >= 0.f ;
+        reject_dir = dot(*smeared_normal, *direction) >= 0.f;
         // reject smears that move the normal into same hemi as direction
 
 #if !defined(PRODUCTION) && defined(MOCK_CUDA_DEBUG)
-        if(dump) printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG u2 %10.5f phi %10.5f smeared_normal ( %10.5f, %10.5f, %10.5f)  reject_dir %d  \n",
-               u2, phi, smeared_normal->x, smeared_normal->y, smeared_normal->z, reject_dir );
+        if (dump)
+            printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG u2 %10.5f phi %10.5f smeared_normal ( %10.5f, "
+                   "%10.5f, %10.5f)  reject_dir %d  \n",
+                   u2, phi, smeared_normal->x, smeared_normal->y, smeared_normal->z, reject_dir);
 #endif
 
-
-    } while( reject_dir ) ;
+    } while (reject_dir);
 }
 
 /**
@@ -328,52 +330,42 @@ CAUTION : THIS CURRENTLY NOT USED BY ANYTHING OTHER THAN TESTS : SEE DETAILS ABO
 
 **/
 
-inline QSIM_METHOD void qsim::SmearNormal_Polish(
-    RNG& rng,
-    float3* smeared_normal,
-    const float3* direction,
-    const float3* normal,
-    float polish,
-    const sctx& ctx
-    )
+inline QSIM_METHOD void qsim::SmearNormal_Polish(RNG &rng, float3 *smeared_normal, const float3 *direction,
+                                                 const float3 *normal, float polish, const sctx &ctx)
 {
 #if !defined(PRODUCTION) && defined(MOCK_CUDA_DEBUG)
-    bool dump = ctx.pidx == -1 ;
+    bool dump = ctx.pidx == -1;
 #endif
 
-    if(polish == 1.f)
+    if (polish == 1.f)
     {
-        *smeared_normal = *normal ;
-        return ;
+        *smeared_normal = *normal;
+        return;
     }
 
-    float u0, u1, u2 ;
-    float3 smear ;
-    bool reject_mag ;
-    bool reject_dir ;
+    float u0, u1, u2;
+    float3 smear;
+    bool reject_mag;
+    bool reject_dir;
 
-    do {
-        do {
+    do
+    {
+        do
+        {
             u0 = curand_uniform(&rng);
-            u1 = curand_uniform(&rng) ;
-            u2 = curand_uniform(&rng) ;
-            smear.x = 2.f*u0 - 1.f ;
-            smear.y = 2.f*u1 - 1.f ;
-            smear.z = 2.f*u2 - 1.f ;
-            reject_mag = length(smear) > 1.f  ;   // HMM: could this use just dot(smear, smear) ?
-       }
-       while( reject_mag );
+            u1 = curand_uniform(&rng);
+            u2 = curand_uniform(&rng);
+            smear.x = 2.f * u0 - 1.f;
+            smear.y = 2.f * u1 - 1.f;
+            smear.z = 2.f * u2 - 1.f;
+            reject_mag = length(smear) > 1.f; // HMM: could this use just dot(smear, smear) ?
+        } while (reject_mag);
 
-       *smeared_normal = *normal + (1.f-polish)*smear;
-       reject_dir = dot(*smeared_normal, *direction) >= 0.f ;
-    }
-    while( reject_dir );
+        *smeared_normal = *normal + (1.f - polish) * smear;
+        reject_dir = dot(*smeared_normal, *direction) >= 0.f;
+    } while (reject_dir);
     *smeared_normal = normalize(*smeared_normal);
 }
-
-
-
-
 
 #endif
 
@@ -430,59 +422,56 @@ as opposed to local stack float3 : as this keeps changing the dir before
 arriving at the final one
 
 **/
-inline  QSIM_METHOD void qsim::lambertian_direction(float3* dir, const float3* normal, float orient, RNG& rng, sctx& ctx )
+inline QSIM_METHOD void qsim::lambertian_direction(float3 *dir, const float3 *normal, float orient, RNG &rng, sctx &ctx)
 {
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    unsigned long long PIDX = 0xffffffffff ;
-    if(ctx.pidx == PIDX )
+    unsigned long long PIDX = 0xffffffffff;
+    if (ctx.pidx == PIDX)
     {
-        printf("//qsim.lambertian_direction.head pidx %7lld : normal = np.array([%10.5f,%10.5f,%10.5f]) ; orient = %10.5f  \n",
-            ctx.pidx, normal->x, normal->y, normal->z, orient  );
+        printf("//qsim.lambertian_direction.head pidx %7lld : normal = np.array([%10.5f,%10.5f,%10.5f]) ; orient = "
+               "%10.5f  \n",
+               ctx.pidx, normal->x, normal->y, normal->z, orient);
     }
 #endif
 
-    float ndotv ;
-    int count = 0 ;
-    float u ;
+    float ndotv;
+    int count = 0;
+    float u;
     do
     {
-        count++ ;
+        count++;
         random_direction_marsaglia(dir, rng, ctx); // sets dir to random point on unit sphere
-        ndotv = dot( *dir, *normal )*orient ;
-        if( ndotv < 0.f )
+        ndotv = dot(*dir, *normal) * orient;
+        if (ndotv < 0.f)
         {
-            *dir = -1.f*(*dir) ;
-            ndotv = -1.f*ndotv ;
+            *dir = -1.f * (*dir);
+            ndotv = -1.f * ndotv;
         }
         // when random dir is in opposite hemisphere to oriented normal
         // flip the dir into same hemi and ndotv
 
-        u = curand_uniform(&rng) ;
+        u = curand_uniform(&rng);
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
 
-        if(ctx.pidx == PIDX)
+        if (ctx.pidx == PIDX)
         {
-            printf("//qsim.lambertian_direction.loop pidx %7lld : dir = np.array([%10.5f,%10.5f,%10.5f]) ; count = %d ; ndotv = %10.5f ; u = %10.5f \n",
-                ctx.pidx, dir->x, dir->y, dir->z, count, ndotv, u   );
-
+            printf("//qsim.lambertian_direction.loop pidx %7lld : dir = np.array([%10.5f,%10.5f,%10.5f]) ; count = %d "
+                   "; ndotv = %10.5f ; u = %10.5f \n",
+                   ctx.pidx, dir->x, dir->y, dir->z, count, ndotv, u);
         }
 #endif
-    }
-    while (!(u < ndotv) && (count < 1024)) ;
+    } while (!(u < ndotv) && (count < 1024));
     // distribution looks pretty similar without the while loop
 
-
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == PIDX)
+    if (ctx.pidx == PIDX)
     {
-        printf("//qsim.lambertian_direction.tail pidx %7lld : dir = np.array([%10.5f,%10.5f,%10.5f]) ; count = %d ; ndotv = %10.5f \n",
-            ctx.pidx, dir->x, dir->y, dir->z, count, ndotv  );
-
+        printf("//qsim.lambertian_direction.tail pidx %7lld : dir = np.array([%10.5f,%10.5f,%10.5f]) ; count = %d ; "
+               "ndotv = %10.5f \n",
+               ctx.pidx, dir->x, dir->y, dir->z, count, ndotv);
     }
 #endif
-
-
 }
 
 /**
@@ -550,31 +539,28 @@ So that means the random 3D (x,y,z) points are on the unit sphere.
 
 **/
 
-
-inline QSIM_METHOD void qsim::random_direction_marsaglia(float3* dir,  RNG& rng, sctx& ctx  )
+inline QSIM_METHOD void qsim::random_direction_marsaglia(float3 *dir, RNG &rng, sctx &ctx)
 {
     // NB: no use of ctx.tagr so this has not been random aligned
-    float u0, u1 ;
-    float u, v, b, a  ;
+    float u0, u1;
+    float u, v, b, a;
     do
     {
         u0 = curand_uniform(&rng);
         u1 = curand_uniform(&rng);
-        //if( idx == 0u ) printf("//qsim.random_direction_marsaglia pidx %7lld u0 %10.4f u1 %10.4f \n", ctx.pidx, u0, u1 );
-        u = 2.f*u0 - 1.f ;
-        v = 2.f*u1 - 1.f ;
-        b = u*u + v*v ;
-    }
-    while( b > 1.f ) ;
+        // if( idx == 0u ) printf("//qsim.random_direction_marsaglia pidx %7lld u0 %10.4f u1 %10.4f \n", ctx.pidx, u0,
+        // u1 );
+        u = 2.f * u0 - 1.f;
+        v = 2.f * u1 - 1.f;
+        b = u * u + v * v;
+    } while (b > 1.f);
 
-    a = 2.f*sqrtf( 1.f - b );
+    a = 2.f * sqrtf(1.f - b);
 
-    dir->x = a*u ;
-    dir->y = a*v ;
-    dir->z = 2.f*b - 1.f ;
+    dir->x = a * u;
+    dir->y = a * v;
+    dir->z = 2.f * b - 1.f;
 }
-
-
 
 /**
 qsim::rayleigh_scatter
@@ -601,73 +587,74 @@ Transverse wave nature means::
 
 **/
 
-inline QSIM_METHOD void qsim::rayleigh_scatter(RNG& rng, sctx& ctx )
+inline QSIM_METHOD void qsim::rayleigh_scatter(RNG &rng, sctx &ctx)
 {
-    sphoton& p = ctx.p ;
-    float3 direction ;
-    float3 polarization ;
+    sphoton &p = ctx.p;
+    float3 direction;
+    float3 polarization;
 
-    bool looping(true) ;
+    bool looping(true);
     do
     {
-        float u0 = curand_uniform(&rng) ;
-        float u1 = curand_uniform(&rng) ;
-        float u2 = curand_uniform(&rng) ;
-        float u3 = curand_uniform(&rng) ;
-        float u4 = curand_uniform(&rng) ;
+        float u0 = curand_uniform(&rng);
+        float u1 = curand_uniform(&rng);
+        float u2 = curand_uniform(&rng);
+        float u3 = curand_uniform(&rng);
+        float u4 = curand_uniform(&rng);
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-        stagr& tagr = ctx.tagr ;  // UNTESTED
+        stagr &tagr = ctx.tagr; // UNTESTED
         tagr.add(stag_sc, u0);
         tagr.add(stag_sc, u1);
         tagr.add(stag_sc, u2);
         tagr.add(stag_sc, u3);
         tagr.add(stag_sc, u4);
 #endif
-        float cosTheta = u0 ;
-        float sinTheta = sqrtf(1.0f-u0*u0);
-        if(u1 < 0.5f ) cosTheta = -cosTheta ;
+        float cosTheta = u0;
+        float sinTheta = sqrtf(1.0f - u0 * u0);
+        if (u1 < 0.5f)
+            cosTheta = -cosTheta;
         // could use uniform_sphere here : but not doing so to follow G4OpRayleigh more closely
 
-        float sinPhi ;
-        float cosPhi ;
+        float sinPhi;
+        float cosPhi;
 
-#if defined(MOCK_CURAND ) || defined(MOCK_CUDA)
+#if defined(MOCK_CURAND) || defined(MOCK_CUDA)
         //__sincosf(2.f*M_PIf*u2,&sinPhi,&cosPhi);   // apple extension
-        float phi = 2.f*M_PIf*u2 ;
+        float phi = 2.f * M_PIf * u2;
         sinPhi = sinf(phi);
         cosPhi = cosf(phi);
 #else
-        sincosf(2.f*M_PIf*u2,&sinPhi,&cosPhi);
+        sincosf(2.f * M_PIf * u2, &sinPhi, &cosPhi);
 #endif
 
         direction.x = sinTheta * cosPhi;
         direction.y = sinTheta * sinPhi;
-        direction.z = cosTheta ;
+        direction.z = cosTheta;
 
-        smath::rotateUz(direction, p.mom );
+        smath::rotateUz(direction, p.mom);
 
-        float constant = -dot(direction, p.pol );
+        float constant = -dot(direction, p.pol);
 
-        polarization.x = p.pol.x + constant*direction.x ;
-        polarization.y = p.pol.y + constant*direction.y ;
-        polarization.z = p.pol.z + constant*direction.z ;
+        polarization.x = p.pol.x + constant * direction.x;
+        polarization.y = p.pol.y + constant * direction.y;
+        polarization.z = p.pol.z + constant * direction.z;
 
-        if(dot(polarization, polarization) == 0.f )
+        if (dot(polarization, polarization) == 0.f)
         {
 
-#if defined( MOCK_CURAND ) || defined(MOCK_CUDA)
+#if defined(MOCK_CURAND) || defined(MOCK_CUDA)
             //__sincosf(2.f*M_PIf*u3,&sinPhi,&cosPhi);
-            phi = 2.f*M_PIf*u3 ;
+            phi = 2.f * M_PIf * u3;
             sinPhi = sinf(phi);
             cosPhi = cosf(phi);
 #else
-            sincosf(2.f*M_PIf*u3,&sinPhi,&cosPhi);
+            sincosf(2.f * M_PIf * u3, &sinPhi, &cosPhi);
 #endif
 
-            polarization.x = cosPhi ;
-            polarization.y = sinPhi ;
-            polarization.z = 0.f ;
+            polarization.x = cosPhi;
+            polarization.y = sinPhi;
+            polarization.z = 0.f;
 
             smath::rotateUz(polarization, direction);
         }
@@ -675,37 +662,41 @@ inline QSIM_METHOD void qsim::rayleigh_scatter(RNG& rng, sctx& ctx )
         {
             // There are two directions which are perpendicular
             // to the new momentum direction
-            if(u3 < 0.5f) polarization = -polarization ;
+            if (u3 < 0.5f)
+                polarization = -polarization;
         }
         polarization = normalize(polarization);
 
         // simulate according to the distribution cos^2(theta)
         // where theta is the angle between old and new polarizations
-        float doCosTheta = dot(polarization, p.pol ) ;
-        float doCosTheta2 = doCosTheta*doCosTheta ;
-        looping = doCosTheta2 < u4 ;
+        float doCosTheta = dot(polarization, p.pol);
+        float doCosTheta2 = doCosTheta * doCosTheta;
+        looping = doCosTheta2 < u4;
 
-    } while ( looping ) ;
+    } while (looping);
 
-    p.mom = direction ;
-    p.pol = polarization ;
+    p.mom = direction;
+    p.pol = polarization;
 }
-
 
 /**
 qsim::propagate_to_boundary
 ------------------------------
 
 +---------------------+------------------+---------------------------------------------------------+-------------------------------------------------------+
-| flag                |   command        |  changed                                                |  note                                                 |
+| flag                |   command        |  changed                                                |  note |
 +=====================+==================+=========================================================+=======================================================+
-|   BULK_REEMIT       |   CONTINUE       |  time, position, direction, polarization, wavelength    | advance to reemit position with everything changed    |
+|   BULK_REEMIT       |   CONTINUE       |  time, position, direction, polarization, wavelength    | advance to reemit
+position with everything changed    |
 +---------------------+------------------+---------------------------------------------------------+-------------------------------------------------------+
-|   BULK_SCATTER      |   CONTINUE       |  time, position, direction, polarization                | advance to scatter position, new dir+pol              |
+|   BULK_SCATTER      |   CONTINUE       |  time, position, direction, polarization                | advance to scatter
+position, new dir+pol              |
 +---------------------+------------------+---------------------------------------------------------+-------------------------------------------------------+
-|   BULK_ABSORB       |   BREAK          |  time, position                                         | advance to absorption position, dir+pol unchanged     |
+|   BULK_ABSORB       |   BREAK          |  time, position                                         | advance to
+absorption position, dir+pol unchanged     |
 +---------------------+------------------+---------------------------------------------------------+-------------------------------------------------------+
-|   not set "SAIL"    |   BOUNDARY       |  time, position                                         | advanced to border position, dir+pol unchanged        |
+|   not set "SAIL"    |   BOUNDARY       |  time, position                                         | advanced to border
+position, dir+pol unchanged        |
 +---------------------+------------------+---------------------------------------------------------+-------------------------------------------------------+
 
 
@@ -716,71 +707,65 @@ TODO:
 
 **/
 
-
-
-inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sctx& ctx)
+inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned &flag, RNG &rng, sctx &ctx)
 {
-    sphoton& p = ctx.p ;
-    const sstate& s = ctx.s ;
+    sphoton &p = ctx.p;
+    const sstate &s = ctx.s;
 
-    const float& absorption_length = s.material1.y ;
-    const float& scattering_length = s.material1.z ;
-    const float& reemission_prob = s.material1.w ;
-    const float& group_velocity = s.m1group2.x ;
+    const float &absorption_length = s.material1.y;
+    const float &scattering_length = s.material1.z;
+    const float &reemission_prob = s.material1.w;
+    const float &group_velocity = s.m1group2.x;
     const float &wls_absorption_length = s.m1group2.y;
-    const float& distance_to_boundary = ctx.prd->q0.f.w ;
-
+    const float &distance_to_boundary = ctx.prd->q0.f.w;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    float u_to_sci = curand_uniform(&rng) ;  // purely for alignment with G4
-    float u_to_bnd = curand_uniform(&rng) ;  // purely for alignment with G4
+    float u_to_sci = curand_uniform(&rng); // purely for alignment with G4
+    float u_to_bnd = curand_uniform(&rng); // purely for alignment with G4
 #endif
-    float u_scattering = curand_uniform(&rng) ;
-    float u_absorption = curand_uniform(&rng) ;
+    float u_scattering = curand_uniform(&rng);
+    float u_absorption = curand_uniform(&rng);
     float u_wls_absorption = (wls != nullptr) ? curand_uniform(&rng) : 2.f;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    stagr& tagr = ctx.tagr ;
-    tagr.add( stag_to_sci, u_to_sci);
-    tagr.add( stag_to_bnd, u_to_bnd);
-    tagr.add( stag_to_sca, u_scattering);
-    tagr.add( stag_to_abs, u_absorption);
+    stagr &tagr = ctx.tagr;
+    tagr.add(stag_to_sci, u_to_sci);
+    tagr.add(stag_to_bnd, u_to_bnd);
+    tagr.add(stag_to_sca, u_scattering);
+    tagr.add(stag_to_abs, u_absorption);
 #endif
 
-
 #if !defined(PRODUCTION) && defined(DEBUG_LOGF)
-    // see notes/issues/U4LogTest_maybe_replacing_G4Log_G4UniformRand_in_Absorption_and_Scattering_with_float_version_will_avoid_deviations.rst
-    float scattering_distance = -scattering_length*KLUDGE_FASTMATH_LOGF(u_scattering);
-    float absorption_distance = -absorption_length*KLUDGE_FASTMATH_LOGF(u_absorption);
-    float wls_absorption_distance = -wls_absorption_length*KLUDGE_FASTMATH_LOGF(u_wls_absorption);
+    // see
+    // notes/issues/U4LogTest_maybe_replacing_G4Log_G4UniformRand_in_Absorption_and_Scattering_with_float_version_will_avoid_deviations.rst
+    float scattering_distance = -scattering_length * KLUDGE_FASTMATH_LOGF(u_scattering);
+    float absorption_distance = -absorption_length * KLUDGE_FASTMATH_LOGF(u_absorption);
+    float wls_absorption_distance = -wls_absorption_length * KLUDGE_FASTMATH_LOGF(u_wls_absorption);
 #else
-    float scattering_distance = -scattering_length*logf(u_scattering);
-    float absorption_distance = -absorption_length*logf(u_absorption);
-    float wls_absorption_distance = -wls_absorption_length*logf(u_wls_absorption);
+    float scattering_distance = -scattering_length * logf(u_scattering);
+    float absorption_distance = -absorption_length * logf(u_absorption);
+    float wls_absorption_distance = -wls_absorption_length * logf(u_wls_absorption);
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
 
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.propagate_to_boundary.head pidx %7lld : u_absorption %10.8f logf(u_absorption) %10.8f absorption_length %10.4f absorption_distance %10.6f \n",
-        ctx.pidx, u_absorption, logf(u_absorption), absorption_length, absorption_distance );
+        printf("//qsim.propagate_to_boundary.head pidx %7lld : u_absorption %10.8f logf(u_absorption) %10.8f "
+               "absorption_length %10.4f absorption_distance %10.6f \n",
+               ctx.pidx, u_absorption, logf(u_absorption), absorption_length, absorption_distance);
 
-    printf("//qsim.propagate_to_boundary.head pidx %7lld : post = np.array([%10.5f,%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time );
+        printf("//qsim.propagate_to_boundary.head pidx %7lld : post = np.array([%10.5f,%10.5f,%10.5f,%10.5f]) \n",
+               ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time);
 
-    printf("//qsim.propagate_to_boundary.head pidx %7lld : distance_to_boundary %10.4f absorption_distance %10.4f scattering_distance %10.4f \n",
-             ctx.pidx, distance_to_boundary, absorption_distance, scattering_distance );
+        printf("//qsim.propagate_to_boundary.head pidx %7lld : distance_to_boundary %10.4f absorption_distance %10.4f "
+               "scattering_distance %10.4f \n",
+               ctx.pidx, distance_to_boundary, absorption_distance, scattering_distance);
 
-    printf("//qsim.propagate_to_boundary.head pidx %7lld : u_scattering %10.4f u_absorption %10.4f \n",
-             ctx.pidx, u_scattering, u_absorption  );
-
+        printf("//qsim.propagate_to_boundary.head pidx %7lld : u_scattering %10.4f u_absorption %10.4f \n", ctx.pidx,
+               u_scattering, u_absorption);
     }
 #endif
-
-
-
-
 
     // WLS absorption competes with regular absorption and Rayleigh scattering.
     // The process with the shortest sampled distance wins.
@@ -789,88 +774,88 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     if (wls != nullptr && wls_wins && wls_absorption_distance <= distance_to_boundary)
     {
         // WLS ABSORPTION: photon absorbed by wavelength shifting material
-        p.time += wls_absorption_distance/group_velocity ;
-        p.pos  += wls_absorption_distance*(p.mom) ;
+        p.time += wls_absorption_distance / group_velocity;
+        p.pos += wls_absorption_distance * (p.mom);
 
-        unsigned mat_idx = s.index.x - 1u ;  // 0-based material index from 1-based optical index
+        unsigned mat_idx = s.index.x - 1u; // 0-based material index from 1-based optical index
 
-        if(wls->has_wls(mat_idx))
+        if (wls->has_wls(mat_idx))
         {
             // Sample re-emitted wavelength from WLS emission spectrum ICDF
-            float u_wls_wl = curand_uniform(&rng) ;
-            float new_wavelength = wls->wavelength(mat_idx, u_wls_wl) ;
+            float u_wls_wl = curand_uniform(&rng);
+            float new_wavelength = wls->wavelength(mat_idx, u_wls_wl);
 
             // Energy conservation: re-emitted photon must have lower energy (longer wavelength).
             // Matches G4OpWLS algorithm: retry up to 100 times.
-            int attempts = 0 ;
-            while(new_wavelength < p.wavelength && attempts < 100)
+            int attempts = 0;
+            while (new_wavelength < p.wavelength && attempts < 100)
             {
-                u_wls_wl = curand_uniform(&rng) ;
-                new_wavelength = wls->wavelength(mat_idx, u_wls_wl) ;
-                attempts++ ;
+                u_wls_wl = curand_uniform(&rng);
+                new_wavelength = wls->wavelength(mat_idx, u_wls_wl);
+                attempts++;
             }
 
-            if(new_wavelength < p.wavelength)
+            if (new_wavelength < p.wavelength)
             {
                 // Failed energy conservation after 100 attempts — absorb without re-emission
-                flag = BULK_ABSORB ;
-                return BREAK ;
+                flag = BULK_ABSORB;
+                return BREAK;
             }
 
-            p.wavelength = new_wavelength ;
+            p.wavelength = new_wavelength;
 
             // Isotropic re-emission direction and random polarization
-            float u_wls_mom_ph = curand_uniform(&rng) ;
-            float u_wls_mom_ct = curand_uniform(&rng) ;
-            float u_wls_pol_ph = curand_uniform(&rng) ;
-            float u_wls_pol_ct = curand_uniform(&rng) ;
+            float u_wls_mom_ph = curand_uniform(&rng);
+            float u_wls_mom_ct = curand_uniform(&rng);
+            float u_wls_pol_ph = curand_uniform(&rng);
+            float u_wls_pol_ct = curand_uniform(&rng);
 
-            p.mom = uniform_sphere(u_wls_mom_ph, u_wls_mom_ct) ;
-            p.pol = normalize(cross(uniform_sphere(u_wls_pol_ph, u_wls_pol_ct), p.mom)) ;
+            p.mom = uniform_sphere(u_wls_mom_ph, u_wls_mom_ct);
+            p.pol = normalize(cross(uniform_sphere(u_wls_pol_ph, u_wls_pol_ct), p.mom));
 
             // Apply WLS time delay (exponential decay)
-            float tc = wls->time_constant(mat_idx) ;
-            if(tc > 0.f)
+            float tc = wls->time_constant(mat_idx);
+            if (tc > 0.f)
             {
-                float u_wls_time = curand_uniform(&rng) ;
-                p.time += -tc * logf(u_wls_time) ;
+                float u_wls_time = curand_uniform(&rng);
+                p.time += -tc * logf(u_wls_time);
             }
 
-            flag = BULK_REEMIT ;
-            return CONTINUE ;
+            flag = BULK_REEMIT;
+            return CONTINUE;
         }
         else
         {
             // Material map says no WLS — treat as regular absorption
-            flag = BULK_ABSORB ;
-            return BREAK ;
+            flag = BULK_ABSORB;
+            return BREAK;
         }
     }
     else if (absorption_distance <= scattering_distance)
     {
         if (absorption_distance <= distance_to_boundary)
         {
-            p.time += absorption_distance/group_velocity ;
-            p.pos  += absorption_distance*(p.mom) ;
-
+            p.time += absorption_distance / group_velocity;
+            p.pos += absorption_distance * (p.mom);
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-            float absorb_time_delta = absorption_distance/group_velocity ;
-            if( ctx.pidx == base->pidx )
+            float absorb_time_delta = absorption_distance / group_velocity;
+            if (ctx.pidx == base->pidx)
             {
-            printf("//qsim.propagate_to_boundary.body.BULK_ABSORB pidx %7lld : post = np.array([%10.5f,%10.5f,%10.5f,%10.5f]) ; absorb_time_delta = %10.8f   \n",
-                    ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time, absorb_time_delta  );
-
+                printf("//qsim.propagate_to_boundary.body.BULK_ABSORB pidx %7lld : post = "
+                       "np.array([%10.5f,%10.5f,%10.5f,%10.5f]) ; absorb_time_delta = %10.8f   \n",
+                       ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time, absorb_time_delta);
             }
 #endif
 
-            float u_reemit = reemission_prob == 0.f ? 2.f : curand_uniform(&rng);  // avoid consumption at absorption when not scintillator
-
+            float u_reemit = reemission_prob == 0.f
+                                 ? 2.f
+                                 : curand_uniform(&rng); // avoid consumption at absorption when not scintillator
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-            if( u_reemit != 2.f ) tagr.add( stag_to_ree, u_reemit) ;
+            if (u_reemit != 2.f)
+                tagr.add(stag_to_ree, u_reemit);
 #endif
-
 
             if (u_reemit < reemission_prob)
             {
@@ -885,19 +870,19 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
                 p.pol = normalize(cross(uniform_sphere(u_re_pol_ph, u_re_pol_ct), p.mom));
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-                tagr.add( stag_re_wl, u_re_wavelength);
-                tagr.add( stag_re_mom_ph, u_re_mom_ph);
-                tagr.add( stag_re_mom_ct, u_re_mom_ct);
-                tagr.add( stag_re_pol_ph, u_re_pol_ph);
-                tagr.add( stag_re_pol_ct, u_re_pol_ct);
+                tagr.add(stag_re_wl, u_re_wavelength);
+                tagr.add(stag_re_mom_ph, u_re_mom_ph);
+                tagr.add(stag_re_mom_ct, u_re_mom_ct);
+                tagr.add(stag_re_pol_ph, u_re_pol_ph);
+                tagr.add(stag_re_pol_ct, u_re_pol_ct);
 #endif
 
-                flag = BULK_REEMIT ;
+                flag = BULK_REEMIT;
                 return CONTINUE;
             }
             else
             {
-                flag = BULK_ABSORB ;
+                flag = BULK_ABSORB;
                 return BREAK;
             }
         }
@@ -907,33 +892,33 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     {
         if (scattering_distance <= distance_to_boundary)
         {
-            p.time += scattering_distance/group_velocity ;
-            p.pos  += scattering_distance*(p.mom) ;
+            p.time += scattering_distance / group_velocity;
+            p.pos += scattering_distance * (p.mom);
 
-            rayleigh_scatter(rng, ctx);  // changes dir and pol, consumes 5u at each turn of rejection sampling loop
+            rayleigh_scatter(rng, ctx); // changes dir and pol, consumes 5u at each turn of rejection sampling loop
 
             flag = BULK_SCATTER;
 
             return CONTINUE;
         }
-          //  otherwise sail to boundary
-    }     // if scattering_distance < absorption_distance
+        //  otherwise sail to boundary
+    } // if scattering_distance < absorption_distance
 
-
-
-    p.pos  += distance_to_boundary*(p.mom) ;
-    p.time += distance_to_boundary/group_velocity   ;
+    p.pos += distance_to_boundary * (p.mom);
+    p.time += distance_to_boundary / group_velocity;
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    float sail_time_delta = distance_to_boundary/group_velocity ;
-    if( ctx.pidx == base->pidx ) printf("//qsim.propagate_to_boundary.tail.SAIL pidx %7lld : post = np.array([%10.5f,%10.5f,%10.5f,%10.5f]) ;  sail_time_delta = %10.5f   \n",
-          ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time, sail_time_delta  );
+    float sail_time_delta = distance_to_boundary / group_velocity;
+    if (ctx.pidx == base->pidx)
+        printf("//qsim.propagate_to_boundary.tail.SAIL pidx %7lld : post = np.array([%10.5f,%10.5f,%10.5f,%10.5f]) ;  "
+               "sail_time_delta = %10.5f   \n",
+               ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time, sail_time_delta);
 #endif
 
-    return BOUNDARY ;
+    return BOUNDARY;
 }
 #endif
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
 /**
 qsim::propagate_at_boundary
 ------------------------------------------
@@ -1066,74 +1051,88 @@ incidence.
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance ) const
+inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned &flag, RNG &rng, sctx &ctx, float theTransmittance) const
 {
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
-    printf("//propagate_at_boundary.DEBUG_PIDX ctx.pidx %7lld base %p base.pidx %7lld \n", ctx.pidx, base, base->pidx  );
+    if (ctx.pidx == base->pidx)
+        printf("//propagate_at_boundary.DEBUG_PIDX ctx.pidx %7lld base %p base.pidx %7lld \n", ctx.pidx, base,
+               base->pidx);
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    if(ctx.pidx == base->pidx)
-    printf("//propagate_at_boundary.DEBUG_TAG ctx.pidx %7lld base %p base.pidx %7lld \n", ctx.pidx, base, base->pidx  );
+    if (ctx.pidx == base->pidx)
+        printf("//propagate_at_boundary.DEBUG_TAG ctx.pidx %7lld base %p base.pidx %7lld \n", ctx.pidx, base,
+               base->pidx);
 #endif
     // stray "return 0;" left here 2024-12-14 caused : ~/j/issues/jok-tds-missing-BR-BT-on-A-side.rst
 
-    sphoton& p = ctx.p ;
-    const sstate& s = ctx.s ;
+    sphoton &p = ctx.p;
+    const sstate &s = ctx.s;
 
-    const float& n1 = s.material1.x ;
-    const float& n2 = s.material2.x ;
-    const float eta = n1/n2 ;
+    const float &n1 = s.material1.x;
+    const float &n2 = s.material2.x;
+    const float eta = n1 / n2;
 
-    const float3* normal = (float3*)&ctx.prd->q0.f.x ;     // geometrical outwards normal
+    const float3 *normal = (float3 *)&ctx.prd->q0.f.x; // geometrical outwards normal
 
-    const float _c1 = -dot(p.mom, *normal );                // _c1 : cos(angle_of_incidence) not yet oriented
-    const float3 oriented_normal = _c1 < 0.f ? -(*normal) : (*normal) ; // oriented against incident p.mom
-    const float3 trans = cross(p.mom, oriented_normal) ;   // perpendicular to plane of incidence, S-pol direction
-    const float trans_length = length(trans) ;             // same as sin(theta), as p.mom and oriented_normal are unit vectors
-    const bool normal_incidence = trans_length < 1e-6f  ;  // p.mom parallel/anti-parallel to oriented_normal
-    const float3 A_trans = normal_incidence ? p.pol : trans/trans_length ; // normalized unit vector : perpendicular to plane of incidence
-    const float E1_perp = dot(p.pol, A_trans);     // amplitude of polarization in direction perpendicular to plane of incidence, ie S polarization
+    const float _c1 = -dot(p.mom, *normal);                            // _c1 : cos(angle_of_incidence) not yet oriented
+    const float3 oriented_normal = _c1 < 0.f ? -(*normal) : (*normal); // oriented against incident p.mom
+    const float3 trans = cross(p.mom, oriented_normal); // perpendicular to plane of incidence, S-pol direction
+    const float trans_length = length(trans); // same as sin(theta), as p.mom and oriented_normal are unit vectors
+    const bool normal_incidence = trans_length < 1e-6f; // p.mom parallel/anti-parallel to oriented_normal
+    const float3 A_trans =
+        normal_incidence ? p.pol : trans / trans_length; // normalized unit vector : perpendicular to plane of incidence
+    const float E1_perp =
+        dot(p.pol,
+            A_trans); // amplitude of polarization in direction perpendicular to plane of incidence, ie S polarization
 
-    const float c1 = fabs(_c1) ;
+    const float c1 = fabs(_c1);
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : theTransmittance = %10.8f \n", ctx.pidx, theTransmittance  );
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f  \n",
-         ctx.pidx, oriented_normal.x, oriented_normal.y, oriented_normal.z, length(oriented_normal) );
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : pos = np.array([%10.5f,%10.5f,%10.5f]) ; lpos = %10.8f \n",
-         ctx.pidx, p.pos.x, p.pos.y, p.pos.z, length(p.pos) );
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : mom0 = np.array([%10.8f,%10.8f,%10.8f]) ; lmom0 = %10.8f \n",
-         ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom)  );
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : pol0 = np.array([%10.8f,%10.8f,%10.8f]) ; lpol0 = %10.8f \n",
-          ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol)  );
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : n1,n2,eta = (%10.8f,%10.8f,%10.8f) \n", ctx.pidx, n1, n2, eta );
-    printf("//qsim.propagate_at_boundary.head pidx %7lld : c1 = %10.8f ; normal_incidence = %d \n", ctx.pidx, c1, normal_incidence );
+        printf("//qsim.propagate_at_boundary.head pidx %7lld : theTransmittance = %10.8f \n", ctx.pidx,
+               theTransmittance);
+        printf(
+            "//qsim.propagate_at_boundary.head pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f  \n",
+            ctx.pidx, oriented_normal.x, oriented_normal.y, oriented_normal.z, length(oriented_normal));
+        printf(
+            "//qsim.propagate_at_boundary.head pidx %7lld : pos = np.array([%10.5f,%10.5f,%10.5f]) ; lpos = %10.8f \n",
+            ctx.pidx, p.pos.x, p.pos.y, p.pos.z, length(p.pos));
+        printf("//qsim.propagate_at_boundary.head pidx %7lld : mom0 = np.array([%10.8f,%10.8f,%10.8f]) ; lmom0 = "
+               "%10.8f \n",
+               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom));
+        printf("//qsim.propagate_at_boundary.head pidx %7lld : pol0 = np.array([%10.8f,%10.8f,%10.8f]) ; lpol0 = "
+               "%10.8f \n",
+               ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol));
+        printf("//qsim.propagate_at_boundary.head pidx %7lld : n1,n2,eta = (%10.8f,%10.8f,%10.8f) \n", ctx.pidx, n1, n2,
+               eta);
+        printf("//qsim.propagate_at_boundary.head pidx %7lld : c1 = %10.8f ; normal_incidence = %d \n", ctx.pidx, c1,
+               normal_incidence);
     }
 #endif
 
-    const float c2c2 = 1.f - eta*eta*(1.f - c1 * c1 ) ;   // Snells law and trig identity
-    bool tir = c2c2 < 0.f ;
-    const float EdotN = dot(p.pol, oriented_normal ) ;  // used for TIR polarization
-    const float c2 = tir ? 0.f : sqrtf(c2c2) ;   // c2 chosen +ve, set to 0.f for TIR => reflection_coefficient = 1.0f : so will always reflect
-    const float n1c1 = n1*c1 ;
-    const float n2c2 = n2*c2 ;
-    const float n2c1 = n2*c1 ;
-    const float n1c2 = n1*c2 ;
+    const float c2c2 = 1.f - eta * eta * (1.f - c1 * c1); // Snells law and trig identity
+    bool tir = c2c2 < 0.f;
+    const float EdotN = dot(p.pol, oriented_normal); // used for TIR polarization
+    const float c2 =
+        tir ? 0.f
+            : sqrtf(
+                  c2c2); // c2 chosen +ve, set to 0.f for TIR => reflection_coefficient = 1.0f : so will always reflect
+    const float n1c1 = n1 * c1;
+    const float n2c2 = n2 * c2;
+    const float n2c1 = n2 * c1;
+    const float n1c2 = n1 * c2;
 
-    const float2 E1   = normal_incidence ? make_float2( 0.f, 1.f) : make_float2( E1_perp , length( p.pol - (E1_perp*A_trans) ) );
-    const float2 E2_t = make_float2(  2.f*n1c1*E1.x/(n1c1+n2c2), 2.f*n1c1*E1.y/(n2c1+n1c2) ) ;  // ( S:perp, P:parl )
-    const float2 E2_r = make_float2( E2_t.x - E1.x             , (n2*E2_t.y/n1) - E1.y     ) ;  // ( S:perp, P:parl )
-    const float2 RR = normalize(E2_r) ;
-    const float2 TT = normalize(E2_t) ;
-    const float TransCoeff = theTransmittance >= 0.f ?
-                                                           theTransmittance
-                                                     :
-                                                           ( tir || n1c1 == 0.f ? 0.f : n2c2*dot(E2_t,E2_t)/n1c1 )
-                                                     ;
+    const float2 E1 =
+        normal_incidence ? make_float2(0.f, 1.f) : make_float2(E1_perp, length(p.pol - (E1_perp * A_trans)));
+    const float2 E2_t =
+        make_float2(2.f * n1c1 * E1.x / (n1c1 + n2c2), 2.f * n1c1 * E1.y / (n2c1 + n1c2)); // ( S:perp, P:parl )
+    const float2 E2_r = make_float2(E2_t.x - E1.x, (n2 * E2_t.y / n1) - E1.y);             // ( S:perp, P:parl )
+    const float2 RR = normalize(E2_r);
+    const float2 TT = normalize(E2_t);
+    const float TransCoeff =
+        theTransmittance >= 0.f ? theTransmittance : (tir || n1c1 == 0.f ? 0.f : n2c2 * dot(E2_t, E2_t) / n1c1);
 
     /*
     E1, E2_t, E2_t: incident, transmitted and reflected amplitudes in S and P directions
@@ -1141,138 +1140,128 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
     */
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : TransCoeff = %10.8f ; n1c1 = %10.8f ; n2c2 = %10.8f \n",
-            ctx.pidx, TransCoeff, n1c1, n2c2 );
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : TransCoeff = %10.8f ; n1c1 = %10.8f ; n2c2 = %10.8f \n",
+               ctx.pidx, TransCoeff, n1c1, n2c2);
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : E2_t = np.array([%10.8f,%10.8f]) ; lE2_t = %10.8f \n",
-            ctx.pidx,  E2_t.x, E2_t.y, length(E2_t) );
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : E2_t = np.array([%10.8f,%10.8f]) ; lE2_t = %10.8f \n",
+               ctx.pidx, E2_t.x, E2_t.y, length(E2_t));
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : A_trans = np.array([%10.8f,%10.8f,%10.8f]) ; lA_trans = %10.8f \n",
-            ctx.pidx,  A_trans.x, A_trans.y, A_trans.z, length(A_trans) );
-
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : A_trans = np.array([%10.8f,%10.8f,%10.8f]) ; lA_trans = "
+               "%10.8f \n",
+               ctx.pidx, A_trans.x, A_trans.y, A_trans.z, length(A_trans));
     }
 #endif
 
-
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    const float u_boundary_burn = curand_uniform(&rng) ;  // needed for random consumption alignment with Geant4 G4OpBoundaryProcess::PostStepDoIt
+    const float u_boundary_burn =
+        curand_uniform(&rng); // needed for random consumption alignment with Geant4 G4OpBoundaryProcess::PostStepDoIt
 #endif
-    const float u_reflect = curand_uniform(&rng) ;
-    bool reflect = u_reflect > TransCoeff  ;
+    const float u_reflect = curand_uniform(&rng);
+    bool reflect = u_reflect > TransCoeff;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    stagr& tagr = ctx.tagr ;
-    tagr.add( stag_at_burn_sf_sd, u_boundary_burn);
-    tagr.add( stag_at_ref,  u_reflect);
+    stagr &tagr = ctx.tagr;
+    tagr.add(stag_at_burn_sf_sd, u_boundary_burn);
+    tagr.add(stag_at_ref, u_reflect);
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : u_reflect %10.4f TransCoeff %10.4f reflect %d \n",
-              ctx.pidx,  u_reflect, TransCoeff, reflect   );
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : u_reflect %10.4f TransCoeff %10.4f reflect %d \n",
+               ctx.pidx, u_reflect, TransCoeff, reflect);
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : mom0 = np.array([%10.8f,%10.8f,%10.8f]) ; lmom0 = %10.8f \n",
-               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom) ) ;
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : mom0 = np.array([%10.8f,%10.8f,%10.8f]) ; lmom0 = "
+               "%10.8f \n",
+               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom));
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : pos = np.array([%10.5f,%10.5f,%10.5f]) ; lpos = %10.8f \n",
-               ctx.pidx, p.pos.x, p.pos.y, p.pos.z, length(p.pos)  );
+        printf(
+            "//qsim.propagate_at_boundary.body pidx %7lld : pos = np.array([%10.5f,%10.5f,%10.5f]) ; lpos = %10.8f \n",
+            ctx.pidx, p.pos.x, p.pos.y, p.pos.z, length(p.pos));
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f \n",
-               ctx.pidx, oriented_normal.x, oriented_normal.y, oriented_normal.z, length(oriented_normal) ) ;
+        printf(
+            "//qsim.propagate_at_boundary.body pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f \n",
+            ctx.pidx, oriented_normal.x, oriented_normal.y, oriented_normal.z, length(oriented_normal));
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : n1 = %10.8f ; n2 = %10.8f ; eta = %10.8f  \n",
-               ctx.pidx, n1, n2, eta );
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : n1 = %10.8f ; n2 = %10.8f ; eta = %10.8f  \n", ctx.pidx,
+               n1, n2, eta);
 
-    printf("//qsim.propagate_at_boundary.body pidx %7lld : c1 = %10.8f ; eta_c1 = %10.8f ; c2 = %10.8f ; eta_c1__c2 = %10.8f \n",
-               ctx.pidx, c1, eta*c1, c2, (eta*c1 - c2) );
-
+        printf("//qsim.propagate_at_boundary.body pidx %7lld : c1 = %10.8f ; eta_c1 = %10.8f ; c2 = %10.8f ; "
+               "eta_c1__c2 = %10.8f \n",
+               ctx.pidx, c1, eta * c1, c2, (eta * c1 - c2));
     }
 #endif
 
-    p.mom = reflect
-                    ?
-                       p.mom + 2.0f*c1*oriented_normal
-                    :
-                       eta*(p.mom) + (eta*c1 - c2)*oriented_normal
-                    ;
-
+    p.mom = reflect ? p.mom + 2.0f * c1 * oriented_normal : eta * (p.mom) + (eta * c1 - c2) * oriented_normal;
 
     // Q: Does the new p.mom need to be normalized ?
     // A: NO, it is inherently normalized as derived in the comment below
 
+    const float3 A_paral = normalize(cross(p.mom, A_trans)); // new P-pol direction
 
-    const float3 A_paral = normalize(cross(p.mom, A_trans));   // new P-pol direction
+    p.pol = normal_incidence
+                ? (reflect ? p.pol * (n2 > n1 ? -1.f : 1.f) : p.pol)
+                : (reflect ? (tir ? -p.pol + 2.f * EdotN * oriented_normal : RR.x * A_trans + RR.y * A_paral)
 
-    p.pol =  normal_incidence ?
-                                         ( reflect ?  p.pol*(n2>n1? -1.f:1.f) : p.pol )
-                                      :
-                                         ( reflect ?
-                                                   ( tir ?  -p.pol + 2.f*EdotN*oriented_normal : RR.x*A_trans + RR.y*A_paral )
+                           : TT.x * A_trans + TT.y * A_paral
 
-                                                   :
-                                                       TT.x*A_trans + TT.y*A_paral
+                  );
 
-                                                   )
-                                      ;
-
-
-
-     // Q: Above expression kinda implies A_trans and A_paral are same for reflect and transmit ?
-     // A: NO IT DOESNT,
-     //    A_trans is the same (except for normal incidence) as there is only one perpendicular
-     //    to the plane of incidence which is the same for i,r,t.
-     //
-     //    A_paral depends on the new p.mom (is has to be orthogonal to p.mom and A_trans)
-     //    and p.mom of course is different for r and t
-     //    (the reflect bool is used in multiple places, not just here)
-
-
+    // Q: Above expression kinda implies A_trans and A_paral are same for reflect and transmit ?
+    // A: NO IT DOESNT,
+    //    A_trans is the same (except for normal incidence) as there is only one perpendicular
+    //    to the plane of incidence which is the same for i,r,t.
+    //
+    //    A_paral depends on the new p.mom (is has to be orthogonal to p.mom and A_trans)
+    //    and p.mom of course is different for r and t
+    //    (the reflect bool is used in multiple places, not just here)
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.propagate_at_boundary.tail pidx %7lld : reflect %d tir %d TransCoeff %10.4f u_reflect %10.4f \n", ctx.pidx, reflect, tir, TransCoeff, u_reflect );
-    printf("//qsim.propagate_at_boundary.tail pidx %7lld : mom1 = np.array([%10.8f,%10.8f,%10.8f]) ; lmom1 = %10.8f  \n",
-        ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom) );
-    printf("//qsim.propagate_at_boundary.tail pidx %7lld : pol1 = np.array([%10.8f,%10.8f,%10.8f]) ; lpol1 = %10.8f \n",
-        ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol) );
+        printf("//qsim.propagate_at_boundary.tail pidx %7lld : reflect %d tir %d TransCoeff %10.4f u_reflect %10.4f \n",
+               ctx.pidx, reflect, tir, TransCoeff, u_reflect);
+        printf("//qsim.propagate_at_boundary.tail pidx %7lld : mom1 = np.array([%10.8f,%10.8f,%10.8f]) ; lmom1 = "
+               "%10.8f  \n",
+               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom));
+        printf("//qsim.propagate_at_boundary.tail pidx %7lld : pol1 = np.array([%10.8f,%10.8f,%10.8f]) ; lpol1 = "
+               "%10.8f \n",
+               ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol));
     }
 
     /*
     if(ctx.pidx == 251959)
     {
-        printf("//qsim.propagate_at_boundary RR.x %10.4f A_trans (%10.4f %10.4f %10.4f )  RR.y %10.4f  A_paral (%10.4f %10.4f %10.4f ) \n",
-              RR.x, A_trans.x, A_trans.y, A_trans.z,
-              RR.y, A_paral.x, A_paral.y, A_paral.z );
+        printf("//qsim.propagate_at_boundary RR.x %10.4f A_trans (%10.4f %10.4f %10.4f )  RR.y %10.4f  A_paral (%10.4f
+    %10.4f %10.4f ) \n", RR.x, A_trans.x, A_trans.y, A_trans.z, RR.y, A_paral.x, A_paral.y, A_paral.z );
 
-        printf("//qsim.propagate_at_boundary reflect %d  tir %d polarization (%10.4f, %10.4f, %10.4f) \n", reflect, tir, p.pol.x, p.pol.y, p.pol.z );
+        printf("//qsim.propagate_at_boundary reflect %d  tir %d polarization (%10.4f, %10.4f, %10.4f) \n", reflect, tir,
+    p.pol.x, p.pol.y, p.pol.z );
     }
     */
 #endif
 
-    flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT ;
-
+    flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    if( flag ==  BOUNDARY_REFLECT )
+    if (flag == BOUNDARY_REFLECT)
     {
-        const float u_br_align_0 = curand_uniform(&rng) ;
-        const float u_br_align_1 = curand_uniform(&rng) ;
-        const float u_br_align_2 = curand_uniform(&rng) ;
-        const float u_br_align_3 = curand_uniform(&rng) ;
+        const float u_br_align_0 = curand_uniform(&rng);
+        const float u_br_align_1 = curand_uniform(&rng);
+        const float u_br_align_2 = curand_uniform(&rng);
+        const float u_br_align_3 = curand_uniform(&rng);
 
         // switched below standard tags from stag_br_align_0/1/2/3 to simplify A:tag to B:stack mapping
-        tagr.add( stag_to_sci, u_br_align_0 );
-        tagr.add( stag_to_bnd, u_br_align_1 );
-        tagr.add( stag_to_sca, u_br_align_2 );
-        tagr.add( stag_to_abs, u_br_align_3 );
+        tagr.add(stag_to_sci, u_br_align_0);
+        tagr.add(stag_to_bnd, u_br_align_1);
+        tagr.add(stag_to_sca, u_br_align_2);
+        tagr.add(stag_to_abs, u_br_align_3);
     }
 #endif
 
-    return CONTINUE ;
+    return CONTINUE;
 }
 /**
 qsim::propagate_at_boundary_with_T
@@ -1292,92 +1281,82 @@ and leave this just for testing.
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_boundary_with_T(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance ) const
+inline QSIM_METHOD int qsim::propagate_at_boundary_with_T(unsigned &flag, RNG &rng, sctx &ctx,
+                                                          float theTransmittance) const
 {
-    sphoton& p = ctx.p ;
-    const sstate& s = ctx.s ;
+    sphoton &p = ctx.p;
+    const sstate &s = ctx.s;
 
-    const float& n1 = s.material1.x ;
-    const float& n2 = s.material2.x ;
-    const float eta = n1/n2 ;
+    const float &n1 = s.material1.x;
+    const float &n2 = s.material2.x;
+    const float eta = n1 / n2;
 
-    const float3* normal = (float3*)&ctx.prd->q0.f.x ;     // geometrical outwards normal
+    const float3 *normal = (float3 *)&ctx.prd->q0.f.x; // geometrical outwards normal
 
-    const float _c1 = -dot(p.mom, *normal );                // _c1 : cos(angle_of_incidence) not yet oriented
-    const float3 oriented_normal = _c1 < 0.f ? -(*normal) : (*normal) ; // oriented against incident p.mom
-    const float3 trans = cross(p.mom, oriented_normal) ;   // perpendicular to plane of incidence, S-pol direction
-    const float trans_length = length(trans) ;             // same as sin(theta), as p.mom and oriented_normal are unit vectors
-    const bool normal_incidence = trans_length < 1e-6f  ;  // p.mom parallel/anti-parallel to oriented_normal
-    const float3 A_trans = normal_incidence ? p.pol : trans/trans_length ; // normalized unit vector : perpendicular to plane of incidence
-    const float E1_perp = dot(p.pol, A_trans);     // amplitude of polarization in direction perpendicular to plane of incidence, ie S polarization
+    const float _c1 = -dot(p.mom, *normal);                            // _c1 : cos(angle_of_incidence) not yet oriented
+    const float3 oriented_normal = _c1 < 0.f ? -(*normal) : (*normal); // oriented against incident p.mom
+    const float3 trans = cross(p.mom, oriented_normal); // perpendicular to plane of incidence, S-pol direction
+    const float trans_length = length(trans); // same as sin(theta), as p.mom and oriented_normal are unit vectors
+    const bool normal_incidence = trans_length < 1e-6f; // p.mom parallel/anti-parallel to oriented_normal
+    const float3 A_trans =
+        normal_incidence ? p.pol : trans / trans_length; // normalized unit vector : perpendicular to plane of incidence
+    const float E1_perp =
+        dot(p.pol,
+            A_trans); // amplitude of polarization in direction perpendicular to plane of incidence, ie S polarization
 
-    const float c1 = fabs(_c1) ;
+    const float c1 = fabs(_c1);
 
-    const float c2c2 = 1.f - eta*eta*(1.f - c1 * c1 ) ;   // Snells law and trig identity
-    bool tir = c2c2 < 0.f ;
-    const float EdotN = dot(p.pol, oriented_normal ) ;  // used for TIR polarization
-    const float c2 = tir ? 0.f : sqrtf(c2c2) ;   // c2 chosen +ve, set to 0.f for TIR => reflection_coefficient = 1.0f : so will always reflect
-    const float n1c1 = n1*c1 ;
-    const float n2c2 = n2*c2 ;
-    const float n2c1 = n2*c1 ;
-    const float n1c2 = n1*c2 ;
+    const float c2c2 = 1.f - eta * eta * (1.f - c1 * c1); // Snells law and trig identity
+    bool tir = c2c2 < 0.f;
+    const float EdotN = dot(p.pol, oriented_normal); // used for TIR polarization
+    const float c2 =
+        tir ? 0.f
+            : sqrtf(
+                  c2c2); // c2 chosen +ve, set to 0.f for TIR => reflection_coefficient = 1.0f : so will always reflect
+    const float n1c1 = n1 * c1;
+    const float n2c2 = n2 * c2;
+    const float n2c1 = n2 * c1;
+    const float n1c2 = n1 * c2;
 
-    const float2 E1   = normal_incidence ? make_float2( 0.f, 1.f) : make_float2( E1_perp , length( p.pol - (E1_perp*A_trans) ) );
-    const float2 E2_t = make_float2(  2.f*n1c1*E1.x/(n1c1+n2c2), 2.f*n1c1*E1.y/(n2c1+n1c2) ) ;  // ( S:perp, P:parl )
-    const float2 E2_r = make_float2( E2_t.x - E1.x             , (n2*E2_t.y/n1) - E1.y     ) ;  // ( S:perp, P:parl )
-    const float2 RR = normalize(E2_r) ;
-    const float2 TT = normalize(E2_t) ;
+    const float2 E1 =
+        normal_incidence ? make_float2(0.f, 1.f) : make_float2(E1_perp, length(p.pol - (E1_perp * A_trans)));
+    const float2 E2_t =
+        make_float2(2.f * n1c1 * E1.x / (n1c1 + n2c2), 2.f * n1c1 * E1.y / (n2c1 + n1c2)); // ( S:perp, P:parl )
+    const float2 E2_r = make_float2(E2_t.x - E1.x, (n2 * E2_t.y / n1) - E1.y);             // ( S:perp, P:parl )
+    const float2 RR = normalize(E2_r);
+    const float2 TT = normalize(E2_t);
 
+    /*
+        const float TransCoeff = theTransmittance >= 0.f ?
+                                                               theTransmittance
+                                                         :
+                                                               ( tir || n1c1 == 0.f ? 0.f : n2c2*dot(E2_t,E2_t)/n1c1 )
+                                                         ;
+    */
 
-/*
-    const float TransCoeff = theTransmittance >= 0.f ?
-                                                           theTransmittance
-                                                     :
-                                                           ( tir || n1c1 == 0.f ? 0.f : n2c2*dot(E2_t,E2_t)/n1c1 )
-                                                     ;
-*/
+    const float &TransCoeff = theTransmittance;
 
-    const float& TransCoeff = theTransmittance ;
+    const float u_reflect = curand_uniform(&rng);
+    bool reflect = u_reflect > TransCoeff;
 
-    const float u_reflect = curand_uniform(&rng) ;
-    bool reflect = u_reflect > TransCoeff  ;
+    p.mom = reflect ? p.mom + 2.0f * c1 * oriented_normal : eta * (p.mom) + (eta * c1 - c2) * oriented_normal;
 
-    p.mom = reflect
-                    ?
-                       p.mom + 2.0f*c1*oriented_normal
-                    :
-                       eta*(p.mom) + (eta*c1 - c2)*oriented_normal
-                    ;
+    const float3 A_paral = normalize(cross(p.mom, A_trans)); // new P-pol direction
 
+    p.pol = normal_incidence
+                ? (reflect ? p.pol * (n2 > n1 ? -1.f : 1.f) : p.pol)
+                : (reflect ? (tir ? -p.pol + 2.f * EdotN * oriented_normal : RR.x * A_trans + RR.y * A_paral)
 
-    const float3 A_paral = normalize(cross(p.mom, A_trans));   // new P-pol direction
+                           : TT.x * A_trans + TT.y * A_paral
 
-    p.pol =  normal_incidence ?
-                                         ( reflect ?  p.pol*(n2>n1? -1.f:1.f) : p.pol )
-                                      :
-                                         ( reflect ?
-                                                   ( tir ?  -p.pol + 2.f*EdotN*oriented_normal : RR.x*A_trans + RR.y*A_paral )
+                  );
 
-                                                   :
-                                                       TT.x*A_trans + TT.y*A_paral
+    flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT;
 
-                                                   )
-                                      ;
-
-    flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT ;
-
-
-    return CONTINUE ;
+    return CONTINUE;
 }
 
 #endif
-
-
-
-
-
-
-
 
 /**
 Reflected momentum vector
@@ -1515,12 +1494,6 @@ Compare transmitted vector with G4OpBoundaryProcess::DielectricDielectric
 
 **/
 
-
-
-
-
-
-
 /*
 G4OpBoundaryProcess::DielectricDielectric
 
@@ -1585,7 +1558,6 @@ transmit
 
 */
 
-
 /*
 qsim::propagate_at_surface_MultiFilm
 -------------------------------
@@ -1606,13 +1578,13 @@ TODO:
 */
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-inline QSIM_METHOD int qsim::propagate_at_surface_MultiFilm(unsigned& flag, RNG& rng, sctx& ctx )
+inline QSIM_METHOD int qsim::propagate_at_surface_MultiFilm(unsigned &flag, RNG &rng, sctx &ctx)
 {
 
-	const float one = 1.0f;
-    const sphoton& p = ctx.p ;
-    const float3* normal = (float3*)&ctx.prd->q0.f.x ;
-    int   lpmtid = ctx.prd->identity() - 1 ;  // identity comes from optixInstance.instanceId where 0 means not-a-sensor
+    const float one = 1.0f;
+    const sphoton &p = ctx.p;
+    const float3 *normal = (float3 *)&ctx.prd->q0.f.x;
+    int lpmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
 
     float minus_cos_theta = dot(p.mom, *normal);
     int pmtcat = pmt->get_lpmtcat_from_lpmtid(lpmtid);
@@ -1620,66 +1592,61 @@ inline QSIM_METHOD int qsim::propagate_at_surface_MultiFilm(unsigned& flag, RNG&
 
     float4 RsTsRpTp = multifilm->lookup(pmtcat, wv_nm, minus_cos_theta);
 
+    const float c1 = fabs(minus_cos_theta);
+    const float s1 = sqrtf(one - c1 * c1);
 
-    const float c1 = fabs(minus_cos_theta) ;
-    const float s1 = sqrtf(one -c1*c1);
+    float EsEs = s1 > 0.f ? dot(p.pol, cross(p.mom, *normal)) / s1 : 0.f;
+    EsEs *= EsEs; //   orienting normal doesnt matter as squared : this is S_vs_P power fraction
 
-    float EsEs = s1 > 0.f ? dot(p.pol, cross( p.mom, *normal))/s1 : 0.f ;
-    EsEs *= EsEs;   //   orienting normal doesnt matter as squared : this is S_vs_P power fraction
+    float3 ART;
+    ART.z = RsTsRpTp.y * EsEs + RsTsRpTp.w * (one - EsEs);
+    ART.y = RsTsRpTp.x * EsEs + RsTsRpTp.z * (one - EsEs);
+    ART.x = one - (ART.y + ART.z);
 
+    const float &A = ART.x;
+    const float &T = ART.z;
 
-    float3 ART ;
-    ART.z = RsTsRpTp.y*EsEs + RsTsRpTp.w*(one - EsEs);
-    ART.y = RsTsRpTp.x*EsEs + RsTsRpTp.z*(one - EsEs);
-    ART.x = one - (ART.y+ART.z);
-
-    const float& A = ART.x ;
-    const float& T = ART.z ;
-
-
-    float4 RsTsRpTpNormal = multifilm->lookup(pmtcat, wv_nm, -one );
+    float4 RsTsRpTpNormal = multifilm->lookup(pmtcat, wv_nm, -one);
     // Normal means the photon incident from glass to vacuum, AOI = 0 deg  cos_theta = -1.f
 
     float3 ART_normal;
-    ART_normal.z = 0.5f*(RsTsRpTpNormal.y + RsTsRpTpNormal.w); // T:0.5f*(Ts+Tp)
-    ART_normal.y = 0.5f*(RsTsRpTpNormal.x + RsTsRpTpNormal.z); // R:0.5f*(Rs+Rp)
-    ART_normal.x = one -(ART_normal.y + ART_normal.z) ;        // 1.f - (R+T)
+    ART_normal.z = 0.5f * (RsTsRpTpNormal.y + RsTsRpTpNormal.w); // T:0.5f*(Ts+Tp)
+    ART_normal.y = 0.5f * (RsTsRpTpNormal.x + RsTsRpTpNormal.z); // R:0.5f*(Rs+Rp)
+    ART_normal.x = one - (ART_normal.y + ART_normal.z);          // 1.f - (R+T)
 
-    const float& An = ART_normal.x ;
-    const float energy_eV = qpmt<float>::hc_eVnm/wv_nm ;
+    const float &An = ART_normal.x;
+    const float energy_eV = qpmt<float>::hc_eVnm / wv_nm;
     const float qe_scale = pmt->get_qescale_from_lpmtid(lpmtid);
     const float qe_shape = pmt->get_lpmtcat_qe(pmtcat, energy_eV);
 
     const float _qe = minus_cos_theta > 0.f ? 0.f : qe_scale * qe_shape;
 
-    const float& theAbsorption = A;
-    const float& theTransmittance = T/(one-A);
-    const float& theEfficiency = _qe/An;
+    const float &theAbsorption = A;
+    const float &theTransmittance = T / (one - A);
+    const float &theEfficiency = _qe / An;
 
     float u_theAbsorption = curand_uniform(&rng);
-    int action = u_theAbsorption < theAbsorption  ? BREAK : CONTINUE ;
+    int action = u_theAbsorption < theAbsorption ? BREAK : CONTINUE;
 
-    if( action == BREAK )
+    if (action == BREAK)
     {
-        float u_theEfficiency = curand_uniform(&rng) ;
-        flag = u_theEfficiency < theEfficiency ? SURFACE_DETECT : SURFACE_ABSORB ;
+        float u_theEfficiency = curand_uniform(&rng);
+        flag = u_theEfficiency < theEfficiency ? SURFACE_DETECT : SURFACE_ABSORB;
     }
     else
     {
-        propagate_at_boundary( flag, rng, ctx, theTransmittance  );
+        propagate_at_boundary(flag, rng, ctx, theTransmittance);
     }
 
-    //printf("//qsim.propagate_at_surface_MultiFilm pidx %7lld lpmtid %d ART ( %7.3f %7.3f %7.3f ) u_theAbsorption  %7.3f action %d \n",
-    //ctx.pidx, lpmtid, ART.x, ART.y, ART.z, u_theAbsorption, action);
+    // printf("//qsim.propagate_at_surface_MultiFilm pidx %7lld lpmtid %d ART ( %7.3f %7.3f %7.3f ) u_theAbsorption
+    // %7.3f action %d \n", ctx.pidx, lpmtid, ART.x, ART.y, ART.z, u_theAbsorption, action);
 
-    return action ;
-
+    return action;
 }
 
 #endif
 
-
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
 
 /**
 qsim::propagate_at_surface   (HMM: perhaps propagate_at_simplified_surface )
@@ -1745,86 +1712,81 @@ The s.surface float4 is filled by qbnd::fill_state via::
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx& ctx)
+inline QSIM_METHOD int qsim::propagate_at_surface(unsigned &flag, RNG &rng, sctx &ctx)
 {
-    const sstate& s = ctx.s ;
-    const float& detect = s.surface.x ;
-    const float& absorb = s.surface.y ;
-    //const float& reflect_specular_ = s.surface.z ;
-    const float& reflect_diffuse_  = s.surface.w ;
+    const sstate &s = ctx.s;
+    const float &detect = s.surface.x;
+    const float &absorb = s.surface.y;
+    // const float& reflect_specular_ = s.surface.z ;
+    const float &reflect_diffuse_ = s.surface.w;
 
     float u_surface = curand_uniform(&rng);
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    stagr& tagr = ctx.tagr ;
+    stagr &tagr = ctx.tagr;
     float u_surface_burn = curand_uniform(&rng);
-    tagr.add( stag_at_burn_sf_sd, u_surface);
-    tagr.add( stag_sf_burn,       u_surface_burn);
+    tagr.add(stag_at_burn_sf_sd, u_surface);
+    tagr.add(stag_sf_burn, u_surface_burn);
 #endif
 
+    int action = u_surface < absorb + detect ? BREAK : CONTINUE;
 
-    int action = u_surface < absorb + detect ? BREAK : CONTINUE  ;
-
-    if( action == BREAK )
+    if (action == BREAK)
     {
 #if defined(WITH_CUSTOM4)
-        int pmtid = ctx.prd->identity() - 1 ;     // identity comes from optixInstance.instanceId where 0 means not-a-sensor
-        float qe = 1.f ;
+        int pmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
+        float qe = 1.f;
         float u_qe = curand_uniform(&rng);
-        if( s_pmt::is_spmtid(pmtid) )
+        if (s_pmt::is_spmtid(pmtid))
         {
-            const float energy_eV = qpmt<float>::hc_eVnm/ctx.p.wavelength ;
-            float qe_shape = pmt->s_qeshape_prop->interpolate( 0, energy_eV );
+            const float energy_eV = qpmt<float>::hc_eVnm / ctx.p.wavelength;
+            float qe_shape = pmt->s_qeshape_prop->interpolate(0, energy_eV);
             float qe_scale = pmt->get_s_qescale_from_spmtid(pmtid);
-            qe = qe_shape*qe_scale ;
+            qe = qe_shape * qe_scale;
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-            if(ctx.pidx == base->pidx)
-            printf("//qsim.propagate_at_surface.BREAK.is_spmtid pidx %7lld : pmtid %d energy_eV %7.3f qe_shape %7.3f qe_scale %7.3f qe %7.3f detect %7.3f absorb %7.3f reflect_specular %7.3f reflect_diffuse %7.3f \n" ,
-                ctx.pidx, pmtid, energy_eV, qe_shape, qe_scale, qe, detect, absorb, s.surface.z, reflect_diffuse_ );
+            if (ctx.pidx == base->pidx)
+                printf(
+                    "//qsim.propagate_at_surface.BREAK.is_spmtid pidx %7lld : pmtid %d energy_eV %7.3f qe_shape %7.3f "
+                    "qe_scale %7.3f qe %7.3f detect %7.3f absorb %7.3f reflect_specular %7.3f reflect_diffuse %7.3f \n",
+                    ctx.pidx, pmtid, energy_eV, qe_shape, qe_scale, qe, detect, absorb, s.surface.z, reflect_diffuse_);
 #endif
         }
-        flag = u_surface < absorb ?
-                                      SURFACE_ABSORB
-                                  :
-                                      ( u_qe < qe  ? EFFICIENCY_COLLECT : EFFICIENCY_CULL  )
-                                  ;
+        flag = u_surface < absorb ? SURFACE_ABSORB : (u_qe < qe ? EFFICIENCY_COLLECT : EFFICIENCY_CULL);
 #else
-        flag = u_surface < absorb ?
-                                      SURFACE_ABSORB
-                                  :
-                                      SURFACE_DETECT
-                                  ;
+        flag = u_surface < absorb ? SURFACE_ABSORB : SURFACE_DETECT;
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if(ctx.pidx == base->pidx)
-        printf("//qsim.propagate_at_surface.SA/SD.BREAK pidx %7lld : flag %d \n" , ctx.pidx, flag );
+        if (ctx.pidx == base->pidx)
+            printf("//qsim.propagate_at_surface.SA/SD.BREAK pidx %7lld : flag %d \n", ctx.pidx, flag);
 #endif
     }
     else
     {
-        flag = u_surface < absorb + detect + reflect_diffuse_ ?  SURFACE_DREFLECT : SURFACE_SREFLECT ;
-        switch(flag)
+        flag = u_surface < absorb + detect + reflect_diffuse_ ? SURFACE_DREFLECT : SURFACE_SREFLECT;
+        switch (flag)
         {
-            case SURFACE_DREFLECT: reflect_diffuse( rng, ctx)  ; break ;
-            case SURFACE_SREFLECT: reflect_specular(rng, ctx)  ; break ;
+        case SURFACE_DREFLECT:
+            reflect_diffuse(rng, ctx);
+            break;
+        case SURFACE_SREFLECT:
+            reflect_specular(rng, ctx);
+            break;
         }
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if(ctx.pidx == base->pidx)
-        printf("//qsim.propagate_at_surface.DR/SR.CONTINUE pidx %7lld : flag %d \n" , ctx.pidx, flag );
+        if (ctx.pidx == base->pidx)
+            printf("//qsim.propagate_at_surface.DR/SR.CONTINUE pidx %7lld : flag %d \n", ctx.pidx, flag);
 #endif
     }
-    return action ;
+    return action;
 }
 
-
-inline QSIM_METHOD int qsim::propagate_at_surface_Detect(unsigned& flag, RNG& rng, sctx& ctx) const
+inline QSIM_METHOD int qsim::propagate_at_surface_Detect(unsigned &flag, RNG &rng, sctx &ctx) const
 {
-    float u_surface_burn = curand_uniform(&rng);  // for random alignment
-    flag = SURFACE_DETECT ;
-    return BREAK ;
+    float u_surface_burn = curand_uniform(&rng); // for random alignment
+    flag = SURFACE_DETECT;
+    return BREAK;
 }
-
 
 #if defined(WITH_CUSTOM4)
 
@@ -1851,125 +1813,134 @@ Where ctx.prd->identity() comes from ? Where is the "+ 1" done ?
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_surface_CustomART(unsigned& flag, RNG& rng, sctx& ctx) const
+inline QSIM_METHOD int qsim::propagate_at_surface_CustomART(unsigned &flag, RNG &rng, sctx &ctx) const
 {
 
-    sphoton& p = ctx.p ;
-    const float3* normal = (float3*)&ctx.prd->q0.f.x ;  // geometrical outwards normal
-    int lpmtid = ctx.prd->identity() - 1 ;  // identity comes from optixInstance.instanceId where 0 means not-a-sensor
-    const float lposcost = ctx.prd->lposcost() ;  // local frame intersect position cosine theta
-
+    sphoton &p = ctx.p;
+    const float3 *normal = (float3 *)&ctx.prd->q0.f.x; // geometrical outwards normal
+    int lpmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
+    const float lposcost = ctx.prd->lposcost(); // local frame intersect position cosine theta
 
     float minus_cos_theta = dot(p.mom, *normal);
-    float dot_pol_cross_mom_nrm = dot(p.pol,cross(p.mom,*normal)) ;
+    float dot_pol_cross_mom_nrm = dot(p.pol, cross(p.mom, *normal));
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
+    if (ctx.pidx_debug)
     {
-    float3 cross_mom_nrm = cross(p.mom, *normal) ;
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = %10.8f \n",
-       ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom) );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : pol = np.array([%10.8f,%10.8f,%10.8f]) ; lpol = %10.8f \n",
-       ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol) );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f \n",
-       ctx.pidx, normal->x, normal->y, normal->z, length(*normal) );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : cross_mom_nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lcross_mom_nrm = %10.8f  \n",
-           ctx.pidx, cross_mom_nrm.x, cross_mom_nrm.y, cross_mom_nrm.z, length(cross_mom_nrm)  );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : dot_pol_cross_mom_nrm = %10.8f \n", ctx.pidx, dot_pol_cross_mom_nrm );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : minus_cos_theta = %10.8f \n", ctx.pidx, minus_cos_theta );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : lposcost = %10.8f (expect 0->1)\n", ctx.pidx, lposcost );
+        float3 cross_mom_nrm = cross(p.mom, *normal);
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = "
+               "%10.8f \n",
+               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : pol = np.array([%10.8f,%10.8f,%10.8f]) ; lpol = "
+               "%10.8f \n",
+               ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = "
+               "%10.8f \n",
+               ctx.pidx, normal->x, normal->y, normal->z, length(*normal));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : cross_mom_nrm = np.array([%10.8f,%10.8f,%10.8f]) ; "
+               "lcross_mom_nrm = %10.8f  \n",
+               ctx.pidx, cross_mom_nrm.x, cross_mom_nrm.y, cross_mom_nrm.z, length(cross_mom_nrm));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : dot_pol_cross_mom_nrm = %10.8f \n", ctx.pidx,
+               dot_pol_cross_mom_nrm);
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : minus_cos_theta = %10.8f \n", ctx.pidx,
+               minus_cos_theta);
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : lposcost = %10.8f (expect 0->1)\n", ctx.pidx,
+               lposcost);
     }
 #endif
 
     // formerly excluded Custom4 hits onto WP PMTs see ~/j/issues/jok-tds-mu-running-NOT-A-SENSOR-warnings.rst
-    //if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_PMT_END )
-    //if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_ATM_LPMT_END )
-    if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >=   s_pmt::OFFSET_WP_WAL_PMT_END )
+    // if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_PMT_END )
+    // if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_ATM_LPMT_END )
+    if (lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_WAL_PMT_END)
     {
-        flag = NAN_ABORT ;
+        flag = NAN_ABORT;
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d : ERROR UNEXPECTED LPMTID : NAN_ABORT \n", ctx.pidx, lpmtid );
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d : ERROR UNEXPECTED LPMTID : NAN_ABORT \n",
+               ctx.pidx, lpmtid);
 #endif
-        return BREAK ;
+        return BREAK;
     }
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f pmt %p pre-ATQC \n",
-           ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, pmt );
+    if (ctx.pidx_debug)
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f pmt %p "
+               "pre-ATQC \n",
+               ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, pmt);
 #endif
 
-    float ATQC[4] = {} ;
+    float ATQC[4] = {};
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(lpmtid > -1 && pmt != nullptr) pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ctx.pidx, ctx.pidx_debug );
+    if (lpmtid > -1 && pmt != nullptr)
+        pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ctx.pidx,
+                             ctx.pidx_debug);
 #else
-    if(lpmtid > -1 && pmt != nullptr) pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost );
+    if (lpmtid > -1 && pmt != nullptr)
+        pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost);
 #endif
-
-
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f lpc %8.4f ATQC ( %8.4f %8.4f %8.4f %8.4f  ) \n",
-           ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ATQC[0], ATQC[1], ATQC[2], ATQC[3] );
+    if (ctx.pidx_debug)
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f lpc %8.4f "
+               "ATQC ( %8.4f %8.4f %8.4f %8.4f  ) \n",
+               ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ATQC[0], ATQC[1],
+               ATQC[2], ATQC[3]);
 #endif
 
-
-    const float& theAbsorption        = ATQC[0];
-    const float& theTransmittance     = ATQC[1];
-    const float& theEfficiency        = ATQC[2];
-    const float& collectionEfficiency = ATQC[3];
+    const float &theAbsorption = ATQC[0];
+    const float &theTransmittance = ATQC[1];
+    const float &theEfficiency = ATQC[2];
+    const float &collectionEfficiency = ATQC[3];
 
     float u_theAbsorption = curand_uniform(&rng);
-    int action = u_theAbsorption < theAbsorption  ? BREAK : CONTINUE ;
-
+    int action = u_theAbsorption < theAbsorption ? BREAK : CONTINUE;
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
-        printf("//qsim.propagate_at_surface_CustomART pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) u_theAbsorption  %7.3f action %d \n",
-        ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theAbsorption, action  );
+    if (ctx.pidx_debug)
+        printf("//qsim.propagate_at_surface_CustomART pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) "
+               "u_theAbsorption  %7.3f action %d \n",
+               ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theAbsorption, action);
 #endif
 
-    if( action == BREAK )
+    if (action == BREAK)
     {
-        float u_theEfficiency = curand_uniform(&rng) ;
+        float u_theEfficiency = curand_uniform(&rng);
         float u_collectionEfficiency = curand_uniform(&rng);
 
-        flag = u_theEfficiency < theEfficiency ?
-                                                    (  u_collectionEfficiency < collectionEfficiency ? EFFICIENCY_COLLECT : EFFICIENCY_CULL )
-                                               :
-                                                    SURFACE_ABSORB
-                                               ;
+        flag = u_theEfficiency < theEfficiency
+                   ? (u_collectionEfficiency < collectionEfficiency ? EFFICIENCY_COLLECT : EFFICIENCY_CULL)
+                   : SURFACE_ABSORB;
 
-        // former SD:SURFACE_DETECT, now becomes EC:EFFICIENCY_COLLECT or EX:EFFICIENCY_CULL depending on collectionEfficiency and random throw
+        // former SD:SURFACE_DETECT, now becomes EC:EFFICIENCY_COLLECT or EX:EFFICIENCY_CULL depending on
+        // collectionEfficiency and random throw
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if( ctx.pidx_debug )
-            printf("//qsim.propagate_at_surface_CustomART.BREAK.SD/SA EC/EX pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) u_theEfficiency  %8.4f theEfficiency %8.4f flag %d \n",
-                                                                    ctx.pidx, lpmtid, ATQC[0],ATQC[1], ATQC[2],ATQC[3],  u_theEfficiency,  theEfficiency, flag );
+        if (ctx.pidx_debug)
+            printf("//qsim.propagate_at_surface_CustomART.BREAK.SD/SA EC/EX pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f "
+                   "%8.4f %8.4f ) u_theEfficiency  %8.4f theEfficiency %8.4f flag %d \n",
+                   ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theEfficiency, theEfficiency, flag);
 #endif
-
     }
     else
     {
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if( ctx.pidx_debug )
-            printf("//qsim.propagate_at_surface_CustomART.CONTINUE pidx %7lld lpmtid %d ATQC ( %7.3f %7.3f %7.3f %7.3f ) theTransmittance %7.3f  \n",
-            ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], theTransmittance  );
+        if (ctx.pidx_debug)
+            printf("//qsim.propagate_at_surface_CustomART.CONTINUE pidx %7lld lpmtid %d ATQC ( %7.3f %7.3f %7.3f %7.3f "
+                   ") theTransmittance %7.3f  \n",
+                   ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], theTransmittance);
 #endif
 
-        propagate_at_boundary( flag, rng, ctx, theTransmittance  );
+        propagate_at_boundary(flag, rng, ctx, theTransmittance);
     }
-    return action ;
+    return action;
 }
 #endif
 
 #endif
 
-
-#if defined(__CUDACC__) || defined(__CUDABE__)  || defined(MOCK_CURAND) || defined(MOCK_CUDA)
+#if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
 
 /**
 qsim::reflect_diffuse cf G4OpBoundaryProcess::DoReflection
@@ -2045,41 +2016,39 @@ orient is used to flip the reflection normal back against the incident direction
 
 **/
 
-inline QSIM_METHOD void qsim::reflect_diffuse( RNG& rng, sctx& ctx )
+inline QSIM_METHOD void qsim::reflect_diffuse(RNG &rng, sctx &ctx)
 {
-    sphoton& p = ctx.p ;
+    sphoton &p = ctx.p;
 
-    float3 old_mom = p.mom ;
+    float3 old_mom = p.mom;
 
-    const float3* normal = ctx.prd->normal() ;    // geometrical outwards normal
+    const float3 *normal = ctx.prd->normal(); // geometrical outwards normal
 
-    //const float orient = -1.f ; // BUG : FIXED ORIENT FLIP CANNOT BE CORRECT
-    const float orient = dot( old_mom, *normal ) > 0.f ? -1.f : 1.f ;
+    // const float orient = -1.f ; // BUG : FIXED ORIENT FLIP CANNOT BE CORRECT
+    const float orient = dot(old_mom, *normal) > 0.f ? -1.f : 1.f;
 
-    lambertian_direction( &p.mom, normal, orient, rng, ctx );
+    lambertian_direction(&p.mom, normal, orient, rng, ctx);
 
-
-    float3 facet_normal = normalize( p.mom - old_mom );
-    const float EdotN = dot( p.pol, facet_normal );
-    p.pol = -1.f*(p.pol) + 2.f*EdotN*facet_normal ;
+    float3 facet_normal = normalize(p.mom - old_mom);
+    const float EdotN = dot(p.pol, facet_normal);
+    p.pol = -1.f * (p.pol) + 2.f * EdotN * facet_normal;
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.reflect_diffuse pidx %7lld : old_mom = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  old_mom.x, old_mom.y, old_mom.z ) ;
+        printf("//qsim.reflect_diffuse pidx %7lld : old_mom = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx, old_mom.x,
+               old_mom.y, old_mom.z);
 
-    printf("//qsim.reflect_diffuse pidx %7lld : normal0 = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  normal->x, normal->y, normal->z ) ;
+        printf("//qsim.reflect_diffuse pidx %7lld : normal0 = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx, normal->x,
+               normal->y, normal->z);
 
-    printf("//qsim.reflect_diffuse pidx %7lld : p.mom = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  p.mom.x, p.mom.y, p.mom.z ) ;
+        printf("//qsim.reflect_diffuse pidx %7lld : p.mom = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx, p.mom.x,
+               p.mom.y, p.mom.z);
 
-    printf("//qsim.reflect_diffuse pidx %7lld : facet_normal = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  facet_normal.x, facet_normal.y, facet_normal.z ) ;
+        printf("//qsim.reflect_diffuse pidx %7lld : facet_normal = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx,
+               facet_normal.x, facet_normal.y, facet_normal.z);
     }
 #endif
-
 }
 
 /**
@@ -2098,58 +2067,56 @@ to be helpful.
 
 **/
 
-inline QSIM_METHOD void qsim::reflect_specular( RNG& rng, sctx& ctx )
+inline QSIM_METHOD void qsim::reflect_specular(RNG &rng, sctx &ctx)
 {
-    sphoton& p = ctx.p ;
-    const float3* normal = ctx.prd->normal() ;
+    sphoton &p = ctx.p;
+    const float3 *normal = ctx.prd->normal();
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.reflect_specular.head pidx %7lld : normal0 = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  normal->x, normal->y, normal->z ) ;
+        printf("//qsim.reflect_specular.head pidx %7lld : normal0 = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx,
+               normal->x, normal->y, normal->z);
 
-    printf("//qsim.reflect_specular.head pidx %7lld : mom0 = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  p.mom.x, p.mom.y, p.mom.z ) ;
+        printf("//qsim.reflect_specular.head pidx %7lld : mom0 = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx,
+               p.mom.x, p.mom.y, p.mom.z);
 
-    printf("//qsim.reflect_specular.head pidx %7lld : pol0 = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  p.pol.x, p.pol.y, p.pol.z ) ;
+        printf("//qsim.reflect_specular.head pidx %7lld : pol0 = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx,
+               p.pol.x, p.pol.y, p.pol.z);
     }
 #endif
 
 #ifdef WITH_ORIENT
-    //const float orient = -1.f ;
-    const float orient = 1.f ;
+    // const float orient = -1.f ;
+    const float orient = 1.f;
     // because orient appears twice in the below p.mom p.pol calcs
     // it being +1.f or -1.f makes no difference
 
-    const float PdotN = dot( p.mom, *normal )*orient ;
-    p.mom = p.mom - 2.f*PdotN*(*normal)*orient ;
+    const float PdotN = dot(p.mom, *normal) * orient;
+    p.mom = p.mom - 2.f * PdotN * (*normal) * orient;
 
-    const float EdotN = dot( p.pol, *normal )*orient ;
-    p.pol = -1.f*(p.pol) + 2.f*EdotN*(*normal)*orient  ;
+    const float EdotN = dot(p.pol, *normal) * orient;
+    p.pol = -1.f * (p.pol) + 2.f * EdotN * (*normal) * orient;
 #else
     // removed orient as does not effect calc, hence confusing and pointless
-    const float PdotN = dot( p.mom, *normal ) ;
-    p.mom = p.mom - 2.f*PdotN*(*normal) ;
+    const float PdotN = dot(p.mom, *normal);
+    p.mom = p.mom - 2.f * PdotN * (*normal);
 
-    const float EdotN = dot( p.pol, *normal ) ;
-    p.pol = -1.f*(p.pol) + 2.f*EdotN*(*normal)  ;
+    const float EdotN = dot(p.pol, *normal);
+    p.pol = -1.f * (p.pol) + 2.f * EdotN * (*normal);
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(ctx.pidx == base->pidx)
+    if (ctx.pidx == base->pidx)
     {
-    printf("//qsim.reflect_specular.tail pidx %7lld : mom1 = np.array([%10.5f,%10.5f,%10.5f]) ; PdotN = %10.5f ; EdotN = %10.5f \n",
-        ctx.pidx,  p.mom.x, p.mom.y, p.mom.z, PdotN, EdotN  ) ;
+        printf("//qsim.reflect_specular.tail pidx %7lld : mom1 = np.array([%10.5f,%10.5f,%10.5f]) ; PdotN = %10.5f ; "
+               "EdotN = %10.5f \n",
+               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, PdotN, EdotN);
 
-    printf("//qsim.reflect_specular.tail pidx %7lld : pol1 = np.array([%10.5f,%10.5f,%10.5f]) \n",
-        ctx.pidx,  p.pol.x, p.pol.y, p.pol.z ) ;
-
+        printf("//qsim.reflect_specular.tail pidx %7lld : pol1 = np.array([%10.5f,%10.5f,%10.5f]) \n", ctx.pidx,
+               p.pol.x, p.pol.y, p.pol.z);
     }
 #endif
-
-
 }
 
 /**
@@ -2180,7 +2147,8 @@ Stages within bounce loop
 
 3. mutate photon and set flag using material properties
 
-  * note that photons that SAIL to boundary are mutated twice within the while loop (by propagate_to_boundary and propagate_at_boundary/surface)
+  * note that photons that SAIL to boundary are mutated twice within the while loop (by propagate_to_boundary and
+propagate_at_boundary/surface)
 
 Thoughts
 ~~~~~~~~~~~
@@ -2191,47 +2159,50 @@ so can switch them off easily in production running
 
 **/
 
-inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd, RNG& rng, unsigned long long idx )
+inline QSIM_METHOD void qsim::fake_propagate(sphoton &p, const quad2 *mock_prd, RNG &rng, unsigned long long idx)
 {
-    p.set_flag(TORCH);  // setting initial flag : in reality this should be done by generation
+    p.set_flag(TORCH); // setting initial flag : in reality this should be done by generation
 
-    qsim* sim = this ;
+    qsim *sim = this;
 
-    sctx ctx = {} ;
-    ctx.p = p ;     // Q: Why is this different from CSGOptiX7.cu:simulate ? A: Presumably due to input photon.
-    ctx.evt = evt ;
-    ctx.pidx = idx ;
+    sctx ctx = {};
+    ctx.p = p; // Q: Why is this different from CSGOptiX7.cu:simulate ? A: Presumably due to input photon.
+    ctx.evt = evt;
+    ctx.pidx = idx;
 
-    int command = START ;
-    int bounce = 0 ;
+    int command = START;
+    int bounce = 0;
 #ifndef PRODUCTION
     ctx.point(bounce);
 #endif
 
-    while( bounce < evt->max_bounce )
+    while (bounce < evt->max_bounce)
     {
-        ctx.prd = mock_prd + (evt->max_bounce*idx+bounce) ;
-        if( ctx.prd->boundary() == 0xffffu ) break ;   // SHOULD NEVER HAPPEN : propagate can do nothing meaningful without a boundary
+        ctx.prd = mock_prd + (evt->max_bounce * idx + bounce);
+        if (ctx.prd->boundary() == 0xffffu)
+            break; // SHOULD NEVER HAPPEN : propagate can do nothing meaningful without a boundary
 #ifndef PRODUCTION
         ctx.trace(bounce);
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if(idx == base->pidx)
-        printf("//qsim.fake_propagate pidx %7lld bounce %d evt.max_bounce %d prd.q0.f.xyzw (%10.4f %10.4f %10.4f %10.4f) \n",
-             idx, bounce, evt->max_bounce, ctx.prd->q0.f.x, ctx.prd->q0.f.y, ctx.prd->q0.f.z, ctx.prd->q0.f.w );
+        if (idx == base->pidx)
+            printf("//qsim.fake_propagate pidx %7lld bounce %d evt.max_bounce %d prd.q0.f.xyzw (%10.4f %10.4f %10.4f "
+                   "%10.4f) \n",
+                   idx, bounce, evt->max_bounce, ctx.prd->q0.f.x, ctx.prd->q0.f.y, ctx.prd->q0.f.z, ctx.prd->q0.f.w);
 #endif
-        command = sim->propagate(bounce, rng, ctx );
+        command = sim->propagate(bounce, rng, ctx);
         bounce++;
 #ifndef PRODUCTION
         ctx.point(bounce);
 #endif
-        if(command == BREAK) break ;
+        if (command == BREAK)
+            break;
     }
 #ifndef PRODUCTION
     ctx.end();
 #endif
-    evt->photon[idx] = ctx.p ;
+    evt->photon[idx] = ctx.p;
 }
 
 /**
@@ -2286,43 +2257,44 @@ Prior to supporting special surfaces, within the command == BOUNDARY used::
 
 **/
 
-inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  // ::simulate
+inline QSIM_METHOD int qsim::propagate(const int bounce, RNG &rng, sctx &ctx) // ::simulate
 {
-    const unsigned boundary = ctx.prd->boundary() ;
-    const unsigned identity = ctx.prd->identity() ; // sensor_identifier+1, 0:not-a-sensor
-    const unsigned iindex = ctx.prd->iindex() ;
-    const float lposcost = ctx.prd->lposcost() ;  // local frame intersect position cosine theta
+    const unsigned boundary = ctx.prd->boundary();
+    const unsigned identity = ctx.prd->identity(); // sensor_identifier+1, 0:not-a-sensor
+    const unsigned iindex = ctx.prd->iindex();
+    const float lposcost = ctx.prd->lposcost(); // local frame intersect position cosine theta
 
-    const float3* normal = ctx.prd->normal();
-    float cosTheta = dot(ctx.p.mom, *normal ) ;
+    const float3 *normal = ctx.prd->normal();
+    float cosTheta = dot(ctx.p.mom, *normal);
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx == base->pidx )
+    if (ctx.pidx == base->pidx)
     {
-    printf("\n//qsim.propagate.head pidx %7lld : ctx.evt.index %d evt.index %d \n", ctx.pidx, ctx.evt->index, evt->index );
+        printf("\n//qsim.propagate.head pidx %7lld : ctx.evt.index %d evt.index %d \n", ctx.pidx, ctx.evt->index,
+               evt->index);
 
-    printf("\n//qsim.propagate.head pidx %7lld : bnc %d boundary %d cosTheta %10.8f \n", ctx.pidx, bounce, boundary, cosTheta );
+        printf("\n//qsim.propagate.head pidx %7lld : bnc %d boundary %d cosTheta %10.8f \n", ctx.pidx, bounce, boundary,
+               cosTheta);
 
-    printf("//qsim.propagate.head pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = %10.8f  \n",
-                 ctx.pidx, ctx.p.mom.x, ctx.p.mom.y, ctx.p.mom.z, length(ctx.p.mom) ) ;
+        printf("//qsim.propagate.head pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = %10.8f  \n",
+               ctx.pidx, ctx.p.mom.x, ctx.p.mom.y, ctx.p.mom.z, length(ctx.p.mom));
 
-    printf("//qsim.propagate.head pidx %7lld : pos = np.array([%10.5f,%10.5f,%10.5f]) ; lpos = %10.8f \n",
-                 ctx.pidx, ctx.p.pos.x, ctx.p.pos.y, ctx.p.pos.z, length(ctx.p.pos) ) ;
+        printf("//qsim.propagate.head pidx %7lld : pos = np.array([%10.5f,%10.5f,%10.5f]) ; lpos = %10.8f \n", ctx.pidx,
+               ctx.p.pos.x, ctx.p.pos.y, ctx.p.pos.z, length(ctx.p.pos));
 
-    printf("//qsim.propagate.head pidx %7lld : nrm = np.array([(%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f  \n",
-                 ctx.pidx, normal->x, normal->y, normal->z, length(*normal) );
-
+        printf("//qsim.propagate.head pidx %7lld : nrm = np.array([(%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f  \n",
+               ctx.pidx, normal->x, normal->y, normal->z, length(*normal));
     }
 #endif
 
     // copy geometry info into the sphoton struct
-    ctx.p.set_prd(boundary, identity, cosTheta, iindex );  // HMM: lposcost not passed along
+    ctx.p.set_prd(boundary, identity, cosTheta, iindex); // HMM: lposcost not passed along
 
-    bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.pidx, base->pidx );
+    bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.pidx, base->pidx);
 
-    unsigned flag = 0 ;
+    unsigned flag = 0;
 
-    int command = propagate_to_boundary( flag, rng, ctx );
+    int command = propagate_to_boundary(flag, rng, ctx);
     /**
     command possibilities:
 
@@ -2333,52 +2305,55 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
     **/
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx == base->pidx )
-    printf("//qsim.propagate.body pidx %7lld bounce %d command %d flag %d s.optical.x %d s.optical.y %d \n",
-          ctx.pidx, bounce, command, flag, ctx.s.optical.x, ctx.s.optical.y );
+    if (ctx.pidx == base->pidx)
+        printf("//qsim.propagate.body pidx %7lld bounce %d command %d flag %d s.optical.x %d s.optical.y %d \n",
+               ctx.pidx, bounce, command, flag, ctx.s.optical.x, ctx.s.optical.y);
 #endif
 
-    if( command == BOUNDARY )
+    if (command == BOUNDARY)
     {
-        const int& ems = ctx.s.optical.y ;
+        const int &ems = ctx.s.optical.y;
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if( ctx.pidx == base->pidx )
+        if (ctx.pidx == base->pidx)
         {
 #if defined(WITH_CUSTOM4)
-            printf("//qsim.propagate.body.WITH_CUSTOM4 pidx %7lld  BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems, lposcost );
+            printf("//qsim.propagate.body.WITH_CUSTOM4 pidx %7lld  BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems,
+                   lposcost);
 #else
-            printf("//qsim.propagate.body.NOT:WITH_CUSTOM4 pidx %7lld BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems, lposcost);
+            printf("//qsim.propagate.body.NOT:WITH_CUSTOM4 pidx %7lld BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems,
+                   lposcost);
 #endif
         }
 #endif
 
-        if( ems == smatsur_NoSurface )
+        if (ems == smatsur_NoSurface)
         {
-            command = propagate_at_boundary( flag, rng, ctx ) ;
+            command = propagate_at_boundary(flag, rng, ctx);
         }
-        else if( ems == smatsur_Surface )
+        else if (ems == smatsur_Surface)
         {
-            command = propagate_at_surface( flag, rng, ctx ) ;
+            command = propagate_at_surface(flag, rng, ctx);
         }
-        else if( lposcost < 0.f )  // could combine with prior, but handy for debug to keep separate
+        else if (lposcost < 0.f) // could combine with prior, but handy for debug to keep separate
         {
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-            if( ctx.pidx == base->pidx )
+            if (ctx.pidx == base->pidx)
                 printf("//qsim.propagate.body (lposcost < 0.f) pidx %7lld bounce %d command %d flag %d ems %d \n",
-                ctx.pidx, bounce, command, flag, ems  );
+                       ctx.pidx, bounce, command, flag, ems);
 #endif
-            command = propagate_at_surface( flag, rng, ctx ) ;
+            command = propagate_at_surface(flag, rng, ctx);
         }
-        else if( ems == smatsur_Surface_zplus_sensor_A )
+        else if (ems == smatsur_Surface_zplus_sensor_A)
         {
-            command = propagate_at_surface_Detect( flag, rng, ctx ) ;
+            command = propagate_at_surface_Detect(flag, rng, ctx);
         }
-        else if( ems == smatsur_Surface_zplus_sensor_CustomART )
+        else if (ems == smatsur_Surface_zplus_sensor_CustomART)
         {
 #if defined(WITH_CUSTOM4)
-            command = propagate_at_surface_CustomART( flag, rng, ctx ) ;
-            //command = base->custom_lut == 0u ? propagate_at_surface_CustomART( flag, rng, ctx ) : propagate_at_surface_MultiFilm(flag, rng, ctx );
+            command = propagate_at_surface_CustomART(flag, rng, ctx);
+            // command = base->custom_lut == 0u ? propagate_at_surface_CustomART( flag, rng, ctx ) :
+            // propagate_at_surface_MultiFilm(flag, rng, ctx );
 
 #endif
         }
@@ -2387,14 +2362,13 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
     // Q: Does flag need to be single bit at this point OR can multiple "flags" be OR-ed together here ?
     // A: Decided to keep the flag as single bitted, and directly set EFFICENCY_COLLECT/CULL into ctx.p.flagmask
 
-
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx == base->pidx )
-    printf("//qsim.propagate.tail pidx %7lld bounce %d command %d flag %d ctx.s.optical.y(ems) %d \n",
-             ctx.pidx, bounce, command, flag, ctx.s.optical.y  );
+    if (ctx.pidx == base->pidx)
+        printf("//qsim.propagate.tail pidx %7lld bounce %d command %d flag %d ctx.s.optical.y(ems) %d \n", ctx.pidx,
+               bounce, command, flag, ctx.s.optical.y);
 #endif
 
-    return command ;
+    return command;
 }
 /**
 Q: Where does ctx.s.optical come from ?
@@ -2409,8 +2383,6 @@ A: YES, but non-trivially and probably confusingly. This is because
    ordinary NoSurface must be possible no matter the lposcost value.
 
 **/
-
-
 
 /**
 qsim::hemisphere_polarized
@@ -2449,47 +2421,54 @@ inwards.
 
 **/
 
-inline QSIM_METHOD void qsim::hemisphere_polarized( unsigned polz, bool inwards, RNG& rng, sctx& ctx )
+inline QSIM_METHOD void qsim::hemisphere_polarized(unsigned polz, bool inwards, RNG &rng, sctx &ctx)
 {
-    sphoton& p = ctx.p ;
-    const float3* normal = ctx.prd->normal() ;
+    sphoton &p = ctx.p;
+    const float3 *normal = ctx.prd->normal();
 
-    //printf("//qsim.hemisphere_polarized polz %d normal (%10.4f, %10.4f, %10.4f) \n", polz, normal->x, normal->y, normal->z );
+    // printf("//qsim.hemisphere_polarized polz %d normal (%10.4f, %10.4f, %10.4f) \n", polz, normal->x, normal->y,
+    // normal->z );
 
-    float u_hemipol_phi = curand_uniform(&rng) ;
-    float phi = u_hemipol_phi*2.f*M_PIf;  // 0->2pi
-    float cosTheta = curand_uniform(&rng) ;      // 0->1
+    float u_hemipol_phi = curand_uniform(&rng);
+    float phi = u_hemipol_phi * 2.f * M_PIf; // 0->2pi
+    float cosTheta = curand_uniform(&rng);   // 0->1
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    stagr& tagr = ctx.tagr ;
-    tagr.add( stag_hp_ph, u_hemipol_phi );
-    tagr.add( stag_hp_ph, cosTheta );    // trying to reduce stag::BITS from 5 to 4, so change stag_hp_ct to stag_hp_ph
+    stagr &tagr = ctx.tagr;
+    tagr.add(stag_hp_ph, u_hemipol_phi);
+    tagr.add(stag_hp_ph, cosTheta); // trying to reduce stag::BITS from 5 to 4, so change stag_hp_ct to stag_hp_ph
 #endif
 
-    float sinTheta = sqrtf(1.f-cosTheta*cosTheta);
+    float sinTheta = sqrtf(1.f - cosTheta * cosTheta);
 
-    p.mom.x = cosf(phi)*sinTheta ;
-    p.mom.y = sinf(phi)*sinTheta ;
-    p.mom.z = cosTheta ;
+    p.mom.x = cosf(phi) * sinTheta;
+    p.mom.y = sinf(phi) * sinTheta;
+    p.mom.z = cosTheta;
 
-    smath::rotateUz( p.mom, (*normal) * ( inwards ? -1.f : 1.f ));
+    smath::rotateUz(p.mom, (*normal) * (inwards ? -1.f : 1.f));
 
-    //printf("//qsim.hemisphere_polarized polz %d p.mom (%10.4f, %10.4f, %10.4f) \n", polz, p.mom.x, p.mom.y, p.mom.z );
+    // printf("//qsim.hemisphere_polarized polz %d p.mom (%10.4f, %10.4f, %10.4f) \n", polz, p.mom.x, p.mom.y, p.mom.z
+    // );
 
     // what about normal incidence ?
-    const float3 transverse = normalize(cross(p.mom, (*normal) * ( inwards ? -1.f : 1.f )  )) ; // perpendicular to plane of incidence
-    const float3 within = normalize( cross(p.mom, transverse) );  //   within plane of incidence and perpendicular to direction
+    const float3 transverse =
+        normalize(cross(p.mom, (*normal) * (inwards ? -1.f : 1.f))); // perpendicular to plane of incidence
+    const float3 within =
+        normalize(cross(p.mom, transverse)); //   within plane of incidence and perpendicular to direction
 
-    switch(polz)
+    switch (polz)
     {
-        case 0: p.pol = transverse ; break ;   // S-polarizatiom
-        case 1: p.pol = within     ; break ;   // P-polarization
-        case 2: p.pol = normalize( 0.5f*transverse + (1.f-0.5f)*within )  ; break ;  // equal admixture
+    case 0:
+        p.pol = transverse;
+        break; // S-polarizatiom
+    case 1:
+        p.pol = within;
+        break; // P-polarization
+    case 2:
+        p.pol = normalize(0.5f * transverse + (1.f - 0.5f) * within);
+        break; // equal admixture
     }
 }
-
-
-
 
 /**
 qsim::generate_photon_simtrace
@@ -2517,68 +2496,96 @@ SEE : sevent::add_simtrace
 
 **/
 
-inline QSIM_METHOD void qsim::generate_photon_simtrace(quad4& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const
+inline QSIM_METHOD void qsim::generate_photon_simtrace(quad4 &p, RNG &rng, const quad6 &gs,
+                                                       unsigned long long photon_id, unsigned genstep_id) const
 {
-    const int& gencode = gs.q0.i.x ;
-    switch(gencode)
+    const int &gencode = gs.q0.i.x;
+    switch (gencode)
     {
-        case OpticksGenstep_FRAME:                   generate_photon_simtrace_frame(p, rng, gs, photon_id, genstep_id ); break ;
-        case OpticksGenstep_INPUT_PHOTON_SIMTRACE:   { p = (quad4&)evt->simtrace[photon_id] ; }                          ; break ;
+    case OpticksGenstep_FRAME:
+        generate_photon_simtrace_frame(p, rng, gs, photon_id, genstep_id);
+        break;
+    case OpticksGenstep_INPUT_PHOTON_SIMTRACE: {
+        p = (quad4 &)evt->simtrace[photon_id];
+    };
+    break;
     }
 }
 
-inline QSIM_METHOD void qsim::generate_photon_simtrace_frame(quad4& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const
+inline QSIM_METHOD void qsim::generate_photon_simtrace_frame(quad4 &p, RNG &rng, const quad6 &gs,
+                                                             unsigned long long photon_id, unsigned genstep_id) const
 {
-    C4U gsid ;
+    C4U gsid;
 
-    //int gencode          = gs.q0.i.x ;
-    int gridaxes           = gs.q0.i.y ;  // { XYZ, YZ, XZ, XY }
-    gsid.u                 = gs.q0.i.z ;
-    //unsigned num_photons = gs.q0.u.w ;
+    // int gencode          = gs.q0.i.x ;
+    int gridaxes = gs.q0.i.y; // { XYZ, YZ, XZ, XY }
+    gsid.u = gs.q0.i.z;
+    // unsigned num_photons = gs.q0.u.w ;
 
-    p.q0.f.x = gs.q1.f.x ;   // start with genstep local frame position, typically origin  (0,0,0)
-    p.q0.f.y = gs.q1.f.y ;
-    p.q0.f.z = gs.q1.f.z ;
-    p.q0.f.w = 1.f ;
+    p.q0.f.x = gs.q1.f.x; // start with genstep local frame position, typically origin  (0,0,0)
+    p.q0.f.y = gs.q1.f.y;
+    p.q0.f.z = gs.q1.f.z;
+    p.q0.f.w = 1.f;
 
-    //printf("//qsim.generate_photon_simtrace_frame gridaxes %d gs.q1 (%10.4f %10.4f %10.4f %10.4f) \n", gridaxes, gs.q1.f.x, gs.q1.f.y, gs.q1.f.z, gs.q1.f.w );
+    // printf("//qsim.generate_photon_simtrace_frame gridaxes %d gs.q1 (%10.4f %10.4f %10.4f %10.4f) \n", gridaxes,
+    // gs.q1.f.x, gs.q1.f.y, gs.q1.f.z, gs.q1.f.w );
 
     float u0 = curand_uniform(&rng);
     float sinPhi, cosPhi;
 #if defined(MOCK_CURAND) || defined(MOCK_CUDA)
-    __sincosf(2.f*M_PIf*u0,&sinPhi,&cosPhi);
+    __sincosf(2.f * M_PIf * u0, &sinPhi, &cosPhi);
 #else
-    sincosf(2.f*M_PIf*u0,&sinPhi,&cosPhi);
+    sincosf(2.f * M_PIf * u0, &sinPhi, &cosPhi);
 #endif
 
     float u1 = curand_uniform(&rng);
-    float cosTheta = 2.f*u1 - 1.f ;
-    float sinTheta = sqrtf(1.f-cosTheta*cosTheta) ;
+    float cosTheta = 2.f * u1 - 1.f;
+    float sinTheta = sqrtf(1.f - cosTheta * cosTheta);
 
-    //printf("//qsim.generate_photon_simtrace_frame u0 %10.4f sinPhi   %10.4f cosPhi   %10.4f \n", u0, sinPhi, cosPhi );
-    //printf("//qsim.generate_photon_simtrace_frame u1 %10.4f sinTheta %10.4f cosTheta %10.4f \n", u1, sinTheta, cosTheta );
-    //printf("//qsim.generate_photon_simtrace_frame  u0 %10.4f sinPhi   %10.4f cosPhi   %10.4f u1 %10.4f sinTheta %10.4f cosTheta %10.4f \n",  u0, sinPhi, cosPhi, u1, sinTheta, cosTheta );
+    // printf("//qsim.generate_photon_simtrace_frame u0 %10.4f sinPhi   %10.4f cosPhi   %10.4f \n", u0, sinPhi, cosPhi
+    // ); printf("//qsim.generate_photon_simtrace_frame u1 %10.4f sinTheta %10.4f cosTheta %10.4f \n", u1, sinTheta,
+    // cosTheta ); printf("//qsim.generate_photon_simtrace_frame  u0 %10.4f sinPhi   %10.4f cosPhi   %10.4f u1 %10.4f
+    // sinTheta %10.4f cosTheta %10.4f \n",  u0, sinPhi, cosPhi, u1, sinTheta, cosTheta );
 
-    switch( gridaxes )
+    switch (gridaxes)
     {
-        case YZ:  { p.q1.f.x = 0.f    ;  p.q1.f.y = cosPhi ;  p.q1.f.z = sinPhi ;  p.q1.f.w = 0.f ; } ; break ;
-        case XZ:  { p.q1.f.x = cosPhi ;  p.q1.f.y = 0.f    ;  p.q1.f.z = sinPhi ;  p.q1.f.w = 0.f ; } ; break ;
-        case XY:  { p.q1.f.x = cosPhi ;  p.q1.f.y = sinPhi ;  p.q1.f.z = 0.f    ;  p.q1.f.w = 0.f ; } ; break ;
-        case XYZ: { p.q1.f.x = sinTheta*cosPhi ;
-                    p.q1.f.y = sinTheta*sinPhi ;
-                    p.q1.f.z = cosTheta        ;
-                    p.q1.f.w = 0.f ; } ; break ;   // previously used XZ
+    case YZ: {
+        p.q1.f.x = 0.f;
+        p.q1.f.y = cosPhi;
+        p.q1.f.z = sinPhi;
+        p.q1.f.w = 0.f;
+    };
+    break;
+    case XZ: {
+        p.q1.f.x = cosPhi;
+        p.q1.f.y = 0.f;
+        p.q1.f.z = sinPhi;
+        p.q1.f.w = 0.f;
+    };
+    break;
+    case XY: {
+        p.q1.f.x = cosPhi;
+        p.q1.f.y = sinPhi;
+        p.q1.f.z = 0.f;
+        p.q1.f.w = 0.f;
+    };
+    break;
+    case XYZ: {
+        p.q1.f.x = sinTheta * cosPhi;
+        p.q1.f.y = sinTheta * sinPhi;
+        p.q1.f.z = cosTheta;
+        p.q1.f.w = 0.f;
+    };
+    break; // previously used XZ
     }
 
+    qat4 qt(gs);                            // copy 4x4 transform from last 4 quads of genstep
+    qt.right_multiply_inplace(p.q0.f, 1.f); // position
+    qt.right_multiply_inplace(p.q1.f, 0.f); // direction
 
-    qat4 qt(gs) ; // copy 4x4 transform from last 4 quads of genstep
-    qt.right_multiply_inplace( p.q0.f, 1.f );   // position
-    qt.right_multiply_inplace( p.q1.f, 0.f );   // direction
-
-
-    unsigned char ucj = (photon_id < 255 ? photon_id : 255 ) ;
-    gsid.c4.w = ucj ;
-    p.q3.u.w = gsid.u ;   // WARNING : THIS GSID LOOKS TO BE STOMPED ON BY sevent::add_simtrace
+    unsigned char ucj = (photon_id < 255 ? photon_id : 255);
+    gsid.c4.w = ucj;
+    p.q3.u.w = gsid.u; // WARNING : THIS GSID LOOKS TO BE STOMPED ON BY sevent::add_simtrace
 }
 
 /**
@@ -2589,26 +2596,38 @@ Moved non-standard center-extent (aka frame) gensteps to use qsim::generate_phot
 
 **/
 
-inline QSIM_METHOD void qsim::generate_photon(sphoton& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const
+inline QSIM_METHOD void qsim::generate_photon(sphoton &p, RNG &rng, const quad6 &gs, unsigned long long photon_id,
+                                              unsigned genstep_id) const
 {
-    const int& gencode = gs.q0.i.x ;
-    switch(gencode)
+    const int &gencode = gs.q0.i.x;
+    switch (gencode)
     {
-        case OpticksGenstep_CARRIER:         scarrier::generate(     p, rng, gs, photon_id, genstep_id)  ; break ;
-        case OpticksGenstep_TORCH:           storch::generate(       p, rng, gs, photon_id, genstep_id ) ; break ;
+    case OpticksGenstep_CARRIER:
+        scarrier::generate(p, rng, gs, photon_id, genstep_id);
+        break;
+    case OpticksGenstep_TORCH:
+        storch::generate(p, rng, gs, photon_id, genstep_id);
+        break;
 
-        case OpticksGenstep_G4Cerenkov_modified:
-        case OpticksGenstep_CERENKOV:
-                                              cerenkov->generate(    p, rng, gs, photon_id, genstep_id ) ; break ;
+    case OpticksGenstep_G4Cerenkov_modified:
+    case OpticksGenstep_CERENKOV:
+        cerenkov->generate(p, rng, gs, photon_id, genstep_id);
+        break;
 
-        case OpticksGenstep_DsG4Scintillation_r4695:
-        case OpticksGenstep_SCINTILLATION:
-                                              scint->generate(        p, rng, gs, photon_id, genstep_id ) ; break ;
+    case OpticksGenstep_DsG4Scintillation_r4695:
+    case OpticksGenstep_SCINTILLATION:
+        scint->generate(p, rng, gs, photon_id, genstep_id);
+        break;
 
-        case OpticksGenstep_INPUT_PHOTON:    { p = evt->photon[photon_id] ; p.set_flag(TORCH) ; }        ; break ;
-        default:                             generate_photon_dummy(  p, rng, gs, photon_id, genstep_id)  ; break ;
+    case OpticksGenstep_INPUT_PHOTON: {
+        p = evt->photon[photon_id];
+        p.set_flag(TORCH);
+    };
+    break;
+    default:
+        generate_photon_dummy(p, rng, gs, photon_id, genstep_id);
+        break;
     }
-    p.set_index(photon_id) ;
+    p.set_index(photon_id);
 }
 #endif
-
