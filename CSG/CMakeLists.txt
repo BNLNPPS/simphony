@@ -112,6 +112,7 @@ add_library( ${name} ${SOURCES} )
 target_compile_definitions( ${name} PUBLIC OPTICKS_CSG )
 target_compile_definitions( ${name} PUBLIC WITH_CONTIGUOUS )
 target_compile_definitions( ${name} PUBLIC WITH_S_BB )
+target_compile_definitions( ${name} PRIVATE GLM_ENABLE_EXPERIMENTAL )
 
 target_include_directories(${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

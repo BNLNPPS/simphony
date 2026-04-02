@@ -1,4 +1,13 @@
 {
   "name": "eic-opticks (codespace)",
-  "image": "ghcr.io/bnlnpps/eic-opticks:base"
+  "image": "ghcr.io/bnlnpps/eic-opticks:base",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "openai.chatgpt"
+      ]
+    }
+  }
 }

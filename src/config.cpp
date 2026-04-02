@@ -1,6 +1,6 @@
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
@@ -18,12 +18,39 @@ namespace gphox {
 
 using namespace std;
 
+constexpr const char *GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
+
+bool FileExists(const std::string &path)
+{
+    if (path.empty())
+        return false;
+    std::error_code ec;
+    return std::filesystem::exists(path, ec) && !ec;
+}
+
 Config::Config(std::string config_name) :
   name{std::getenv("GPHOX_CONFIG") ? std::getenv("GPHOX_CONFIG") : config_name}
 {
   ReadConfig(Locate(name + ".json"));
 }
 
+std::string Config::PtxPath(const std::string &ptx_name)
+{
+    const char *env_path = std::getenv(GPHOX_PTX_PATH_ENV);
+    if (env_path && FileExists(env_path))
+        return env_path;
+
+    std::string default_path = std::string(GPHOX_PTX_DIR) + "/" + ptx_name;
+    if (FileExists(default_path))
+        return default_path;
+
+    std::stringstream errmsg;
+    errmsg << "Could not resolve PTX file \"" << ptx_name << "\".\n"
+           << "Expected one of:\n"
+           << "  - " << GPHOX_PTX_PATH_ENV << "=<path-to-ptx>\n"
+           << "  - " << default_path;
+    throw std::runtime_error(errmsg.str());
+}
 
 std::string Config::Locate(std::string filename) const
 {

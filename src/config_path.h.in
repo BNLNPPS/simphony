@@ -1,3 +1,4 @@
 #pragma once
 
 #define GPHOX_CONFIG_SEARCH_PATHS ".:config:@GPHOX_INSTALL_FULL_DATADIR@/config"
+#define GPHOX_PTX_DIR "@CMAKE_INSTALL_FULL_LIBDIR@"

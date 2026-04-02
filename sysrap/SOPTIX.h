@@ -13,6 +13,7 @@ SOPTIX__HANDLE
 **/
 
 #include "ssys.h"
+#include "config.h"
 #include "SOPTIX_Context.h"
 #include "SOPTIX_Desc.h"
 #include "SOPTIX_MeshGroup.h"
@@ -33,8 +34,7 @@ struct SOPTIX
 
     int             irc ;
     SGLM&           gm  ;
-    const char*     _optixpath ;
-    const char*     optixpath ;
+    std::string     optixpath;
 
     SOPTIX_Context  ctx ;
     SOPTIX_Options  opt ;
@@ -75,15 +75,8 @@ inline SOPTIX::SOPTIX(SGLM& _gm)
     :
     irc(Initialize()),
     gm(_gm),
-#ifdef CONFIG_Debug
-    _optixpath("${SOPTIX__optixpath:-$OPTICKS_PREFIX/optix/objects-Debug/SysRap_OPTIX/SOPTIX.ptx}"),
-#elif CONFIG_Release
-    _optixpath("${SOPTIX__optixpath:-$OPTICKS_PREFIX/optix/objects-Release/SysRap_OPTIX/SOPTIX.ptx}"),
-#else
-    _optixpath(nullptr),
-#endif
-    optixpath(_optixpath ? spath::Resolve(_optixpath) : nullptr),
-    mod(ctx.context, opt, optixpath ),
+    optixpath(gphox::Config::PtxPath("SOPTIX.ptx")),
+    mod(ctx.context, opt, optixpath.c_str()),
     pip(ctx.context, mod.module, opt ),
     scn(&ctx, gm.scene ),
     sbt(pip, scn ),
@@ -174,8 +167,7 @@ inline std::string SOPTIX::desc() const
     std::stringstream ss ;
     ss
         << "[SOPTIX::desc\n"
-        << " _optixpath [" << ( _optixpath ? _optixpath : "-" ) << "]\n"
-        << " optixpath  [" << ( optixpath ? optixpath : "-" ) << "]\n"
+        << " optixpath  [" << optixpath << "]\n"
         << " [" << __HANDLE << "] " << HANDLE << "\n"
         << "]SOPTIX::desc\n"
         ;

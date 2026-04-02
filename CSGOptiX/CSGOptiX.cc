@@ -81,6 +81,7 @@ HMM: looking like getting qudarap/qsim.h to work with OptiX < 7 is more effort t
 // CSGOptiX
 #include "Frame.h"
 #include "Params.h"
+#include "config.h"
 
 #if OPTIX_VERSION < 70000
 #include "Six.h"
@@ -437,14 +438,8 @@ CSGOptiX::CSGOptiX(const CSGFoundry* foundry_)
     flight(SGeoConfig::FlightConfig()),
     foundry(foundry_),
     outdir(SEventConfig::OutFold()),
-#ifdef CONFIG_Debug
-    _optixpath("${CSGOptiX__optixpath:-$OPTICKS_PREFIX/optix/objects-Debug/CSGOptiX_OPTIX/CSGOptiX7.ptx}"),
-#elif CONFIG_Release
-    _optixpath("${CSGOptiX__optixpath:-$OPTICKS_PREFIX/optix/objects-Release/CSGOptiX_OPTIX/CSGOptiX7.ptx}"),
-#else
-    _optixpath(nullptr),
-#endif
-    optixpath(_optixpath ? spath::Resolve(_optixpath) : nullptr),
+    _optixpath(std::getenv("CSGOptiX__optixpath")),
+    optixpath(spath::Resolve(gphox::Config::PtxPath("CSGOptiX7.ptx").c_str())),
     tmin_model(ssys::getenvfloat("TMIN",0.1)),    // CAUTION: tmin very different in rendering and simulation
     kernel_count(0),
     raygenmode(SEventConfig::RGMode()),

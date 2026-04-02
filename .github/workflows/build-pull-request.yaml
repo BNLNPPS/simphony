@@ -78,3 +78,4 @@ jobs:
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_simg4ox.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPURaytrace.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonFileSource.sh
+          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonSource_8x8SiPM.sh

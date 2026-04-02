@@ -5,6 +5,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(plog REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
@@ -15,11 +16,9 @@ message(STATUS "${name} Custom4_FOUND:${Custom4_FOUND}  " )
 
 set(WITH_SLOG YES)
 
-
-set(SYSRAP_GENERATED_HEADER  "sconfig.h")
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-configure_file( ${SYSRAP_GENERATED_HEADER}.in inc/${SYSRAP_GENERATED_HEADER} )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/${SYSRAP_GENERATED_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+configure_file(sconfig.h.in inc/sconfig.h)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/sconfig.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
 set(SOURCES
     SYSRAP_LOG.cc 
@@ -616,6 +615,7 @@ target_link_libraries(${name}
     CUDA::cudart
     GLEW::GLEW
     glfw
+    glm::glm
     OpenSSL::SSL
     OpenSSL::Crypto
 )
@@ -683,8 +683,8 @@ target_compile_definitions( ${name}
       $<$<CONFIG:MinSizeRel>:CONFIG_MinSizeRel>
 
       OPTICKS_SYSRAP 
+      GLM_ENABLE_EXPERIMENTAL
       WITH_CHILD
-      WITH_CUDA
       PLOG_LOCAL
       RNG_PHILOX
 

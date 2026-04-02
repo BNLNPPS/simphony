@@ -1,0 +1,30 @@
+{
+  "torch": {
+    "gentype": "TORCH",
+    "trackid": 0,
+    "matline": 0,
+    "numphoton": 1000,
+
+    "pos": [-8.7, -8.7, 4.0],
+    "time": 0.0,
+
+    "mom": [0.0, 0.0, 1.0],
+    "weight": 0.0,
+
+    "pol": [1.0, 0.0, 0.0],
+    "wavelength": 420.0,
+
+    "zenith":  [0.0, 1.0],
+    "azimuth": [0.0, 1.0],
+
+    "radius": 0.5,
+    "distance": 0.0,
+    "mode": 255,
+    "type": "disc"
+  },
+
+  "event": {
+    "mode": "Minimal",
+    "maxslot": 1000000
+  }
+}

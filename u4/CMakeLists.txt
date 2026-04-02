@@ -144,6 +144,7 @@ target_include_directories( ${name} PUBLIC
 )
 
 target_compile_definitions( ${name} PUBLIC OPTICKS_U4 ) # THIS MUST BE PUBLIC FOR SLOG-ING TO WORK FULLY
+target_compile_definitions( ${name} PUBLIC GLM_ENABLE_EXPERIMENTAL )
 
 target_compile_definitions( ${name} PRIVATE G4USE_STD11 )
 target_compile_definitions( ${name} PRIVATE STANDALONE )

@@ -52,9 +52,17 @@ jobs:
            docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           target: ${{ matrix.target }}
           cache-from: type=local,src=/home/runner/.buildx-cache
-          cache-to: type=local,dest=/home/runner/.buildx-cache,mode=max
+          cache-to: type=local,dest=/home/runner/.buildx-cache-new,mode=max
 
-  build-push-cleanup:
+      - name: Move cache
+        # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
+        run: |
+          rm -rf /home/runner/.buildx-cache
+          mv /home/runner/.buildx-cache-new /home/runner/.buildx-cache
+
+  cleanup:
     runs-on: ubuntu-latest
     needs: build-push
     steps:

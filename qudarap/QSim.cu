@@ -648,6 +648,7 @@ extern void QSim_photon_launch(dim3 numBlocks, dim3 threadsPerBlock, qsim* sim, 
 }
 
 
+#if !defined(PRODUCTION)
 /**
 _QSim_fake_propagate
 -----------------------
@@ -686,8 +687,7 @@ extern void QSim_fake_propagate_launch(dim3 numBlocks, dim3 threadsPerBlock, qsi
     _QSim_fake_propagate<<<numBlocks,threadsPerBlock>>>( sim, prd );
 }
 
-
-
+#endif
 
 __global__ void _QSim_boundary_lookup_all(qsim* sim, quad* lookup, unsigned width, unsigned height )
 {

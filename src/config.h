@@ -19,6 +19,8 @@ class Config
 
   Config(std::string config_name = "dev");
 
+  static std::string PtxPath(const std::string &ptx_name = "CSGOptiX7.ptx");
+
   /// A unique name associated with this Config
   std::string name;
 

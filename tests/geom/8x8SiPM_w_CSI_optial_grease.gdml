@@ -3,32 +3,45 @@
       xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
 
   <define>
-    <!-- Constants -->
-    <constant name="pixel_width" value="2.0"/>
+    <!-- Loop variables -->
+    <variable name="i" value="0"/>
+    <variable name="j" value="0"/>
+    
     <constant name="reflector_thickness" value="0.2"/>
-    <constant name="pitch" value="2.2"/>
+    <constant name="pixel_width" value="2.0"/>
+    <constant name="px" value="8"/>
+    <constant name="py" value="8"/>
     <constant name="xtal_thickness" value="8.0"/>
+    
     <constant name="sipm_size" value="2.0"/>
     <constant name="sipm_dead" value="0.2"/>
+    <constant name="sipm_n" value="8"/>
+    
+    <constant name="pitch" value="2.2"/>
+    
     <constant name="grease_thickness" value="0.1"/>
     <constant name="window_thickness" value="0.1"/>
-    <constant name="array_size" value="8"/>
     
-    <!-- Total array width calculation -->
+    <!-- Optical indices -->
+    <constant name="RI_crystal" value="1.82"/>
+    <constant name="RI_grease" value="1.47"/>
+    <constant name="RI_window" value="1.55"/>
+    
+    <!-- Total widths -->
     <constant name="xtal_array_width" value="17.4"/>
     <constant name="sipm_array_width" value="17.4"/>
-    <constant name="startX" value="-8.7"/>
-    <constant name="startY" value="-8.7"/>
     
-    <!-- Z positions  (crystal bottom at z=0, top at z=8.0mm) -->
-    <constant name="crystal_bottom_z" value="0.0"/>
-    <constant name="crystal_top_z" value="8.0"/>
-    <constant name="grease_bottom_z" value="8.0"/>
-    <constant name="grease_top_z" value="8.1"/>
-    <constant name="window_bottom_z" value="8.1"/>
-    <constant name="window_top_z" value="8.2"/>
-    <constant name="sipm_bottom_z" value="8.2"/>
-    <constant name="sipm_top_z" value="8.4"/>
+    <!-- Starting positions -->
+    <constant name="startXtalX" value="0.0"/>
+    <constant name="startXtalY" value="0.0"/>
+    <constant name="startSiPMX" value="-8.7"/>
+    <constant name="startSiPMY" value="-8.7"/>
+    
+    <!-- Z positions -->
+    <constant name="crystal_center_z" value="4.0"/>
+    <constant name="grease_center_z" value="8.05"/>
+    <constant name="window_center_z" value="8.15"/>
+    <constant name="sipm_center_z" value="8.3"/>
     
     <!-- Optical properties -->
     <matrix coldim="2" name="RINDEX_CRYSTAL" values="1.0*eV 1.82 4.0*eV 1.82"/>
@@ -36,22 +49,24 @@
     <matrix coldim="2" name="RINDEX_WINDOW" values="1.0*eV 1.55 4.0*eV 1.55"/>
     <matrix coldim="2" name="RINDEX_AIR" values="1.0*eV 1.0 4.0*eV 1.0"/>
     
-    <!-- Absorption lengths -->
+    <!-- Absorption lengths (mm) -->
     <matrix coldim="2" name="ABSLENGTH_CRYSTAL" values="1.0*eV 400.0 4.0*eV 400.0"/>
     <matrix coldim="2" name="ABSLENGTH_GREASE" values="1.0*eV 1000.0 4.0*eV 1000.0"/>
     <matrix coldim="2" name="ABSLENGTH_WINDOW" values="1.0*eV 1000.0 4.0*eV 1000.0"/>
     <matrix coldim="2" name="ABSLENGTH_AIR" values="1.0*eV 10000.0 4.0*eV 10000.0"/>
     
     <!-- Scintillation properties -->
-    <matrix coldim="2" name="SCINT_SPECTRUM" values="1.0*eV 0.1 2.9*eV 1.0 4.0*eV 0.1"/>
-    <!-- Const properties must be coldim="1" for Geant4 11.x -->
-    <matrix coldim="1" name="SCINT_YIELD" values="5000.0"/>
+    <matrix coldim="2" name="SCINT_SPECTRUM" values="1.5*eV 0.0 2.896*eV 1.0 4.0*eV 0.0"/>
+    
+    <!-- Reemission probability  -->
+    <matrix coldim="2" name="REEMISSIONPROB_CRYSTAL" values="1.0*eV 0.0 4.0*eV 0.0"/>
+    
+    <!-- Const properties for Geant4 11.x -->
+    <matrix coldim="1" name="SCINT_YIELD_CONST" values="5000.0"/>
     <matrix coldim="1" name="RESOLUTION_SCALE" values="1.0"/>
     <matrix coldim="1" name="FAST_TIME_CONST" values="21.5"/>
-    <matrix coldim="1" name="SLOW_TIME_CONST" values="43.8"/>
-    <matrix coldim="1" name="YIELD_RATIO" values="0.87"/>
-    <!-- Reemission probability for Opticks U4Scint -->
-    <matrix coldim="2" name="REEMISSION_PROB" values="1.0*eV 0.0 4.0*eV 0.0"/>
+    <matrix coldim="1" name="SLOW_TIME_CONST" value="43.8"/>
+    <matrix coldim="1" name="YIELD_RATIO" value="0.87"/>
     
     <!-- Surface properties -->
     <matrix coldim="2" name="EFFICIENCY_0" values="1.0*eV 0.0 4.0*eV 0.0"/>
@@ -71,30 +86,32 @@
       <property name="ABSLENGTH" ref="ABSLENGTH_AIR"/>
     </material>
 
-    <!-- Crystal (CsI)  -->
+
     <material name="Crystal" state="solid">
       <D unit="g/cm3" value="4.51"/>
       <fraction n="1.0" ref="G4_CESIUM_IODIDE"/>
       <property name="RINDEX" ref="RINDEX_CRYSTAL"/>
       <property name="ABSLENGTH" ref="ABSLENGTH_CRYSTAL"/>
-      <!-- Const properties (coldim="1" refs for Geant4 11.x) -->
-      <property name="SCINTILLATIONYIELD" ref="SCINT_YIELD"/>
+      
+      <!-- Geant4 11.x style properties -->
+      <property name="SCINTILLATIONYIELD" ref="SCINT_YIELD_CONST"/>
       <property name="RESOLUTIONSCALE" ref="RESOLUTION_SCALE"/>
-      <!-- New Geant4 11.x style names -->
       <property name="SCINTILLATIONCOMPONENT1" ref="SCINT_SPECTRUM"/>
       <property name="SCINTILLATIONCOMPONENT2" ref="SCINT_SPECTRUM"/>
       <property name="SCINTILLATIONTIMECONSTANT1" ref="FAST_TIME_CONST"/>
       <property name="SCINTILLATIONTIMECONSTANT2" ref="SLOW_TIME_CONST"/>
-      <!-- Old-style names for Opticks U4Scint compatibility -->
+      <property name="SCINTILLATIONYIELD1" value="0.13"/>
+      <property name="SCINTILLATIONYIELD2" value="0.87"/>
+      
+      <!-- Legacy properties for Opticks compatibility -->
       <property name="FASTCOMPONENT" ref="SCINT_SPECTRUM"/>
       <property name="SLOWCOMPONENT" ref="SCINT_SPECTRUM"/>
       <property name="FASTTIMECONSTANT" ref="FAST_TIME_CONST"/>
       <property name="SLOWTIMECONSTANT" ref="SLOW_TIME_CONST"/>
-      <property name="YIELDRATIO" ref="YIELD_RATIO"/>
-      <property name="REEMISSIONPROB" ref="REEMISSION_PROB"/>
+      <property name="YIELDRATIO" value="0.87"/>
+      <property name="REEMISSIONPROB" ref="REEMISSIONPROB_CRYSTAL"/>
     </material>
 
-    <!-- Optical Grease -->
     <material name="OpticalGrease" state="solid">
       <D unit="g/cm3" value="1.03"/>
       <fraction n="1.0" ref="G4_SILICON_DIOXIDE"/>
@@ -102,7 +119,6 @@
       <property name="ABSLENGTH" ref="ABSLENGTH_GREASE"/>
     </material>
 
-    <!-- Entrance Window -->
     <material name="EntranceWindow" state="solid">
       <D unit="g/cm3" value="1.2"/>
       <fraction n="1.0" ref="G4_SILICON_DIOXIDE"/>
@@ -115,35 +131,33 @@
     <!-- World -->
     <box name="WorldBox" x="100" y="100" z="100" lunit="mm"/>
     
-    <!-- Crystal pixel (8mm thick) -->
+    <!-- Crystal pixel -->
     <box name="CrystalPixel" x="2.0" y="2.0" z="8.0" lunit="mm"/>
     
-    <!-- Optical grease layer (covers entire array) -->
+    <!-- Optical grease layer -->
     <box name="GreaseLayer" x="17.4" y="17.4" z="0.1" lunit="mm"/>
     
-    <!-- Entrance window (covers entire array) -->
+    <!-- Entrance window -->
     <box name="WindowLayer" x="17.4" y="17.4" z="0.1" lunit="mm"/>
     
-    <!-- SiPM active area (0.2mm thick) -->
+    <!-- SiPM active area -->
     <box name="SiPMActive" x="2.0" y="2.0" z="0.2" lunit="mm"/>
     
-    <!-- SiPM horizontal dead space (between rows) -->
+    <!-- SiPM dead spaces -->
     <box name="SiPMDeadH" x="17.4" y="0.2" z="0.2" lunit="mm"/>
-    
-    <!-- SiPM vertical dead space (between columns) -->
     <box name="SiPMDeadV" x="0.2" y="2.0" z="0.2" lunit="mm"/>
     
-    <!--OPTICAL SURFACES -->
+    <!-- Optical surfaces -->
     
-    <!-- 100% QE -->
+    <!-- FIN1: DETECT surface (100% QE) -->
     <opticalsurface name="DetectorSurface" type="dielectric_dielectric" 
                    finish="polished" model="glisur" value="1">
       <property name="REFLECTIVITY" ref="REFLECTIVITY_0"/>
       <property name="EFFICIENCY" ref="EFFICIENCY_100"/>
     </opticalsurface>
     
-    <!-- FIN2 & FIN3: Crystal side surfaces (POLISH, 0.98RC) -->
-    <opticalsurface name="CrystalSideSurface" type="dielectric_dielectric" 
+    <!-- FIN2 & FIN6: Crystal surfaces (POLISH, 0.98RC) -->
+    <opticalsurface name="CrystalSurface" type="dielectric_dielectric" 
                    finish="polished" model="glisur" value="1">
       <property name="REFLECTIVITY" ref="REFLECTIVITY_98"/>
       <property name="EFFICIENCY" ref="EFFICIENCY_0"/>
@@ -157,16 +171,10 @@
     </opticalsurface>
     
     <!-- FIN5: Smooth coupling surface (POLISH) -->
+    <!-- Used for grease and window side surfaces -->
     <opticalsurface name="CouplingSurface" type="dielectric_dielectric" 
                    finish="polished" model="glisur" value="1">
       <property name="REFLECTIVITY" ref="REFLECTIVITY_0"/>
-      <property name="EFFICIENCY" ref="EFFICIENCY_0"/>
-    </opticalsurface>
-    
-    <!-- FIN6: Crystal top surface (POLISH, 0.98RC) -->
-    <opticalsurface name="CrystalTopSurface" type="dielectric_dielectric" 
-                   finish="polished" model="glisur" value="1">
-      <property name="REFLECTIVITY" ref="REFLECTIVITY_98"/>
       <property name="EFFICIENCY" ref="EFFICIENCY_0"/>
     </opticalsurface>
   </solids>
@@ -174,11 +182,10 @@
   <structure>
     <!-- ========== VOLUME DEFINITIONS ========== -->
     
-    <!-- SiPM Active Area Volume - THIS IS THE SENSITIVE DETECTOR -->
+    <!-- SiPM Active Area Volume -->
     <volume name="SiPMActiveVol">
       <materialref ref="EntranceWindow"/>
       <solidref ref="SiPMActive"/>
-      <!--  SensDet tag for Opticks sensitivity -->
       <auxiliary auxtype="SensDet" auxvalue="SD0"/>
       <auxiliary auxtype="SensorSurface" auxvalue="DetectorSurface"/>
       <auxiliary auxtype="OpticalSurface" auxvalue="DetectorSurface"/>
@@ -186,7 +193,7 @@
       <auxiliary auxtype="GroupName" auxvalue="SiPMActive"/>
     </volume>
     
-    <!-- SiPM Horizontal Dead Space Volume -->
+    <!-- SiPM Dead Space Volumes -->
     <volume name="SiPMDeadHVol">
       <materialref ref="EntranceWindow"/>
       <solidref ref="SiPMDeadH"/>
@@ -195,7 +202,6 @@
       <auxiliary auxtype="GroupName" auxvalue="SiPMDead"/>
     </volume>
     
-    <!-- SiPM Vertical Dead Space Volume -->
     <volume name="SiPMDeadVVol">
       <materialref ref="EntranceWindow"/>
       <solidref ref="SiPMDeadV"/>
@@ -209,8 +215,8 @@
       <materialref ref="Crystal"/>
       <solidref ref="CrystalPixel"/>
       <auxiliary auxtype="Optical" auxvalue="1"/>
-      <auxiliary auxtype="SkinSurface" auxvalue="CrystalSideSurface"/>
       <auxiliary auxtype="GroupName" auxvalue="CrystalPixels"/>
+      <!-- NO SkinSurface here - applied globally below -->
     </volume>
     
     <!-- Optical Grease Volume -->
@@ -227,840 +233,96 @@
       <auxiliary auxtype="Optical" auxvalue="1"/>
     </volume>
     
-    <!-- ========== WORLD VOLUME WITH COMPLETE 8x8 ARRAY ========== -->
+    <!-- World Volume -->
     <volume name="WorldLog">
       <materialref ref="Air"/>
       <solidref ref="WorldBox"/>
       <auxiliary auxtype="Optical" auxvalue="1"/>
       
-      <!-- Place Grease Layer (covers entire array) -->
+      <!-- Grease Layer -->
       <physvol name="GreaseLayer">
         <volumeref ref="GreaseVol"/>
         <position name="grease_pos" x="0" y="0" z="8.05" unit="mm"/>
       </physvol>
       
-      <!-- Place Entrance Window (covers entire array) -->
+      <!-- Entrance Window -->
       <physvol name="WindowLayer">
         <volumeref ref="WindowVol"/>
         <position name="window_pos" x="0" y="0" z="8.15" unit="mm"/>
       </physvol>
       
-      <!-- ========== COMPLETE 8x8 CRYSTAL ARRAY (64 CRYSTALS) ========== -->
-      <!-- Row 0 (y = -8.7mm) -->
-      <physvol name="Crystal_0_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_0" x="-8.7" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_1" x="-6.5" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_2" x="-4.3" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_3" x="-2.1" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_4" x="0.1" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_5" x="2.3" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_6" x="4.5" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_0_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_0_7" x="6.7" y="-8.7" z="4.0" unit="mm"/>
-      </physvol>
+      <!-- 8x8 Crystal Array -->
+      <loop for="i" from="0" to="7" step="1">
+        <loop for="j" from="0" to="7" step="1">
+          <physvol name="Crystal_{i}_{j}">
+            <volumeref ref="CrystalPixelVol"/>
+            <position name="crystal_pos_{i}_{j}"
+                      x="-8.7 + i*2.2"
+                      y="-8.7 + j*2.2"
+                      z="4.0"
+                      unit="mm"/>
+          </physvol>
+        </loop>
+      </loop>
       
-      <!-- Row 1 (y = -6.5mm) -->
-      <physvol name="Crystal_1_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_0" x="-8.7" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_1" x="-6.5" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_2" x="-4.3" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_3" x="-2.1" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_4" x="0.1" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_5" x="2.3" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_6" x="4.5" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_1_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_1_7" x="6.7" y="-6.5" z="4.0" unit="mm"/>
-      </physvol>
+      <!-- 8x8 SiPM Array -->
+      <loop for="i" from="0" to="7" step="1">
+        <loop for="j" from="0" to="7" step="1">
+          <physvol name="SiPM_{i}_{j}">
+            <volumeref ref="SiPMActiveVol"/>
+            <position name="sipm_pos_{i}_{j}"
+                      x="-8.7 + i*2.2"
+                      y="-8.7 + j*2.2"
+                      z="8.3"
+                      unit="mm"/>
+          </physvol>
+        </loop>
+      </loop>
       
-      <!-- Row 2 (y = -4.3mm) -->
-      <physvol name="Crystal_2_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_0" x="-8.7" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_1" x="-6.5" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_2" x="-4.3" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_3" x="-2.1" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_4" x="0.1" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_5" x="2.3" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_6" x="4.5" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_2_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_2_7" x="6.7" y="-4.3" z="4.0" unit="mm"/>
-      </physvol>
+      <!-- Vertical Dead Spaces -->
+      <loop for="i" from="0" to="7" step="1">
+        <loop for="j" from="0" to="6" step="1">
+          <physvol name="SiPMDeadV_{i}_{j}">
+            <volumeref ref="SiPMDeadVVol"/>
+            <position name="deadV_pos_{i}_{j}"
+                      x="-8.7 + i*2.2 + 1.1"
+                      y="-8.7 + j*2.2"
+                      z="8.3"
+                      unit="mm"/>
+          </physvol>
+        </loop>
+      </loop>
       
-      <!-- Row 3 (y = -2.1mm) -->
-      <physvol name="Crystal_3_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_0" x="-8.7" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_1" x="-6.5" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_2" x="-4.3" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_3" x="-2.1" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_4" x="0.1" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_5" x="2.3" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_6" x="4.5" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_3_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_3_7" x="6.7" y="-2.1" z="4.0" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 4 (y = 0.1mm) -->
-      <physvol name="Crystal_4_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_0" x="-8.7" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_1" x="-6.5" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_2" x="-4.3" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_3" x="-2.1" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_4" x="0.1" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_5" x="2.3" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_6" x="4.5" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_4_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_4_7" x="6.7" y="0.1" z="4.0" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 5 (y = 2.3mm) -->
-      <physvol name="Crystal_5_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_0" x="-8.7" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_1" x="-6.5" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_2" x="-4.3" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_3" x="-2.1" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_4" x="0.1" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_5" x="2.3" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_6" x="4.5" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_5_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_5_7" x="6.7" y="2.3" z="4.0" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 6 (y = 4.5mm) -->
-      <physvol name="Crystal_6_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_0" x="-8.7" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_1" x="-6.5" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_2" x="-4.3" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_3" x="-2.1" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_4" x="0.1" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_5" x="2.3" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_6" x="4.5" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_6_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_6_7" x="6.7" y="4.5" z="4.0" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 7 (y = 6.7mm) -->
-      <physvol name="Crystal_7_0">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_0" x="-8.7" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_1">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_1" x="-6.5" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_2">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_2" x="-4.3" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_3">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_3" x="-2.1" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_4">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_4" x="0.1" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_5">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_5" x="2.3" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_6">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_6" x="4.5" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      <physvol name="Crystal_7_7">
-        <volumeref ref="CrystalPixelVol"/>
-        <position name="crystal_pos_7_7" x="6.7" y="6.7" z="4.0" unit="mm"/>
-      </physvol>
-      
-      <!-- ========== COMPLETE 8x8 SIPM ACTIVE AREA ARRAY (64 SIPMS) ========== -->
-      <!-- Row 0 SiPMs -->
-      <physvol name="SiPM_0_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_0" x="-8.7" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_1" x="-6.5" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_2" x="-4.3" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_3" x="-2.1" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_4" x="0.1" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_5" x="2.3" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_6" x="4.5" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_0_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_0_7" x="6.7" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 1 SiPMs -->
-      <physvol name="SiPM_1_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_0" x="-8.7" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_1" x="-6.5" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_2" x="-4.3" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_3" x="-2.1" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_4" x="0.1" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_5" x="2.3" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_6" x="4.5" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_1_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_1_7" x="6.7" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 2 SiPMs -->
-      <physvol name="SiPM_2_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_0" x="-8.7" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_1" x="-6.5" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_2" x="-4.3" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_3" x="-2.1" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_4" x="0.1" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_5" x="2.3" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_6" x="4.5" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_2_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_2_7" x="6.7" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 3 SiPMs -->
-      <physvol name="SiPM_3_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_0" x="-8.7" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_1" x="-6.5" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_2" x="-4.3" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_3" x="-2.1" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_4" x="0.1" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_5" x="2.3" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_6" x="4.5" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_3_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_3_7" x="6.7" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 4 SiPMs -->
-      <physvol name="SiPM_4_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_0" x="-8.7" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_1" x="-6.5" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_2" x="-4.3" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_3" x="-2.1" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_4" x="0.1" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_5" x="2.3" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_6" x="4.5" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_4_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_4_7" x="6.7" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 5 SiPMs -->
-      <physvol name="SiPM_5_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_0" x="-8.7" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_1" x="-6.5" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_2" x="-4.3" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_3" x="-2.1" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_4" x="0.1" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_5" x="2.3" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_6" x="4.5" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_5_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_5_7" x="6.7" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 6 SiPMs -->
-      <physvol name="SiPM_6_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_0" x="-8.7" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_1" x="-6.5" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_2" x="-4.3" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_3" x="-2.1" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_4" x="0.1" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_5" x="2.3" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_6" x="4.5" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_6_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_6_7" x="6.7" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 7 SiPMs -->
-      <physvol name="SiPM_7_0">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_0" x="-8.7" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_1">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_1" x="-6.5" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_2">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_2" x="-4.3" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_3">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_3" x="-2.1" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_4">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_4" x="0.1" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_5">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_5" x="2.3" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_6">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_6" x="4.5" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPM_7_7">
-        <volumeref ref="SiPMActiveVol"/>
-        <position name="sipm_pos_7_7" x="6.7" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- ========== SIPM DEAD SPACES ========== -->
-      <!-- ========== COMPLETE VERTICAL DEAD SPACES (56 TOTAL) ========== -->
-      <!-- Row 0 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_0_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_0" x="-6.7" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_0_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_1" x="-4.5" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_0_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_2" x="-2.3" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_0_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_3" x="-0.1" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_0_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_4" x="2.1" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_0_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_5" x="4.3" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_0_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_0_6" x="6.5" y="-8.7" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 1 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_1_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_0" x="-6.7" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_1_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_1" x="-4.5" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_1_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_2" x="-2.3" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_1_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_3" x="-0.1" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_1_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_4" x="2.1" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_1_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_5" x="4.3" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_1_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_1_6" x="6.5" y="-6.5" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 2 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_2_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_0" x="-6.7" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_2_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_1" x="-4.5" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_2_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_2" x="-2.3" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_2_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_3" x="-0.1" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_2_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_4" x="2.1" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_2_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_5" x="4.3" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_2_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_2_6" x="6.5" y="-4.3" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 3 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_3_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_0" x="-6.7" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_3_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_1" x="-4.5" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_3_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_2" x="-2.3" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_3_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_3" x="-0.1" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_3_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_4" x="2.1" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_3_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_5" x="4.3" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_3_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_3_6" x="6.5" y="-2.1" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 4 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_4_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_0" x="-6.7" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_4_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_1" x="-4.5" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_4_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_2" x="-2.3" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_4_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_3" x="-0.1" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_4_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_4" x="2.1" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_4_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_5" x="4.3" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_4_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_4_6" x="6.5" y="0.1" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 5 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_5_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_0" x="-6.7" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_5_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_1" x="-4.5" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_5_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_2" x="-2.3" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_5_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_3" x="-0.1" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_5_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_4" x="2.1" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_5_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_5" x="4.3" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_5_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_5_6" x="6.5" y="2.3" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 6 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_6_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_0" x="-6.7" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_6_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_1" x="-4.5" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_6_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_2" x="-2.3" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_6_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_3" x="-0.1" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_6_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_4" x="2.1" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_6_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_5" x="4.3" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_6_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_6_6" x="6.5" y="4.5" z="8.3" unit="mm"/>
-      </physvol>
-      
-      <!-- Row 7 vertical dead spaces (7) -->
-      <physvol name="SiPMDeadV_7_0">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_0" x="-6.7" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_7_1">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_1" x="-4.5" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_7_2">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_2" x="-2.3" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_7_3">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_3" x="-0.1" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_7_4">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_4" x="2.1" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_7_5">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_5" x="4.3" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      <physvol name="SiPMDeadV_7_6">
-        <volumeref ref="SiPMDeadVVol"/>
-        <position name="deadV_pos_7_6" x="6.5" y="6.7" z="8.3" unit="mm"/>
-      </physvol>
-      
-      
+      <!-- Horizontal Dead Spaces -->
+      <loop for="i" from="0" to="6" step="1">
+        <physvol name="SiPMDeadH_{i}">
+          <volumeref ref="SiPMDeadHVol"/>
+          <position name="deadH_pos_{i}"
+                    x="0"
+                    y="-8.7 + i*2.2 + 1.1"
+                    z="8.3"
+                    unit="mm"/>
+        </physvol>
+      </loop>
     </volume>
 
-      
-      <!-- Skin surface for ALL SiPM active areas - THIS IS WHERE PHOTONS GET DETECTED -->
-      <skinsurface name="SiPMActiveSkin" surfaceproperty="DetectorSurface">
-        <volumeref ref="SiPMActiveVol"/>
-      </skinsurface>
-      
-      <!-- Skin surface for ALL crystal sides -->
-      <skinsurface name="CrystalSideSkin" surfaceproperty="CrystalSideSurface">
-        <volumeref ref="CrystalPixelVol"/>
-      </skinsurface>
-      
-      <!-- Skin surface for ALL crystal tops -->
-      <skinsurface name="CrystalTopSkin" surfaceproperty="CrystalTopSurface">
-        <volumeref ref="CrystalPixelVol"/>
-      </skinsurface>
-      
-      <!-- Skin surface for ALL dead spaces -->
-      <skinsurface name="DeadSkinH" surfaceproperty="DeadSurface">
-        <volumeref ref="SiPMDeadHVol"/>
-      </skinsurface>
-      
-      <skinsurface name="DeadSkinV" surfaceproperty="DeadSurface">
-        <volumeref ref="SiPMDeadVVol"/>
-      </skinsurface>
-      
+    <!-- ========== SKIN SURFACES ========== -->
+    
+    <skinsurface name="SiPMActiveSkin" surfaceproperty="DetectorSurface">
+      <volumeref ref="SiPMActiveVol"/>
+    </skinsurface>
+    
+    <skinsurface name="CrystalSkin" surfaceproperty="CrystalSurface">
+      <volumeref ref="CrystalPixelVol"/>
+    </skinsurface>
+    
+    <skinsurface name="DeadSkinH" surfaceproperty="DeadSurface">
+      <volumeref ref="SiPMDeadHVol"/>
+    </skinsurface>
+    
+    <skinsurface name="DeadSkinV" surfaceproperty="DeadSurface">
+      <volumeref ref="SiPMDeadVVol"/>
+    </skinsurface>
   </structure>
 
   <setup name="Default" version="1.0">
