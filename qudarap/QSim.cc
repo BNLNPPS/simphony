@@ -832,7 +832,7 @@ std::string QSim::descFull() const
        << std::uint64_t(d_sim)
        << std::dec
        //<< " sim->rng_state 0x"   << std::hex << std::uint64_t(sim->rng_state) << std::dec  // tending to SEGV on some
-       //systems
+       // systems
        << " sim->base 0x" << std::hex << std::uint64_t(sim->base) << std::dec << " sim->bnd 0x" << std::hex
        << std::uint64_t(sim->bnd) << std::dec << " sim->scint 0x" << std::hex << std::uint64_t(sim->scint) << std::dec
        << " sim->cerenkov 0x" << std::hex << std::uint64_t(sim->cerenkov) << std::dec;
