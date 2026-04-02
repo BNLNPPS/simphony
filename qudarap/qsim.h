@@ -296,7 +296,7 @@ inline QSIM_METHOD void qsim::SmearNormal_SigmaAlpha(RNG &rng, float3 *smeared_n
                 printf("//qsim::SmearNormal_SigmaAlpha.MOCK_CUDA_DEBUG u0 %10.5f alpha %10.5f sin_alpha %10.5f u1 "
                        "%10.5f u1*f_max %10.5f  (u1*f_max > sin_alpha) %d reject_alpha %d  \n",
                        u0, alpha, sin_alpha, u1, u1 * f_max, (u1 * f_max > sin_alpha), reject_alpha);
-                // theres lots of alpha rejected : eg all -ve sin_alpha
+            // theres lots of alpha rejected : eg all -ve sin_alpha
 #endif
 
         } while (reject_alpha);
