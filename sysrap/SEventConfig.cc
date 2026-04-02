@@ -13,9 +13,7 @@
 #include "sdirectory.h"
 #include "salloc.h"
 
-#ifdef WITH_CUDA
 #include "scontext.h"
-#endif
 
 #include "sbuild.h"
 #include "sphoton.h"
@@ -1169,19 +1167,15 @@ const char* SEventConfig::OutDir(const char* reldir)
 }
 
 
-#ifdef WITH_CUDA
 scontext* SEventConfig::CONTEXT = nullptr ;
 salloc*   SEventConfig::ALLOC = nullptr ;
 
 std::string SEventConfig::GetGPUMeta(){ return CONTEXT ? CONTEXT->brief() : "ERR-NO-SEventConfig-CONTEXT" ; }
-#endif
 
 void SEventConfig::Initialize_Meta()
 {
-#ifdef WITH_CUDA
     CONTEXT = new scontext ;
     ALLOC = new salloc ;
-#endif
 }
 
 
@@ -1958,7 +1952,6 @@ std::string SEventConfig::DescDevice(size_t totalGlobalMem_bytes, std::string na
 }
 
 
-#ifdef WITH_CUDA
 salloc* SEventConfig::AllocEstimate(int _max_slot)
 {
     uint64_t max_slot = _max_slot == 0 ? MaxSlot() : _max_slot ;
@@ -1981,6 +1974,4 @@ uint64_t SEventConfig::AllocEstimateTotal(int _max_slot)
     delete estimate ;
     return total ;
 }
-#endif
-
 

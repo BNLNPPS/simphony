@@ -1,6 +1,6 @@
 [project]
 name = "optiphy"
-version = "0.0.0"
+version = "0.3.0"
 description = ""
 authors = [ { name = "Dmitri Smirnov", email = "dmixsmi@gmail.com" } ]
 requires-python = ">=3.10"

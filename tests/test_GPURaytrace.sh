@@ -2,7 +2,6 @@
 
 set -e
 
-export CSGOptiX__optixpath=${OPTICKS_PREFIX}/ptx/CSGOptiX_generated_CSGOptiX7.cu.ptx
 
 SEED=42
 TOLERANCE=113

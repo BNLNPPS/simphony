@@ -26,9 +26,7 @@ TODO : try using CUDA __constant__ and cudaMemcpyToSymbol for the CSGParams
 
 #include "CSGParams.h"
 
-#ifdef WITH_CUDA
 #include "CU.h"
-#endif
 
 /**
 CSGScan::CSGScan
@@ -66,11 +64,9 @@ CSGScan::CSGScan( const CSGFoundry* fd_, const CSGSolid* so_, const char* opts_ 
     initGeom_h(); 
     initRays_h(opts_); 
 
-#ifdef WITH_CUDA
     initGeom_d(); 
     initRays_d(); 
     initParams_d(); 
-#endif
 }
 
 void CSGScan::initGeom_h()
@@ -102,7 +98,6 @@ void CSGScan::initRays_h(const char* opts_)
 }
 
 
-#ifdef WITH_CUDA
 void CSGScan::initGeom_d()
 {
     assert( fd->isUploaded() ); 
@@ -122,7 +117,6 @@ void CSGScan::initParams_d()
 {
     d_d = CU::UploadArray<CSGParams>( d, 1 ) ; 
 }
-#endif
 
 
 
@@ -277,7 +271,6 @@ void CSGScan::intersect_h()
 
 
 
-#ifdef WITH_CUDA
 extern void CSGScan_intersect( dim3 numBlocks, dim3 threadsPerBlock, CSGParams* d ); 
 
 void CSGScan::intersect_d()
@@ -300,7 +293,6 @@ void CSGScan::download()
     assert( d->devp == true ) ; 
     c->devp = false ;
 }
-#endif
 
 
 
@@ -381,4 +373,3 @@ void CSGScan::save(const char* base) const
    NPFold* fold = serialize();  
    fold->save(base) ; 
 }
-

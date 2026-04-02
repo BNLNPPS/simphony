@@ -54,9 +54,7 @@ inline void CSGScanTest::init()
     {
         fd = CSGFoundry::Load();
     }
-#ifdef WITH_CUDA
     fd->upload();
-#endif
     so = fd->getSolid(0);
     // TODO: makes more sense to pick a CSGPrim (or root CSGNode) not a solid
 
@@ -66,9 +64,7 @@ inline void CSGScanTest::init()
 inline int CSGScanTest::intersect()
 {
     sc->intersect_h();
-#ifdef WITH_CUDA
     sc->intersect_d();
-#endif
     std::cout << sc->brief() ;
     sc->save("$FOLD");
 
@@ -83,4 +79,3 @@ int main(int argc, char** argv)
     CSGScanTest t ;
     return t.intersect();
 }
-

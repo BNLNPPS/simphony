@@ -1544,9 +1544,9 @@ quad2* QSim::UploadFakePRD(const NP* ip, const NP* prd) // static
     return d_prd ;
 }
 
-
-
+#if !defined(PRODUCTION)
 extern void QSim_fake_propagate_launch(dim3 numBlocks, dim3 threadsPerBlock, qsim* sim, quad2* prd );
+#endif
 
 /**
 
@@ -1570,6 +1570,12 @@ using common QEvt functionality
 
 void QSim::fake_propagate( const NP* prd, unsigned type )
 {
+#if defined(PRODUCTION)
+    (void)prd;
+    (void)type;
+    LOG(fatal) << "QSim::fake_propagate is disabled in PRODUCTION builds";
+    std::raise(SIGINT);
+#else
     const NP* ip = sev->getInputPhoton();
     int num_ip = ip ? ip->shape[0] : 0 ;
     assert( num_ip > 0 );
@@ -1609,6 +1615,7 @@ void QSim::fake_propagate( const NP* prd, unsigned type )
 
 
     LOG(LEVEL) << "]" ;
+#endif
 }
 
 

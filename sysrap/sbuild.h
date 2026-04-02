@@ -23,9 +23,7 @@ Due to this prefixed the names with underscore.
 #include <string>
 #include <sstream>
 
-#ifdef WITH_CUDA
 #include "srng.h"
-#endif
 
 
 struct sbuild
@@ -102,14 +100,9 @@ struct sbuild
 #endif
 
 
-    static constexpr const char* NOCUDA = "NOCUDA" ;
     static const char* RNGName()
     {
-#ifdef WITH_CUDA
         return srng<RNG>::NAME ;
-#else
-        return NOCUDA ;
-#endif
     }
     static bool IsDebug(){   return strcmp(BUILD_TYPE, Debug) == 0 ; }
     static bool IsRelease(){ return strcmp(BUILD_TYPE, Release) == 0 ; }
@@ -136,9 +129,7 @@ inline std::string sbuild::Desc() // static
        << " sbuild::BuildTypeMatches(\"Cheese\") : " << sbuild::BuildTypeMatches("Cheese") << "\n"
        << " sbuild::BuildTypeMatches(\"Cheese Debug \") : " << sbuild::BuildTypeMatches("Cheese Debug") << "\n"
        << " sbuild::BuildTypeMatches(\"Cheese Release \") : " << sbuild::BuildTypeMatches("Cheese Release ") << "\n"
-#ifdef WITH_CUDA
        << " srng<RNG>::NAME      : [" << srng<RNG>::NAME << "]\n"
-#endif
        << " sbuild::RNGName()    : [" << RNGName() << "]\n"
        << " sbuild::RNGMatches(\"Cheese\") : " << sbuild::RNGMatches("Cheese") << "\n"
        << " sbuild::RNGMatches(\"Cheese XORWOW\") : " << sbuild::RNGMatches("Cheese XORWOW ") << "\n"
@@ -198,11 +189,7 @@ inline bool sbuild::BuildTypeMatches(const char* arg)
 
 inline bool sbuild::RNGMatches(const char* arg)
 {
-#ifdef WITH_CUDA
     return srng_Matches<RNG>(arg);
-#else
-    return false ;
-#endif
 }
 
 /**
@@ -228,6 +215,5 @@ inline bool sbuild::Matches(const char* arg)
 {
     return RNGMatches(arg) && BuildTypeMatches(arg) ;
 }
-
 
 

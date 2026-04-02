@@ -5,7 +5,8 @@
     "vscode": {
       "extensions": [
         "ms-vscode.cpptools",
-        "ms-vscode.cmake-tools"
+        "ms-vscode.cmake-tools",
+        "openai.chatgpt"
       ]
     }
   }
