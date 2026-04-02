@@ -11,7 +11,6 @@
 #include "G4VisExecutive.hh"
 
 #include "sysrap/OPTICKS_LOG.hh"
-
 #include "config.h"
 #include "GPURaytrace.h"
 
