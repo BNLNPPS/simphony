@@ -105,9 +105,9 @@ struct sstandard
 
     const NP* icdf ;
 
-    const NP* wls_icdf ;
-    const NP* wls_mat_map ;
-    const NP* wls_time_constants ;
+    const NP *wls_icdf;
+    const NP *wls_mat_map;
+    const NP *wls_time_constants;
 
 
     sstandard();
@@ -218,9 +218,9 @@ inline NPFold* sstandard::serialize() const
 
     fold->add(snam::ICDF, icdf) ;
 
-    fold->add(snam::WLS_ICDF, wls_icdf) ;
-    fold->add(snam::WLS_MAT_MAP, wls_mat_map) ;
-    fold->add(snam::WLS_TIME_CONSTANTS, wls_time_constants) ;
+    fold->add(snam::WLS_ICDF, wls_icdf);
+    fold->add(snam::WLS_MAT_MAP, wls_mat_map);
+    fold->add(snam::WLS_TIME_CONSTANTS, wls_time_constants);
 
     return fold ;
 }

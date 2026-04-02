@@ -727,7 +727,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     const float& scattering_length = s.material1.z ;
     const float& reemission_prob = s.material1.w ;
     const float& group_velocity = s.m1group2.x ;
-    const float& wls_absorption_length = s.m1group2.y ;
+    const float &wls_absorption_length = s.m1group2.y;
     const float& distance_to_boundary = ctx.prd->q0.f.w ;
 
 
@@ -737,7 +737,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 #endif
     float u_scattering = curand_uniform(&rng) ;
     float u_absorption = curand_uniform(&rng) ;
-    float u_wls_absorption = (wls != nullptr) ? curand_uniform(&rng) : 2.f ;
+    float u_wls_absorption = (wls != nullptr) ? curand_uniform(&rng) : 2.f;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
     stagr& tagr = ctx.tagr ;
@@ -784,7 +784,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 
     // WLS absorption competes with regular absorption and Rayleigh scattering.
     // The process with the shortest sampled distance wins.
-    bool wls_wins = wls_absorption_distance <= absorption_distance && wls_absorption_distance <= scattering_distance ;
+    bool wls_wins = wls_absorption_distance <= absorption_distance && wls_absorption_distance <= scattering_distance;
 
     if (wls != nullptr && wls_wins && wls_absorption_distance <= distance_to_boundary)
     {
