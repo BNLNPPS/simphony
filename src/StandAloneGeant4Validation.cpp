@@ -4,11 +4,11 @@
 #include <argparse/argparse.hpp>
 
 #include "FTFP_BERT.hh"
-#include "G4OpticalPhysics.hh"
 #include "G4MTRunManager.hh"
+#include "G4OpticalPhysics.hh"
 #include "G4RunManager.hh"
-#include "G4VModularPhysicsList.hh"
 #include "G4UImanager.hh"
+#include "G4VModularPhysicsList.hh"
 
 #include "G4OpticalParameters.hh"
 
@@ -36,9 +36,7 @@ int main(int argc, char **argv)
         .nargs(1)
         .store_into(config_name);
 
-    program.add_argument("-s", "--seed")
-        .help("fixed random seed (default: time-based)")
-        .scan<'i', long>();
+    program.add_argument("-s", "--seed").help("fixed random seed (default: time-based)").scan<'i', long>();
 
     program.add_argument("-t", "--threads")
         .help("number of threads (0=sequential, default: hardware concurrency)")
@@ -89,7 +87,7 @@ int main(int argc, char **argv)
     int num_events, photons_per_event;
     if (use_mt)
     {
-        num_events = num_threads * 4;  // 4 events per thread for load balancing
+        num_events = num_threads * 4; // 4 events per thread for load balancing
         photons_per_event = (total_photons + num_events - 1) / num_events;
         // Adjust num_events so we don't overshoot
         num_events = (total_photons + photons_per_event - 1) / photons_per_event;
@@ -103,11 +101,9 @@ int main(int argc, char **argv)
     int actual_photons = num_events * photons_per_event;
 
     G4cout << "Random seed set to: " << seed << G4endl;
-    G4cout << "G4: " << total_photons << " photons, "
-           << num_events << " events x " << photons_per_event << " photons/event"
-           << " (" << actual_photons << " actual)"
-           << (use_mt ? ", " + to_string(num_threads) + " threads" : ", sequential")
-           << G4endl;
+    G4cout << "G4: " << total_photons << " photons, " << num_events << " events x " << photons_per_event
+           << " photons/event" << " (" << actual_photons << " actual)"
+           << (use_mt ? ", " + to_string(num_threads) + " threads" : ", sequential") << G4endl;
 
     HitAccumulator accumulator;
     PhotonFateAccumulator fate;

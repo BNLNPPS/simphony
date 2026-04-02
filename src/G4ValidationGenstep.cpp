@@ -5,8 +5,8 @@
 #include "FTFP_BERT.hh"
 #include "G4OpticalPhysics.hh"
 #include "G4RunManager.hh"
-#include "G4VModularPhysicsList.hh"
 #include "G4UImanager.hh"
+#include "G4VModularPhysicsList.hh"
 
 #include "G4ValidationGenstep.h"
 
@@ -38,17 +38,13 @@ int main(int argc, char **argv)
         .scan<'i', int>()
         .store_into(num_events);
 
-    program.add_argument("-s", "--seed")
-        .help("random seed")
-        .scan<'i', long>();
+    program.add_argument("-s", "--seed").help("random seed").scan<'i', long>();
 
     program.add_argument("--pos")
         .help("electron position x,y,z in mm (comma-separated)")
         .default_value(string("0,0,0"));
 
-    program.add_argument("--dir")
-        .help("electron direction x,y,z (comma-separated)")
-        .default_value(string("0,0,1"));
+    program.add_argument("--dir").help("electron direction x,y,z (comma-separated)").default_value(string("0,0,1"));
 
     try
     {
@@ -101,8 +97,7 @@ int main(int argc, char **argv)
     G4RunManager run_mgr;
     run_mgr.SetUserInitialization(physics);
     run_mgr.SetUserInitialization(new GenstepDetectorConstruction(gdml_file, &accumulator));
-    run_mgr.SetUserInitialization(
-        new GenstepActionInitialization(&accumulator, pos, dir, energy_MeV, num_events));
+    run_mgr.SetUserInitialization(new GenstepActionInitialization(&accumulator, pos, dir, energy_MeV, num_events));
     run_mgr.Initialize();
 
     CLHEP::HepRandom::setTheSeed(seed);

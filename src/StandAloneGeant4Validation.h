@@ -1,21 +1,23 @@
 #pragma once
 
+#include <cmath>
 #include <filesystem>
 #include <mutex>
 #include <vector>
-#include <cmath>
 
 #include "G4Event.hh"
 #include "G4GDMLParser.hh"
-#include "G4THitsCollection.hh"
-#include "G4VHit.hh"
+#include "G4OpBoundaryProcess.hh"
+#include "G4OpWLS.hh"
 #include "G4OpticalPhoton.hh"
 #include "G4PhysicalConstants.hh"
 #include "G4PrimaryParticle.hh"
 #include "G4PrimaryVertex.hh"
+#include "G4ProcessManager.hh"
 #include "G4Run.hh"
 #include "G4SDManager.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4THitsCollection.hh"
 #include "G4ThreeVector.hh"
 #include "G4Track.hh"
 #include "G4TrackStatus.hh"
@@ -23,14 +25,12 @@
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
 #include "G4UserTrackingAction.hh"
+#include "G4VHit.hh"
 #include "G4VPhysicalVolume.hh"
+#include "G4VPhysicsConstructor.hh"
 #include "G4VUserActionInitialization.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
-#include "G4OpBoundaryProcess.hh"
-#include "G4ProcessManager.hh"
-#include "G4VPhysicsConstructor.hh"
-#include "G4OpWLS.hh"
 
 #include "ShimG4OpAbsorption.hh"
 #include "ShimG4OpRayleigh.hh"
@@ -77,24 +77,24 @@ struct G4PhotonHit : public G4VHit
 {
     G4PhotonHit() = default;
 
-    G4PhotonHit(G4double energy, G4double time, G4ThreeVector position,
-                G4ThreeVector direction, G4ThreeVector polarization)
+    G4PhotonHit(G4double energy, G4double time, G4ThreeVector position, G4ThreeVector direction,
+                G4ThreeVector polarization)
         : photon()
     {
-        photon.pos = {static_cast<float>(position.x()),
-                      static_cast<float>(position.y()),
+        photon.pos = {static_cast<float>(position.x()), static_cast<float>(position.y()),
                       static_cast<float>(position.z())};
         photon.time = time;
-        photon.mom = {static_cast<float>(direction.x()),
-                      static_cast<float>(direction.y()),
+        photon.mom = {static_cast<float>(direction.x()), static_cast<float>(direction.y()),
                       static_cast<float>(direction.z())};
-        photon.pol = {static_cast<float>(polarization.x()),
-                      static_cast<float>(polarization.y()),
+        photon.pol = {static_cast<float>(polarization.x()), static_cast<float>(polarization.y()),
                       static_cast<float>(polarization.z())};
         photon.wavelength = h_Planck * c_light / (energy * CLHEP::eV);
     }
 
-    void Print() override { G4cout << photon << G4endl; }
+    void Print() override
+    {
+        G4cout << photon << G4endl;
+    }
 
     sphoton photon;
 };
@@ -105,8 +105,7 @@ struct G4PhotonSD : public G4VSensitiveDetector
 {
     HitAccumulator *accumulator;
 
-    G4PhotonSD(G4String name, HitAccumulator *acc)
-        : G4VSensitiveDetector(name), accumulator(acc)
+    G4PhotonSD(G4String name, HitAccumulator *acc) : G4VSensitiveDetector(name), accumulator(acc)
     {
         G4String HCname = name + "_HC";
         collectionName.insert(HCname);
@@ -127,11 +126,8 @@ struct G4PhotonSD : public G4VSensitiveDetector
             return false;
 
         G4PhotonHit *hit = new G4PhotonHit(
-            track->GetTotalEnergy(),
-            track->GetGlobalTime(),
-            aStep->GetPostStepPoint()->GetPosition(),
-            aStep->GetPostStepPoint()->GetMomentumDirection(),
-            aStep->GetPostStepPoint()->GetPolarization());
+            track->GetTotalEnergy(), track->GetGlobalTime(), aStep->GetPostStepPoint()->GetPosition(),
+            aStep->GetPostStepPoint()->GetMomentumDirection(), aStep->GetPostStepPoint()->GetPolarization());
 
         fHitsCollection->insert(hit);
         track->SetTrackStatus(fStopAndKill);
@@ -160,7 +156,9 @@ struct G4PhotonSD : public G4VSensitiveDetector
 struct G4OnlyDetectorConstruction : G4VUserDetectorConstruction
 {
     G4OnlyDetectorConstruction(std::filesystem::path gdml_file, HitAccumulator *acc)
-        : gdml_file_(gdml_file), accumulator_(acc) {}
+        : gdml_file_(gdml_file), accumulator_(acc)
+    {
+    }
 
     G4VPhysicalVolume *Construct() override
     {
@@ -203,7 +201,9 @@ struct G4OnlyPrimaryGenerator : G4VUserPrimaryGeneratorAction
     int photons_per_event;
 
     G4OnlyPrimaryGenerator(const gphox::Config &cfg, int photons_per_event)
-        : cfg(cfg), photons_per_event(photons_per_event) {}
+        : cfg(cfg), photons_per_event(photons_per_event)
+    {
+    }
 
     void GeneratePrimaries(G4Event *event) override
     {
@@ -241,20 +241,20 @@ struct PhotonFateAccumulator
 {
     std::mutex mtx;
     std::vector<sphoton> photons;
-    bool indexed = false;  // true for aligned mode: store by photon index
+    bool indexed = false; // true for aligned mode: store by photon index
 
     // Opticks flag enum values
-    static constexpr unsigned TORCH            = 0x0004;
-    static constexpr unsigned BULK_ABSORB      = 0x0008;
-    static constexpr unsigned BULK_REEMIT      = 0x0010;
-    static constexpr unsigned BULK_SCATTER     = 0x0020;
-    static constexpr unsigned SURFACE_DETECT   = 0x0040;
-    static constexpr unsigned SURFACE_ABSORB   = 0x0080;
+    static constexpr unsigned TORCH = 0x0004;
+    static constexpr unsigned BULK_ABSORB = 0x0008;
+    static constexpr unsigned BULK_REEMIT = 0x0010;
+    static constexpr unsigned BULK_SCATTER = 0x0020;
+    static constexpr unsigned SURFACE_DETECT = 0x0040;
+    static constexpr unsigned SURFACE_ABSORB = 0x0080;
     static constexpr unsigned SURFACE_DREFLECT = 0x0100;
     static constexpr unsigned SURFACE_SREFLECT = 0x0200;
     static constexpr unsigned BOUNDARY_REFLECT = 0x0400;
-    static constexpr unsigned BOUNDARY_TRANSMIT= 0x0800;
-    static constexpr unsigned MISS             = 0x8000;
+    static constexpr unsigned BOUNDARY_TRANSMIT = 0x0800;
+    static constexpr unsigned MISS = 0x8000;
 
     void Resize(int n)
     {
@@ -262,26 +262,26 @@ struct PhotonFateAccumulator
         indexed = true;
     }
 
-    void Set(int idx, const sphoton& p)
+    void Set(int idx, const sphoton &p)
     {
         if (idx >= 0 && idx < (int)photons.size())
             photons[idx] = p;
     }
 
-    void Add(const sphoton& p)
+    void Add(const sphoton &p)
     {
         std::lock_guard<std::mutex> lock(mtx);
         photons.push_back(p);
     }
 
-    void Save(const char* filename)
+    void Save(const char *filename)
     {
         std::lock_guard<std::mutex> lock(mtx);
         int n = photons.size();
-        NP* arr = NP::Make<float>(n, 4, 4);
+        NP *arr = NP::Make<float>(n, 4, 4);
         for (int i = 0; i < n; i++)
         {
-            float* data = reinterpret_cast<float*>(&photons[i]);
+            float *data = reinterpret_cast<float *>(&photons[i]);
             std::copy(data, data + 16, arr->values<float>() + i * 16);
         }
         arr->save(filename);
@@ -294,14 +294,15 @@ struct PhotonFateAccumulator
 
 struct G4OnlySteppingAction : G4UserSteppingAction
 {
-    PhotonFateAccumulator* fate;
+    PhotonFateAccumulator *fate;
     bool aligned;
     std::map<std::string, int> proc_death_counts;
     std::map<int, int> boundary_status_counts;
     std::mutex count_mtx;
 
-    G4OnlySteppingAction(PhotonFateAccumulator* f, bool aligned_ = false)
-        : fate(f), aligned(aligned_) {}
+    G4OnlySteppingAction(PhotonFateAccumulator *f, bool aligned_ = false) : fate(f), aligned(aligned_)
+    {
+    }
 
     ~G4OnlySteppingAction()
     {
@@ -309,57 +310,81 @@ struct G4OnlySteppingAction : G4UserSteppingAction
         if (!proc_death_counts.empty())
         {
             G4cout << "\nG4: Photon death process summary:" << G4endl;
-            for (auto& [name, count] : proc_death_counts)
+            for (auto &[name, count] : proc_death_counts)
                 G4cout << "  " << name << ": " << count << G4endl;
         }
         if (!boundary_status_counts.empty())
         {
             G4cout << "\nG4: OpBoundary status counts (all steps):" << G4endl;
-            const char* bnames[] = {
-                "Undefined","Transmission","FresnelRefraction","FresnelReflection",
-                "TotalInternalReflection","LambertianReflection","LobeReflection",
-                "SpikeReflection","BackScattering","Absorption","Detection",
-                "NotAtBoundary","SameMaterial","StepTooSmall","NoRINDEX",
-                "PolishedLumirrorAirReflection","PolishedLumirrorGlueReflection",
-                "PolishedAirReflection","PolishedTeflonAirReflection",
-                "PolishedTiOAirReflection","PolishedTyvekAirReflection",
-                "PolishedVM2000AirReflection","PolishedVM2000GlueReflection",
-                "EtchedLumirrorAirReflection","EtchedLumirrorGlueReflection",
-                "EtchedAirReflection","EtchedTeflonAirReflection",
-                "EtchedTiOAirReflection","EtchedTyvekAirReflection",
-                "EtchedVM2000AirReflection","EtchedVM2000GlueReflection",
-                "GroundLumirrorAirReflection","GroundLumirrorGlueReflection",
-                "GroundAirReflection","GroundTeflonAirReflection",
-                "GroundTiOAirReflection","GroundTyvekAirReflection",
-                "GroundVM2000AirReflection","GroundVM2000GlueReflection",
-                "Dichroic","CoatedDielectricReflection","CoatedDielectricRefraction",
-                "CoatedDielectricFrustratedTransmission"
-            };
-            for (auto& [st, count] : boundary_status_counts)
+            const char *bnames[] = {"Undefined",
+                                    "Transmission",
+                                    "FresnelRefraction",
+                                    "FresnelReflection",
+                                    "TotalInternalReflection",
+                                    "LambertianReflection",
+                                    "LobeReflection",
+                                    "SpikeReflection",
+                                    "BackScattering",
+                                    "Absorption",
+                                    "Detection",
+                                    "NotAtBoundary",
+                                    "SameMaterial",
+                                    "StepTooSmall",
+                                    "NoRINDEX",
+                                    "PolishedLumirrorAirReflection",
+                                    "PolishedLumirrorGlueReflection",
+                                    "PolishedAirReflection",
+                                    "PolishedTeflonAirReflection",
+                                    "PolishedTiOAirReflection",
+                                    "PolishedTyvekAirReflection",
+                                    "PolishedVM2000AirReflection",
+                                    "PolishedVM2000GlueReflection",
+                                    "EtchedLumirrorAirReflection",
+                                    "EtchedLumirrorGlueReflection",
+                                    "EtchedAirReflection",
+                                    "EtchedTeflonAirReflection",
+                                    "EtchedTiOAirReflection",
+                                    "EtchedTyvekAirReflection",
+                                    "EtchedVM2000AirReflection",
+                                    "EtchedVM2000GlueReflection",
+                                    "GroundLumirrorAirReflection",
+                                    "GroundLumirrorGlueReflection",
+                                    "GroundAirReflection",
+                                    "GroundTeflonAirReflection",
+                                    "GroundTiOAirReflection",
+                                    "GroundTyvekAirReflection",
+                                    "GroundVM2000AirReflection",
+                                    "GroundVM2000GlueReflection",
+                                    "Dichroic",
+                                    "CoatedDielectricReflection",
+                                    "CoatedDielectricRefraction",
+                                    "CoatedDielectricFrustratedTransmission"};
+            for (auto &[st, count] : boundary_status_counts)
             {
-                const char* nm = (st >= 0 && st < 43) ? bnames[st] : "?";
+                const char *nm = (st >= 0 && st < 43) ? bnames[st] : "?";
                 G4cout << "  " << nm << "(" << st << "): " << count << G4endl;
             }
         }
     }
 
-    void UserSteppingAction(const G4Step* aStep) override
+    void UserSteppingAction(const G4Step *aStep) override
     {
-        G4Track* track = aStep->GetTrack();
+        G4Track *track = aStep->GetTrack();
         if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
 
-        G4StepPoint* post = aStep->GetPostStepPoint();
+        G4StepPoint *post = aStep->GetPostStepPoint();
         G4TrackStatus status = track->GetTrackStatus();
 
         // Find the OpBoundary process to get its status (for ALL steps)
-        G4OpBoundaryProcess* boundary = nullptr;
-        G4ProcessManager* pm = track->GetDefinition()->GetProcessManager();
+        G4OpBoundaryProcess *boundary = nullptr;
+        G4ProcessManager *pm = track->GetDefinition()->GetProcessManager();
         for (int i = 0; i < pm->GetPostStepProcessVector()->entries(); i++)
         {
-            G4VProcess* p = (*pm->GetPostStepProcessVector())[i];
-            boundary = dynamic_cast<G4OpBoundaryProcess*>(p);
-            if (boundary) break;
+            G4VProcess *p = (*pm->GetPostStepProcessVector())[i];
+            boundary = dynamic_cast<G4OpBoundaryProcess *>(p);
+            if (boundary)
+                break;
         }
 
         G4OpBoundaryProcessStatus bStatus = boundary ? boundary->GetStatus() : Undefined;
@@ -376,7 +401,7 @@ struct G4OnlySteppingAction : G4UserSteppingAction
             return;
 
         // Identify the process
-        const G4VProcess* proc = post->GetProcessDefinedStep();
+        const G4VProcess *proc = post->GetProcessDefinedStep();
         G4String procName = proc ? proc->GetProcessName() : "Unknown";
 
         // Build detailed key for counting
@@ -405,27 +430,42 @@ struct G4OnlySteppingAction : G4UserSteppingAction
         {
             switch (bStatus)
             {
-                case Detection:       flag = PhotonFateAccumulator::SURFACE_DETECT; break;
-                case Absorption:      flag = PhotonFateAccumulator::SURFACE_ABSORB; break;
-                case FresnelReflection:
-                case TotalInternalReflection:
-                                      flag = PhotonFateAccumulator::BOUNDARY_REFLECT; break;
-                case FresnelRefraction: flag = PhotonFateAccumulator::BOUNDARY_TRANSMIT; break;
-                case LambertianReflection:
-                case LobeReflection:  flag = PhotonFateAccumulator::SURFACE_DREFLECT; break;
-                case SpikeReflection: flag = PhotonFateAccumulator::SURFACE_SREFLECT; break;
-                case BackScattering:  flag = PhotonFateAccumulator::SURFACE_DREFLECT; break;
-                default:              flag = PhotonFateAccumulator::SURFACE_ABSORB; break;
+            case Detection:
+                flag = PhotonFateAccumulator::SURFACE_DETECT;
+                break;
+            case Absorption:
+                flag = PhotonFateAccumulator::SURFACE_ABSORB;
+                break;
+            case FresnelReflection:
+            case TotalInternalReflection:
+                flag = PhotonFateAccumulator::BOUNDARY_REFLECT;
+                break;
+            case FresnelRefraction:
+                flag = PhotonFateAccumulator::BOUNDARY_TRANSMIT;
+                break;
+            case LambertianReflection:
+            case LobeReflection:
+                flag = PhotonFateAccumulator::SURFACE_DREFLECT;
+                break;
+            case SpikeReflection:
+                flag = PhotonFateAccumulator::SURFACE_SREFLECT;
+                break;
+            case BackScattering:
+                flag = PhotonFateAccumulator::SURFACE_DREFLECT;
+                break;
+            default:
+                flag = PhotonFateAccumulator::SURFACE_ABSORB;
+                break;
             }
         }
         else if (procName == "Transportation")
         {
             // Check if an SD killed this photon (SURFACE_DETECT)
-            G4StepPoint* pre = aStep->GetPreStepPoint();
-            G4VPhysicalVolume* preVol = pre->GetPhysicalVolume();
-            G4VPhysicalVolume* postVol = post->GetPhysicalVolume();
-            G4LogicalVolume* preLog = preVol ? preVol->GetLogicalVolume() : nullptr;
-            G4LogicalVolume* postLog = postVol ? postVol->GetLogicalVolume() : nullptr;
+            G4StepPoint *pre = aStep->GetPreStepPoint();
+            G4VPhysicalVolume *preVol = pre->GetPhysicalVolume();
+            G4VPhysicalVolume *postVol = post->GetPhysicalVolume();
+            G4LogicalVolume *preLog = preVol ? preVol->GetLogicalVolume() : nullptr;
+            G4LogicalVolume *postLog = postVol ? postVol->GetLogicalVolume() : nullptr;
             bool sd_pre = preLog && preLog->GetSensitiveDetector();
             bool sd_post = postLog && postLog->GetSensitiveDetector();
             if (sd_pre || sd_post)
@@ -434,7 +474,8 @@ struct G4OnlySteppingAction : G4UserSteppingAction
                 flag = PhotonFateAccumulator::BOUNDARY_TRANSMIT;
         }
 
-        if (flag == 0) flag = PhotonFateAccumulator::MISS; // catch-all
+        if (flag == 0)
+            flag = PhotonFateAccumulator::MISS; // catch-all
 
         // Build sphoton with the final state
         G4ThreeVector pos = post->GetPosition();
@@ -444,10 +485,10 @@ struct G4OnlySteppingAction : G4UserSteppingAction
         G4double energy = post->GetTotalEnergy();
 
         sphoton p = {};
-        p.pos = { float(pos.x()), float(pos.y()), float(pos.z()) };
+        p.pos = {float(pos.x()), float(pos.y()), float(pos.z())};
         p.time = float(time);
-        p.mom = { float(mom.x()), float(mom.y()), float(mom.z()) };
-        p.pol = { float(pol.x()), float(pol.y()), float(pol.z()) };
+        p.mom = {float(mom.x()), float(mom.y()), float(mom.z())};
+        p.pol = {float(pol.x()), float(pol.y()), float(pol.z())};
         p.wavelength = (energy > 0) ? float(h_Planck * c_light / (energy * CLHEP::eV)) : 0.f;
 
         p.orient_boundary_flag = flag & 0xFFFF;
@@ -455,7 +496,7 @@ struct G4OnlySteppingAction : G4UserSteppingAction
 
         if (aligned && fate->indexed)
         {
-            int photon_idx = track->GetTrackID() - 1;  // G4 trackIDs are 1-based
+            int photon_idx = track->GetTrackID() - 1; // G4 trackIDs are 1-based
             fate->Set(photon_idx, p);
         }
         else
@@ -469,15 +510,15 @@ struct G4OnlySteppingAction : G4UserSteppingAction
 
 struct G4OnlyTrackingAction : G4UserTrackingAction
 {
-    void PreUserTrackingAction(const G4Track* track) override
+    void PreUserTrackingAction(const G4Track *track) override
     {
         if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
-        int photon_idx = track->GetTrackID() - 1;  // G4 trackIDs are 1-based
+        int photon_idx = track->GetTrackID() - 1; // G4 trackIDs are 1-based
         U4Random::SetSequenceIndex(photon_idx);
     }
 
-    void PostUserTrackingAction(const G4Track* track) override
+    void PostUserTrackingAction(const G4Track *track) override
     {
         if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
@@ -489,11 +530,15 @@ struct G4OnlyTrackingAction : G4UserTrackingAction
 
 struct AlignedOpticalPhysics : G4VPhysicsConstructor
 {
-    AlignedOpticalPhysics() : G4VPhysicsConstructor("AlignedOptical") {}
-    void ConstructParticle() override {}
+    AlignedOpticalPhysics() : G4VPhysicsConstructor("AlignedOptical")
+    {
+    }
+    void ConstructParticle() override
+    {
+    }
     void ConstructProcess() override
     {
-        auto* pm = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
+        auto *pm = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
         pm->AddDiscreteProcess(new ShimG4OpAbsorption());
         pm->AddDiscreteProcess(new ShimG4OpRayleigh());
         pm->AddDiscreteProcess(new G4OpBoundaryProcess());
@@ -507,7 +552,9 @@ struct G4OnlyEventAction : G4UserEventAction
 {
     int total_events;
 
-    G4OnlyEventAction(int total_events) : total_events(total_events) {}
+    G4OnlyEventAction(int total_events) : total_events(total_events)
+    {
+    }
 
     void EndOfEventAction(const G4Event *event) override
     {
@@ -524,8 +571,9 @@ struct G4OnlyRunAction : G4UserRunAction
     HitAccumulator *accumulator;
     PhotonFateAccumulator *fate;
 
-    G4OnlyRunAction(HitAccumulator *acc, PhotonFateAccumulator *f = nullptr)
-        : accumulator(acc), fate(f) {}
+    G4OnlyRunAction(HitAccumulator *acc, PhotonFateAccumulator *f = nullptr) : accumulator(acc), fate(f)
+    {
+    }
 
     void EndOfRunAction(const G4Run *) override
     {
@@ -553,13 +601,12 @@ struct G4OnlyActionInitialization : G4VUserActionInitialization
     int num_events;
     bool aligned;
 
-    G4OnlyActionInitialization(const gphox::Config &cfg, HitAccumulator *acc,
-                               PhotonFateAccumulator *f,
-                               int photons_per_event, int num_events,
-                               bool aligned_ = false)
-        : cfg(cfg), accumulator(acc), fate(f),
-          photons_per_event(photons_per_event),
-          num_events(num_events), aligned(aligned_) {}
+    G4OnlyActionInitialization(const gphox::Config &cfg, HitAccumulator *acc, PhotonFateAccumulator *f,
+                               int photons_per_event, int num_events, bool aligned_ = false)
+        : cfg(cfg), accumulator(acc), fate(f), photons_per_event(photons_per_event), num_events(num_events),
+          aligned(aligned_)
+    {
+    }
 
     void BuildForMaster() const override
     {

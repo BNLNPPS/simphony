@@ -13,23 +13,23 @@ with GPU (simg4ox) genstep-based optical simulation.
 #include <mutex>
 #include <vector>
 
+#include "G4Electron.hh"
 #include "G4Event.hh"
 #include "G4GDMLParser.hh"
-#include "G4THitsCollection.hh"
-#include "G4VHit.hh"
 #include "G4OpticalPhoton.hh"
-#include "G4Electron.hh"
 #include "G4PhysicalConstants.hh"
 #include "G4PrimaryParticle.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4Run.hh"
 #include "G4SDManager.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4THitsCollection.hh"
 #include "G4ThreeVector.hh"
 #include "G4Track.hh"
 #include "G4TrackStatus.hh"
 #include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
+#include "G4VHit.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VUserActionInitialization.hh"
 #include "G4VUserDetectorConstruction.hh"
@@ -76,24 +76,24 @@ struct GenstepPhotonHit : public G4VHit
 {
     GenstepPhotonHit() = default;
 
-    GenstepPhotonHit(G4double energy, G4double time, G4ThreeVector position,
-                     G4ThreeVector direction, G4ThreeVector polarization)
+    GenstepPhotonHit(G4double energy, G4double time, G4ThreeVector position, G4ThreeVector direction,
+                     G4ThreeVector polarization)
         : photon()
     {
-        photon.pos = {static_cast<float>(position.x()),
-                      static_cast<float>(position.y()),
+        photon.pos = {static_cast<float>(position.x()), static_cast<float>(position.y()),
                       static_cast<float>(position.z())};
         photon.time = time;
-        photon.mom = {static_cast<float>(direction.x()),
-                      static_cast<float>(direction.y()),
+        photon.mom = {static_cast<float>(direction.x()), static_cast<float>(direction.y()),
                       static_cast<float>(direction.z())};
-        photon.pol = {static_cast<float>(polarization.x()),
-                      static_cast<float>(polarization.y()),
+        photon.pol = {static_cast<float>(polarization.x()), static_cast<float>(polarization.y()),
                       static_cast<float>(polarization.z())};
         photon.wavelength = h_Planck * c_light / (energy * CLHEP::eV);
     }
 
-    void Print() override { G4cout << photon << G4endl; }
+    void Print() override
+    {
+        G4cout << photon << G4endl;
+    }
     sphoton photon;
 };
 
@@ -103,8 +103,7 @@ struct GenstepPhotonSD : public G4VSensitiveDetector
 {
     GenstepHitAccumulator *accumulator;
 
-    GenstepPhotonSD(G4String name, GenstepHitAccumulator *acc)
-        : G4VSensitiveDetector(name), accumulator(acc)
+    GenstepPhotonSD(G4String name, GenstepHitAccumulator *acc) : G4VSensitiveDetector(name), accumulator(acc)
     {
         collectionName.insert(name + "_HC");
     }
@@ -124,11 +123,8 @@ struct GenstepPhotonSD : public G4VSensitiveDetector
             return false;
 
         fHC->insert(new GenstepPhotonHit(
-            track->GetTotalEnergy(),
-            track->GetGlobalTime(),
-            aStep->GetPostStepPoint()->GetPosition(),
-            aStep->GetPostStepPoint()->GetMomentumDirection(),
-            aStep->GetPostStepPoint()->GetPolarization()));
+            track->GetTotalEnergy(), track->GetGlobalTime(), aStep->GetPostStepPoint()->GetPosition(),
+            aStep->GetPostStepPoint()->GetMomentumDirection(), aStep->GetPostStepPoint()->GetPolarization()));
 
         track->SetTrackStatus(fStopAndKill);
         return true;
@@ -154,7 +150,9 @@ struct GenstepPhotonSD : public G4VSensitiveDetector
 struct GenstepDetectorConstruction : G4VUserDetectorConstruction
 {
     GenstepDetectorConstruction(std::filesystem::path gdml_file, GenstepHitAccumulator *acc)
-        : gdml_file_(gdml_file), accumulator_(acc) {}
+        : gdml_file_(gdml_file), accumulator_(acc)
+    {
+    }
 
     G4VPhysicalVolume *Construct() override
     {
@@ -198,7 +196,9 @@ struct ElectronPrimaryGenerator : G4VUserPrimaryGeneratorAction
     G4double energy_MeV;
 
     ElectronPrimaryGenerator(G4ThreeVector pos, G4ThreeVector dir, G4double energy)
-        : position(pos), direction(dir.unit()), energy_MeV(energy) {}
+        : position(pos), direction(dir.unit()), energy_MeV(energy)
+    {
+    }
 
     void GeneratePrimaries(G4Event *event) override
     {
@@ -218,8 +218,9 @@ struct GenstepEventAction : G4UserEventAction
     GenstepHitAccumulator *accumulator;
     int total_events;
 
-    GenstepEventAction(GenstepHitAccumulator *acc, int total)
-        : accumulator(acc), total_events(total) {}
+    GenstepEventAction(GenstepHitAccumulator *acc, int total) : accumulator(acc), total_events(total)
+    {
+    }
 
     void EndOfEventAction(const G4Event *event) override
     {
@@ -235,7 +236,9 @@ struct GenstepRunAction : G4UserRunAction
 {
     GenstepHitAccumulator *accumulator;
 
-    GenstepRunAction(GenstepHitAccumulator *acc) : accumulator(acc) {}
+    GenstepRunAction(GenstepHitAccumulator *acc) : accumulator(acc)
+    {
+    }
 
     void EndOfRunAction(const G4Run *) override
     {
@@ -254,11 +257,11 @@ struct GenstepActionInitialization : G4VUserActionInitialization
     G4double energy_MeV;
     int num_events;
 
-    GenstepActionInitialization(GenstepHitAccumulator *acc,
-                                G4ThreeVector pos, G4ThreeVector dir,
-                                G4double energy, int nevt)
-        : accumulator(acc), position(pos), direction(dir),
-          energy_MeV(energy), num_events(nevt) {}
+    GenstepActionInitialization(GenstepHitAccumulator *acc, G4ThreeVector pos, G4ThreeVector dir, G4double energy,
+                                int nevt)
+        : accumulator(acc), position(pos), direction(dir), energy_MeV(energy), num_events(nevt)
+    {
+    }
 
     void BuildForMaster() const override
     {
