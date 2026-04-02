@@ -30,6 +30,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 def run_simulation(gdml, config, macro, seed):
     """Run GPURaytrace and return (gpu_hits_path, g4_hits_path, gpu_nhits, g4_nhits)."""
+    print("NOTE: For step count plots, set \"mode\": \"DebugLite\" in the config JSON file.")
+    print("      For hit-only analysis, \"HitPhoton\" is sufficient.")
+    print()
     cmd = ["/opt/eic-opticks/bin/GPURaytrace",
            "-g", gdml, "-m", macro, "-s", str(seed)]
     if config:
