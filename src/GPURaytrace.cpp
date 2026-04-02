@@ -12,6 +12,7 @@
 
 #include "sysrap/OPTICKS_LOG.hh"
 #include "config.h"
+#include "sysrap/OPTICKS_LOG.hh"
 #include "GPURaytrace.h"
 
 #include "G4RunManager.hh"
