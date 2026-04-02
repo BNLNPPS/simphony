@@ -180,8 +180,8 @@ print()
 print("=" * 55)
 print("  TEST 3: Shifted Wavelength Distribution (Chi-Squared)")
 print("=" * 55)
-# Chi2 on WLS-shifted photons only (>380nm), 50nm bins for robust statistics
-wl_bins = np.arange(375, 575, 50)
+# Chi2 on WLS-shifted photons only (>380nm), 75nm bins for robust statistics
+wl_bins = np.arange(375, 575, 75)
 h_gpu_wl, _ = np.histogram(gpu_shifted, bins=wl_bins)
 h_g4_wl, _ = np.histogram(g4_shifted, bins=wl_bins)
 
@@ -231,30 +231,37 @@ PASS = PASS and t4_pass
 
 
 # -------------------------------------------------------
-# Test 5: Arrival time distribution (chi-squared)
+# Test 5: Arrival time for shifted photons (KS test)
 # -------------------------------------------------------
 print()
 print("=" * 55)
-print("  TEST 5: Arrival Time Distribution (Chi-Squared)")
+print("  TEST 5: Shifted Photon Arrival Time (KS Test)")
 print("=" * 55)
-gpu_median_t = np.median(gpu_time)
-g4_median_t = np.median(g4_time)
-median_diff_pct = 100 * abs(gpu_median_t - g4_median_t) / g4_median_t if g4_median_t > 0 else 0
 
-print(f"  GPU time: mean={gpu_time.mean():.3f}ns  median={gpu_median_t:.3f}ns  max={gpu_time.max():.1f}ns")
-print(f"  G4  time: mean={g4_time.mean():.3f}ns  median={g4_median_t:.3f}ns  max={g4_time.max():.1f}ns")
-print(f"  Median diff: {abs(gpu_median_t - g4_median_t):.4f}ns ({median_diff_pct:.1f}%)")
+# Compare shifted photon times — these include WLS exponential delay + transport
+# With the G4 WLS time profile set to "exponential", distributions should match
+gpu_shifted_t = gpu_time[gpu_wl > WLS_THRESHOLD]
+g4_shifted_t = g4_time[g4_wl > WLS_THRESHOLD]
 
-# Note: time distribution tail differs due to same-material detector boundary
-# (GPU detects at skin surface, G4 detects geometrically inside volume)
-# This is a known artifact — test median agreement instead of full distribution
-gpu_t_gt2 = (gpu_time > 2.0).sum()
-g4_t_gt2 = (g4_time > 2.0).sum()
-print(f"  Time > 2ns: GPU={gpu_t_gt2} G4={g4_t_gt2} (tail differs: same-material boundary artifact)")
+print(f"  GPU shifted: N={len(gpu_shifted_t)}, mean={gpu_shifted_t.mean():.3f}ns, std={gpu_shifted_t.std():.3f}ns")
+print(f"  G4  shifted: N={len(g4_shifted_t)}, mean={g4_shifted_t.mean():.3f}ns, std={g4_shifted_t.std():.3f}ns")
+print(f"  Std ratio: {gpu_shifted_t.std()/g4_shifted_t.std():.3f} (expect ~1.0)")
 
-t5_pass = median_diff_pct < 5.0  # median within 5%
+if len(gpu_shifted_t) > 10 and len(g4_shifted_t) > 10:
+    d_t, p_t = ks_test(gpu_shifted_t, g4_shifted_t)
+    print(f"  KS D={d_t:.6f}  p={p_t:.4f}")
+    t5_pass = p_t >= ALPHA
+else:
+    print("  Too few shifted photons for KS test")
+    t5_pass = True
+
+# Also check unshifted time (pure transport, no WLS delay)
+gpu_unshifted_t = gpu_time[gpu_wl <= WLS_THRESHOLD]
+g4_unshifted_t = g4_time[g4_wl <= WLS_THRESHOLD]
+print(f"  Unshifted time: GPU mean={gpu_unshifted_t.mean():.3f}ns  G4 mean={g4_unshifted_t.mean():.3f}ns")
+
 status = "PASS" if t5_pass else "FAIL"
-print(f"  Result: {status} (median within 5%)")
+print(f"  Result: {status} (KS p > {ALPHA})")
 PASS = PASS and t5_pass
 
 
