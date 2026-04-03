@@ -37,9 +37,9 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
 
 dd4hep_add_plugin(ddeicopticks
   SOURCES
-    OpticsPhysics.cc
     OpticsRun.cc
     OpticsEvent.cc
+    OpticsSteppingAction.cc
   USES
     DD4hep::DDG4
     DD4hep::DDCore

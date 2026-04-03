@@ -71,8 +71,9 @@ def run():
 
     # Physics: QGSP_BERT + standard G4OpticalPhysics (G4Cerenkov + G4Scintillation)
     geant4.setupPhysics('QGSP_BERT')
-    optphy = DDG4.PhysicsList(kernel, 'OpticsPhysics/OpticsPhys1')
-    kernel.physicsList().adopt(optphy)
+    ph = DDG4.PhysicsList(kernel, 'Geant4PhysicsList/OpticalPhys')
+    ph.addPhysicsConstructor(str('G4OpticalPhysics'))
+    kernel.physicsList().adopt(ph)
 
     # --- eic-opticks GPU plugins ---
 
