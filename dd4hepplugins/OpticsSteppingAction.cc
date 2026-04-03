@@ -3,6 +3,7 @@
 #include <DD4hep/InstanceCount.h>
 #include <DDG4/Factories.h>
 
+#include <G4AutoLock.hh>
 #include <G4Cerenkov.hh>
 #include <G4Scintillation.hh>
 #include <G4OpticalPhoton.hh>
@@ -16,6 +17,11 @@
 #include <G4MaterialPropertiesTable.hh>
 
 #include <U4.hh>
+
+namespace
+{
+G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
+}
 
 namespace ddeicopticks
 {
@@ -103,14 +109,17 @@ void OpticsSteppingAction::operator()(const G4Step* step,
             G4double MeanNumberOfPhotons2 =
                 cer->GetAverageNumberOfPhotons(charge, beta2, mat, Rindex);
 
-            U4::CollectGenstep_G4Cerenkov_modified(
-                track, step, numPhotons, BetaInverse, Pmin, Pmax,
-                maxCos, maxSin2, MeanNumberOfPhotons1, MeanNumberOfPhotons2);
+            {
+                G4AutoLock lock(&genstep_mutex);
+                U4::CollectGenstep_G4Cerenkov_modified(
+                    track, step, numPhotons, BetaInverse, Pmin, Pmax,
+                    maxCos, maxSin2, MeanNumberOfPhotons1, MeanNumberOfPhotons2);
+            }
 
             if (verbose_ > 0)
                 info("Cerenkov genstep: %d photons", numPhotons);
         }
-        else if (false && procName == "Scintillation")  // temporarily disabled
+        else if (procName == "Scintillation")
         {
             G4Scintillation* scint = static_cast<G4Scintillation*>((*procPost)[i]);
             G4int numPhotons = scint->GetNumPhotons();
@@ -126,10 +135,13 @@ void OpticsSteppingAction::operator()(const G4Step* step,
             if (mpt->ConstPropertyExists(kSCINTILLATIONTIMECONSTANT1))
                 scintTime = mpt->GetConstProperty(kSCINTILLATIONTIMECONSTANT1);
 
-            U4::CollectGenstep_DsG4Scintillation_r4695(
-                track, step, numPhotons, /*scnt=*/1, scintTime);
+            {
+                G4AutoLock lock(&genstep_mutex);
+                U4::CollectGenstep_DsG4Scintillation_r4695(
+                    track, step, numPhotons, /*scnt=*/1, scintTime);
+            }
 
-            if (verbose_ > 1)
+            if (verbose_ > 0)
                 info("Scintillation genstep: %d photons", numPhotons);
         }
     }
