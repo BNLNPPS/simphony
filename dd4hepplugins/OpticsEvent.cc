@@ -27,6 +27,7 @@ OpticsEvent::OpticsEvent(dd4hep::sim::Geant4Context* ctxt,
 {
     dd4hep::InstanceCount::increment(this);
     declareProperty("Verbose", verbose_);
+    declareProperty("PhotonThreshold", photon_threshold_);
 }
 
 //---------------------------------------------------------------------------//
@@ -41,15 +42,18 @@ void OpticsEvent::begin(G4Event const* event)
     int eventID = event->GetEventID();
 
     if (verbose_ > 0)
-    {
         info("OpticsEvent::begin -- event #%d", eventID);
-    }
 
-    SEvt::CreateOrReuse_EGPU();
-    SEvt* sev = SEvt::Get_EGPU();
-    if (sev)
+    // In batch mode, only start a new SEvt at the beginning of each batch.
+    // Skipping beginOfEvent between events lets gensteps accumulate
+    // (SEvt::clear_output preserves gensteps by design).
+    if (!batch_begun_)
     {
-        sev->beginOfEvent(eventID);
+        SEvt::CreateOrReuse_EGPU();
+        SEvt* sev = SEvt::Get_EGPU();
+        if (sev)
+            sev->beginOfEvent(eventID);
+        batch_begun_ = true;
     }
 }
 
@@ -77,11 +81,15 @@ void OpticsEvent::end(G4Event const* event)
 
     if (verbose_ > 0 || num_genstep > 0)
     {
-        info("Event #%d: %lld gensteps, %lld photons to simulate",
+        info("Event #%d: %lld gensteps, %lld photons accumulated",
              eventID,
              static_cast<long long>(num_genstep),
              static_cast<long long>(num_photon));
     }
+
+    // Batch mode: keep accumulating until threshold reached
+    if (photon_threshold_ > 0 && num_photon < photon_threshold_)
+        return;
 
     if (num_genstep > 0)
     {
@@ -96,11 +104,10 @@ void OpticsEvent::end(G4Event const* event)
              eventID, simulate_ms,
              static_cast<long long>(num_photon), num_hit);
 
-        // Inject GPU hits into DD4hep sensitive detector hit collections
-        if (num_hit > 0)
-        {
+        // Inject hits only in per-event mode; batch mode cannot map
+        // hits back to individual events.
+        if (photon_threshold_ == 0 && num_hit > 0)
             injectHits(event, sev, num_hit);
-        }
 
         sev->endOfEvent(eventID);
         gx->reset(eventID);
@@ -109,8 +116,11 @@ void OpticsEvent::end(G4Event const* event)
     {
         if (verbose_ > 0)
             info("Event #%d: no gensteps, skipping GPU simulation", eventID);
-        sev->endOfEvent(eventID);
+        if (photon_threshold_ == 0)
+            sev->endOfEvent(eventID);
     }
+
+    batch_begun_ = false;
 }
 
 //---------------------------------------------------------------------------//

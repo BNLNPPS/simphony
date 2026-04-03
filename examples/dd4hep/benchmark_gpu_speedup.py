@@ -32,7 +32,7 @@ import time
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def run_single_mode(mode, num_events):
+def run_single_mode(mode, num_events, photon_threshold=0):
     """Run one benchmark mode inside the current process."""
     import cppyy
     import DDG4
@@ -104,6 +104,8 @@ def run_single_mode(mode, num_events):
 
         evt_action = DDG4.EventAction(kernel, "OpticsEvent/OpticsEvt1")
         evt_action.Verbose = 1
+        if photon_threshold > 0:
+            evt_action.PhotonThreshold = photon_threshold
         kernel.eventAction().adopt(evt_action)
 
     # ---- configure & initialize -------------------------------------------
@@ -137,6 +139,7 @@ def run_single_mode(mode, num_events):
         "events": num_events,
         "wall_s": round(wall_s, 4),
         "per_event_ms": round(wall_s / num_events * 1000, 2),
+        "photon_threshold": photon_threshold,
     }
     print(f"BENCHMARK_RESULT:{json.dumps(result)}", flush=True)
     return result
@@ -146,10 +149,11 @@ def run_single_mode(mode, num_events):
 # "all" mode — runs each config as a subprocess, then computes speedup
 # ---------------------------------------------------------------------------
 
-def _run_subprocess(mode, num_events):
+def _run_subprocess(mode, num_events, photon_threshold=0):
     """Run a single mode in a child process, return (result_dict, raw_output)."""
     script = os.path.abspath(__file__)
-    cmd = [sys.executable, script, "--mode", mode, "--events", str(num_events)]
+    cmd = [sys.executable, script, "--mode", mode, "--events", str(num_events),
+           "--photon-threshold", str(photon_threshold)]
     proc = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
@@ -175,22 +179,24 @@ def _parse_gpu_times(output):
     return times
 
 
-def run_all(num_events):
+def run_all(num_events, photon_threshold=0):
     """Run all three modes and print speedup analysis."""
     results = {}
     gpu_event_times = []
 
     for mode in ("baseline", "cpu", "gpu"):
+        pt = photon_threshold if mode == "gpu" else 0
         label = {
             "baseline": "baseline (no photon tracking)",
             "cpu": "cpu (photons tracked on CPU)",
             "gpu": "gpu (photons on GPU via eic-opticks)",
         }[mode]
+        extra = f", threshold={pt}" if pt > 0 else ""
         print(f"\n{'='*60}")
-        print(f"  {label}  --  {num_events} events")
+        print(f"  {label}  --  {num_events} events{extra}")
         print(f"{'='*60}")
 
-        result, output = _run_subprocess(mode, num_events)
+        result, output = _run_subprocess(mode, num_events, pt)
 
         if result is None:
             print(f"ERROR: mode={mode} failed. Output:\n{output[-2000:]}")
@@ -282,9 +288,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--events", type=int, default=10, help="number of events (default: 10)"
     )
+    parser.add_argument(
+        "--photon-threshold", type=int, default=0,
+        help="GPU batch mode: accumulate photons across events and simulate "
+             "when this count is reached (default: 0 = per-event)",
+    )
     args = parser.parse_args()
 
     if args.mode == "all":
-        run_all(args.events)
+        run_all(args.events, args.photon_threshold)
     else:
-        run_single_mode(args.mode, args.events)
+        run_single_mode(args.mode, args.events, args.photon_threshold)

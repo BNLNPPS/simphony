@@ -42,6 +42,8 @@ class OpticsEvent final : public dd4hep::sim::Geant4EventAction
     static dd4hep::sim::Geant4Tracker::Hit* createTrackerHit(sphoton const& ph);
 
     int verbose_{0};
+    int64_t photon_threshold_{0};  ///< 0 = simulate per-event, >0 = batch until N photons
+    bool batch_begun_{false};
 };
 
 //---------------------------------------------------------------------------//

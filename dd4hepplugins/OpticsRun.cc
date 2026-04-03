@@ -8,6 +8,8 @@
 #include <G4Material.hh>
 #include <G4MaterialPropertiesTable.hh>
 
+#include <chrono>
+
 #include <G4CXOpticks.hh>
 #include <SEvt.hh>
 #include <SEventConfig.hh>
@@ -107,6 +109,39 @@ void OpticsRun::begin(G4Run const* run)
 //---------------------------------------------------------------------------//
 void OpticsRun::end(G4Run const* run)
 {
+    // Flush any remaining batched gensteps (from PhotonThreshold mode)
+    SEvt* sev = SEvt::Get_EGPU();
+    if (sev)
+    {
+        int64_t num_genstep = sev->getNumGenstepFromGenstep();
+        int64_t num_photon = sev->getNumPhotonFromGenstep();
+        if (num_genstep > 0)
+        {
+            G4CXOpticks* gx = G4CXOpticks::Get();
+            if (gx)
+            {
+                int eventID = run->GetNumberOfEvent();
+                info("Flushing %lld remaining photons from %lld gensteps",
+                     static_cast<long long>(num_photon),
+                     static_cast<long long>(num_genstep));
+
+                auto t0 = std::chrono::high_resolution_clock::now();
+                gx->simulate(eventID, /*reset=*/false);
+                auto t1 = std::chrono::high_resolution_clock::now();
+                double ms =
+                    std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+                unsigned num_hit = sev->getNumHit();
+                info("OPTICKS_GPU_TIME event=%d ms=%.3f photons=%lld hits=%u",
+                     eventID, ms,
+                     static_cast<long long>(num_photon), num_hit);
+
+                sev->endOfEvent(eventID);
+                gx->reset(eventID);
+            }
+        }
+    }
+
     info("Finalizing G4CXOpticks (run #%d)", run->GetRunID());
     G4CXOpticks::Finalize();
 }
