@@ -1,0 +1,12 @@
+BasedOnStyle: Microsoft
+
+ColumnLimit: 0
+DerivePointerAlignment: true
+ReferenceAlignment: Pointer
+SpaceBeforeParens: Never
+SpacesInParentheses: true
+SortIncludes: false
+ReflowComments: false
+AlignTrailingComments: false
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: Consecutive
