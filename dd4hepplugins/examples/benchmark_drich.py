@@ -208,6 +208,11 @@ def _run_subprocess(mode, num_events, photon_threshold=0, multiplicity=100,
     )
     output = proc.stdout
 
+    if proc.returncode != 0:
+        print(f"ERROR: subprocess exited with code {proc.returncode}",
+              file=sys.stderr)
+        return None, output
+
     result = None
     for line in output.splitlines():
         if line.startswith("BENCHMARK_RESULT:"):

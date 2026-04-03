@@ -9,8 +9,6 @@
 #include <G4OpticalPhoton.hh>
 #include <G4ProcessManager.hh>
 #include <G4SteppingManager.hh>
-#include <G4EventManager.hh>
-#include <G4TrackingManager.hh>
 #include <G4Step.hh>
 #include <G4Track.hh>
 #include <G4Material.hh>
@@ -43,10 +41,9 @@ OpticsSteppingAction::~OpticsSteppingAction()
 
 //---------------------------------------------------------------------------//
 void OpticsSteppingAction::operator()(const G4Step* step,
-                                      G4SteppingManager* /*mgr*/)
+                                      G4SteppingManager* mgr)
 {
-    G4SteppingManager* fpSteppingManager =
-        G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
+    G4SteppingManager* fpSteppingManager = mgr;
 
     const G4Track* track = step->GetTrack();
 

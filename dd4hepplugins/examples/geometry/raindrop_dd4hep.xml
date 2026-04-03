@@ -6,7 +6,8 @@
       Matches eic-opticks tests/geom/opticks_raindrop_with_scintillation.gdml
       Nested boxes: Vacuum(240) > Lead(220) > Air(200) > Water(100) mm
       Water has RINDEX and scintillation. Air has RINDEX.
-      Border surface between water drop and air medium.
+      Border surface between air medium and lead container (MediumContainerSurf).
+      Skin surface on lead container (ContainerSkinSurf).
     </comment>
   </info>
 

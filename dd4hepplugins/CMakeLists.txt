@@ -47,7 +47,11 @@ dd4hep_add_plugin(ddeicopticks
     ${_u4}
     ${_sysrap}
 )
-target_compile_definitions(ddeicopticks PRIVATE STANDALONE)
+# STANDALONE changes class export macros in eic-opticks headers;
+# only needed when building outside the main eic-opticks tree.
+if(NOT TARGET G4CX)
+    target_compile_definitions(ddeicopticks PRIVATE STANDALONE)
+endif()
 
 install(TARGETS ddeicopticks
   LIBRARY DESTINATION lib

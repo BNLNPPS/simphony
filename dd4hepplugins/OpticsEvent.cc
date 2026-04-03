@@ -17,6 +17,7 @@
 #include <sphoton.h>
 #include <NP.hh>
 #include <NPFold.h>
+#include <map>
 
 namespace ddeicopticks
 {
@@ -104,6 +105,30 @@ void OpticsEvent::end(G4Event const* event)
              eventID, simulate_ms,
              static_cast<long long>(num_photon), num_hit);
 
+        // Debug: dump photon flag and boundary statistics (verbose >= 2)
+        if (verbose_ >= 2)
+        {
+            NPFold* tf = sev->topfold;
+            const NP* photon = tf ? tf->get("photon") : nullptr;
+            if (photon)
+            {
+                int np = photon->shape[0];
+                const sphoton* pp =
+                    (const sphoton*)photon->cvalues<float>();
+                std::map<unsigned, int> flag_counts;
+                std::map<unsigned, int> boundary_counts;
+                for (int i = 0; i < np; i++)
+                {
+                    flag_counts[pp[i].flagmask]++;
+                    boundary_counts[pp[i].boundary()]++;
+                }
+                for (auto& [f, c] : flag_counts)
+                    info("  flagmask 0x%08x : %d photons", f, c);
+                for (auto& [b, c] : boundary_counts)
+                    info("  boundary %u : %d photons", b, c);
+            }
+        }
+
         // Inject hits only in per-event mode; batch mode cannot map
         // hits back to individual events.
         if (photon_threshold_ == 0 && num_hit > 0)
@@ -144,6 +169,16 @@ void OpticsEvent::injectHits(G4Event const* event,
         return;
     }
 
+    if (seqs.size() > 1)
+    {
+        warning("Event #%d: %zu sensitive detectors registered -- "
+                "hit routing by sensor identity not yet implemented, "
+                "injecting into first SD only", eventID, seqs.size());
+    }
+
+    // Inject into the first SD with a valid collection.
+    // TODO: route hits to the correct SD based on sensor identity
+    // when multiple sensitive detectors are present.
     for (auto const& [det_name, seq] : seqs)
     {
         Geant4HitCollection* coll = seq->collection(0);
@@ -159,6 +194,7 @@ void OpticsEvent::injectHits(G4Event const* event,
 
         info("Event #%d: injected %u hits into '%s' collection",
              eventID, num_hit, det_name.c_str());
+        break;
     }
 }
 

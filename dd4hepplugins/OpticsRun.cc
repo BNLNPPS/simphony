@@ -13,6 +13,7 @@
 #include <G4CXOpticks.hh>
 #include <SEvt.hh>
 #include <SEventConfig.hh>
+#include <SSim.hh>
 
 #include "DD4hepSensorIdentifier.hh"
 
@@ -45,7 +46,7 @@ static void addOpticksPropertyAliases()
         for (auto const& [g4_11_name, g4_10_name] : aliases)
         {
             auto* prop = mpt->GetProperty(g4_11_name);
-            if (prop)
+            if (prop && !mpt->GetProperty(g4_10_name))
             {
                 bool createNewKey = true;
                 mpt->AddProperty(g4_10_name, prop, createNewKey);
@@ -103,6 +104,14 @@ void OpticsRun::begin(G4Run const* run)
         G4CXOpticks::SaveGeometry();
     }
 
+    // Log boundary count
+    {
+        const SSim* sim = SSim::Get();
+        if (sim && sim->get_bnd())
+            info("Boundary table: %zu boundaries",
+                 sim->get_bnd()->names.size());
+    }
+
     info("G4CXOpticks geometry initialized successfully");
 }
 
@@ -120,7 +129,8 @@ void OpticsRun::end(G4Run const* run)
             G4CXOpticks* gx = G4CXOpticks::Get();
             if (gx)
             {
-                int eventID = run->GetNumberOfEvent();
+                int eventID = run->GetNumberOfEvent() > 0
+                    ? run->GetNumberOfEvent() - 1 : 0;
                 info("Flushing %lld remaining photons from %lld gensteps",
                      static_cast<long long>(num_photon),
                      static_cast<long long>(num_genstep));
