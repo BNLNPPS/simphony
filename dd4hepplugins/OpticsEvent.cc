@@ -9,6 +9,8 @@
 
 #include <G4Event.hh>
 
+#include <chrono>
+
 #include <G4CXOpticks.hh>
 #include <SEvt.hh>
 #include <SComp.h>
@@ -83,10 +85,16 @@ void OpticsEvent::end(G4Event const* event)
 
     if (num_genstep > 0)
     {
+        auto sim_t0 = std::chrono::high_resolution_clock::now();
         gx->simulate(eventID, /*reset=*/false);
+        auto sim_t1 = std::chrono::high_resolution_clock::now();
+        double simulate_ms =
+            std::chrono::duration<double, std::milli>(sim_t1 - sim_t0).count();
 
         unsigned num_hit = sev->getNumHit();
-        info("Event #%d: %u hits from GPU", eventID, num_hit);
+        info("OPTICKS_GPU_TIME event=%d ms=%.3f photons=%lld hits=%u",
+             eventID, simulate_ms,
+             static_cast<long long>(num_photon), num_hit);
 
         // Inject GPU hits into DD4hep sensitive detector hit collections
         if (num_hit > 0)
