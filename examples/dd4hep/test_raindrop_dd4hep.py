@@ -11,6 +11,10 @@ Geometry: Vacuum world > Lead(220mm) > Air(200mm) > Water(100mm)
 This uses the same geometry as eic-opticks's own raindrop test,
 but expressed as DD4hep compact XML instead of GDML.
 
+Approach: standard G4OpticalPhysics (G4Cerenkov + G4Scintillation) runs on CPU.
+OpticsSteppingAction intercepts the processes and collects gensteps.
+OpticsEvent triggers GPU simulation and injects hits into DD4hep collections.
+
 Prerequisites:
   - Spack environment activated (ROOT, DD4hep, eic-opticks on PYTHONPATH/LD_LIBRARY_PATH)
   - DD4hepINSTALL set (for elements.xml lookup)
@@ -52,6 +56,7 @@ def run():
         particle='e-',
         energy=10 * MeV,
         position=(0, 0, 0),
+        isotrop=False,
         direction=(1.0, 0.0, 0.0),
         multiplicity=1,
     )
@@ -64,24 +69,24 @@ def run():
     filt.Cut = 1e12  # 1 TeV -- effectively blocks all G4Step hits
     seq.adopt(filt)
 
-    # Physics: QGSP_BERT + eic-opticks genstep-collecting optical processes
+    # Physics: QGSP_BERT + standard G4OpticalPhysics (G4Cerenkov + G4Scintillation)
     geant4.setupPhysics('QGSP_BERT')
-
-    # OpticsPhysics replaces Geant4CerenkovPhysics, Geant4ScintillationPhysics,
-    # and Geant4OpticalPhotonPhysics with eic-opticks modified versions that
-    # collect gensteps for GPU simulation instead of producing CPU photons.
     optphy = DDG4.PhysicsList(kernel, 'OpticsPhysics/OpticsPhys1')
-    optphy.MaxNumPhotonsPerStep = 10000
-    optphy.MaxBetaChangePerStep = 10.0
-    optphy.TrackSecondariesFirst = True
-    optphy.OpticksMode = 0
     kernel.physicsList().adopt(optphy)
 
     # --- eic-opticks GPU plugins ---
+
+    # SteppingAction: intercepts G4Cerenkov/G4Scintillation and collects gensteps
+    stepping = DDG4.SteppingAction(kernel, 'OpticsSteppingAction/OpticsStep1')
+    stepping.Verbose = 1
+    kernel.steppingAction().adopt(stepping)
+
+    # RunAction: initializes/finalizes G4CXOpticks geometry
     run_action = DDG4.RunAction(kernel, 'OpticsRun/OpticsRun1')
     run_action.SaveGeometry = False
     kernel.runAction().adopt(run_action)
 
+    # EventAction: triggers GPU simulation, injects hits
     evt_action = DDG4.EventAction(kernel, 'OpticsEvent/OpticsEvt1')
     evt_action.Verbose = 1
     kernel.eventAction().adopt(evt_action)

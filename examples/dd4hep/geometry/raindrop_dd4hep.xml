@@ -30,77 +30,13 @@
       1.55*eV  1000*mm
       15.5*eV  1000*mm
     "/>
-    <matrix name="SCINTILLATIONCOMPONENT1__OpWater" coldim="2" values="
-      2.034*eV  0.04
-      2.068*eV  0.08
-      2.103*eV  0.12
-      2.139*eV  0.16
-      2.177*eV  0.20
-      2.216*eV  0.24
-      2.256*eV  0.28
-      2.298*eV  0.32
-      2.341*eV  0.40
-      2.386*eV  0.48
-      2.433*eV  0.56
-      2.481*eV  0.64
-      2.532*eV  0.72
-      2.585*eV  0.80
-      2.640*eV  0.84
-      2.697*eV  0.88
-      2.757*eV  0.92
-      2.820*eV  0.96
-      2.885*eV  1.00
-      2.954*eV  0.96
-      3.026*eV  0.92
-      3.102*eV  0.84
-      3.181*eV  0.76
-      3.265*eV  0.64
-      3.353*eV  0.48
-      3.446*eV  0.36
-      3.545*eV  0.24
-      3.649*eV  0.16
-      3.760*eV  0.08
-      3.877*eV  0.04
-      4.002*eV  0.02
-      4.136*eV  0.01
-    "/>
-    <matrix name="SCINTILLATIONCOMPONENT2__OpWater" coldim="2" values="
-      2.034*eV  0.04
-      2.068*eV  0.08
-      2.103*eV  0.12
-      2.139*eV  0.16
-      2.177*eV  0.20
-      2.216*eV  0.24
-      2.256*eV  0.28
-      2.298*eV  0.32
-      2.341*eV  0.40
-      2.386*eV  0.48
-      2.433*eV  0.56
-      2.481*eV  0.64
-      2.532*eV  0.72
-      2.585*eV  0.80
-      2.640*eV  0.84
-      2.697*eV  0.88
-      2.757*eV  0.92
-      2.820*eV  0.96
-      2.885*eV  1.00
-      2.954*eV  0.96
-      3.026*eV  0.92
-      3.102*eV  0.84
-      3.181*eV  0.76
-      3.265*eV  0.64
-      3.353*eV  0.48
-      3.446*eV  0.36
-      3.545*eV  0.24
-      3.649*eV  0.16
-      3.760*eV  0.08
-      3.877*eV  0.04
-      4.002*eV  0.02
-      4.136*eV  0.01
-    "/>
     <matrix name="RINDEX__OpLead" coldim="2" values="
       1.512*eV  1.0
       5.512*eV  1.1
+    "/>
+    <matrix name="ABSLENGTH__OpLead" coldim="2" values="
+      1.512*eV  1*mm
+      5.512*eV  1*mm
     "/>
     <matrix name="EFFICIENCY__DropSurf" coldim="2" values="
       2.034*eV  1.0
@@ -142,20 +78,13 @@
       <fraction n="0.888" ref="O"/>
       <property name="RINDEX"                    ref="RINDEX__OpWater"/>
       <property name="ABSLENGTH"                 ref="ABSLENGTH__OpWater"/>
-      <property name="SCINTILLATIONCOMPONENT1"   ref="SCINTILLATIONCOMPONENT1__OpWater"/>
-      <property name="SCINTILLATIONCOMPONENT2"   ref="SCINTILLATIONCOMPONENT2__OpWater"/>
-      <constant name="SCINTILLATIONYIELD"        value="200.0/MeV"/>
-      <constant name="RESOLUTIONSCALE"           value="1.0"/>
-      <constant name="SCINTILLATIONTIMECONSTANT1" value="6.0*ns"/>
-      <constant name="SCINTILLATIONTIMECONSTANT2" value="1500.0*ns"/>
-      <constant name="SCINTILLATIONYIELD1"       value="0.8"/>
-      <constant name="SCINTILLATIONYIELD2"       value="0.2"/>
     </material>
 
     <material name="OpLead">
       <D type="density" unit="g/cm3" value="11.35"/>
       <fraction n="1.0" ref="Pb"/>
       <property name="RINDEX" ref="RINDEX__OpLead"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH__OpLead"/>
     </material>
   </materials>
 
@@ -170,12 +99,12 @@
   </display>
 
   <surfaces>
-    <opticalsurface name="/world/Raindrop#DropMediumSurf"
+    <opticalsurface name="/world/Raindrop#MediumContainerSurf"
                     finish="polished" model="glisur" type="dielectric_dielectric">
       <property name="EFFICIENCY"    ref="EFFICIENCY__DropSurf"/>
       <property name="REFLECTIVITY"  ref="REFLECTIVITY__DropSurf"/>
     </opticalsurface>
-    <opticalsurface name="/world/Raindrop#DropSkinSurf"
+    <opticalsurface name="/world/Raindrop#ContainerSkinSurf"
                     finish="polished" model="glisur" type="dielectric_dielectric">
       <property name="EFFICIENCY"    ref="EFFICIENCY__DropSurf"/>
     </opticalsurface>

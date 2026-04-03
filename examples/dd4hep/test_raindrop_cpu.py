@@ -16,8 +16,11 @@ Prerequisites:
 import os
 import sys
 
+import cppyy
 import DDG4
 from g4units import MeV
+
+cppyy.include("G4OpticalParameters.hh")
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -47,13 +50,14 @@ def run():
         particle='e-',
         energy=10 * MeV,
         position=(0, 0, 0),
+        isotrop=False,
         direction=(1.0, 0.0, 0.0),
         multiplicity=1,
     )
 
-    # Register sensitive detector with Geant4OpticalTrackerAction:
-    # - Accepts only optical photons (ParticleSelectFilter)
-    # - Records one hit per photon and kills it (stop-and-kill on detection)
+    # Register optical photon sensitive detector on lead container.
+    # Use Geant4OpticalTrackerAction (not default Geant4SimpleTrackerAction
+    # which has a 1 keV min energy deposit cut -- optical photons are ~eV).
     seq, act = geant4.setupDetector('Raindrop', 'Geant4OpticalTrackerAction')
     filt = DDG4.Filter(kernel, 'ParticleSelectFilter/OpticalPhotonSelector')
     filt.particle = 'opticalphoton'
@@ -73,6 +77,13 @@ def run():
     kernel.NumEvents = 2
     kernel.configure()
     kernel.initialize()
+
+    # Enable boundary SD invocation so photons detected at the air/lead
+    # surface (EFFICIENCY=1.0) trigger hits in the sensitive lead volume.
+    # Geant4 11 defaults BoundaryInvokeSD to false.
+    from cppyy.gbl import G4OpticalParameters
+    G4OpticalParameters.Instance().SetBoundaryInvokeSD(True)
+
     kernel.run()
     kernel.terminate()
 
@@ -81,7 +92,7 @@ def run():
 
 
 def verify_hits(root_file):
-    """Read back hits, count unique optical photon tracks (boundary crossings)."""
+    """Read back detected photon hits and print summary."""
     import ROOT
     f = ROOT.TFile.Open(root_file)
     if not f or f.IsZombie():
@@ -104,27 +115,13 @@ def verify_hits(root_file):
         hits = tree.RaindropHits
         nhits = hits.size()
 
-        # Count unique photon tracks (each track = one photon entering the volume)
-        track_ids = set()
-        # Keep only the first hit per track (boundary crossing)
-        first_hits = {}
-        for i in range(nhits):
-            h = hits[i]
-            tid = h.truth.trackID
-            if tid not in first_hits:
-                first_hits[tid] = h
-            track_ids.add(tid)
-
-        n_unique = len(track_ids)
         print(f"\n  Event {evt_idx}:")
-        print(f"    Total G4Steps in sensitive volume: {nhits}")
-        print(f"    Unique optical photon tracks:      {n_unique}")
-        print(f"    Avg steps per photon:              {nhits/n_unique:.1f}")
-        print(f"    First 3 photon hits (boundary crossing):")
-        for i, (tid, h) in enumerate(list(first_hits.items())[:3]):
+        print(f"    Detected photons: {nhits}")
+        for i in range(min(3, nhits)):
+            h = hits[i]
             pos = h.position
             mom = h.momentum
-            print(f"      [trackID={tid}] pos=({pos.x():.1f}, {pos.y():.1f}, {pos.z():.1f}) "
+            print(f"      [{i}] pos=({pos.x():.1f}, {pos.y():.1f}, {pos.z():.1f}) "
                   f"mom=({mom.x():.3f}, {mom.y():.3f}, {mom.z():.3f}) "
                   f"time={h.truth.time:.2f}ns")
 

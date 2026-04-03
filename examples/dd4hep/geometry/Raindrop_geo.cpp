@@ -3,7 +3,6 @@
 // Based on DD4hep OpNovice example
 //
 // Geometry: Vacuum(240) > Lead(220) > Air(200) > Water(100) mm
-// Matches eic-opticks tests/geom/opticks_raindrop_with_scintillation.gdml
 //==========================================================================
 #include <DD4hep/DetFactoryHelper.h>
 #include <DD4hep/OpticalSurfaces.h>
@@ -25,7 +24,7 @@ static Ref_t create_raindrop(Detector& description, xml_h e, SensitiveDetector s
 
     // Build volumes: nested boxes
     Box    container_box(x_container.x(), x_container.y(), x_container.z());
-    Volume container_vol("Ct", container_box,
+    Volume container_vol("CtPMT", container_box,
                          description.material(x_container.attr<std::string>(_U(material))));
 
     Box    medium_box(x_medium.x(), x_medium.y(), x_medium.z());
@@ -33,7 +32,7 @@ static Ref_t create_raindrop(Detector& description, xml_h e, SensitiveDetector s
                       description.material(x_medium.attr<std::string>(_U(material))));
 
     Box    drop_box(x_drop.x(), x_drop.y(), x_drop.z());
-    Volume drop_vol("DrPMT", drop_box,
+    Volume drop_vol("Dr", drop_box,
                     description.material(x_drop.attr<std::string>(_U(material))));
 
     // Visualization
@@ -44,8 +43,8 @@ static Ref_t create_raindrop(Detector& description, xml_h e, SensitiveDetector s
     if (x_drop.hasAttr(_U(vis)))
         drop_vol.setVisAttributes(description, x_drop.visStr());
 
-    // Mark drop as sensitive for Opticks sensor detection
-    drop_vol.setSensitiveDetector(sens);
+    // Mark container (OpLead) as sensitive
+    container_vol.setSensitiveDetector(sens);
 
     // Place: drop inside medium, medium inside container
     PlacedVolume drop_pv   = medium_vol.placeVolume(drop_vol);
@@ -59,22 +58,22 @@ static Ref_t create_raindrop(Detector& description, xml_h e, SensitiveDetector s
     container_pv.addPhysVolID("system", x_det.id());
     sdet.setPlacement(container_pv);
 
-    // Attach optical border surface between drop and medium
+    // Border surface between medium (air) and container (lead) with EFFICIENCY=1.0
     OpticalSurfaceManager surfMgr = description.surfaceManager();
-    OpticalSurface surf = surfMgr.opticalSurface("/world/" + name + "#DropMediumSurf");
+    OpticalSurface surf = surfMgr.opticalSurface("/world/" + name + "#MediumContainerSurf");
     if (surf.isValid()) {
-        BorderSurface bsurf = BorderSurface(description, sdet, "DropMedium",
-                                            surf, drop_pv, medium_pv);
+        BorderSurface bsurf = BorderSurface(description, sdet, "MediumContainer",
+                                            surf, medium_pv, container_pv);
         bsurf.isValid();
-        printout(INFO, "Raindrop", "Attached border surface DropMedium");
+        printout(INFO, "Raindrop", "Attached border surface MediumContainer (air/lead)");
     }
 
-    // Attach skin surface with EFFICIENCY to drop volume for Opticks sensor detection
-    OpticalSurface skinSurf = surfMgr.opticalSurface("/world/" + name + "#DropSkinSurf");
+    // Skin surface on container for Opticks sensor detection
+    OpticalSurface skinSurf = surfMgr.opticalSurface("/world/" + name + "#ContainerSkinSurf");
     if (skinSurf.isValid()) {
-        SkinSurface ssf = SkinSurface(description, sdet, "DropSkin", skinSurf, drop_vol);
+        SkinSurface ssf = SkinSurface(description, sdet, "ContainerSkin", skinSurf, container_vol);
         ssf.isValid();
-        printout(INFO, "Raindrop", "Attached skin surface DropSkin with EFFICIENCY");
+        printout(INFO, "Raindrop", "Attached skin surface ContainerSkin with EFFICIENCY");
     }
 
     return sdet;
