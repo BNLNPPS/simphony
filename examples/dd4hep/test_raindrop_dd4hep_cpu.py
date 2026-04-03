@@ -6,7 +6,7 @@ Uses standard G4OpticalPhysics (no eic-opticks GPU plugins).
 Optical photons are tracked on CPU by Geant4 and collected as
 Geant4Tracker::Hit via the sensitive detector.
 
-Compare hit counts with test_raindrop_dd4hep.py (GPU) to validate.
+Compare hit counts with test_raindrop_dd4hep_gpu.py to validate.
 
 Prerequisites:
   - Spack environment activated (ROOT, DD4hep on PYTHONPATH/LD_LIBRARY_PATH)
