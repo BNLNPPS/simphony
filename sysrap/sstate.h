@@ -25,7 +25,7 @@ BUT seems no point doing that, can just directly use them from PRD.
 struct sstate
 {
     float4 material1 ;    // refractive_index/absorption_length/scattering_length/reemission_prob
-    float4 m1group2 ;     // material1_group_velocity/material2_group_velocity/spare2/spare3
+    float4 m1group2 ;     // material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3
     float4 material2 ;   
     float4 surface ;      // detect/absorb/reflect_specular/reflect_diffuse
 
@@ -74,7 +74,7 @@ inline std::ostream& operator<<(std::ostream& os, const sstate& s )
        << " (refractive_index/absorption_length/scattering_length/reemission_prob) " 
        << std::endl 
        << " m1group2 " << s.m1group2
-       << " (material1_group_velocity/material2_group_velocity/spare2/spare3) "
+       << " (material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3) "
        << std::endl 
        << " material2 " << s.material2 
        << " (refractive_index/absorption_length/scattering_length/reemission_prob) " 

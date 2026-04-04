@@ -82,6 +82,7 @@ controlled via envvar::
 
 #include "U4Mesh.h"
 #include "U4Scint.h"
+#include "U4WLS.h"
 
 #include "U4Solid.h"
 #include "U4PhysicsTable.h"
@@ -112,6 +113,7 @@ struct U4Tree
     std::vector<const G4VSolid*>                solids ;
     U4PhysicsTable<G4OpRayleigh>*               rayleigh_table ;
     U4Scint*                                    scint ;
+    U4WLS*                                      wls ;
 
     // disable the below with settings with by defining the below envvar
     static constexpr const char* __DISABLE_OSUR_IMPLICIT = "U4Tree__DISABLE_OSUR_IMPLICIT" ;
@@ -152,6 +154,7 @@ private:
     void initMaterial(const G4Material* const mt);
 
     void initScint();
+    void initWLS();
     void initSurfaces();
 
     void initSolids();
@@ -262,6 +265,7 @@ inline U4Tree::U4Tree(
     num_surface_standard(-1),
     rayleigh_table(CreateRayleighTable()),
     scint(nullptr),
+    wls(nullptr),
     enable_osur(!ssys::getenvbool(__DISABLE_OSUR_IMPLICIT)),
     enable_isur(!ssys::getenvbool(__DISABLE_ISUR_IMPLICIT)),
     material_debug(ssys::getenvint(__MATERIAL_DEBUG,0)),
@@ -291,6 +295,9 @@ inline void U4Tree::init()
 
     LOG(LEVEL) << "-initScint" ;
     initScint();
+
+    LOG(LEVEL) << "-initWLS" ;
+    initWLS();
 
     LOG(LEVEL) << "-initSurfaces" ;
     initSurfaces();
@@ -381,6 +388,28 @@ inline void U4Tree::initScint()
     if(scint)
     {
         st->standard->icdf = scint->icdf ;
+    }
+}
+
+/**
+U4Tree::initWLS
+------------------
+
+Scans all G4 materials for WLS properties (WLSCOMPONENT, WLSTIMECONSTANT).
+Creates inverse CDF texture data and material mapping for GPU-side WLS
+wavelength sampling. Stored in st->standard for serialization and upload.
+
+**/
+
+inline void U4Tree::initWLS()
+{
+    wls = U4WLS::Create(st->material, materials) ;
+    if(wls)
+    {
+        st->standard->wls_icdf = wls->icdf ;
+        st->standard->wls_mat_map = wls->mat_map ;
+        st->standard->wls_time_constants = wls->time_constants ;
+        LOG(LEVEL) << wls->desc() ;
     }
 }
 

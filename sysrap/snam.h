@@ -16,6 +16,10 @@ struct snam
     static constexpr const char* OPTICAL = "optical.npy" ;
     static constexpr const char* ICDF = "icdf.npy" ;
 
+    static constexpr const char* WLS_ICDF = "wls_icdf.npy" ;
+    static constexpr const char* WLS_MAT_MAP = "wls_mat_map.npy" ;
+    static constexpr const char* WLS_TIME_CONSTANTS = "wls_time_constants.npy" ;
+
     static constexpr const char* MULTIFILM = "multifilm.npy" ;
     static constexpr const char* PROPCOM = "propcom.npy" ;
 
