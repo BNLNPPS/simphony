@@ -7,7 +7,7 @@ Runs GPU (simg4ox) and G4 (G4ValidationGenstep) simulations with the same
 electron primary, then compares the optical photon hit distributions.
 
 Usage:
-    python run_genstep_comparison.py [--gdml det.gdml] [--energy 1.0] [--nevents 10] [--seed 42]
+    python run_genstep_comparison.py [--gdml apex.gdml] [--energy 1.0] [--nevents 10] [--seed 42]
 """
 import os
 import sys
@@ -138,7 +138,7 @@ def compare_hits(g4_path, gpu_path):
 
 def main():
     parser = argparse.ArgumentParser(description="Compare GPU vs G4 electron genstep simulation")
-    parser.add_argument("--gdml", default="det.gdml", help="GDML geometry file")
+    parser.add_argument("--gdml", default="apex.gdml", help="GDML geometry file")
     parser.add_argument("--energy", type=float, default=1.0, help="Electron energy in MeV")
     parser.add_argument("--nevents", type=int, default=10, help="Number of events")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")

@@ -10,7 +10,7 @@ Runs GPURaytrace with a given GDML and config, then plots:
   6. 3D hit position scatter for GPU and G4
 
 Usage:
-    python optiphy/ana/run_and_compare.py -g det.gdml -s 42 [--outdir plots]
+    python optiphy/ana/run_and_compare.py -g apex.gdml -s 42 [--outdir plots]
 
     # Skip simulation, use existing .npy files:
     python optiphy/ana/run_and_compare.py --gpu-hits gpu_hits.npy --g4-hits g4_hits.npy
@@ -147,6 +147,8 @@ def make_plots(gpu, g4, outdir, title_extra="", g4_full=None, g4_raw_shape=None)
                      f'GPU (overflow={gpu_over})', f'G4 (overflow={g4_over})',
                      'Time (ns)')
     ax.set_title(f'Arrival Time (t < {t_cut:.0f}ns)\n{header}')
+    ax.set_yscale('log')
+    ax.set_ylim(bottom=0.5)
     plt.tight_layout()
     plt.savefig(f'{outdir}/time_bulk.png', dpi=150)
     plt.close()
@@ -159,6 +161,8 @@ def make_plots(gpu, g4, outdir, title_extra="", g4_full=None, g4_raw_shape=None)
                      f'GPU ({len(gpu)})', f'G4 ({len(g4)})',
                      'Time (ns)')
     ax.set_title(f'Arrival Time (full range)\n{header}')
+    ax.set_yscale('log')
+    ax.set_ylim(bottom=0.5)
     plt.tight_layout()
     plt.savefig(f'{outdir}/time_full.png', dpi=150)
     plt.close()
@@ -213,10 +217,11 @@ def make_plots(gpu, g4, outdir, title_extra="", g4_full=None, g4_raw_shape=None)
                 pass
             break
 
-    # G4: check if extended hit array has step count in row 3, col 3
-    if g4_raw_shape is not None and g4_raw_shape[1] >= 5:
-        g4_steps = g4_full[:, 3, 3].astype(int)
-        print(f"  G4 step counts loaded from extended hit array")
+    # G4: step count stored in row 3, col 3 (last float of the 4x4 array)
+    g4_q3w = g4[:, 3, 3]
+    if np.any(g4_q3w > 0):
+        g4_steps = g4_q3w.astype(int)
+        print(f"  G4 step counts loaded from hit array row 3 col 3")
 
     if gpu_steps is not None or g4_steps is not None:
         fig, ax = plt.subplots(figsize=(8, 5))
@@ -273,7 +278,7 @@ def make_plots(gpu, g4, outdir, title_extra="", g4_full=None, g4_raw_shape=None)
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-g", "--gdml", default="det.gdml", help="GDML geometry file")
+    parser.add_argument("-g", "--gdml", default="apex.gdml", help="GDML geometry file")
     parser.add_argument("-c", "--config", default=None, help="Config name (e.g. det_debug)")
     parser.add_argument("-m", "--macro", default="tests/run_genstep.mac", help="G4 macro file")
     parser.add_argument("-s", "--seed", type=int, default=42, help="Random seed")

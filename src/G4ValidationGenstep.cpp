@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 
     program.add_argument("-g", "--gdml")
         .help("path to GDML file")
-        .default_value(string("det.gdml"))
+        .default_value(string("apex.gdml"))
         .nargs(1)
         .store_into(gdml_file);
 
