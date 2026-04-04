@@ -541,10 +541,42 @@ struct SteppingAction : G4UserSteppingAction
                                    << G4endl;
                             return;
                         }
-                        G4double SCINTILLATIONTIMECONSTANT1 = MPT->GetConstProperty(kSCINTILLATIONTIMECONSTANT1);
+                        // G4 11.x supports up to 3 scintillation components
+                        const G4int tcKeys[3] = {kSCINTILLATIONTIMECONSTANT1, kSCINTILLATIONTIMECONSTANT2, kSCINTILLATIONTIMECONSTANT3};
+                        const G4int yieldKeys[3] = {kSCINTILLATIONYIELD1, kSCINTILLATIONYIELD2, kSCINTILLATIONYIELD3};
 
-                        U4::CollectGenstep_DsG4Scintillation_r4695(aTrack, aStep, fNumPhotons, 1,
-                                                                   SCINTILLATIONTIMECONSTANT1);
+                        G4double tc[3] = {0, 0, 0};
+                        G4double yield[3] = {0, 0, 0};
+                        G4double yieldSum = 0;
+                        G4int nComp = 0;
+
+                        for (G4int c = 0; c < 3; c++)
+                        {
+                            if (MPT->ConstPropertyExists(tcKeys[c]))
+                            {
+                                tc[c] = MPT->GetConstProperty(tcKeys[c]);
+                                yield[c] = MPT->ConstPropertyExists(yieldKeys[c])
+                                               ? MPT->GetConstProperty(yieldKeys[c])
+                                               : (c == 0 ? 1.0 : 0.0);
+                                yieldSum += yield[c];
+                                nComp = c + 1;
+                            }
+                        }
+
+                        G4AutoLock lock(&genstep_mutex);
+                        G4int nRemaining = fNumPhotons;
+                        for (G4int c = 0; c < nComp; c++)
+                        {
+                            G4int nPhotComp;
+                            if (c == nComp - 1)
+                                nPhotComp = nRemaining; // last component gets remainder
+                            else
+                                nPhotComp = static_cast<G4int>(fNumPhotons * yield[c] / yieldSum);
+                            nRemaining -= nPhotComp;
+
+                            if (nPhotComp > 0)
+                                U4::CollectGenstep_DsG4Scintillation_r4695(aTrack, aStep, nPhotComp, c + 1, tc[c]);
+                        }
                     }
                 }
             }
