@@ -306,7 +306,7 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
         G4PrimaryVertex *vertex = new G4PrimaryVertex(position_mm, time_ns);
         G4PrimaryParticle *particle = new G4PrimaryParticle(G4Electron::Definition());
-        particle->SetKineticEnergy(10 * MeV);
+        particle->SetKineticEnergy(5 * GeV);
         particle->SetMomentumDirection(direction);
         vertex->SetPrimary(particle);
         event->AddPrimaryVertex(vertex);
