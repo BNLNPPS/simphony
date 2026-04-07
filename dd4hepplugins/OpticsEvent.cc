@@ -10,6 +10,7 @@
 #include <G4Event.hh>
 
 #include <chrono>
+#include <cuda_runtime.h>
 
 #include <G4CXOpticks.hh>
 #include <NP.hh>
@@ -93,6 +94,7 @@ void OpticsEvent::end(G4Event const *event)
     {
         auto sim_t0 = std::chrono::high_resolution_clock::now();
         gx->simulate(eventID, /*reset=*/false);
+        cudaDeviceSynchronize();
         auto sim_t1 = std::chrono::high_resolution_clock::now();
         double simulate_ms = std::chrono::duration<double, std::milli>(sim_t1 - sim_t0).count();
 
