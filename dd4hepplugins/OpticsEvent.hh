@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
 #include <DDG4/Geant4Action.h>
-#include <DDG4/Geant4EventAction.h>
 #include <DDG4/Geant4Data.h>
+#include <DDG4/Geant4EventAction.h>
+#include <string>
 
 class SEvt;
 struct sphoton;
@@ -28,22 +28,22 @@ namespace ddeicopticks
 class OpticsEvent final : public dd4hep::sim::Geant4EventAction
 {
   public:
-    OpticsEvent( dd4hep::sim::Geant4Context* ctxt, std::string const& name );
+    OpticsEvent(dd4hep::sim::Geant4Context *ctxt, std::string const &name);
 
-    void begin( G4Event const* event ) final;
-    void end( G4Event const* event ) final;
+    void begin(G4Event const *event) final;
+    void end(G4Event const *event) final;
 
   protected:
-    DDG4_DEFINE_ACTION_CONSTRUCTORS( OpticsEvent );
+    DDG4_DEFINE_ACTION_CONSTRUCTORS(OpticsEvent);
     ~OpticsEvent() final;
 
   private:
-    void                                    injectHits( G4Event const* event, SEvt* sev, unsigned num_hit );
-    static dd4hep::sim::Geant4Tracker::Hit* createTrackerHit( sphoton const& ph );
+    void injectHits(G4Event const *event, SEvt *sev, unsigned num_hit);
+    static dd4hep::sim::Geant4Tracker::Hit *createTrackerHit(sphoton const &ph);
 
-    int     verbose_{ 0 };
-    int64_t photon_threshold_{ 0 }; ///< 0 = simulate per-event, >0 = batch until N photons
-    bool    batch_begun_{ false };
+    int verbose_{0};
+    int64_t photon_threshold_{0}; ///< 0 = simulate per-event, >0 = batch until N photons
+    bool batch_begun_{false};
 };
 
 //---------------------------------------------------------------------------//

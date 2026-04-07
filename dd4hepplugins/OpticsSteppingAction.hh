@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
 #include <DDG4/Geant4Action.h>
 #include <DDG4/Geant4SteppingAction.h>
+#include <string>
 
 namespace ddeicopticks
 {
@@ -18,17 +18,16 @@ namespace ddeicopticks
 class OpticsSteppingAction final : public dd4hep::sim::Geant4SteppingAction
 {
   public:
-    OpticsSteppingAction( dd4hep::sim::Geant4Context* ctxt,
-                          std::string const&          name );
+    OpticsSteppingAction(dd4hep::sim::Geant4Context *ctxt, std::string const &name);
 
-    void operator()( const G4Step* step, G4SteppingManager* mgr ) final;
+    void operator()(const G4Step *step, G4SteppingManager *mgr) final;
 
   protected:
-    DDG4_DEFINE_ACTION_CONSTRUCTORS( OpticsSteppingAction );
+    DDG4_DEFINE_ACTION_CONSTRUCTORS(OpticsSteppingAction);
     ~OpticsSteppingAction() final;
 
   private:
-    int verbose_{ 0 };
+    int verbose_{0};
 };
 
 //---------------------------------------------------------------------------//

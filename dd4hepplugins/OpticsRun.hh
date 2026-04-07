@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
 #include <DDG4/Geant4Action.h>
 #include <DDG4/Geant4RunAction.h>
+#include <string>
 
 namespace ddeicopticks
 {
@@ -21,17 +21,17 @@ namespace ddeicopticks
 class OpticsRun final : public dd4hep::sim::Geant4RunAction
 {
   public:
-    OpticsRun( dd4hep::sim::Geant4Context* ctxt, std::string const& name );
+    OpticsRun(dd4hep::sim::Geant4Context *ctxt, std::string const &name);
 
-    void begin( G4Run const* run ) final;
-    void end( G4Run const* run ) final;
+    void begin(G4Run const *run) final;
+    void end(G4Run const *run) final;
 
   protected:
-    DDG4_DEFINE_ACTION_CONSTRUCTORS( OpticsRun );
+    DDG4_DEFINE_ACTION_CONSTRUCTORS(OpticsRun);
     ~OpticsRun() final;
 
   private:
-    bool save_geometry_{ false };
+    bool save_geometry_{false};
 };
 
 //---------------------------------------------------------------------------//

@@ -23,10 +23,10 @@ explicitly set via DetElement::setSensitiveDetector().
 
 struct DD4hepSensorIdentifier : public U4SensorIdentifier
 {
-    int level   = 0;
+    int level = 0;
     int counter = 0; // auto-increment sensor ID (1-based; 0 means "not a sensor" in opticks)
 
-    void setLevel( int _level ) override
+    void setLevel(int _level) override
     {
         level = _level;
     }
@@ -40,26 +40,22 @@ struct DD4hepSensorIdentifier : public U4SensorIdentifier
     Note: opticks treats sensor_id == 0 as "not a sensor", so IDs must be >= 1.
     PV copy numbers are not reliable (e.g. dRICH SiPMs all have copyNo=0).
     **/
-    int getGlobalIdentity( const G4VPhysicalVolume* pv,
-                           const G4VPhysicalVolume* /*ppv*/ ) override
+    int getGlobalIdentity(const G4VPhysicalVolume *pv, const G4VPhysicalVolume * /*ppv*/) override
     {
-        if( !pv )
+        if (!pv)
             return -1;
 
-        const G4LogicalVolume* lv = pv->GetLogicalVolume();
-        G4VSensitiveDetector*  sd = lv->GetSensitiveDetector();
+        const G4LogicalVolume *lv = pv->GetLogicalVolume();
+        G4VSensitiveDetector *sd = lv->GetSensitiveDetector();
 
-        if( !sd )
+        if (!sd)
             return -1;
 
         int sensor_id = ++counter; // 1-based unique ID
 
-        if( level > 0 )
-            std::cout << "DD4hepSensorIdentifier::getGlobalIdentity"
-                      << " sensor_id " << sensor_id
-                      << " sd " << sd->GetName()
-                      << " pv " << pv->GetName()
-                      << std::endl;
+        if (level > 0)
+            std::cout << "DD4hepSensorIdentifier::getGlobalIdentity" << " sensor_id " << sensor_id << " sd "
+                      << sd->GetName() << " pv " << pv->GetName() << std::endl;
 
         return sensor_id;
     }
@@ -70,30 +66,28 @@ struct DD4hepSensorIdentifier : public U4SensorIdentifier
     Same as default: recursively search for G4VSensitiveDetector
     within the instance subtree.
     **/
-    int getInstanceIdentity( const G4VPhysicalVolume* instance_outer_pv ) const override
+    int getInstanceIdentity(const G4VPhysicalVolume *instance_outer_pv) const override
     {
-        if( !instance_outer_pv )
+        if (!instance_outer_pv)
             return -1;
 
-        std::vector<const G4VPhysicalVolume*> sdpv;
-        FindSD_r( sdpv, instance_outer_pv, 0 );
+        std::vector<const G4VPhysicalVolume *> sdpv;
+        FindSD_r(sdpv, instance_outer_pv, 0);
 
-        if( sdpv.empty() )
+        if (sdpv.empty())
             return -1;
 
-        const G4PVPlacement* pvp =
-            dynamic_cast<const G4PVPlacement*>( instance_outer_pv );
+        const G4PVPlacement *pvp = dynamic_cast<const G4PVPlacement *>(instance_outer_pv);
         return pvp ? pvp->GetCopyNo() : 0;
     }
 
-    static void FindSD_r( std::vector<const G4VPhysicalVolume*>& sdpv,
-                          const G4VPhysicalVolume* pv, int depth )
+    static void FindSD_r(std::vector<const G4VPhysicalVolume *> &sdpv, const G4VPhysicalVolume *pv, int depth)
     {
-        const G4LogicalVolume* lv = pv->GetLogicalVolume();
-        G4VSensitiveDetector*  sd = lv->GetSensitiveDetector();
-        if( sd )
-            sdpv.push_back( pv );
-        for( size_t i = 0; i < size_t( lv->GetNoDaughters() ); i++ )
-            FindSD_r( sdpv, lv->GetDaughter( i ), depth + 1 );
+        const G4LogicalVolume *lv = pv->GetLogicalVolume();
+        G4VSensitiveDetector *sd = lv->GetSensitiveDetector();
+        if (sd)
+            sdpv.push_back(pv);
+        for (size_t i = 0; i < size_t(lv->GetNoDaughters()); i++)
+            FindSD_r(sdpv, lv->GetDaughter(i), depth + 1);
     }
 };
