@@ -117,7 +117,7 @@ inline int U4SensorIdentifierDefault::getInstanceIdentity( const G4VPhysicalVolu
     FindSD_r(sdpv, instance_outer_pv, 0 );
 
     unsigned num_sd = sdpv.size() ;
-    bool is_sensor = num_sd > 0 && has_PMT_pvn  ;
+    bool     is_sensor = num_sd > 0;
 
     int identifier = is_sensor ? copyno : -1  ;
 
