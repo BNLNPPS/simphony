@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+"""
+Benchmark: quantify GPU speedup for optical photon simulation.
+
+Runs three configurations of the raindrop geometry (10 MeV e- in water):
+
+  cpu      -- Optical photons generated AND tracked on CPU by Geant4
+  baseline -- Optical photons generated but NOT tracked (SetStackPhotons=false)
+  gpu      -- Optical photons simulated on GPU via eic-opticks
+
+Speedup = CPU_optical_time / GPU_simulate_time
+  where CPU_optical_time = T(cpu) - T(baseline)
+  and   GPU_simulate_time = wall time of G4CXOpticks::simulate()
+                            (includes genstep upload, OptiX launch,
+                             cudaDeviceSynchronize, hit download)
+
+Usage:
+  python3 benchmark_gpu_speedup.py                       # all modes, 10 events
+  python3 benchmark_gpu_speedup.py --events 20            # more events
+  python3 benchmark_gpu_speedup.py --mode cpu             # single mode
+  python3 benchmark_gpu_speedup.py --mode gpu --events 5  # single mode
+"""
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def run_single_mode(mode, num_events, photon_threshold=0):
+    """Run one benchmark mode inside the current process."""
+    import cppyy
+    import DDG4
+    from g4units import MeV
+
+    cppyy.include("G4OpticalParameters.hh")
+    from cppyy.gbl import G4OpticalParameters
+
+    # ---- kernel & geometry ------------------------------------------------
+    kernel = DDG4.Kernel()
+    compact = os.path.join(_SCRIPT_DIR, "geometry", "raindrop_dd4hep.xml")
+    if not os.path.exists(compact):
+        print(f"ERROR: {compact} not found", file=sys.stderr)
+        sys.exit(1)
+    kernel.loadGeometry(str("file:" + compact))
+
+    geant4 = DDG4.Geant4(kernel)
+    geant4.setupUI(typ="tcsh", vis=False, ui=False)
+    geant4.setupGun(
+        "Gun",
+        particle="e-",
+        energy=10 * MeV,
+        position=(0, 0, 0),
+        isotrop=False,
+        direction=(1.0, 0.0, 0.0),
+        multiplicity=1,
+    )
+
+    # ---- physics ----------------------------------------------------------
+    geant4.setupPhysics("QGSP_BERT")
+    ph = DDG4.PhysicsList(kernel, "Geant4PhysicsList/OpticalPhys")
+    ph.addPhysicsConstructor(str("G4OpticalPhysics"))
+    kernel.physicsList().adopt(ph)
+
+    # ---- mode-specific setup ----------------------------------------------
+    if mode == "cpu":
+        # Track optical photons on CPU
+        seq, act = geant4.setupDetector(
+            "Raindrop", "Geant4OpticalTrackerAction"
+        )
+        filt = DDG4.Filter(
+            kernel, "ParticleSelectFilter/OpticalPhotonSelector"
+        )
+        filt.particle = "opticalphoton"
+        seq.adopt(filt)
+
+    elif mode == "baseline":
+        # Need a tracker so DD4hep is happy, but no photons will arrive
+        geant4.setupTracker("Raindrop")
+
+    elif mode == "gpu":
+        # Tracker with impossibly high cut -> blocks CPU-side G4Step hits;
+        # only GPU-injected hits pass.
+        seq, act = geant4.setupTracker("Raindrop")
+        filt = DDG4.Filter(kernel, "EnergyDepositMinimumCut/Block")
+        filt.Cut = 1e12
+        seq.adopt(filt)
+
+        # eic-opticks DDG4 plugins
+        stepping = DDG4.SteppingAction(
+            kernel, "OpticsSteppingAction/OpticsStep1"
+        )
+        stepping.Verbose = 0
+        kernel.steppingAction().adopt(stepping)
+
+        run_action = DDG4.RunAction(kernel, "OpticsRun/OpticsRun1")
+        run_action.SaveGeometry = False
+        kernel.runAction().adopt(run_action)
+
+        evt_action = DDG4.EventAction(kernel, "OpticsEvent/OpticsEvt1")
+        evt_action.Verbose = 1
+        if photon_threshold > 0:
+            evt_action.PhotonThreshold = photon_threshold
+        kernel.eventAction().adopt(evt_action)
+
+    # ---- configure & initialize -------------------------------------------
+    kernel.NumEvents = num_events
+    kernel.configure()
+
+    # Disable photon stacking BEFORE initialize so G4Cerenkov reads it
+    # during BuildPhysicsTable.  Cerenkov still fires (gensteps collected)
+    # but secondary photon tracks are not pushed onto the Geant4 stack.
+    if mode in ("baseline", "gpu"):
+        G4OpticalParameters.Instance().SetCerenkovStackPhotons(False)
+        G4OpticalParameters.Instance().SetScintStackPhotons(False)
+
+    kernel.initialize()
+
+    # BoundaryInvokeSD must be set AFTER initialize (runtime parameter).
+    # Needed so photons detected at a boundary surface actually invoke the SD.
+    if mode == "cpu":
+        G4OpticalParameters.Instance().SetBoundaryInvokeSD(True)
+
+    # ---- run & time -------------------------------------------------------
+    t0 = time.perf_counter()
+    kernel.run()
+    t1 = time.perf_counter()
+    wall_s = t1 - t0
+
+    kernel.terminate()
+
+    result = {
+        "mode": mode,
+        "events": num_events,
+        "wall_s": round(wall_s, 4),
+        "per_event_ms": round(wall_s / num_events * 1000, 2),
+        "photon_threshold": photon_threshold,
+    }
+    print(f"BENCHMARK_RESULT:{json.dumps(result)}", flush=True)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# "all" mode — runs each config as a subprocess, then computes speedup
+# ---------------------------------------------------------------------------
+
+def _run_subprocess(mode, num_events, photon_threshold=0):
+    """Run a single mode in a child process, return (result_dict, raw_output)."""
+    script = os.path.abspath(__file__)
+    cmd = [sys.executable, script, "--mode", mode, "--events", str(num_events),
+           "--photon-threshold", str(photon_threshold)]
+    proc = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
+    output = proc.stdout
+
+    if proc.returncode != 0:
+        print(f"ERROR: subprocess exited with code {proc.returncode}",
+              file=sys.stderr)
+        return None, output
+
+    # Parse BENCHMARK_RESULT JSON
+    result = None
+    for line in output.splitlines():
+        if line.startswith("BENCHMARK_RESULT:"):
+            result = json.loads(line[len("BENCHMARK_RESULT:"):])
+            break
+
+    return result, output
+
+
+def _parse_gpu_times(output):
+    """Extract per-event GPU simulate() times from C++ info output."""
+    times = []
+    for line in output.splitlines():
+        m = re.search(r"OPTICKS_GPU_TIME event=(\d+) ms=([\d.]+)", line)
+        if m:
+            times.append((int(m.group(1)), float(m.group(2))))
+    return times
+
+
+def run_all(num_events, photon_threshold=0):
+    """Run all three modes and print speedup analysis."""
+    results = {}
+    gpu_event_times = []
+
+    for mode in ("baseline", "cpu", "gpu"):
+        pt = photon_threshold if mode == "gpu" else 0
+        label = {
+            "baseline": "baseline (no photon tracking)",
+            "cpu": "cpu (photons tracked on CPU)",
+            "gpu": "gpu (photons on GPU via eic-opticks)",
+        }[mode]
+        extra = f", threshold={pt}" if pt > 0 else ""
+        print(f"\n{'='*60}")
+        print(f"  {label}  --  {num_events} events{extra}")
+        print(f"{'='*60}")
+
+        result, output = _run_subprocess(mode, num_events, pt)
+
+        if result is None:
+            print(f"ERROR: mode={mode} failed. Output:\n{output[-2000:]}")
+            sys.exit(1)
+
+        results[mode] = result
+
+        # Show selected output lines
+        for line in output.splitlines():
+            if line.startswith("BENCHMARK_RESULT:"):
+                continue
+            # Show event summary lines and GPU timing
+            if any(kw in line for kw in (
+                "OPTICKS_GPU_TIME", "gensteps", "hits from GPU",
+                "Detected photons",
+            )):
+                print(f"  {line.strip()}")
+
+        print(f"  Wall time: {result['wall_s']:.3f} s  "
+              f"({result['per_event_ms']:.1f} ms/event)")
+
+        if mode == "gpu":
+            gpu_event_times = _parse_gpu_times(output)
+
+    # ------------------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------------------
+    T_b = results["baseline"]["wall_s"]
+    T_c = results["cpu"]["wall_s"]
+    T_g = results["gpu"]["wall_s"]
+    cpu_optical = T_c - T_b
+    gpu_overhead = T_g - T_b
+
+    print(f"\n{'='*60}")
+    print(f"  RESULTS  ({num_events} events, 10 MeV e- in raindrop)")
+    print(f"{'='*60}")
+    print(f"\n  {'Mode':<12} {'Total (s)':<12} {'Per event (ms)'}")
+    print(f"  {'-'*40}")
+    for m in ("baseline", "cpu", "gpu"):
+        r = results[m]
+        print(f"  {m:<12} {r['wall_s']:<12.3f} {r['per_event_ms']:.1f}")
+
+    print(f"\n  CPU optical photon tracking: {cpu_optical:.3f} s"
+          f"  ({cpu_optical / num_events * 1000:.1f} ms/event)")
+    print(f"  GPU total overhead:          {gpu_overhead:.3f} s"
+          f"  ({gpu_overhead / num_events * 1000:.1f} ms/event)")
+
+    if gpu_event_times:
+        all_ms = [t for _, t in gpu_event_times]
+        total_ms = sum(all_ms)
+        print(f"\n  GPU simulate() per event:")
+        for evt_id, ms in gpu_event_times:
+            tag = " (includes OptiX warmup)" if evt_id == 0 else ""
+            print(f"    event {evt_id:>3d}:  {ms:>8.1f} ms{tag}")
+        print(f"    {'total':>9s}:  {total_ms:>8.1f} ms")
+
+        if len(all_ms) > 1:
+            warm_ms = all_ms[1:]
+            avg_warm = sum(warm_ms) / len(warm_ms)
+            print(f"    avg (excl. first): {avg_warm:>5.1f} ms")
+
+        if total_ms > 0:
+            speedup = cpu_optical / (total_ms / 1000)
+            print(f"\n  >>> SPEEDUP (CPU optical / GPU simulate):  {speedup:.1f}x <<<")
+
+        if len(all_ms) > 1 and avg_warm > 0:
+            speedup_warm = (cpu_optical / num_events * 1000) / avg_warm
+            print(f"  >>> SPEEDUP (per-event, excl. warmup):     {speedup_warm:.1f}x <<<")
+
+    if gpu_overhead > 0:
+        speedup_total = cpu_optical / gpu_overhead
+        print(f"  >>> SPEEDUP (CPU optical / GPU overhead):   {speedup_total:.1f}x <<<")
+
+    print(f"{'='*60}\n")
+
+
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Benchmark GPU vs CPU optical photon speedup"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["cpu", "baseline", "gpu", "all"],
+        default="all",
+        help="cpu=photons on CPU, baseline=no photon tracking, "
+             "gpu=photons on GPU, all=run all three",
+    )
+    parser.add_argument(
+        "--events", type=int, default=10, help="number of events (default: 10)"
+    )
+    parser.add_argument(
+        "--photon-threshold", type=int, default=0,
+        help="GPU batch mode: accumulate photons across events and simulate "
+             "when this count is reached (default: 0 = per-event)",
+    )
+    args = parser.parse_args()
+
+    if args.mode == "all":
+        run_all(args.events, args.photon_threshold)
+    else:
+        run_single_mode(args.mode, args.events, args.photon_threshold)
