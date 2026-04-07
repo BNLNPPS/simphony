@@ -524,7 +524,8 @@ struct SteppingAction : G4UserSteppingAction
                             return;
                         }
                         // G4 11.x supports up to 3 scintillation components
-                        const G4int tcKeys[3] = {kSCINTILLATIONTIMECONSTANT1, kSCINTILLATIONTIMECONSTANT2, kSCINTILLATIONTIMECONSTANT3};
+                        const G4int tcKeys[3] = {kSCINTILLATIONTIMECONSTANT1, kSCINTILLATIONTIMECONSTANT2,
+                                                 kSCINTILLATIONTIMECONSTANT3};
                         const G4int yieldKeys[3] = {kSCINTILLATIONYIELD1, kSCINTILLATIONYIELD2, kSCINTILLATIONYIELD3};
 
                         G4double tc[3] = {0, 0, 0};
@@ -537,9 +538,8 @@ struct SteppingAction : G4UserSteppingAction
                             if (MPT->ConstPropertyExists(tcKeys[c]))
                             {
                                 tc[c] = MPT->GetConstProperty(tcKeys[c]);
-                                yield[c] = MPT->ConstPropertyExists(yieldKeys[c])
-                                               ? MPT->GetConstProperty(yieldKeys[c])
-                                               : (c == 0 ? 1.0 : 0.0);
+                                yield[c] = MPT->ConstPropertyExists(yieldKeys[c]) ? MPT->GetConstProperty(yieldKeys[c])
+                                                                                  : (c == 0 ? 1.0 : 0.0);
                                 yieldSum += yield[c];
                                 nComp = c + 1;
                             }
