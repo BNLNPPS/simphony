@@ -67,11 +67,10 @@ def plot_with_errors(ax, data1, data2, bins, label1, label2, xlabel):
     h1, edges = np.histogram(data1, bins=bins)
     h2, _ = np.histogram(data2, bins=bins)
     centers = (edges[:-1] + edges[1:]) / 2
-    width = (edges[1] - edges[0]) * 0.35
-    ax.errorbar(centers - width / 2, h1, yerr=np.sqrt(np.maximum(h1, 1)),
+    ax.errorbar(centers, h1, yerr=np.sqrt(np.maximum(h1, 1)),
                 fmt='o', color='dodgerblue', markersize=4, capsize=2,
                 linewidth=1, label=label1)
-    ax.errorbar(centers + width / 2, h2, yerr=np.sqrt(np.maximum(h2, 1)),
+    ax.errorbar(centers, h2, yerr=np.sqrt(np.maximum(h2, 1)),
                 fmt='s', color='orangered', markersize=4, capsize=2,
                 linewidth=1, label=label2)
     ax.set_xlabel(xlabel)
