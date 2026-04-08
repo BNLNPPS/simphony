@@ -115,7 +115,8 @@ int main(int argc, char **argv)
     if (program.get<bool>("--skip-gpu"))
     {
         g4app->run_act_->fSkipGPU = true;
-        G4cout << "Skip-GPU mode: GPU photon propagation will be skipped" << G4endl;
+        g4app->stepping_->fSkipGenstep = true;
+        G4cout << "Skip-GPU mode: GPU propagation and genstep collection skipped" << G4endl;
     }
 
     ActionInitialization *actionInit = new ActionInitialization(g4app);

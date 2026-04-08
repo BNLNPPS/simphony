@@ -451,6 +451,7 @@ struct SteppingAction : G4UserSteppingAction
     std::atomic<int> fCountOpRayleigh{0};
     std::atomic<int> fCountOpAbsorption{0};
     std::atomic<int> fOpticalSteps{0};
+    bool fSkipGenstep{false}; // skip genstep collection when --skip-gpu
 
     static thread_local std::chrono::steady_clock::time_point fLastStepTime;
     static thread_local bool fLastStepValid;
@@ -502,6 +503,8 @@ struct SteppingAction : G4UserSteppingAction
                 aTrack->SetTrackStatus(fStopAndKill);
             }
         }
+
+        if (fSkipGenstep) return; // skip genstep collection for timing-only runs
 
         G4SteppingManager *fpSteppingManager =
             G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
