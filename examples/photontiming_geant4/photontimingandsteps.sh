@@ -1,21 +1,28 @@
 #!/bin/bash
-# benchmark_apex.sh — Measure GPU vs G4 optical photon propagation speedup
+# photontimingandsteps.sh — Measure GPU vs G4 optical photon speedup and timing
 #
-# Methodology:
-#   Run 1 (--skip-gpu):         G4 electrons + G4 photon propagation, no GPU
-#   Run 2 (setStackPhotons off): G4 electrons only, no photon tracks at all
-#   Run 3 (normal):             G4 electrons + GPU photon propagation
+# Methodology (3 runs):
 #
-#   G4 photon-only CPU time = Run 1 - Run 2
-#   GPU photon time          = "Simulation time" from Run 3
-#   Speedup                  = G4 photon-only / GPU time
+#   Run 1 (--skip-gpu):          G4 tracks electron + propagates optical photons
+#                                GPU is skipped. Genstep collection is skipped.
+#                                Measures: G4 photon-only CPU time, per-process
+#                                step timing, per-photon timing with percentiles.
 #
-# The --skip-gpu flag prevents the GPU simulate() call so that G4's
-# "User=" time reflects only CPU-side photon propagation without
-# GPU contamination.
+#   Run 2 (setStackPhotons off): G4 tracks electron only, no photon tracks created.
+#                                GPU is skipped.
+#                                Measures: EM baseline time (electron tracking only).
+#
+#   Run 3 (setStackPhotons off,  G4 tracks electron and collects gensteps but does
+#          GPU active):          NOT create photon tracks. GPU propagates photons.
+#                                Measures: GPU-accelerated total wall time.
+#
+# Speedup calculations:
+#   G4 photon-only CPU time  = Run 1 CPU  - Run 2 CPU
+#   Photon-only speedup      = G4 photon-only / GPU sim time
+#   Wall time speedup         = Run 1 wall / Run 3 wall
 #
 # Usage:
-#   ./examples/benchmark_apex.sh [events]    # default: 1
+#   ./examples/photontiming_geant4/photontimingandsteps.sh [events]  # default: 1
 
 set -e
 
@@ -30,9 +37,10 @@ if [ ! -f "$GDML" ]; then
     exit 1
 fi
 
-echo "=== apex.gdml Benchmark ==="
-echo "eps=$EPS  eps0=$EPS0  events=$NEVENTS  config=$CONFIG"
+echo "=== Optical Photon Timing & Speedup Benchmark ==="
+echo "GDML=$GDML  eps=$EPS  eps0=$EPS0  events=$NEVENTS  config=$CONFIG"
 
+# Macro: normal G4 (photons propagated)
 MAC_NORMAL=$(mktemp /tmp/bench_normal_XXXXXX.mac)
 cat > "$MAC_NORMAL" << EOF
 /run/verbose 1
@@ -41,8 +49,9 @@ cat > "$MAC_NORMAL" << EOF
 /run/beamOn $NEVENTS
 EOF
 
-MAC_BASELINE=$(mktemp /tmp/bench_baseline_XXXXXX.mac)
-cat > "$MAC_BASELINE" << EOF
+# Macro: no photon tracks (gensteps still collected by SteppingAction)
+MAC_NOPHOTON=$(mktemp /tmp/bench_nophoton_XXXXXX.mac)
+cat > "$MAC_NOPHOTON" << EOF
 /run/verbose 1
 /run/numberOfThreads 1
 /run/initialize
@@ -55,7 +64,9 @@ export OPTICKS_MAX_BOUNCE=1000
 export OPTICKS_PROPAGATE_EPSILON=$EPS
 export OPTICKS_PROPAGATE_EPSILON0=$EPS0
 
-# --- Run 1: G4 photon propagation (skip GPU) ---
+# ---------------------------------------------------------------
+# Run 1: G4 photon propagation (no GPU, no genstep collection)
+# ---------------------------------------------------------------
 echo ""
 echo "--- Run 1: G4 photon propagation (--skip-gpu, single-threaded) ---"
 LOG1=$(mktemp /tmp/bench1_XXXXXX.txt)
@@ -63,71 +74,85 @@ GPURaytrace -g "$GDML" -m "$MAC_NORMAL" -c "$CONFIG" -s 42 --skip-gpu &> "$LOG1"
 
 G4_LINE=$(grep "^  User=" "$LOG1" | tail -1)
 G4_PHOTON_CPU=$(echo "$G4_LINE" | grep -oP 'User=\K[0-9.]+')
+G4_PHOTON_WALL=$(echo "$G4_LINE" | grep -oP 'Real=\K[0-9.]+')
 G4_HITS=$(grep "Geant4: NumHits:" "$LOG1" | awk '{print $NF}')
-NPHOTONS=$(grep "NumCollected:" "$LOG1" | tail -1 | awk '{print $NF}')
 
-echo "  G4 CPU (with photons): ${G4_PHOTON_CPU}s"
+echo "  G4 CPU time:           ${G4_PHOTON_CPU}s"
+echo "  G4 wall time:          ${G4_PHOTON_WALL}s"
 echo "  G4 hits:               $G4_HITS"
-echo "  Photons:               $NPHOTONS"
 
-# Print per-process and per-photon timing from Run 1
-grep "Geant4: StepTime\|Geant4: PhotonTiming\|Geant4: PhotonPercentiles\|Geant4: PhotonSteps\|Geant4: StepPercentiles\|Geant4: PhotonTimeHist" "$LOG1" | sed 's/^/  /'
+# Print per-process and per-photon timing
+grep "Geant4: StepTime\|Geant4: PhotonTiming\|Geant4: PhotonPercentiles\|Geant4: PhotonSteps\|Geant4: StepPercentiles\|Geant4: PhotonTimeHist\|Geant4: OpticalSteps" "$LOG1" | sed 's/^/  /'
 
-# --- Run 2: Baseline (no photon tracks) ---
+# ---------------------------------------------------------------
+# Run 2: EM baseline (no photon tracks, no GPU)
+# ---------------------------------------------------------------
 echo ""
-echo "--- Run 2: Baseline (setStackPhotons false) ---"
+echo "--- Run 2: EM baseline (setStackPhotons false, --skip-gpu) ---"
 LOG2=$(mktemp /tmp/bench2_XXXXXX.txt)
-GPURaytrace -g "$GDML" -m "$MAC_BASELINE" -c "$CONFIG" -s 42 --skip-gpu &> "$LOG2"
+GPURaytrace -g "$GDML" -m "$MAC_NOPHOTON" -c "$CONFIG" -s 42 --skip-gpu &> "$LOG2"
 
 G4_BASE_LINE=$(grep "^  User=" "$LOG2" | tail -1)
 G4_BASE_CPU=$(echo "$G4_BASE_LINE" | grep -oP 'User=\K[0-9.]+')
-echo "  G4 baseline CPU:       ${G4_BASE_CPU}s (electrons only)"
+echo "  EM baseline CPU:       ${G4_BASE_CPU}s"
 
-# --- Run 3: GPU propagation ---
+# ---------------------------------------------------------------
+# Run 3: GPU-accelerated (no G4 photon tracks, GPU propagates)
+# ---------------------------------------------------------------
 echo ""
-echo "--- Run 3: GPU photon propagation ---"
+echo "--- Run 3: GPU-accelerated (setStackPhotons false, GPU active) ---"
 LOG3=$(mktemp /tmp/bench3_XXXXXX.txt)
-GPURaytrace -g "$GDML" -m "$MAC_NORMAL" -c "$CONFIG" -s 42 &> "$LOG3"
+GPURaytrace -g "$GDML" -m "$MAC_NOPHOTON" -c "$CONFIG" -s 42 &> "$LOG3"
 
 GPU_TIME=$(grep "Simulation time:" "$LOG3" | awk '{print $3}')
 GPU_HITS=$(grep "Opticks: NumHits:" "$LOG3" | awk '{print $NF}')
-echo "  GPU sim time:          ${GPU_TIME}s"
-echo "  GPU hits:              $GPU_HITS"
+GPU_LINE=$(grep "^  User=" "$LOG3" | tail -1)
+GPU_WALL=$(echo "$GPU_LINE" | grep -oP 'Real=\K[0-9.]+')
+NPHOTONS=$(grep "NumCollected:" "$LOG3" | tail -1 | awk '{print $NF}')
 
-# --- Results ---
+echo "  GPU sim time:          ${GPU_TIME}s"
+echo "  GPU total wall:        ${GPU_WALL}s"
+echo "  GPU hits:              $GPU_HITS"
+echo "  Photons:               $NPHOTONS"
+
+# ---------------------------------------------------------------
+# Results
+# ---------------------------------------------------------------
 echo ""
 echo "=== Results ==="
 python3 -c "
-gpu = float('${GPU_TIME:-0}')
-g4_full = float('${G4_PHOTON_CPU:-0}')
+gpu_sim = float('${GPU_TIME:-0}')
+g4_cpu = float('${G4_PHOTON_CPU:-0}')
 g4_base = float('${G4_BASE_CPU:-0}')
+g4_wall = float('${G4_PHOTON_WALL:-0}')
+gpu_wall = float('${GPU_WALL:-0}')
 nphotons = int('${NPHOTONS:-0}')
 gpu_hits = int('${GPU_HITS:-0}')
 g4_hits = int('${G4_HITS:-0}')
 
-g4_photon = g4_full - g4_base
+g4_photon_cpu = g4_cpu - g4_base
 hit_diff = (gpu_hits - g4_hits) / g4_hits * 100 if g4_hits > 0 else 0
 
 print()
 print(f'Photons:                    {nphotons:>12,}')
 print()
-print(f'G4 with photons (CPU):      {g4_full:>12.2f} s')
-print(f'G4 baseline (CPU):          {g4_base:>12.2f} s')
-print(f'G4 photon-only (CPU):       {g4_photon:>12.2f} s')
-print(f'GPU sim time:               {gpu:>12.4f} s')
+print(f'--- Photon-only speedup ---')
+print(f'G4 photon CPU time:         {g4_photon_cpu:>12.2f} s')
+print(f'GPU sim time:               {gpu_sim:>12.4f} s')
+if gpu_sim > 0 and g4_photon_cpu > 0:
+    print(f'Photon speedup:             {g4_photon_cpu/gpu_sim:>12.0f}x')
+    print(f'GPU time/photon:            {gpu_sim/nphotons*1e9:>12.1f} ns')
+    print(f'G4 time/photon (avg):       {g4_photon_cpu/nphotons*1e6:>12.1f} us')
 print()
-if gpu > 0 and g4_photon > 0:
-    speedup = g4_photon / gpu
-    print(f'Speedup:                    {speedup:>12.0f}x')
-    print()
-    print(f'GPU rate:                   {nphotons/gpu/1e6:>12.1f} M photons/s')
-    print(f'G4 rate:                    {nphotons/g4_photon/1e3:>12.1f} k photons/s')
-    print(f'GPU time/photon:            {gpu/nphotons*1e9:>12.1f} ns')
-    print(f'G4 time/photon (avg):       {g4_photon/nphotons*1e6:>12.1f} us')
+print(f'--- Wall time speedup ---')
+print(f'G4 wall (EM + photons):     {g4_wall:>12.2f} s')
+print(f'GPU wall (EM + GPU):        {gpu_wall:>12.4f} s')
+if gpu_wall > 0 and g4_wall > 0:
+    print(f'Wall speedup:               {g4_wall/gpu_wall:>12.0f}x')
 print()
 print(f'GPU hits:                   {gpu_hits:>12}')
 print(f'G4 hits:                    {g4_hits:>12}')
 print(f'Hit diff:                   {hit_diff:>+11.1f}%')
 "
 
-rm -f "$LOG1" "$LOG2" "$LOG3" "$MAC_NORMAL" "$MAC_BASELINE"
+rm -f "$LOG1" "$LOG2" "$LOG3" "$MAC_NORMAL" "$MAC_NOPHOTON"
