@@ -13,6 +13,7 @@
 #include "sysrap/OPTICKS_LOG.hh"
 
 #include "GPURaytrace.h"
+#include "config.h"
 
 #include "G4RunManager.hh"
 #include "G4RunManagerFactory.hh"
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
 
     argparse::ArgumentParser program("GPURaytrace", "0.0.0");
 
-    string gdml_file, macro_name;
+    string gdml_file, config_name, macro_name;
     bool interactive;
 
     program.add_argument("-g", "--gdml")
@@ -61,6 +62,12 @@ int main(int argc, char **argv)
         .default_value(string("geom.gdml"))
         .nargs(1)
         .store_into(gdml_file);
+
+    program.add_argument("-c", "--config")
+        .help("the name of a config file")
+        .default_value(string("dev"))
+        .nargs(1)
+        .store_into(config_name);
 
     program.add_argument("-m", "--macro")
         .help("path to G4 macro")
@@ -97,6 +104,8 @@ int main(int argc, char **argv)
     }
     CLHEP::HepRandom::setTheSeed(seed);
     G4cout << "Random seed set to: " << seed << G4endl;
+
+    gphox::Config cfg(config_name);
 
     // Configure Geant4
     // The physics list must be instantiated before other user actions

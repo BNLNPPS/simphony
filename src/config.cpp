@@ -1,8 +1,13 @@
+#include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <ranges>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <sys/stat.h>
 #include <vector>
 
@@ -20,6 +25,38 @@ using namespace std;
 
 constexpr const char *GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
 
+namespace
+{
+
+struct EventModeInfo
+{
+    EventMode        mode;
+    std::string_view name;
+};
+
+inline constexpr std::array EventModeInfos{
+    EventModeInfo{EventMode::DebugHeavy, "DebugHeavy"},
+    EventModeInfo{EventMode::DebugLite, "DebugLite"},
+    EventModeInfo{EventMode::Nothing, "Nothing"},
+    EventModeInfo{EventMode::Minimal, "Minimal"},
+    EventModeInfo{EventMode::Hit, "Hit"},
+    EventModeInfo{EventMode::HitPhoton, "HitPhoton"},
+    EventModeInfo{EventMode::HitPhotonSeq, "HitPhotonSeq"},
+    EventModeInfo{EventMode::HitSeq, "HitSeq"},
+};
+
+auto FindEventMode(EventMode mode)
+{
+    return std::ranges::find(EventModeInfos, mode, &EventModeInfo::mode);
+}
+
+auto FindEventMode(std::string_view name)
+{
+    return std::ranges::find(EventModeInfos, name, &EventModeInfo::name);
+}
+
+} // namespace
+
 bool FileExists(const std::string &path)
 {
     if (path.empty())
@@ -28,10 +65,27 @@ bool FileExists(const std::string &path)
     return std::filesystem::exists(path, ec) && !ec;
 }
 
+std::filesystem::path Config::DefaultOutputDir()
+{
+    return std::filesystem::current_path();
+}
+
+std::filesystem::path ReadOutputDir(const nlohmann::json& event)
+{
+    if (event.contains("output_dir"))
+        return event["output_dir"].get<std::string>();
+
+    return Config::DefaultOutputDir();
+}
+
 Config::Config(std::string config_name) :
-  name{std::getenv("GPHOX_CONFIG") ? std::getenv("GPHOX_CONFIG") : config_name}
+    name{config_name},
+    event_mode{EventMode::Minimal},
+    maxslot{0},
+    output_dir{DefaultOutputDir()}
 {
   ReadConfig(Locate(name + ".json"));
+  Apply();
 }
 
 std::string Config::PtxPath(const std::string &ptx_name)
@@ -99,6 +153,36 @@ std::string Config::Locate(std::string filename) const
   return filepath;
 }
 
+EventMode Config::ParseEventMode(std::string_view name)
+{
+    const auto it = FindEventMode(name);
+    if (it != EventModeInfos.end())
+        return it->mode;
+
+    throw std::invalid_argument(
+        "Invalid event.mode \"" + std::string{name} + "\". Expected one of: " + ValidEventModes());
+}
+
+std::string Config::ValidEventModes()
+{
+    std::string names;
+    for (const auto& info : EventModeInfos)
+    {
+        if (!names.empty())
+            names += ", ";
+        names += info.name;
+    }
+    return names;
+}
+
+std::string_view Config::EventModeName(EventMode mode)
+{
+    const auto it = FindEventMode(mode);
+    if (it != EventModeInfos.end())
+        return it->name;
+
+    return "Minimal";
+}
 
 /**
  * Expects a valid filepath.
@@ -111,36 +195,53 @@ void Config::ReadConfig(std::string filepath)
     std::ifstream ifs(filepath);
     ifs >> json;
 
-    nlohmann::json torch_ = json["torch"];
+    if (json.contains("torch"))
+    {
+        nlohmann::json torch_ = json["torch"];
 
-    torch = {
-      .gentype = OpticksGenstep_::Type(torch_["gentype"]),
-      .trackid = torch_["trackid"],
-      .matline = torch_["matline"],
-      .numphoton = torch_["numphoton"],
-      .pos = make_float3(torch_["pos"][0], torch_["pos"][1], torch_["pos"][2]),
-      .time = torch_["time"],
-      .mom = normalize(make_float3(torch_["mom"][0], torch_["mom"][1], torch_["mom"][2])),
-      .weight = torch_["weight"],
-      .pol = make_float3(torch_["pol"][0], torch_["pol"][1], torch_["pol"][2]),
-      .wavelength = torch_["wavelength"],
-      .zenith = make_float2(torch_["zenith"][0], torch_["zenith"][1]),
-      .azimuth = make_float2(torch_["azimuth"][0], torch_["azimuth"][1]),
-      .radius = torch_["radius"],
-      .distance = torch_["distance"],
-      .mode = torch_["mode"],
-      .type = storchtype::Type(torch_["type"])
-    };
+        torch = {
+            .gentype = OpticksGenstep_::Type(torch_["gentype"]),
+            .trackid = torch_["trackid"],
+            .matline = torch_["matline"],
+            .numphoton = torch_["numphoton"],
+            .pos = make_float3(torch_["pos"][0], torch_["pos"][1], torch_["pos"][2]),
+            .time = torch_["time"],
+            .mom = normalize(make_float3(torch_["mom"][0], torch_["mom"][1], torch_["mom"][2])),
+            .weight = torch_["weight"],
+            .pol = make_float3(torch_["pol"][0], torch_["pol"][1], torch_["pol"][2]),
+            .wavelength = torch_["wavelength"],
+            .zenith = make_float2(torch_["zenith"][0], torch_["zenith"][1]),
+            .azimuth = make_float2(torch_["azimuth"][0], torch_["azimuth"][1]),
+            .radius = torch_["radius"],
+            .distance = torch_["distance"],
+            .mode = torch_["mode"],
+            .type = storchtype::Type(torch_["type"])};
+    }
 
     nlohmann::json event_ = json["event"];
 
-    SEventConfig::SetEventMode( string(event_["mode"]).c_str() );
-    SEventConfig::SetMaxSlot( event_["maxslot"] );
+    event_mode = ParseEventMode(event_["mode"].get<std::string>());
+    maxslot = event_["maxslot"].get<int>();
+    output_dir = ReadOutputDir(event_);
   }
   catch (nlohmann::json::exception& e) {
     std::string errmsg{"Failed reading config parameters from " + filepath + "\n" + e.what()};
     throw std::runtime_error{errmsg};
   }
+  catch (std::exception& e)
+  {
+      std::string errmsg{"Failed reading config parameters from " + filepath + "\n" + e.what()};
+      throw std::runtime_error{errmsg};
+  }
 }
 
+void Config::Apply() const
+{
+    const std::string event_mode_name{EventModeName(event_mode)};
+    const std::string output_dir_str = output_dir.string();
+
+    SEventConfig::SetEventMode(event_mode_name.c_str());
+    SEventConfig::SetMaxSlot(maxslot);
+    SEventConfig::SetOutFold(output_dir_str.c_str());
+}
 }

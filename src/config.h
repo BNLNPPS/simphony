@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "sysrap/srng.h"
@@ -9,9 +10,24 @@
 
 namespace gphox {
 
+enum class EventMode
+{
+    DebugHeavy,
+    DebugLite,
+    Nothing,
+    Minimal,
+    Hit,
+    HitPhoton,
+    HitPhotonSeq,
+    HitSeq
+};
 
 /**
  * Provides access to all configuration types and data.
+ *
+ * Config is the authoritative source for app-level event output policy.
+ * Lower-level Opticks code still consumes this through SEventConfig after
+ * Config::Apply has synchronized the selected values.
  */
 class Config
 {
@@ -19,10 +35,25 @@ class Config
 
   Config(std::string config_name = "dev");
 
+  void Apply() const;
+
+  static std::filesystem::path DefaultOutputDir();
+  static EventMode ParseEventMode(std::string_view name);
+  static std::string ValidEventModes();
+  static std::string_view EventModeName(EventMode mode);
   static std::string PtxPath(const std::string &ptx_name = "CSGOptiX7.ptx");
 
   /// A unique name associated with this Config
   std::string name;
+
+  /// Event persistence mode applied to SEventConfig.
+  EventMode event_mode;
+
+  /// Maximum event slots applied to SEventConfig.
+  int maxslot;
+
+  /// Base directory for event output folders.
+  std::filesystem::path output_dir;
 
   storch torch;
 
