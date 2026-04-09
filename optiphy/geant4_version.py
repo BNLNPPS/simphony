@@ -5,11 +5,12 @@ import subprocess
 
 
 def parse_geant4_version(version):
-    match = re.match(r"^\s*(\d+)\.(\d+)(?:\.(\d+))?", version)
+    match = re.fullmatch(r"\s*(\d+)\.(\d+)(?:\.(?:(\d+)|p(\d+))(?:\.beta)?)?\s*", version)
     if match is None:
         raise RuntimeError(f"Unable to parse Geant4 version: {version!r}")
 
-    return tuple(int(part) for part in match.groups(default="0"))
+    major, minor, patch, patchlevel = match.groups(default="0")
+    return int(major), int(minor), int(patch if patch != "0" else patchlevel)
 
 
 def detect_geant4_version():
@@ -35,7 +36,7 @@ def geant4_series(version=None):
         return "11.4+"
 
     raise RuntimeError(
-        f"Unsupported Geant4 version {resolved}. Add support for this release family."
+        f"Unsupported Geant4 version {resolved!r}. Add support for this release family."
     )
 
 
