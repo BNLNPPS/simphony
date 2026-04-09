@@ -40,6 +40,7 @@ add_subdirectory(u4/tests)
 add_subdirectory(g4cx)
 add_subdirectory(g4cx/tests)
 add_subdirectory(src)
+add_subdirectory(examples/viztracks)
 
 # Export configs
 include(CMakePackageConfigHelpers)
