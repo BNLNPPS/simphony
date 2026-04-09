@@ -193,7 +193,7 @@ inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wav
 
 
     s.material1 = boundary_lookup( wavelength, m1_line, 0);   // refractive_index, absorption_length, scattering_length, reemission_prob
-    s.m1group2  = boundary_lookup( wavelength, m1_line, 1);   // group_velocity ,  (unused          , unused           , unused)
+    s.m1group2  = boundary_lookup( wavelength, m1_line, 1);   // x: material1 group_velocity, y: material2 group_velocity, z/w unused
     s.material2 = boundary_lookup( wavelength, m2_line, 0);   // refractive_index, (absorption_length, scattering_length, reemission_prob) only m2:refractive index actually used
     s.surface   = boundary_lookup( wavelength, su_line, 0);   // detect,         , absorb            , (reflect_specular), reflect_diffuse     [they add to 1. so one not used]
     s.set_material2_group_velocity(boundary_lookup(wavelength, m2_line, 1).x);
