@@ -41,6 +41,7 @@ add_subdirectory(g4cx)
 add_subdirectory(g4cx/tests)
 add_subdirectory(src)
 add_subdirectory(examples/viztracks)
+add_subdirectory(examples/AlignGpuCpuTracks)
 
 # Export configs
 include(CMakePackageConfigHelpers)
