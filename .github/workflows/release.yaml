@@ -28,12 +28,13 @@ jobs:
       - name: Define environment variables
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+          CACHE_IMAGE_NAME=${IMAGE_NAME}-buildcache
           REF_SANITIZED=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
           BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
           echo IMAGE_TAG_SHORT=${REF_SANITIZED} >> $GITHUB_ENV
-          echo CACHE_REF=${IMAGE_NAME}:buildcache-${BUILD_VARIANT} >> $GITHUB_ENV
+          echo CACHE_REF=${CACHE_IMAGE_NAME}:${BUILD_VARIANT} >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,3 +73,5 @@ jobs:
     needs: release
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          packages: ${{ github.event.repository.name }},${{ github.event.repository.name }}-buildcache
