@@ -225,8 +225,8 @@ void test_TimePoint_0()
 /**
 
 
-Previously has to divide the Linux epoch count 
-by 1000 to be comparable with the Darwin one.
+Previously had to divide the Linux epoch count 
+by 1000 to be comparable with an older platform-specific value.
 
 Instead of such a hack, changed EpochCount to 
 standardize on microsecond epoch counts. 

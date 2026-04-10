@@ -124,7 +124,7 @@ source $PWD/../bin/GEOM.sh trim   ## sets GEOM envvar
 if [ "$(uname)" == "Linux" ]; then
     cfname=GeoChain/$GEOM            
 else
-    cfname=GeoChain_Darwin/$GEOM            
+    cfname=GeoChain/$GEOM            
 fi
 
 
@@ -173,4 +173,3 @@ echo $msg invoke ./cxr.sh
 ./cxr.sh 
 
 exit 0
-

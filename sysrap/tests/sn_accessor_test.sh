@@ -56,10 +56,7 @@ if [ "${arg/run}" != "$arg" ]; then
 fi 
 
 if [ "${arg/dbg}" != "$arg" ]; then 
-    case $(uname) in 
-    Linux)   gdb__ $bin ;;
-    Darwin) lldb__ $bin ;;
-    esac
+    gdb__ $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 3
 fi 
 

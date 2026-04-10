@@ -20,37 +20,5 @@
 
 #pragma once
 
-/* 
-
-Source "Generated" hdr CSGOPTIX_API_EXPORT.hh 
-Created Fri, Jun 17, 2016  8:03:44 PM with commandline::
-
-    importlib-exports CSGOPTIX CSGOPTIX_API  
-
-https://cmake.org/Wiki/BuildingWinDLL
-
-CMake will define CSGOPTIX_EXPORTS on Windows when it
-configures to build a shared library. If you are going to use
-another build system on windows or create the visual studio
-projects by hand you need to define CSGOPTIX_EXPORTS when
-building a DLL on windows.
-
-*/
-
-// TODO: probably mingw32 will need handling 
-
-#if defined (_WIN32) 
-
-   #if defined(CSGOPTIX_EXPORTS)
-       #define  CSGOPTIX_API __declspec(dllexport)
-   #else
-       #define  CSGOPTIX_API __declspec(dllimport)
-   #endif
-
-#else
-
-   #define CSGOPTIX_API  __attribute__ ((visibility ("default")))
-
-#endif
-
+#define CSGOPTIX_API __attribute__ ((visibility ("default")))
 

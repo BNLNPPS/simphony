@@ -87,7 +87,7 @@ fi
 export CAM=${CAM:-$cam}
 export QUALITY=${QUALITY:-$quality}
 
-#export GDB=lldb_ 
+#export GDB=gdb 
 
 export NAMEPREFIX=$nameprefix
 export OPTICKS_RELDIR=cam_${CAM}

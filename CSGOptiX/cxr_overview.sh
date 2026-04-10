@@ -20,7 +20,7 @@ For some views its good to remove large container volumes::
 ::
 
    GDB=gdb    ./cxr_overview.sh 
-   GDB=lldb__ ./cxr_overview.sh 
+   GDB=gdb ./cxr_overview.sh 
 
 On workstation, make renders::
 
@@ -80,7 +80,6 @@ cd $(dirname $(realpath $BASH_SOURCE))
 
 case $(uname) in 
   Linux) defarg="run" ;;
-  Darwin) defarg="grab_open" ;; 
 esac
 arg=${1:-$defarg}
 
@@ -104,7 +103,7 @@ export ZOOM=${ZOOM:-$zoom}
 export QUALITY=90 
 export OPTICKS_GEOM=cxr_overview
 
-#[ "$(uname)" == "Darwin" ] && emm=1, || emm=t8,
+#[ "$(uname)" == "Linux" ] && emm=t8,
 
 emm_all=t0        # tilde zero     : (without comma so this is whole number spec)  meaning ~0 (ie 0xffffffff...) for ALL
 emm_noglobal=t0,  # tilde 0-th bit : (with comma meaning single bitindex spec) meaning exclude solid 0 (global) 
@@ -131,4 +130,3 @@ if [ -z "$SCAN" ]; then
 fi
 
 source cxr.sh $arg
-

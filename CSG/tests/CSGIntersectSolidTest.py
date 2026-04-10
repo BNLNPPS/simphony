@@ -317,7 +317,7 @@ pass
 
 def CSGIntersectFold():
     """
-    eg /tmp/blyth/opticks/GeoChain_Darwin/nmskSolidMaskTail/CSGIntersectSolidTest/nmskSolidMaskTail_XZ 
+    eg /tmp/blyth/opticks/GeoChain/nmskSolidMaskTail/CSGIntersectSolidTest/nmskSolidMaskTail_XZ 
     """
     identdir = "$GEOM" if "GEOM" in os.environ else "$SOPR" 
     isectFold = os.path.expandvars("$CFBASE/CSGIntersectSolidTest/%s" % identdir)

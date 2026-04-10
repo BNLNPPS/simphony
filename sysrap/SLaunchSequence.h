@@ -5,7 +5,7 @@ SLaunchSequence
 
 This is an updated version of the old cudarap/LaunchSequence
 
-Old defaults, chosen while using macOS mobile GPU Geforce 750M:: 
+Old defaults from earlier mobile-GPU tuning:: 
 
     unsigned max_blocks=128
     unsigned threads_per_block=256  
@@ -195,4 +195,3 @@ inline std::string SLaunchSequence::desc() const
 }
 
 #endif
-

@@ -87,7 +87,6 @@ vars="$vars BASH_SOURCE SDIR"
 
 case $(uname) in
    Linux) defarg=run_report_info ;;
-   Darwin) defarg=ana ;;
 esac
 
 [ -n "$BP" ] && defarg=dbg
@@ -210,7 +209,6 @@ export TEST=${TEST:-$test}
 #ctx=Debug_Philox
 
 case $(uname) in
-   Darwin) ctx=Debug_Philox ;;
     Linux) ctx=$(TEST=ContextString sbuild_test) ;;
 esac
 
@@ -747,4 +745,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
         source epub.sh
     fi
 fi
-

@@ -8,13 +8,8 @@ opticks-switch-key $arg
 bin=CSGNodeTest 
 
 if [ -n "$DEBUG" ]; then 
-   if [ "$(uname)" == "Darwin" ]; then
-       lldb__ $bin
-   else
-       gdb $bin
-   fi
+   gdb $bin
 else
    $bin
 fi 
-
 

@@ -167,16 +167,6 @@ set(_TEST_SOURCES
    UnwindTest.cc
 )
 
-set(OBJC_TEST_SOURCES
-)
-
-set(_OBJC_TEST_SOURCES
-
-   NSLogTest_m.m
-   NSLogTest_mm.mm
-)
-
-
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
     add_executable(${TGT} ${SRC})

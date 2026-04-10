@@ -2,7 +2,6 @@
 cxs_msg="=== $BASH_SOURCE : "
 case $(uname) in 
    Linux)  argdef="run" ;; 
-   Darwin) argdef="ana" ;;
 esac 
 cxs_arg=${1:-$argdef}
 
@@ -289,39 +288,6 @@ if [ "$(uname)" == "Linux" ]; then
         fi 
 
     fi
-
-elif [ "$(uname)" == "Darwin" ]; then
-
-    echo $cxs_msg Darwin $(pwd) LINENO $LINENO
-
-
-    if [ "${cxs_arg}" == "grab" ]; then 
-        echo $cxs_msg grab LINENO $LINENO 
-        EXECUTABLE=$bin       source cachegrab.sh grab
-        EXECUTABLE=CSGFoundry source cachegrab.sh grab
-    else
-        echo $cxs_msg cxs_arg $cxs_arg LINENO $LINENO
-        EXECUTABLE=$bin       source cachegrab.sh env
-
-        cxs_dumpvars "FOLD CFBASE" after cachegrab.sh env
-
-        case ${cxs_arg} in 
-           ana) ${IPYTHON:-ipython} --pdb -i ${BASH_FOLDER}/tests/$bin.py  ;; 
-           pvcap) source pvcap.sh cap ;;  
-           mpcap) source mpcap.sh cap ;;  
-           pvpub) source pvcap.sh env ;;
-           mppub) source mpcap.sh env ;;
-        esac
-
-        echo $cxs_msg cxs_arg $cxs_arg LINENO $LINENO
-
-        if [ "${cxs_arg/pub}" != "${cxs_arg}" ]; then
-           cxs_dumpvars "cxs_msg cxs_arg CAP_BASE CAP_REL CAP_PATH CAP_EXT" 
-           cxs_pub $CAP_PATH $CAP_EXT 
-        else
-           echo not pub cxs_arg $cxs_arg
-        fi 
-    fi  
 
 fi 
 
