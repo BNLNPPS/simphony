@@ -138,7 +138,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
+      matrix: &develop_matrix
         include:
           - os: ubuntu24.04
             cuda_version: 13.0.2
@@ -188,3 +188,43 @@ jobs:
         if: ${{ success() }}
         run: |
           docker image rm -f ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
+
+
+  cleanup-pr-images:
+    if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: test-develop-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: *develop_matrix
+
+    steps:
+      - name: Define environment variables
+        run: |
+          PACKAGE_NAME=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
+          REF_SANITIZED=PR-${{ github.event.pull_request.number }}
+          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-develop-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          echo PACKAGE_NAME=${PACKAGE_NAME} >> $GITHUB_ENV
+          echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
+
+      - name: Delete successful PR image from GHCR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          VERSION_ID=$(
+            gh api --paginate "/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100" \
+              --jq ".[] | select((.metadata.container.tags // []) | index(\"$IMAGE_TAG\")) | .id" \
+              | head -n 1
+          )
+
+          if [ -z "$VERSION_ID" ]; then
+            echo "No GHCR version found with tag $IMAGE_TAG"
+            exit 0
+          fi
+
+          echo "Deleting GHCR version $VERSION_ID for tag $IMAGE_TAG"
+          gh api -X DELETE "/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions/$VERSION_ID"
