@@ -111,9 +111,13 @@ int main(int argc, char **argv)
 
     HitAccumulator accumulator;
     PhotonFateAccumulator fate;
+    StepRecordAccumulator *record = nullptr;
 
     if (aligned)
+    {
         fate.Resize(total_photons);
+        record = new StepRecordAccumulator(total_photons, 32);
+    }
 
     G4VModularPhysicsList *physics = new FTFP_BERT;
     if (aligned)
@@ -131,7 +135,7 @@ int main(int argc, char **argv)
         run_mgr->SetUserInitialization(physics);
         run_mgr->SetUserInitialization(new G4OnlyDetectorConstruction(gdml_file, &accumulator));
         run_mgr->SetUserInitialization(
-            new G4OnlyActionInitialization(cfg, &accumulator, &fate, photons_per_event, num_events, aligned));
+            new G4OnlyActionInitialization(cfg, &accumulator, &fate, photons_per_event, num_events, aligned, record));
         run_mgr->Initialize();
 
         CLHEP::HepRandom::setTheSeed(seed);
@@ -147,7 +151,7 @@ int main(int argc, char **argv)
         run_mgr.SetUserInitialization(physics);
         run_mgr.SetUserInitialization(new G4OnlyDetectorConstruction(gdml_file, &accumulator));
         run_mgr.SetUserInitialization(
-            new G4OnlyActionInitialization(cfg, &accumulator, &fate, photons_per_event, num_events, aligned));
+            new G4OnlyActionInitialization(cfg, &accumulator, &fate, photons_per_event, num_events, aligned, record));
 
         if (aligned)
         {
@@ -163,5 +167,6 @@ int main(int argc, char **argv)
         run_mgr.BeamOn(num_events);
     }
 
+    delete record;
     return EXIT_SUCCESS;
 }

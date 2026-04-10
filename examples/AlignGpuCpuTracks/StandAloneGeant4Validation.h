@@ -290,18 +290,69 @@ struct PhotonFateAccumulator
     }
 };
 
+// ---- Step Record: saves per-step photon state as (num_photons, max_steps, 4, 4) ----
+
+struct StepRecordAccumulator
+{
+    int max_photons;
+    int max_steps;
+    std::vector<sphoton> records;  // flat array: [photon_idx * max_steps + step_idx]
+    std::vector<int> step_counts;  // current step count per photon
+
+    StepRecordAccumulator(int np, int ms) : max_photons(np), max_steps(ms),
+        records(np * ms), step_counts(np, 0)
+    {
+        memset(records.data(), 0, records.size() * sizeof(sphoton));
+    }
+
+    void RecordStep(int photon_idx, const G4StepPoint* point, unsigned flag)
+    {
+        if (photon_idx < 0 || photon_idx >= max_photons) return;
+        int step = step_counts[photon_idx];
+        if (step >= max_steps) return;
+
+        G4ThreeVector pos = point->GetPosition();
+        G4ThreeVector mom = point->GetMomentumDirection();
+        G4ThreeVector pol = point->GetPolarization();
+        G4double energy = point->GetTotalEnergy();
+
+        sphoton& s = records[photon_idx * max_steps + step];
+        s.pos = { float(pos.x()), float(pos.y()), float(pos.z()) };
+        s.time = float(point->GetGlobalTime());
+        s.mom = { float(mom.x()), float(mom.y()), float(mom.z()) };
+        s.pol = { float(pol.x()), float(pol.y()), float(pol.z()) };
+        s.wavelength = (energy > 0) ? float(h_Planck * c_light / (energy * CLHEP::eV)) : 0.f;
+        s.orient_boundary_flag = flag & 0xFFFF;
+        s.flagmask = flag;
+
+        step_counts[photon_idx]++;
+    }
+
+    void Save(const char* filename)
+    {
+        NP* arr = NP::Make<float>(max_photons, max_steps, 4, 4);
+        memcpy(arr->values<float>(), records.data(), records.size() * sizeof(sphoton));
+        arr->save(filename);
+        delete arr;
+        G4cout << "G4: Saved step records (" << max_photons << " x " << max_steps
+               << ") to " << filename << G4endl;
+    }
+};
+
 // ---- Stepping Action: tracks photon fates with opticks-compatible flags ----
 
 struct G4OnlySteppingAction : G4UserSteppingAction
 {
     PhotonFateAccumulator* fate;
+    StepRecordAccumulator* record;
     bool aligned;
     std::map<std::string, int> proc_death_counts;
     std::map<int, int> boundary_status_counts;
     std::mutex count_mtx;
 
-    G4OnlySteppingAction(PhotonFateAccumulator* f, bool aligned_ = false)
-        : fate(f), aligned(aligned_) {}
+    G4OnlySteppingAction(PhotonFateAccumulator* f, bool aligned_ = false,
+                         StepRecordAccumulator* rec = nullptr)
+        : fate(f), record(rec), aligned(aligned_) {}
 
     ~G4OnlySteppingAction()
     {
@@ -349,8 +400,20 @@ struct G4OnlySteppingAction : G4UserSteppingAction
         if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
 
+        if (track->GetCurrentStepNumber() > 1000)
+            track->SetTrackStatus(fStopAndKill);
+
         G4StepPoint* post = aStep->GetPostStepPoint();
         G4TrackStatus status = track->GetTrackStatus();
+
+        // Record every step for aligned photon-by-photon comparison
+        if (record)
+        {
+            int photon_idx = track->GetTrackID() - 1;
+            if (track->GetCurrentStepNumber() == 1)
+                record->RecordStep(photon_idx, aStep->GetPreStepPoint(), 0x0004); // TORCH
+            record->RecordStep(photon_idx, post, 0x0001);  // placeholder flag
+        }
 
         // Find the OpBoundary process to get its status (for ALL steps)
         G4OpBoundaryProcess* boundary = nullptr;
@@ -435,6 +498,22 @@ struct G4OnlySteppingAction : G4UserSteppingAction
         }
 
         if (flag == 0) flag = PhotonFateAccumulator::MISS; // catch-all
+
+        // Update the last recorded step with the death flag
+        if (record)
+        {
+            int photon_idx = track->GetTrackID() - 1;
+            if (photon_idx >= 0 && photon_idx < record->max_photons)
+            {
+                int step = record->step_counts[photon_idx];
+                if (step > 0)
+                {
+                    sphoton& last = record->records[photon_idx * record->max_steps + step - 1];
+                    last.orient_boundary_flag = flag & 0xFFFF;
+                    last.flagmask = flag;
+                }
+            }
+        }
 
         // Build sphoton with the final state
         G4ThreeVector pos = post->GetPosition();
@@ -523,9 +602,11 @@ struct G4OnlyRunAction : G4UserRunAction
 {
     HitAccumulator *accumulator;
     PhotonFateAccumulator *fate;
+    StepRecordAccumulator *record;
 
-    G4OnlyRunAction(HitAccumulator *acc, PhotonFateAccumulator *f = nullptr)
-        : accumulator(acc), fate(f) {}
+    G4OnlyRunAction(HitAccumulator *acc, PhotonFateAccumulator *f = nullptr,
+                    StepRecordAccumulator *rec = nullptr)
+        : accumulator(acc), fate(f), record(rec) {}
 
     void EndOfRunAction(const G4Run *) override
     {
@@ -538,6 +619,8 @@ struct G4OnlyRunAction : G4UserRunAction
                 G4cout << "G4: Total photon fates: " << fate->photons.size() << G4endl;
                 fate->Save("g4_photon.npy");
             }
+            if (record)
+                record->Save("g4_record.npy");
         }
     }
 };
@@ -549,6 +632,7 @@ struct G4OnlyActionInitialization : G4VUserActionInitialization
     gphox::Config cfg;
     HitAccumulator *accumulator;
     PhotonFateAccumulator *fate;
+    StepRecordAccumulator *record;
     int photons_per_event;
     int num_events;
     bool aligned;
@@ -556,22 +640,23 @@ struct G4OnlyActionInitialization : G4VUserActionInitialization
     G4OnlyActionInitialization(const gphox::Config &cfg, HitAccumulator *acc,
                                PhotonFateAccumulator *f,
                                int photons_per_event, int num_events,
-                               bool aligned_ = false)
-        : cfg(cfg), accumulator(acc), fate(f),
+                               bool aligned_ = false,
+                               StepRecordAccumulator *rec = nullptr)
+        : cfg(cfg), accumulator(acc), fate(f), record(rec),
           photons_per_event(photons_per_event),
           num_events(num_events), aligned(aligned_) {}
 
     void BuildForMaster() const override
     {
-        SetUserAction(new G4OnlyRunAction(accumulator, fate));
+        SetUserAction(new G4OnlyRunAction(accumulator, fate, record));
     }
 
     void Build() const override
     {
         SetUserAction(new G4OnlyPrimaryGenerator(cfg, photons_per_event));
         SetUserAction(new G4OnlyEventAction(num_events));
-        SetUserAction(new G4OnlyRunAction(accumulator, fate));
-        SetUserAction(new G4OnlySteppingAction(fate, aligned));
+        SetUserAction(new G4OnlyRunAction(accumulator, fate, record));
+        SetUserAction(new G4OnlySteppingAction(fate, aligned, record));
         if (aligned)
             SetUserAction(new G4OnlyTrackingAction());
     }
