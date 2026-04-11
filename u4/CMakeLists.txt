@@ -3,7 +3,6 @@ set(desc "Geant4 Low Level Utilities")
 
 find_package(Geant4 REQUIRED)
 find_package(CLHEP  REQUIRED) 
-find_package(XercesC REQUIRED)
 
 find_package(Custom4 CONFIG)  # have to be explicit as Custom4 needed without j/PMTSim
 find_package(PMTSim_standalone CONFIG)
@@ -128,8 +127,6 @@ add_library(${name} ${SOURCES} ${HEADERS} )
 target_link_libraries( ${name} PUBLIC
     SysRap 
     CLHEP::CLHEP
-    XercesC::XercesC
-    GDXML
     Geant4::G4gdml
     Geant4::G4particles
     Geant4::G4track

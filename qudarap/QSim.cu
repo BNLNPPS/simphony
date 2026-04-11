@@ -324,6 +324,8 @@ __global__ void _QSim_propagate_to_boundary( qsim* sim, sphoton* photon, unsigne
     ctx.prd = &dbg->prd ;  // no need for local copy when readonly
     ctx.s = dbg->s ;
     ctx.p = dbg->p ;      // need local copy of photon otherwise will have write interference between threads
+    ctx.current_group_velocity = ctx.s.material1_group_velocity();
+    ctx.current_material_index = ctx.s.index.x;
 
     unsigned flag = 0u ;
     //sim->propagate_to_boundary( flag, p, prd, s, rng, idx, tagr );
@@ -357,6 +359,8 @@ __global__ void _QSim_propagate_at_boundary_generate( qsim* sim, sphoton* photon
     ctx.prd = &dbg->prd ;  // no need for local copy when readonly
     ctx.s = dbg->s ;
     ctx.p = dbg->p ;    // need local copy of photon otherwise will have write interference between threads
+    ctx.current_group_velocity = ctx.s.material1_group_velocity();
+    ctx.current_material_index = ctx.s.index.x;
 
     quad4& q = (quad4&)ctx.p ;
     q.q0.f = q.q1.f ;   // non-standard record initial mom and pol into q0, q3
@@ -402,6 +406,8 @@ __global__ void _QSim_propagate_at_boundary_mutate( qsim* sim, sphoton* photon, 
     ctx.p = photon[idx] ;
     ctx.s = dbg->s ;
     ctx.prd = &dbg->prd ;
+    ctx.current_group_velocity = ctx.s.material1_group_velocity();
+    ctx.current_material_index = ctx.s.index.x;
 
     quad4&  q  = (quad4&)ctx.p ;
     q.q0.f = q.q1.f ;   // non-standard record initial mom and pol into q0, q3
@@ -441,6 +447,8 @@ __global__ void _QSim_propagate_at_multifilm_mutate( qsim* sim, sphoton* photon,
     ctx.p = photon[idx] ;
     ctx.s = dbg->s ;
     ctx.prd = &dbg->prd ;
+    ctx.current_group_velocity = ctx.s.material1_group_velocity();
+    ctx.current_material_index = ctx.s.index.x;
 
     quad4&  q  = (quad4&)ctx.p ;
 
@@ -820,9 +828,3 @@ extern void QSim_multifilm_lookup_all(dim3 numBlocks, dim3 threadsPerBlock, qsim
     printf("//QSim_multifilm_lookup width %d  height %d \n", width, height );
     _QSim_multifilm_lookup_all<<<numBlocks,threadsPerBlock>>>( sim, sample,result , width, height );
 }
-
-
-
-
-
-

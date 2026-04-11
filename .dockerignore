@@ -1,3 +1,5 @@
 .git*
+.github/
+.devcontainer/
 .venv
 __pycache__/

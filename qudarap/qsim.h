@@ -723,7 +723,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     const float& absorption_length = s.material1.y ;
     const float& scattering_length = s.material1.z ;
     const float& reemission_prob = s.material1.w ;
-    const float& group_velocity = s.m1group2.x ;
+    const float& group_velocity = ctx.current_group_velocity;
     const float& distance_to_boundary = ctx.prd->q0.f.w ;
 
 
@@ -1184,6 +1184,8 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
 
     flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT ;
 
+    ctx.current_material_index = reflect ? s.index.x : s.index.y;
+    ctx.current_group_velocity = reflect ? s.material1_group_velocity() : s.material2_group_velocity();
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
     if( flag ==  BOUNDARY_REFLECT )
@@ -2249,6 +2251,18 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
 
     bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.pidx, base->pidx );
 
+    if (ctx.current_material_index == 0u)
+    {
+        ctx.current_material_index = ctx.s.index.x;
+        ctx.current_group_velocity = ctx.s.material1_group_velocity();
+    }
+    else if (ctx.s.index.x == ctx.current_material_index)
+    {
+        // When the boundary orientation agrees with the carried medium, refresh
+        // the active velocity from the wavelength-dependent material lookup.
+        ctx.current_group_velocity = ctx.s.material1_group_velocity();
+    }
+
     unsigned flag = 0 ;
 
     int command = propagate_to_boundary( flag, rng, ctx );
@@ -2540,4 +2554,3 @@ inline QSIM_METHOD void qsim::generate_photon(sphoton& p, RNG& rng, const quad6&
     p.set_index(photon_id) ;
 }
 #endif
-

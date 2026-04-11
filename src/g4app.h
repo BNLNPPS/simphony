@@ -376,6 +376,14 @@ struct TrackingAction : G4UserTrackingAction
 
     void PreUserTrackingAction(const G4Track *track) override
     {
+        if (track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
+        {
+            // Geant4 boundary updates optical velocity via ProposeVelocity, but the
+            // track must honor the given velocity for post-boundary timing to match.
+            G4Track *mutable_track = const_cast<G4Track *>(track);
+            mutable_track->UseGivenVelocity(true);
+        }
+
         spho *label = STrackInfo::GetRef(track);
 
         if (label == nullptr)

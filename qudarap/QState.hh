@@ -51,6 +51,7 @@ inline sstate QState::Make()
     float m1_scattering_length = 1000.f ; 
     float m1_reemission_prob = 0.f ; 
     float m1_group_velocity = 300.f ; 
+    float m2_group_velocity = 300.f;
 
     float m2_refractive_index = qenvfloat("M2_REFRACTIVE_INDEX", "1.5" ) ; 
     float m2_absorption_length = 1000.f ; 
@@ -65,7 +66,7 @@ inline sstate QState::Make()
     sstate s ; 
     s.material1 = make_float4( m1_refractive_index, m1_absorption_length, m1_scattering_length, m1_reemission_prob ); 
     s.material2 = make_float4( m2_refractive_index, m2_absorption_length, m2_scattering_length, m2_reemission_prob );  
-    s.m1group2  = make_float4( m1_group_velocity, 0.f, 0.f, 0.f ); 
+    s.m1group2  = make_float4(m1_group_velocity, m2_group_velocity, 0.f, 0.f);
     s.surface   = make_float4( su_detect, su_absorb, su_reflect_specular, su_reflect_diffuse ); 
     s.optical   = make_uint4( 0u, 0u, 0u, 0u );  // x/y/z/w index/type/finish/value  
     s.index     = make_uint4( 0u, 0u, 0u, 0u );  // indices of m1/m2/surf/sensor
@@ -144,5 +145,3 @@ inline std::string QState::Desc( const sstate& s )
     std::string repr = ss.str(); 
     return repr ; 
 }
-
-
