@@ -204,7 +204,7 @@ dd4hep::sim::Geant4Tracker::Hit *OpticsEvent::createTrackerHit(sphoton const &ph
     hit->momentum = {ph.mom.x, ph.mom.y, ph.mom.z};
     hit->length = ph.wavelength;
     hit->energyDeposit = 0;
-    hit->cellID = ph.identity;
+    hit->cellID = ph.pmtid();
 
     hit->truth.trackID = ph.index;
     hit->truth.pdgID = 0;
