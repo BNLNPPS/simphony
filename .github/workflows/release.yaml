@@ -21,18 +21,20 @@ jobs:
             os: ubuntu24.04
             cuda_version: 13.0.2
             optix_version: 9.0.0
+            geant4_version: 11.4.1
+            cmake_version: 4.2.1
 
     steps:
       - name: Define environment variables
         run: |
+          IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+          CACHE_IMAGE_NAME=${IMAGE_NAME}-buildcache
           REF_SANITIZED=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}
-          echo REF_SANITIZED=$REF_SANITIZED >> $GITHUB_ENV
-          echo BUILD_VARIANT=$BUILD_VARIANT >> $GITHUB_ENV
-          echo IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
           echo IMAGE_TAG_SHORT=${REF_SANITIZED} >> $GITHUB_ENV
-          echo CACHE_SCOPE=${BUILD_VARIANT} >> $GITHUB_ENV
+          echo CACHE_REF=${CACHE_IMAGE_NAME}:${BUILD_VARIANT} >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,20 +52,26 @@ jobs:
       - name: Build and push to registries
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: |
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
+            ${{ env.IMAGE_NAME }}:latest
           target: ${{ matrix.target }}
           build-args: |
             OS=${{ matrix.os }}
             CUDA_VERSION=${{ matrix.cuda_version }}
             OPTIX_VERSION=${{ matrix.optix_version }}
-          cache-from: type=gha,scope=${{ env.CACHE_SCOPE }}
-          cache-to: type=gha,mode=max,scope=${{ env.CACHE_SCOPE }}
+            GEANT4_VERSION=${{ matrix.geant4_version }}
+            CMAKE_VERSION=${{ matrix.cmake_version }}
+          cache-from: type=registry,ref=${{ env.CACHE_REF }}
+          cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
 
   cleanup:
     runs-on: ubuntu-latest
     needs: release
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          packages: ${{ github.event.repository.name }},${{ github.event.repository.name }}-buildcache
