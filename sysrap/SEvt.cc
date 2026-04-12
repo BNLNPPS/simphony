@@ -2473,7 +2473,7 @@ sgs SEvt::addGenstep(const quad6& q_)
     if(matline_ >= G4_INDEX_OFFSET  )
     {
         unsigned mtindex = matline_ - G4_INDEX_OFFSET ;
-        int matline = cf ? cf->lookup_mtline(mtindex) : 0 ;
+        int matline = cf ? cf->lookup_mtline(mtindex) : (tree ? tree->lookup_mtline(mtindex) : 0);
         // cf(SGeo) used for lookup
         // BUT: that just uses SSim::lookup_mtline
         // so SEvt should hold sim(SSim) ?
