@@ -39,6 +39,16 @@ add_subdirectory(g4cx)
 add_subdirectory(g4cx/tests)
 add_subdirectory(src)
 
+# Optional DD4hep integration plugins
+find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
+if(DD4hep_FOUND)
+    message(STATUS "DD4hep found -- building dd4hepplugins")
+    add_subdirectory(dd4hepplugins)
+    add_subdirectory(dd4hepplugins/examples)
+else()
+    message(STATUS "DD4hep not found -- skipping dd4hepplugins")
+endif()
+
 # Export configs
 include(CMakePackageConfigHelpers)
 
