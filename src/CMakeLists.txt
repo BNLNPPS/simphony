@@ -87,7 +87,16 @@ target_include_directories(simtox PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
-install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource simtox gphox gphox_g4_deps
+# async_gpu_launch — async CPU+GPU optical photon simulation example
+add_executable(async_gpu_launch ${CMAKE_SOURCE_DIR}/examples/async_gpu_launch/async_gpu_launch.cpp
+                                ${CMAKE_SOURCE_DIR}/examples/async_gpu_launch/async_gpu_launch.h)
+target_link_libraries(async_gpu_launch gphox gphox_g4_deps U4)
+target_include_directories(async_gpu_launch PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+)
+
+install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource simtox gphox gphox_g4_deps async_gpu_launch
     EXPORT ${PROJECT_NAME}Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
