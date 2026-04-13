@@ -2,9 +2,9 @@
 # benchmark_apex.sh — Measure GPU vs G4 speedup on apex.gdml
 #
 # Usage:
-#   ./examples/benchmark_apex.sh
+#   ./benchmarks/benchmark_apex.sh
 
-GDML="apex.gdml"
+GDML="tests/geom/apex.gdml"
 MACRO="tests/run.mac"
 EPS="0.00001"
 EPS0="0.0006"
