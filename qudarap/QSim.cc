@@ -167,11 +167,10 @@ void QSim::UploadComponents( const SSim* ssim  )
         LOG(LEVEL) << "  propcom null, snam::PROPCOM " <<  snam::PROPCOM ;
     }
 
-
     const NP* icdf = ssim->get(snam::ICDF);
-    if( icdf == nullptr )
+    if (icdf == nullptr)
     {
-        LOG(error) << " icdf null, snam::ICDF " << snam::ICDF ;
+        LOG(LEVEL) << " no scintillation ICDF, skip QScint upload. snam::ICDF: " << snam::ICDF;
     }
     else
     {
@@ -179,7 +178,6 @@ void QSim::UploadComponents( const SSim* ssim  )
         QScint* scint = new QScint( icdf, hd_factor); // custom high-definition inverse CDF for scintillation generation
         LOG(LEVEL) << scint->desc();
     }
-
 
     // TODO: make this more like the others : acting on the available inputs rather than the mode
     bool is_simtrace = SEventConfig::IsRGModeSimtrace() ;
@@ -2053,5 +2051,3 @@ std::string QSim::Switches()  // static
 {
     return Desc(',');
 }
-
-
