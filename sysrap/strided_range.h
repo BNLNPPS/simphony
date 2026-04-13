@@ -48,8 +48,8 @@ genstep buffer, as used by seeding in okop-::
 
 **/
 
-
 #include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/iterator_traits.h>
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/iterator/permutation_iterator.h>
 #include <thrust/functional.h>
@@ -60,7 +60,7 @@ class strided_range
 {
     public:
 
-    typedef typename thrust::iterator_difference<Iterator>::type difference_type;
+    typedef typename thrust::iterator_traits<Iterator>::difference_type difference_type;
 
     struct stride_functor
     {
@@ -107,7 +107,3 @@ class strided_range
     Iterator last;
     difference_type stride;
 };
-
-
-
-
