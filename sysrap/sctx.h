@@ -77,6 +77,8 @@ struct sctx
 
     sphoton p ;
     sstate  s ;
+    float current_group_velocity = 0.f;
+    unsigned current_material_index = 0u;
 
 #ifndef PRODUCTION
     srec rec ;
@@ -184,4 +186,3 @@ SCTX_METHOD void sctx::end()
 }
 
 #endif
-

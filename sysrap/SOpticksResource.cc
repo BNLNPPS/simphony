@@ -423,7 +423,6 @@ const char* SOpticksResource::OpticksGDMLPath()
 const char* SOpticksResource::SomeGDMLPath_ = "SomeGDMLPath" ; 
 const char* SOpticksResource::SomeGDMLPath()
 {
-    // TODO: use GDXML instead of the old CGDMLKludge 
     const char* path0 = getenv(SomeGDMLPath_) ;   
     const char* path1 = spath::Resolve("$HOME/.opticks/GEOM/$GEOM/origin.gdml");  
     const char* path2 = nullptr ; 
@@ -593,5 +592,4 @@ std::string SOpticksResource::Desc()
     std::string s = ss.str(); 
     return s ; 
 }
-
 
