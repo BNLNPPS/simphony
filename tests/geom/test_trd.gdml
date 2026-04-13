@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+  <define>
+    <matrix coldim="2" name="RINDEX_Vacuum" values="1.55e-06 1.0 6.2e-06 1.0 1.033e-05 1.0 1.55e-05 1.0"/>
+    <matrix coldim="2" name="RINDEX_Glass"  values="1.55e-06 1.5 6.2e-06 1.5 1.033e-05 1.5 1.55e-05 1.5"/>
+    <matrix coldim="2" name="ABSLENGTH_Glass" values="1.55e-06 1000 6.2e-06 1000 1.033e-05 1000 1.55e-05 1000"/>
+  </define>
+
+  <materials>
+    <material Z="1" name="Vacuum" state="gas">
+      <D unit="g/cm3" value="1e-25"/>
+      <atom unit="g/mole" value="1.00794"/>
+      <property name="RINDEX" ref="RINDEX_Vacuum"/>
+    </material>
+    <material Z="1" name="GlassMat" state="solid">
+      <D unit="g/cm3" value="2.5"/>
+      <atom unit="g/mole" value="1.00794"/>
+      <property name="RINDEX" ref="RINDEX_Glass"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_Glass"/>
+    </material>
+  </materials>
+
+  <solids>
+    <box name="WorldSolid" x="1000" y="1000" z="1000" lunit="mm"/>
+    <trd name="TrapezoidSolid" x1="100" x2="200" y1="80" y2="160" z="300" lunit="mm"/>
+  </solids>
+
+  <structure>
+    <volume name="TrapezoidVolume">
+      <materialref ref="GlassMat"/>
+      <solidref ref="TrapezoidSolid"/>
+    </volume>
+    <volume name="World">
+      <materialref ref="Vacuum"/>
+      <solidref ref="WorldSolid"/>
+      <physvol name="TrapezoidPV">
+        <volumeref ref="TrapezoidVolume"/>
+      </physvol>
+    </volume>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="World"/>
+  </setup>
+
+</gdml>

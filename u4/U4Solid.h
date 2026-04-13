@@ -48,6 +48,7 @@ npy/NNodeUncoincide npy/NNodeNudger
 #include "G4Hype.hh"
 #include "G4MultiUnion.hh"
 #include "G4Torus.hh"
+#include "G4Trd.hh"
 #include "G4UnionSolid.hh"
 #include "G4IntersectionSolid.hh"
 #include "G4SubtractionSolid.hh"
@@ -77,7 +78,8 @@ enum {
     _G4IntersectionSolid,
     _G4SubtractionSolid,
     _G4DisplacedSolid,
-    _G4CutTubs
+    _G4CutTubs,
+    _G4Trd
  };
 
 struct U4Solid
@@ -97,6 +99,7 @@ struct U4Solid
     static constexpr const char* G4SubtractionSolid_  = "Sub" ;
     static constexpr const char* G4DisplacedSolid_    = "Dis" ;
     static constexpr const char* G4CutTubs_           = "TuC" ;
+    static constexpr const char* G4Trd_               = "Trd" ;
 
     static constexpr const char* _U4Solid__IsFlaggedLVID = "U4Solid__IsFlaggedLVID" ;
     static const int   IsFlaggedLVID_ ;
@@ -144,6 +147,7 @@ private:
     void init_IntersectionSolid();
     void init_SubtractionSolid();
     void init_CutTubs();
+    void init_Trd();
 
     sn* init_Sphere_(char layer);
     sn* init_Cons_(char layer);
@@ -293,6 +297,7 @@ inline int U4Solid::Type(const char* name)   // static
     if( strcmp(name, "G4IntersectionSolid") == 0 ) type = _G4IntersectionSolid ;
     if( strcmp(name, "G4DisplacedSolid") == 0 )    type = _G4DisplacedSolid ;
     if( strcmp(name, "G4CutTubs") == 0 )           type = _G4CutTubs ;
+    if( strcmp(name, "G4Trd") == 0 )               type = _G4Trd ;
     return type ;
 }
 
@@ -316,6 +321,7 @@ inline const char* U4Solid::Tag(int type)   // static
         case _G4IntersectionSolid: tag = G4IntersectionSolid_ ; break ;
         case _G4DisplacedSolid:    tag = G4DisplacedSolid_    ; break ;
         case _G4CutTubs:           tag = G4CutTubs_           ; break ;
+        case _G4Trd:               tag = G4Trd_               ; break ;
     }
     return tag ;
 }
@@ -413,6 +419,7 @@ inline void U4Solid::init_Constituents()
         case _G4SubtractionSolid  : init_SubtractionSolid()      ; break ;
         case _G4DisplacedSolid    : init_DisplacedSolid()        ; break ;
         case _G4CutTubs           : init_CutTubs()               ; break ;
+        case _G4Trd               : init_Trd()                   ; break ;
     }
 
     if(!root) std::cerr << "U4Solid::init_Constituents UNHANDLED SOLID TYPE " << type << "\n" << desc() << "\n" ;
@@ -787,6 +794,21 @@ inline void U4Solid::init_Box()
     double fz = 2.0*box->GetZHalfLength()/CLHEP::mm ;
 
     root = sn::Box3(fx, fy, fz) ;
+}
+
+
+inline void U4Solid::init_Trd()
+{
+    const G4Trd* trd = dynamic_cast<const G4Trd*>(solid);
+    assert(trd);
+
+    double dx1 = trd->GetXHalfLength1()/CLHEP::mm ;
+    double dx2 = trd->GetXHalfLength2()/CLHEP::mm ;
+    double dy1 = trd->GetYHalfLength1()/CLHEP::mm ;
+    double dy2 = trd->GetYHalfLength2()/CLHEP::mm ;
+    double dz  = trd->GetZHalfLength()/CLHEP::mm ;
+
+    root = sn::Trapezoid(dx1, dy1, dz, dx2, dy2) ;
 }
 
 

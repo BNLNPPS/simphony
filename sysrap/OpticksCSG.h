@@ -465,7 +465,7 @@ struct CSG
 
     static bool HasPlanes(int type) // huh ? what happened to the planes array ?
     {
-        return (type == CSG_TRAPEZOID || type == CSG_CONVEXPOLYHEDRON || type == CSG_SEGMENT ) ;
+        return (type == CSG_CONVEXPOLYHEDRON || type == CSG_SEGMENT ) ;
     }
 
 

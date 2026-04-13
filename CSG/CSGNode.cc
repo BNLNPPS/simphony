@@ -418,6 +418,14 @@ void CSGNode::setAABBLocal()
         getParam( fx, fy, fz, a, b, c );
         setAABB( -fx*0.5f , -fy*0.5f, -fz*0.5f, fx*0.5f , fy*0.5f, fz*0.5f );
     }
+    else if( tc == CSG_TRAPEZOID )
+    {
+        float dx1, dy1, dz, dx2, dy2, a ;
+        getParam( dx1, dy1, dz, dx2, dy2, a );
+        float xmax = fmaxf(dx1, dx2) ;
+        float ymax = fmaxf(dy1, dy2) ;
+        setAABB( -xmax, -ymax, -dz, xmax, ymax, dz );
+    }
     else if( tc == CSG_CYLINDER || tc == CSG_OLDCYLINDER )
     {
         float px, py, a, radius, z1, z2 ;

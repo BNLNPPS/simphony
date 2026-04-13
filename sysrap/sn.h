@@ -470,6 +470,7 @@ struct SYSRAP_API sn
     static sn* ZSphere(double radius, double z1, double z2);
     static sn* Box3(double fullside);
     static sn* Box3(double fx, double fy, double fz );
+    static sn* Trapezoid(double dx1, double dy1, double dz, double dx2, double dy2);
     static sn* Torus(double rmin, double rmax, double rtor, double startPhi_deg, double deltaPhi_deg );
 
     static constexpr const char* sn__PhiCut_PACMAN_ALLOWED = "sn__PhiCut_PACMAN_ALLOWED" ;
@@ -3259,6 +3260,20 @@ inline sn* sn::Box3(double fx, double fy, double fz )  // static
 }
 
 
+inline sn* sn::Trapezoid(double dx1, double dy1, double dz, double dx2, double dy2)  // static
+{
+    assert( dz > 0. );
+    assert( dx1 >= 0. || dx2 >= 0. );
+    assert( dy1 >= 0. || dy2 >= 0. );
+
+    double xmax = fmax(dx1, dx2) ;
+    double ymax = fmax(dy1, dy2) ;
+
+    sn* nd = Create(CSG_TRAPEZOID) ;
+    nd->setPA( dx1, dy1, dz, dx2, dy2, 0. );
+    nd->setBB( -xmax, -ymax, -dz, xmax, ymax, dz );
+    return nd ;
+}
 
 
 
@@ -5444,6 +5459,14 @@ inline void sn::setAABB_LeafFrame()
         getParam_(fx, fy, fz, a, b, c );
         assert( a == 0. && b == 0. && c == 0. );
         setBB( -fx*0.5 , -fy*0.5, -fz*0.5, fx*0.5 , fy*0.5, fz*0.5 );
+    }
+    else if( typecode == CSG_TRAPEZOID )
+    {
+        double dx1, dy1, dz, dx2, dy2, a ;
+        getParam_(dx1, dy1, dz, dx2, dy2, a );
+        double xmax = fmax(dx1, dx2) ;
+        double ymax = fmax(dy1, dy2) ;
+        setBB( -xmax, -ymax, -dz, xmax, ymax, dz );
     }
     else if( typecode == CSG_CYLINDER || typecode == CSG_OLDCYLINDER )
     {
