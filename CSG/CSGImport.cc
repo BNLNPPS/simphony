@@ -569,7 +569,7 @@ CSGNode* CSGImport::importNode(int nodeOffset, int partIdx, const snode& node, c
         // ConvexPolyhedron: store planes in foundry, set planeIdx/planeNum on node
         const std::vector<double>* pl = nd->getPlanes() ;
         unsigned num_planes = pl->size() / 4 ;
-        unsigned planeIdx = 1 + fd->plan.size() ;  // 1-based
+        unsigned planeIdx = fd->plan.size() ;  // 0-based, matches csg_intersect_leaf_convexpolyhedron.h
         for(unsigned i = 0 ; i < num_planes ; i++)
         {
             float4 plane = make_float4( (*pl)[i*4+0], (*pl)[i*4+1], (*pl)[i*4+2], (*pl)[i*4+3] ) ;
