@@ -41,31 +41,8 @@ if [ -z "$GPU_TIME" ] || [ -z "$G4_CPU" ]; then
     exit 1
 fi
 
-python3 -c "
-gpu = float('$GPU_TIME')
-g4_cpu = float('$G4_CPU')
-g4_wall = float('$G4_WALL')
-nphotons = int('$NPHOTONS')
-gpu_hits = int('$GPU_HITS')
-g4_hits = int('$G4_HITS')
-hit_diff = (gpu_hits - g4_hits) / g4_hits * 100 if g4_hits > 0 else 0
-
-print()
-print(f'Photons:        {nphotons:>10,}')
-print(f'GPU sim time:   {gpu:>10.4f} s')
-print(f'G4 CPU time:    {g4_cpu:>10.2f} s')
-print(f'G4 wall time:   {g4_wall:>10.2f} s')
-print()
-print(f'Speedup (CPU):  {g4_cpu/gpu:>10.0f}x')
-print(f'Speedup (wall): {g4_wall/gpu:>10.0f}x')
-print()
-print(f'GPU rate:       {nphotons/gpu/1e6:>10.1f} M photons/s')
-print(f'G4 rate:        {nphotons/g4_cpu/1e3:>10.1f} k photons/s')
-print()
-print(f'GPU hits:       {gpu_hits:>10}')
-print(f'G4 hits:        {g4_hits:>10}')
-print(f'Hit diff:       {hit_diff:>+9.1f}%')
-"
+python3 optiphy/ana/print_speedup.py \
+    "$GPU_TIME" "$G4_CPU" "$G4_WALL" "$NPHOTONS" "$GPU_HITS" "$G4_HITS"
 
 rm -f "$LOGFILE"
 
