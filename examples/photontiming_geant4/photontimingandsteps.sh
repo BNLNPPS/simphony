@@ -120,39 +120,9 @@ echo "  Photons:               $NPHOTONS"
 # ---------------------------------------------------------------
 echo ""
 echo "=== Results ==="
-python3 -c "
-gpu_sim = float('${GPU_TIME:-0}')
-g4_cpu = float('${G4_PHOTON_CPU:-0}')
-g4_base = float('${G4_BASE_CPU:-0}')
-g4_wall = float('${G4_PHOTON_WALL:-0}')
-gpu_wall = float('${GPU_WALL:-0}')
-nphotons = int('${NPHOTONS:-0}')
-gpu_hits = int('${GPU_HITS:-0}')
-g4_hits = int('${G4_HITS:-0}')
-
-g4_photon_cpu = g4_cpu - g4_base
-hit_diff = (gpu_hits - g4_hits) / g4_hits * 100 if g4_hits > 0 else 0
-
-print()
-print(f'Photons:                    {nphotons:>12,}')
-print()
-print(f'--- Photon-only speedup ---')
-print(f'G4 photon CPU time:         {g4_photon_cpu:>12.2f} s')
-print(f'GPU sim time:               {gpu_sim:>12.4f} s')
-if gpu_sim > 0 and g4_photon_cpu > 0:
-    print(f'Photon speedup:             {g4_photon_cpu/gpu_sim:>12.0f}x')
-    print(f'GPU time/photon:            {gpu_sim/nphotons*1e9:>12.1f} ns')
-    print(f'G4 time/photon (avg):       {g4_photon_cpu/nphotons*1e6:>12.1f} us')
-print()
-print(f'--- Wall time speedup ---')
-print(f'G4 wall (EM + photons):     {g4_wall:>12.2f} s')
-print(f'GPU wall (EM + GPU):        {gpu_wall:>12.4f} s')
-if gpu_wall > 0 and g4_wall > 0:
-    print(f'Wall speedup:               {g4_wall/gpu_wall:>12.0f}x')
-print()
-print(f'GPU hits:                   {gpu_hits:>12}')
-print(f'G4 hits:                    {g4_hits:>12}')
-print(f'Hit diff:                   {hit_diff:>+11.1f}%')
-"
+python3 optiphy/ana/photon_timing_summary.py \
+    "${GPU_TIME:-0}" "${G4_PHOTON_CPU:-0}" "${G4_BASE_CPU:-0}" \
+    "${G4_PHOTON_WALL:-0}" "${GPU_WALL:-0}" \
+    "${NPHOTONS:-0}" "${GPU_HITS:-0}" "${G4_HITS:-0}"
 
 rm -f "$LOG1" "$LOG2" "$LOG3" "$MAC_NORMAL" "$MAC_NOPHOTON"
