@@ -1,32 +1,34 @@
 #!/usr/bin/env bash
-# MC_Truth example: run GPURaytrace and inspect the G4 Track ID written per hit.
+# MC_Truth example: standalone build of GPURaytrace that demonstrates
+# appending the G4 Track ID of the creating particle to each hit line in
+# opticks_hits_output.txt when OPTICKS_MC_TRUTH is set.
 #
-# Prerequisite: build and install from the mc-truth-hit-trackid branch:
-#     cmake --build /opt/eic-opticks/build --parallel --target install
+# Build (once):
+#     cd examples/MC_Truth
+#     cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/eic-opticks
+#     cmake --build build --parallel
 #
-# The modified GPURaytrace.h (copied into this directory for reference)
-# calls SEvt::getHitGenstepIndex(idx) and emits TrackID=<G4 track id>
-# at the end of each hit line in opticks_hits_output.txt when
-# OPTICKS_MC_TRUTH is set (unset by default → no TrackID field).
+# Run (this script):
+#     ./run.sh
 
 set -euo pipefail
 
-export OPTICKS_MC_TRUTH=1
-
-REPO=/workspaces/eic-opticks
-BIN=/opt/eic-opticks/bin/GPURaytrace
-GDML=${GDML:-$REPO/tests/geom/opticks_raindrop.gdml}
-MACRO=${MACRO:-$REPO/tests/run.mac}
-SEED=${SEED:-42}
+REPO=${REPO:-/workspaces/eic-opticks}
+BIN=${BIN:-$(dirname "$(realpath "$0")")/build/MC_Truth_GPURaytrace}
+EIC_GDML=${EIC_GDML:-$REPO/tests/geom/opticks_raindrop.gdml}
+EIC_MACRO=${EIC_MACRO:-$REPO/tests/run.mac}
+EIC_SEED=${EIC_SEED:-42}
 OUTDIR=${OUTDIR:-$(pwd)}
 
 export USER=${USER:-fakeuser}
 export GEOM=${GEOM:-fakegeom}
+export EIC_GDML EIC_MACRO EIC_SEED
+export OPTICKS_MC_TRUTH=1
 
 cd "$OUTDIR"
 rm -f opticks_hits_output.txt g4_hits_output.txt
 
-"$BIN" -g "$GDML" -m "$MACRO" -s "$SEED"
+"$BIN"
 
 echo
 echo "=== TrackID distribution in opticks_hits_output.txt ==="

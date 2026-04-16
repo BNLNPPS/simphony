@@ -20,29 +20,33 @@
 #include "G4Scintillation.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4THitsCollection.hh"
 #include "G4ThreeVector.hh"
+#include "G4Threading.hh"
 #include "G4Track.hh"
 #include "G4TrackStatus.hh"
 #include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
 #include "G4UserTrackingAction.hh"
+#include "G4VHit.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VProcess.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
+#include "G4VisAttributes.hh"
 
-#include "g4cx/G4CXOpticks.hh"
-#include "sysrap/NP.hh"
-#include "sysrap/SEvt.hh"
-#include "sysrap/STrackInfo.h"
-#include "sysrap/spho.h"
-#include "sysrap/sphoton.h"
-#include "u4/U4.hh"
-#include "u4/U4Random.hh"
-#include "u4/U4StepPoint.hh"
-#include "u4/U4Touchable.h"
-#include "u4/U4Track.h"
+#include "eic-opticks/g4cx/G4CXOpticks.hh"
+#include "eic-opticks/sysrap/NP.hh"
+#include "eic-opticks/sysrap/SEvt.hh"
+#include "eic-opticks/sysrap/STrackInfo.h"
+#include "eic-opticks/sysrap/spho.h"
+#include "eic-opticks/sysrap/sphoton.h"
+#include "eic-opticks/u4/U4.hh"
+#include "eic-opticks/u4/U4Random.hh"
+#include "eic-opticks/u4/U4StepPoint.hh"
+#include "eic-opticks/u4/U4Touchable.h"
+#include "eic-opticks/u4/U4Track.h"
 
 namespace
 {
@@ -387,6 +391,7 @@ struct RunAction : G4UserRunAction
             }
 
             const bool emit_trackid = getenv("OPTICKS_MC_TRUTH") != nullptr;
+            auto hit_loop_start = std::chrono::high_resolution_clock::now();
             for (int idx = 0; idx < int(num_hits); idx++)
             {
                 sphoton hit;
@@ -423,6 +428,11 @@ struct RunAction : G4UserRunAction
                 }
                 outFile << std::endl;
             }
+            auto hit_loop_end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> hit_loop_elapsed = hit_loop_end - hit_loop_start;
+            std::cout << "Hit-write loop time: " << hit_loop_elapsed.count() << " seconds"
+                      << " (emit_trackid=" << (emit_trackid ? "1" : "0")
+                      << ", num_hits=" << num_hits << ")" << std::endl;
 
             outFile.close();
         }
