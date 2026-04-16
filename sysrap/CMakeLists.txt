@@ -259,7 +259,6 @@ set(HEADERS
     SAr.hh
     SArr.hh
     SArgs.hh
-    S_freopen_redirect.hh
     S_get_option.hh
 
     STime.hh
@@ -472,7 +471,6 @@ set(HEADERS
  
 
     SU.hh
-    SComponent_OLD.hh 
     SComp.h 
 
     SEventConfig.hh
