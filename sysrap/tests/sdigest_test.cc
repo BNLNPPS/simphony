@@ -109,10 +109,7 @@ int sdigest_test::hello()
 
     std::string msg = "hello" ;
 
-    std::stringstream ss ;
-    ss << "echo " << hello_digest ;
-    // kludge as Linux equivalent "echo -n hello | md5sum" needs a pipe
-    std::string cmd = ss.str();
+    std::string cmd = "printf \"%s\" \"hello\" | md5sum | cut -c1-32" ;
 
     std::vector<std::string> dig(10) ;
 
