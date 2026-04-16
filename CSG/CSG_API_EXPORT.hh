@@ -20,5 +20,4 @@
 
 #pragma once
 
-#define CSG_API __attribute__ ((visibility ("default")))
-
+#define CSG_API __attribute__((visibility("default")))

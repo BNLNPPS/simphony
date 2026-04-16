@@ -20,5 +20,4 @@
 
 #pragma once
 
-#define SYSRAP_API __attribute__ ((visibility ("default")))
-
+#define SYSRAP_API __attribute__((visibility("default")))

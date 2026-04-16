@@ -20,5 +20,4 @@
 
 #pragma once
 
-#define QUDARAP_API __attribute__ ((visibility ("default")))
-
+#define QUDARAP_API __attribute__((visibility("default")))

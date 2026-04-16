@@ -20,5 +20,4 @@
 
 #pragma once
 
-#define CSGOPTIX_API __attribute__ ((visibility ("default")))
-
+#define CSGOPTIX_API __attribute__((visibility("default")))

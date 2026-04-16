@@ -137,7 +137,7 @@ void test_Basename()
 
 void test_Basename_2()
 {
-    const char* path = "/tmp/blyth/opticks/GeoChain/XJfixtureConstruction" ; 
+    const char *path = "/tmp/blyth/opticks/GeoChain/XJfixtureConstruction";
     const char* base = SPath::Basename(path) ;
 
     LOG(info) 

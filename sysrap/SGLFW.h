@@ -976,9 +976,6 @@ inline std::string SGLFW::FormCommand(const char* token, float value)  // static
     return str ;
 }
 
-
-
-
 /**
 SGLFW::getWindowSize
 ---------------------
@@ -1299,7 +1296,8 @@ inline void SGLFW::init()
 
     gleqInit();
 
-    if(level > 1) printf(".SGLFW::init.linux\n");
+    if (level > 1)
+        printf(".SGLFW::init.linux\n");
     glfwWindowHint (GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint (GLFW_CONTEXT_VERSION_MINOR, 6);  // 1/6 ?
     glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // remove stuff deprecated in requested release

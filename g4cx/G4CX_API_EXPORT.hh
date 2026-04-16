@@ -20,5 +20,4 @@
 
 #pragma once
 
-#define G4CX_API __attribute__ ((visibility ("default")))
-
+#define G4CX_API __attribute__((visibility("default")))

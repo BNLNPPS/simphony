@@ -5,25 +5,25 @@ SLaunchSequence
 
 This is an updated version of the old cudarap/LaunchSequence
 
-Old defaults from earlier mobile-GPU tuning:: 
+Old defaults from earlier mobile-GPU tuning::
 
     unsigned max_blocks=128
-    unsigned threads_per_block=256  
- 
+    unsigned threads_per_block=256
+
 Example of a CUDA launch using this::
 
-    init_rng<<<launch.blocks_per_launch, launch.threads_per_block>>>( launch.threads_per_launch, launch.thread_offset, dev_rng_states_launch, seed, offset );
+    init_rng<<<launch.blocks_per_launch, launch.threads_per_block>>>( launch.threads_per_launch, launch.thread_offset,
+dev_rng_states_launch, seed, offset );
 
 Can experiment with envvars
 
     THREADS_PER_BLOCK
-        rather constrained even with TITAN V,  TITAN RTX cannot exceed 1024   
+        rather constrained even with TITAN V,  TITAN RTX cannot exceed 1024
 
     MAX_BLOCKS
-        not constrained, the maximum is enormous 
+        not constrained, the maximum is enormous
 
 **/
-
 
 #include <vector>
 #include <cassert>

@@ -42,14 +42,13 @@ std::string linux_stack = R"(
 /home/blyth/local/opticks/lib/CerenkovMinimal() [0x4098bd] 
 /usr/lib64/libc.so.6(__libc_start_main+0xf5) [0x7fffe00e1445] 
 /home/blyth/local/opticks/lib/CerenkovMinimal() [0x409629] 
-)" ; 
-
+)";
 
 int main(int  argc, char** argv )
 {
-    OPTICKS_LOG(argc, argv); 
+    OPTICKS_LOG(argc, argv);
 
-    const char* lines = linux_stack.c_str(); 
+    const char *lines = linux_stack.c_str();
     LOG(info) << std::endl << lines  ; 
 
 

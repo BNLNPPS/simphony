@@ -20,5 +20,4 @@
 
 #pragma once
 
-#define U4_API __attribute__ ((visibility ("default")))
-
+#define U4_API __attribute__((visibility("default")))
