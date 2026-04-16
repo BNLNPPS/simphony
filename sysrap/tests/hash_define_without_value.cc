@@ -4,75 +4,68 @@
  * This file is part of Opticks
  * (see https://bitbucket.org/simoncblyth/opticks).
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License.  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
- * See the License for the specific language governing permissions and 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-
-
-#include <cassert>
 #include "OPTICKS_LOG.hh"
+#include <cassert>
 
 #define G4DAE_EXTRAS_NO_VALUE
 #define G4DAE_EXTRAS_WITH_ONE 1
 #define G4DAE_EXTRAS_WITH_ZERO 0
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-   OPTICKS_LOG(argc, argv);
+    OPTICKS_LOG(argc, argv);
 
-   int count(0); 
+    int count(0);
 
 #ifdef G4DAE_EXTRAS_NO_VALUE
-   LOG(info) << "G4DAE_EXTRAS_NO_VALUE" ; 
-   count++ ; 
+    LOG(info) << "G4DAE_EXTRAS_NO_VALUE";
+    count++;
 #else
-   LOG(info) << "not G4DAE_EXTRAS_NO_VALUE" ; 
-#endif   
+    LOG(info) << "not G4DAE_EXTRAS_NO_VALUE";
+#endif
 
 #ifdef G4DAE_EXTRAS_WITH_ONE
-   LOG(info) << "G4DAE_EXTRAS_WITH_ONE" ; 
-   count++ ; 
+    LOG(info) << "G4DAE_EXTRAS_WITH_ONE";
+    count++;
 #else
-   LOG(info) << "not G4DAE_EXTRAS_WITH_ONE" ; 
-#endif   
-
+    LOG(info) << "not G4DAE_EXTRAS_WITH_ONE";
+#endif
 
 #ifdef G4DAE_EXTRAS_WITH_ZERO
-   LOG(info) << "G4DAE_EXTRAS_WITH_ZERO" ; 
-   count++ ; 
+    LOG(info) << "G4DAE_EXTRAS_WITH_ZERO";
+    count++;
 #else
-   LOG(info) << "not G4DAE_EXTRAS_WITH_ZERO" ; 
-#endif   
+    LOG(info) << "not G4DAE_EXTRAS_WITH_ZERO";
+#endif
 
+    LOG(info) << " count : " << count;
+    assert(count == 3);
 
-   LOG(info) << " count : " << count ; 
-   assert(count == 3 );
-
-   return 0 ; 
+    return 0;
 }
-
 
 /*
 
 simon:sysrap blyth$ uname -a
 Linux localhost 6.8.0 #1 SMP x86_64 GNU/Linux
-simon:sysrap blyth$ hash_define_without_value 
+simon:sysrap blyth$ hash_define_without_value
 2017-12-01 11:11:17.313 INFO  [777934] [main@13] G4DAE_EXTRAS_NO_VALUE
 2017-12-01 11:11:17.313 INFO  [777934] [main@19] G4DAE_EXTRAS_WITH_ONE
 2017-12-01 11:11:17.313 INFO  [777934] [main@26] G4DAE_EXTRAS_WITH_ZERO
-simon:sysrap blyth$ 
+simon:sysrap blyth$
 
 
 */
-
-

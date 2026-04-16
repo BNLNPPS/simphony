@@ -1,71 +1,68 @@
 #pragma once
 /**
-SIMG.h : High Level Image load/save methods implemented with stb_image.h 
+SIMG.h : High Level Image load/save methods implemented with stb_image.h
 ===========================================================================
 
-Note that STTF managed truetype fonts are now handled with an 
+Note that STTF managed truetype fonts are now handled with an
 internal instance rather than a global one from SLOG as this
-simplifies dependencies enabling headeronly access to this functionality. 
+simplifies dependencies enabling headeronly access to this functionality.
 
 
 **/
-#include <string>
-#include <cstring>
-#include <sstream>
-#include <iostream>
 #include <cassert>
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-#include "sdirectory.h"
 #include "np.h"
+#include "sdirectory.h"
 
-struct STTF ; 
+struct STTF;
 
-
-struct SIMG 
+struct SIMG
 {
-   STTF* ttf ;  
+    STTF *ttf;
 
-   int width ; 
-   int height ; 
-   int channels ; 
-   unsigned char* data ; 
-   const char* loadpath ; 
-   const char* loadext ; 
-   const bool owned ; 
+    int width;
+    int height;
+    int channels;
+    unsigned char *data;
+    const char *loadpath;
+    const char *loadext;
+    const bool owned;
 
-   SIMG(const char* path, int desired_channels=0);   // 0:asis channels 
-   SIMG(int width_, int height_, int channels_, unsigned char* data_ ); 
-   void setData(unsigned char* data_, bool flip_vertical=false) ; 
-   void flipVertical(); 
-  
-   virtual ~SIMG();  
+    SIMG(const char *path, int desired_channels = 0); // 0:asis channels
+    SIMG(int width_, int height_, int channels_, unsigned char *data_);
+    void setData(unsigned char *data_, bool flip_vertical = false);
+    void flipVertical();
 
-   std::string desc() const ; 
+    virtual ~SIMG();
 
-   void annotate( const char* bottom_line=nullptr, const char* top_line=nullptr, int line_height=24 ) ;
+    std::string desc() const;
 
-   void writeNPY() const ; 
-   void writeNPY(const char* dir, const char* name) const ; 
-   void writeNPY(const char* path) const ; 
+    void annotate(const char *bottom_line = nullptr, const char *top_line = nullptr, int line_height = 24);
 
-   void writePNG() const ; 
-   void writeJPG(int quality) const ; 
+    void writeNPY() const;
+    void writeNPY(const char *dir, const char *name) const;
+    void writeNPY(const char *path) const;
 
-   void writePNG(const char* dir, const char* name) const ; 
-   void writeJPG(const char* dir, const char* name, int quality) const ; 
+    void writePNG() const;
+    void writeJPG(int quality) const;
 
-   void writePNG(const char* path) const ; 
-   void writeJPG(const char* path, int quality) const ; 
+    void writePNG(const char *dir, const char *name) const;
+    void writeJPG(const char *dir, const char *name, int quality) const;
 
-   static std::string FormPath(const char* dir, const char* name);
-   static bool EndsWith( const char* s, const char* q);
-   static const char* ChangeExt( const char* s, const char* x1, const char* x2);
-   static const char* Ext(const char* path);
+    void writePNG(const char *path) const;
+    void writeJPG(const char *path, int quality) const;
+
+    static std::string FormPath(const char *dir, const char *name);
+    static bool EndsWith(const char *s, const char *q);
+    static const char *ChangeExt(const char *s, const char *x1, const char *x2);
+    static const char *Ext(const char *path);
 };
 
-
 #ifdef __clang__
-
 
 #elif defined(__GNUC__) || defined(__GNUG__)
 
@@ -74,7 +71,6 @@ struct SIMG
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #endif
-
 
 #ifdef SIMG_IMPLEMENTATION
 
@@ -92,68 +88,47 @@ struct SIMG
 #pragma GCC diagnostic pop
 #endif
 
-
-
-
-#define STTF_IMPLEMENTATION 1 
+#define STTF_IMPLEMENTATION 1
 #include "STTF.h"
 
-
-inline bool SIMG::EndsWith( const char* s, const char* q) // static 
+inline bool SIMG::EndsWith(const char *s, const char *q) // static
 {
-    int pos = strlen(s) - strlen(q) ;
-    return pos > 0 && strncmp(s + pos, q, strlen(q)) == 0 ; 
+    int pos = strlen(s) - strlen(q);
+    return pos > 0 && strncmp(s + pos, q, strlen(q)) == 0;
 }
 
-inline const char* SIMG::ChangeExt( const char* s, const char* x1, const char* x2)  // static
+inline const char *SIMG::ChangeExt(const char *s, const char *x1, const char *x2) // static
 {
-    assert( EndsWith(s, x1) );  
+    assert(EndsWith(s, x1));
 
-    std::string st = s ; 
-    std::stringstream ss ; 
+    std::string st = s;
+    std::stringstream ss;
 
-    ss << st.substr(0, strlen(s) - strlen(x1) ) ; 
-    ss << x2 ;   
-    std::string ns = ss.str() ; 
-    return strdup(ns.c_str()); 
+    ss << st.substr(0, strlen(s) - strlen(x1));
+    ss << x2;
+    std::string ns = ss.str();
+    return strdup(ns.c_str());
 }
 
-
-inline SIMG::SIMG(const char* path, int desired_channels) 
-    :
-    ttf(nullptr),
-    width(0),
-    height(0),
-    channels(0),
-    data(stbi_load(path, &width, &height, &channels, desired_channels)),    
-    loadpath(strdup(path)),
-    loadext(Ext(loadpath)),
-    owned(true)
+inline SIMG::SIMG(const char *path, int desired_channels)
+    : ttf(nullptr), width(0), height(0), channels(0),
+      data(stbi_load(path, &width, &height, &channels, desired_channels)), loadpath(strdup(path)),
+      loadext(Ext(loadpath)), owned(true)
 {
 }
 
-inline SIMG::SIMG(int width_, int height_, int channels_, unsigned char* data_) 
-    :
-    ttf(nullptr),
-    width(width_),
-    height(height_),
-    channels(channels_),
-    data(data_),
-    loadpath("image.ppm"),
-    loadext(Ext(loadpath)),
-    owned(false)
+inline SIMG::SIMG(int width_, int height_, int channels_, unsigned char *data_)
+    : ttf(nullptr), width(width_), height(height_), channels(channels_), data(data_), loadpath("image.ppm"),
+      loadext(Ext(loadpath)), owned(false)
 {
 }
 
-
-
-
-inline void SIMG::setData(unsigned char* data_, bool flip_vertical)
+inline void SIMG::setData(unsigned char *data_, bool flip_vertical)
 {
-    data = data_ ; 
-    if(flip_vertical) flipVertical(); 
+    data = data_;
+    if (flip_vertical)
+        flipVertical();
 }
-
 
 /**
 SIMG::flipVertical
@@ -163,55 +138,49 @@ Used via SIMG::setData from CSGOptiX/Frame.cc Frame::download
 
 **/
 
-
-inline void SIMG::flipVertical()  
+inline void SIMG::flipVertical()
 {
-    for(int y=0 ; y < height/2 ; y++)
-    for(int x=0 ; x < width    ; x++)
-    for(int c=0 ; c < channels ; c++)
-    std::swap( data[y*width*channels + x*channels + c], data[(height-1-y)*width*channels + x*channels + c]);
+    for (int y = 0; y < height / 2; y++)
+        for (int x = 0; x < width; x++)
+            for (int c = 0; c < channels; c++)
+                std::swap(data[y * width * channels + x * channels + c],
+                          data[(height - 1 - y) * width * channels + x * channels + c]);
 }
-
 
 inline SIMG::~SIMG()
 {
-    // getting linker error with the below when using in CMake project, but not in standalone testing 
-    //if(owned) stbi_image_free((void*)data);    
+    // getting linker error with the below when using in CMake project, but not in standalone testing
+    // if(owned) stbi_image_free((void*)data);
 }
 
 inline std::string SIMG::desc() const
 {
-    std::stringstream ss ;
-    ss << "SIMG"
-       << " width " << width 
-       << " height " << height
-       << " channels " << channels
-       << " loadpath " << ( loadpath ? loadpath : "-" )
-       << " loadext " << ( loadext ? loadext : "-" )
-       ;
-    std::string s = ss.str(); 
-    return s ;
+    std::stringstream ss;
+    ss << "SIMG" << " width " << width << " height " << height << " channels " << channels << " loadpath "
+       << (loadpath ? loadpath : "-") << " loadext " << (loadext ? loadext : "-");
+    std::string s = ss.str();
+    return s;
 }
 
-inline std::string SIMG::FormPath(const char* dir, const char* name)
+inline std::string SIMG::FormPath(const char *dir, const char *name)
 {
-    std::stringstream ss ;
-    ss << dir << "/" << name ; 
-    std::string s = ss.str(); 
-    return s ; 
+    std::stringstream ss;
+    ss << dir << "/" << name;
+    std::string s = ss.str();
+    return s;
 }
 
 inline void SIMG::writeNPY() const
 {
-    assert(loadpath && loadext); 
-    const char* path = ChangeExt(loadpath, loadext, ".npy" ); 
-    writeNPY(path); 
+    assert(loadpath && loadext);
+    const char *path = ChangeExt(loadpath, loadext, ".npy");
+    writeNPY(path);
 }
 
-inline void SIMG::writeNPY(const char* dir, const char* name) const 
+inline void SIMG::writeNPY(const char *dir, const char *name) const
 {
-    std::string pth = FormPath(dir, name); 
-    writeNPY(pth.c_str()); 
+    std::string pth = FormPath(dir, name);
+    writeNPY(pth.c_str());
 }
 
 /**
@@ -219,95 +188,86 @@ SIMG::writeNPY
 --------------
 
 View the array as an image in matplotlib with plt.imshow as demonstrated
-in sysrap/tests/SIMGTest.py and "ana" command of sysrap/tests/SIMGTest.sh 
+in sysrap/tests/SIMGTest.py and "ana" command of sysrap/tests/SIMGTest.sh
 (similar to the old npy/ImageNPY.hpp)
 
 **/
 
-inline void SIMG::writeNPY(const char* path) const
+inline void SIMG::writeNPY(const char *path) const
 {
-    std::vector<int> shape = {height, width, channels } ; 
-    np::Write( path, shape, data, "<u1" ); 
+    std::vector<int> shape = {height, width, channels};
+    np::Write(path, shape, data, "<u1");
 }
 
- 
-inline void SIMG::writePNG() const 
+inline void SIMG::writePNG() const
 {
-    assert(loadpath && loadext); 
-    const char* pngpath = ChangeExt(loadpath, loadext, ".png" ); 
-    if(strcmp(pngpath, loadpath)==0)
+    assert(loadpath && loadext);
+    const char *pngpath = ChangeExt(loadpath, loadext, ".png");
+    if (strcmp(pngpath, loadpath) == 0)
     {
-        std::cerr << "SIMG::writePNG ERROR cannot overwrite loadpath " << loadpath << "\n"  ; 
-    } 
+        std::cerr << "SIMG::writePNG ERROR cannot overwrite loadpath " << loadpath << "\n";
+    }
     else
     {
-         writePNG(pngpath);  
+        writePNG(pngpath);
     }
 }
 
-inline void SIMG::writeJPG(int quality) const 
+inline void SIMG::writeJPG(int quality) const
 {
-    assert(loadpath && loadext); 
+    assert(loadpath && loadext);
 
-    std::stringstream ss ; 
-    ss << "_" << quality << ".jpg" ; 
-    std::string x = ss.str(); 
+    std::stringstream ss;
+    ss << "_" << quality << ".jpg";
+    std::string x = ss.str();
 
-    const char* jpgpath = ChangeExt(loadpath, loadext, x.c_str() ); 
+    const char *jpgpath = ChangeExt(loadpath, loadext, x.c_str());
 
-    if(strcmp(jpgpath, loadpath)==0)
+    if (strcmp(jpgpath, loadpath) == 0)
     {
-        std::cerr << "SIMG::writeJPG ERROR cannot overwrite loadpath " << loadpath << "\n" ; 
-    } 
+        std::cerr << "SIMG::writeJPG ERROR cannot overwrite loadpath " << loadpath << "\n";
+    }
     else
     {
-        writeJPG(jpgpath, quality);  
+        writeJPG(jpgpath, quality);
     }
 }
 
-
-inline void SIMG::writePNG(const char* dir, const char* name) const 
+inline void SIMG::writePNG(const char *dir, const char *name) const
 {
-    std::string s = FormPath(dir, name); 
-    writePNG(s.c_str()); 
+    std::string s = FormPath(dir, name);
+    writePNG(s.c_str());
 }
 
-
-inline void SIMG::writeJPG(const char* dir, const char* name, int quality) const 
+inline void SIMG::writeJPG(const char *dir, const char *name, int quality) const
 {
-    std::string s = FormPath(dir, name); 
-    writeJPG(s.c_str(), quality); 
+    std::string s = FormPath(dir, name);
+    writeJPG(s.c_str(), quality);
 }
 
-
-
-
-inline void SIMG::writePNG(const char* path) const 
+inline void SIMG::writePNG(const char *path) const
 {
-    sdirectory::MakeDirsForFile(path, 0); 
+    sdirectory::MakeDirsForFile(path, 0);
     stbi_write_png(path, width, height, channels, data, width * channels);
 }
 
-inline void SIMG::writeJPG(const char* path, int quality) const 
+inline void SIMG::writeJPG(const char *path, int quality) const
 {
-    assert( quality > 0 && quality <= 100 ); 
+    assert(quality > 0 && quality <= 100);
 
-    //std::cout << "SIMG::writeJPG [" << ( path ? path : "-" ) << "]" << std::endl ; 
-    sdirectory::MakeDirsForFile(path, 0); 
+    // std::cout << "SIMG::writeJPG [" << ( path ? path : "-" ) << "]" << std::endl ;
+    sdirectory::MakeDirsForFile(path, 0);
 
-    stbi_write_jpg(path, width, height, channels, data, quality );
+    stbi_write_jpg(path, width, height, channels, data, quality);
 }
 
-
-inline const char* SIMG::Ext(const char* path)
+inline const char *SIMG::Ext(const char *path)
 {
-    std::string s = path ; 
+    std::string s = path;
     std::size_t pos = s.find_last_of(".");
-    std::string ext = s.substr(pos) ;  
-    return strdup(ext.c_str()); 
+    std::string ext = s.substr(pos);
+    return strdup(ext.c_str());
 }
-
-
 
 /**
 SIMG::annotate
@@ -318,23 +278,21 @@ Possibly related to this being implemented in the header ?
 
 **/
 
-
-inline void SIMG::annotate( const char* bottom_line, const char* top_line, int line_height )
+inline void SIMG::annotate(const char *bottom_line, const char *top_line, int line_height)
 {
-    if(ttf == nullptr) ttf = STTF::Create() ; 
+    if (ttf == nullptr)
+        ttf = STTF::Create();
 
-    assert(ttf); 
-    if(!ttf->valid || line_height > int(height)) 
+    assert(ttf);
+    if (!ttf->valid || line_height > int(height))
     {
-        std::cerr << "SIMG::annotate : ttf invalid OR line_height too large \n" ; 
-        return ; 
-    } 
+        std::cerr << "SIMG::annotate : ttf invalid OR line_height too large \n";
+        return;
+    }
 
-    if( top_line )
-        ttf->annotate( data, int(channels), int(width), int(height), line_height, top_line, false );  
+    if (top_line)
+        ttf->annotate(data, int(channels), int(width), int(height), line_height, top_line, false);
 
-    if( bottom_line )
-        ttf->annotate( data, int(channels), int(width), int(height), line_height, bottom_line, true );  
+    if (bottom_line)
+        ttf->annotate(data, int(channels), int(width), int(height), line_height, bottom_line, true);
 }
-
-

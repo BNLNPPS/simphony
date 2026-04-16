@@ -1,10 +1,9 @@
 #pragma once
 
-#include <math.h>
+#include <cmath>
 
-
-template<typename T>
-void ssincos(const T angle, T& s, T& c)
+template <typename T> void ssincos(const T angle, T &s, T &c)
 {
-    sincos( angle, &s, &c);
+    s = std::sin(angle);
+    c = std::cos(angle);
 }

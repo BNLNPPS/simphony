@@ -4,24 +4,24 @@
  * This file is part of Opticks
  * (see https://bitbucket.org/simoncblyth/opticks).
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License.  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
- * See the License for the specific language governing permissions and 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-// TEST=SFrameTest om-t 
+// TEST=SFrameTest om-t
 
-#include <string>
-#include "OPTICKS_LOG.hh"
 #include "SStackFrame.h"
+#include "OPTICKS_LOG.hh"
+#include <string>
 
 std::string linux_stack = R"(
 /home/blyth/local/opticks/lib64/libSysRap.so(+0x10495) [0x7fffe54cf495] 
@@ -44,25 +44,25 @@ std::string linux_stack = R"(
 /home/blyth/local/opticks/lib/CerenkovMinimal() [0x409629] 
 )";
 
-int main(int  argc, char** argv )
+int main(int argc, char **argv)
 {
     OPTICKS_LOG(argc, argv);
 
     const char *lines = linux_stack.c_str();
-    LOG(info) << std::endl << lines  ; 
-
+    LOG(info) << std::endl << lines;
 
     std::istringstream iss(lines);
-    std::string line ;
+    std::string line;
     while (getline(iss, line, '\n'))
-    {   
-        if(line.empty()) continue ; 
+    {
+        if (line.empty())
+            continue;
 
-        //std::cout << "[" << line << "]" << std::endl ; 
+        // std::cout << "[" << line << "]" << std::endl ;
 
-        SStackFrame f((char*)line.c_str());
-        f.dump(); 
-    }   
+        SStackFrame f((char *)line.c_str());
+        f.dump();
+    }
 
-    return 0 ; 
+    return 0;
 }
