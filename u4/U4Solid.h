@@ -823,16 +823,16 @@ inline void U4Solid::init_Trap()
 
     // 8 vertices (G4Trap convention, CCW when viewed from outside)
     double v[8][3] ;
-    // Bottom face (z = -dz)
-    v[0][0] = cx_bot - dx1 + dy1*alpha1 ; v[0][1] = cy_bot - dy1 ; v[0][2] = -dz ;
-    v[1][0] = cx_bot + dx1 + dy1*alpha1 ; v[1][1] = cy_bot - dy1 ; v[1][2] = -dz ;
-    v[2][0] = cx_bot - dx2 - dy1*alpha1 ; v[2][1] = cy_bot + dy1 ; v[2][2] = -dz ;
-    v[3][0] = cx_bot + dx2 - dy1*alpha1 ; v[3][1] = cy_bot + dy1 ; v[3][2] = -dz ;
+    // Bottom face (z = -dz) : x-center shifts by y*tan(alpha)
+    v[0][0] = cx_bot - dx1 - dy1*alpha1 ; v[0][1] = cy_bot - dy1 ; v[0][2] = -dz ;
+    v[1][0] = cx_bot + dx1 - dy1*alpha1 ; v[1][1] = cy_bot - dy1 ; v[1][2] = -dz ;
+    v[2][0] = cx_bot - dx2 + dy1*alpha1 ; v[2][1] = cy_bot + dy1 ; v[2][2] = -dz ;
+    v[3][0] = cx_bot + dx2 + dy1*alpha1 ; v[3][1] = cy_bot + dy1 ; v[3][2] = -dz ;
     // Top face (z = +dz)
-    v[4][0] = cx_top - dx3 + dy2*alpha2 ; v[4][1] = cy_top - dy2 ; v[4][2] = +dz ;
-    v[5][0] = cx_top + dx3 + dy2*alpha2 ; v[5][1] = cy_top - dy2 ; v[5][2] = +dz ;
-    v[6][0] = cx_top - dx4 - dy2*alpha2 ; v[6][1] = cy_top + dy2 ; v[6][2] = +dz ;
-    v[7][0] = cx_top + dx4 - dy2*alpha2 ; v[7][1] = cy_top + dy2 ; v[7][2] = +dz ;
+    v[4][0] = cx_top - dx3 - dy2*alpha2 ; v[4][1] = cy_top - dy2 ; v[4][2] = +dz ;
+    v[5][0] = cx_top + dx3 - dy2*alpha2 ; v[5][1] = cy_top - dy2 ; v[5][2] = +dz ;
+    v[6][0] = cx_top - dx4 + dy2*alpha2 ; v[6][1] = cy_top + dy2 ; v[6][2] = +dz ;
+    v[7][0] = cx_top + dx4 + dy2*alpha2 ; v[7][1] = cy_top + dy2 ; v[7][2] = +dz ;
 
     // Compute 6 face planes from vertex triples (outward normals, CCW winding)
     // Same face ordering as legacy Python (analytic/prism.py):
