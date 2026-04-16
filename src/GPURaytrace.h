@@ -386,6 +386,7 @@ struct RunAction : G4UserRunAction
                 return;
             }
 
+            const bool emit_trackid = getenv("OPTICKS_MC_TRUTH") != nullptr;
             for (int idx = 0; idx < int(num_hits); idx++)
             {
                 sphoton hit;
@@ -406,8 +407,6 @@ struct RunAction : G4UserRunAction
                 {
                     theCreationProcessid = -1;
                 }
-                int gsidx = sev->getHitGenstepIndex(idx);
-                int trackID = gsidx >= 0 ? int(sev->genstep[gsidx].trackid()) : -1;
                 //    std::cout << "Adding hit from Opticks:" << hit.wavelength << " " << position << " " << direction
                 //    << "
                 //    "
@@ -415,8 +414,14 @@ struct RunAction : G4UserRunAction
                 outFile << hit.time << " " << hit.wavelength << "  " << "(" << position.x() << ", " << position.y()
                         << ", " << position.z() << ")  " << "(" << direction.x() << ", " << direction.y() << ", "
                         << direction.z() << ")  " << "(" << polarization.x() << ", " << polarization.y() << ", "
-                        << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid
-                        << " TrackID=" << trackID << std::endl;
+                        << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid;
+                if (emit_trackid)
+                {
+                    int gsidx = sev->getHitGenstepIndex(idx);
+                    int trackID = gsidx >= 0 ? int(sev->genstep[gsidx].trackid()) : -1;
+                    outFile << " TrackID=" << trackID;
+                }
+                outFile << std::endl;
             }
 
             outFile.close();

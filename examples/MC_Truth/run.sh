@@ -6,9 +6,12 @@
 #
 # The modified GPURaytrace.h (copied into this directory for reference)
 # calls SEvt::getHitGenstepIndex(idx) and emits TrackID=<G4 track id>
-# at the end of each hit line in opticks_hits_output.txt.
+# at the end of each hit line in opticks_hits_output.txt when
+# OPTICKS_MC_TRUTH is set (unset by default → no TrackID field).
 
 set -euo pipefail
+
+export OPTICKS_MC_TRUTH=1
 
 REPO=/workspaces/eic-opticks
 BIN=/opt/eic-opticks/bin/GPURaytrace
