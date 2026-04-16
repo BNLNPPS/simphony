@@ -782,6 +782,7 @@ public:
 
     void getPhoton(sphoton& p, unsigned idx) const ;
     void getHit(   sphoton& p, unsigned idx) const ;
+    int  getHitGenstepIndex(unsigned hit_idx) const ;
 
     void getLocalPhoton(  sphoton& p, unsigned idx) const ;
     void getLocalHit_LEAKY( sphit& ht, sphoton& p, unsigned idx) const ;

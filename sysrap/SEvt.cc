@@ -4995,6 +4995,33 @@ void SEvt::getHit(sphoton& p, unsigned idx) const
 }
 
 /**
+SEvt::getHitGenstepIndex
+--------------------------
+Maps a hit index to its originating genstep index via binary search on the
+gs[] offset table. Works in both GPU and CPU paths since gs is populated by
+addGenstep() during Geant4 stepping. Returns -1 if not found.
+**/
+int SEvt::getHitGenstepIndex(unsigned hit_idx) const
+{
+    sphoton ph ;
+    getHit(ph, hit_idx) ;
+    unsigned pidx = ph.index ;
+
+    int lo = 0 ;
+    int hi = int(gs.size()) - 1 ;
+    while(lo <= hi)
+    {
+        int mid = (lo + hi) / 2 ;
+        int64_t off = gs[mid].offset ;
+        int64_t end = off + gs[mid].photons ;
+        if(int64_t(pidx) < off)        hi = mid - 1 ;
+        else if(int64_t(pidx) >= end)  lo = mid + 1 ;
+        else return mid ;
+    }
+    return -1 ;
+}
+
+/**
 SEvt::getLocalPhoton
 --------------------
 
