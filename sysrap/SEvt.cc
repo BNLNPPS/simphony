@@ -5005,8 +5005,18 @@ int SEvt::getHitGenstepIndex(unsigned hit_idx) const
 {
     sphoton ph ;
     getHit(ph, hit_idx) ;
-    unsigned pidx = ph.index ;
+    return getHitGenstepIndexFromPhotonIndex(ph.index) ;
+}
 
+/**
+SEvt::getHitGenstepIndexFromPhotonIndex
+-----------------------------------------
+Overload that skips the getHit() call when the caller already holds the
+photon index (sphoton::index). Pure binary search on the gs[] offset
+table. Returns -1 if not found.
+**/
+int SEvt::getHitGenstepIndexFromPhotonIndex(unsigned pidx) const
+{
     int lo = 0 ;
     int hi = int(gs.size()) - 1 ;
     while(lo <= hi)

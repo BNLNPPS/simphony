@@ -422,7 +422,7 @@ struct RunAction : G4UserRunAction
                         << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid;
                 if (emit_trackid)
                 {
-                    int gsidx = sev->getHitGenstepIndex(idx);
+                    int gsidx = sev->getHitGenstepIndexFromPhotonIndex(hit.index);
                     int trackID = gsidx >= 0 ? int(sev->genstep[gsidx].trackid()) : -1;
                     outFile << " TrackID=" << trackID;
                 }
