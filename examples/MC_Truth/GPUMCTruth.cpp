@@ -11,7 +11,7 @@
 
 #include "eic-opticks/sysrap/OPTICKS_LOG.hh"
 
-#include "GPURaytrace.h"
+#include "GPUMCTruth.h"
 
 #include "G4RunManager.hh"
 #include "G4RunManagerFactory.hh"
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     if (!gdml_env || !macro_env)
     {
         cerr << "Usage: EIC_GDML=<path> EIC_MACRO=<path> [EIC_SEED=<int>] "
-                "[OPTICKS_MC_TRUTH=1] MC_Truth_GPURaytrace"
+                "[OPTICKS_MC_TRUTH=1] GPUMCTruth"
              << endl;
         return EXIT_FAILURE;
     }

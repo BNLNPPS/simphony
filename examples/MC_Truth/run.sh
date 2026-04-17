@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MC_Truth example: standalone build of GPURaytrace that demonstrates
+# MC_Truth example: standalone build of GPUMCTruth that demonstrates
 # appending the G4 Track ID of the creating particle to each hit line in
 # opticks_hits_output.txt when OPTICKS_MC_TRUTH is set.
 #
@@ -18,7 +18,7 @@
 set -euo pipefail
 
 REPO=${REPO:-/workspaces/eic-opticks}
-BIN=${BIN:-$(dirname "$(realpath "$0")")/build/MC_Truth_GPURaytrace}
+BIN=${BIN:-$(dirname "$(realpath "$0")")/build/GPUMCTruth}
 EIC_GDML=${EIC_GDML:-$REPO/tests/geom/opticks_raindrop.gdml}
 EIC_MACRO=${EIC_MACRO:-$REPO/tests/run.mac}
 EIC_SEED=${EIC_SEED:-42}
