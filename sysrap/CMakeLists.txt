@@ -110,8 +110,6 @@ set(SOURCES
 
     SFastSim_Debug.cc
     SFastSimOpticalModel.cc
-
-    SOpBoundaryProcess.cc
 ) 
     
 
@@ -507,8 +505,6 @@ set(HEADERS
     ssolid.h
     SIntersect.h
     SSimtrace.h
-
-    SOpBoundaryProcess.hh
 )
 
 # using absolute ANADIR avoids build environment requiring it in PATH 

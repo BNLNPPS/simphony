@@ -161,11 +161,10 @@ as they may cause difficult to debug build inconsistencies.
 WITH_THRUST compile definition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* WITH_THRUST is needed for the Custom4 GPU complex math functions used by qpmt.h 
+* WITH_THRUST is needed for the GPU complex math functions used by qpmt.h
 
-* However Custom4 also used on CPU without WITH_THRUST (eg by junosw), so 
-  the WITH_THRUST definition must be PRIVATE to avoid interference with other
-  Custom4 usage
+* The CPU side does not require WITH_THRUST, so keep the definition PRIVATE
+  to avoid leaking it into dependents
 
 #]=]
 

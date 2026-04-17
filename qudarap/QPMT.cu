@@ -11,19 +11,6 @@ QPMT_pmtcat_scan
     CPU entry point to launch above kernels controlled by etype
 
 
-_QPMT_lpmtid_stackspec
-    kernel funcs taking (qpmt,lookup,domain,domain_width,lpmtid,num_lpmtid) args
-
-_QPMT_mct_lpmtid
-    payload size P templated kernel function with domain and lpmtid array inputs
-
-    * within lpmtid loop calls qpmt.h method depending on etype
-    * etype : (qpmt_SPEC qpmt_LL qpmt_COMP qpmt_ART qpmt_ARTE)
-
-QPMT_mct_lpmtid_scan
-    CPU entry point to launch above kernel passing etype
-
-
 **/
 
 #include "QUDARAP_API_EXPORT.hh"
@@ -196,48 +183,6 @@ template void QPMT_pmtcat_scan(
    unsigned
   );
 
-
-
-
-
-
-
-
-/**
-_QPMT_lpmtid_stackspec
--------------------------
-
-**/
-
-
-template <typename F>
-__global__ void _QPMT_lpmtid_stackspec(
-    qpmt<F>* pmt,
-    F* lookup ,
-    const F* domain,
-    unsigned domain_width,
-    const int* lpmtid,
-    unsigned num_lpmtid )
-{
-    unsigned ix = blockIdx.x * blockDim.x + threadIdx.x;
-    if (ix >= domain_width ) return;
-    F energy_eV = domain[ix] ;
-
-    const int& ni = num_lpmtid ;
-    const int& nj = domain_width ;
-    const int  nk = 16 ;
-    const int&  j = ix ;
-
-    F ss[nk] ;
-
-    for(int i=0 ; i < ni ; i++)  // over num_lpmtid
-    {
-        int pmtid = lpmtid[i] ;
-        int index = i*nj*nk + j*nk  ;
-        pmt->get_lpmtid_stackspec(ss, pmtid, energy_eV );
-        for( int k=0 ; k < nk ; k++) lookup[index+k] = ss[k] ;
-    }
-}
 
 
 template <typename F>

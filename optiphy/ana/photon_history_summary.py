@@ -85,7 +85,7 @@ FLAG_ABBREV = {
 }
 
 # Terminal flags that indicate a detected photon.
-# Default hitmask is SD, but CustomART uses EC instead.
+# Default hitmask is SD, but PMT efficiency tagging can use EC instead.
 # The script reads the actual hitmask from event metadata when available.
 HIT_FLAGS = {0x0040, 0x2000}  # SURFACE_DETECT, EFFICIENCY_COLLECT
 
@@ -452,7 +452,7 @@ def print_lost_photons(arrays, pf, hitmask):
 
     A photon is "lost" if its terminal flag is not in the hit set.
     The hitmask is read from event metadata (default: SURFACE_DETECT).
-    With CustomART PMTs the hitmask may be EFFICIENCY_COLLECT instead.
+    With PMT efficiency tagging the hitmask may be EFFICIENCY_COLLECT instead.
     """
     # A photon is a hit if (flagmask & hitmask) == hitmask.
     # For --lost we check the terminal flag against known hit flags,

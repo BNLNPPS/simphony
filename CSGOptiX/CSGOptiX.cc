@@ -207,11 +207,6 @@ const char* CSGOptiX::Desc()
     std::stringstream ss ;
     ss << "CSGOptiX::Desc"
        << " Version " << Version()
-#ifdef WITH_CUSTOM4
-       << " WITH_CUSTOM4 "
-#else
-       << " NOT:WITH_CUSTOM4 "
-#endif
        ;
     std::string str = ss.str();
     return strdup(str.c_str());
@@ -318,14 +313,6 @@ void CSGOptiX::InitMeta()
 
     std::string switches = QSim::Switches() ;
     SEvt::SetRunMetaString("QSim__Switches", switches.c_str() );
-
-#ifdef WITH_CUSTOM4
-    std::string c4 = "TBD" ; //C4Version::Version(); // octal version number bug in Custom4 v0.1.8 : so skip the version metadata
-    SEvt::SetRunMetaString("C4Version", c4.c_str());
-#else
-    SEvt::SetRunMetaString("C4Version", "NOT-WITH_CUSTOM4" );
-#endif
-
 }
 
 

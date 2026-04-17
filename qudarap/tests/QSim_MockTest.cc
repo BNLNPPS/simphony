@@ -521,11 +521,6 @@ inline int QSim_MockTest::main()
     bool ALL = strcmp(TEST, "ALL") == 0 ; 
     int rc = 0 ; 
 
-    if(ALL||0==strcmp(TEST, "propagate_at_surface_CustomART_manual"))
-    {
-       rc += 1 ;  
-    }
-
     if(ALL||0==strcmp(TEST,"propagate_at_boundary_manual")) rc += propagate_at_boundary_manual() ; 
     if(ALL||0==strcmp(TEST,"fill_state"))                   rc += fill_state() ; 
     if(ALL||0==strcmp(TEST,"propagate_at_boundary"))        rc += propagate_at_boundary() ; 

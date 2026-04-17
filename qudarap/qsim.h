@@ -242,7 +242,7 @@ to return something other that LambertianReflection.
 | all zero =>          |                               |                              | LambertianReflection |
 +----------------------+-------------------------------+------------------------------+----------------------+
 
-TODO: full simulation run with breakpoint "BP=C4OpBoundaryProcess::GetFacetNormal"
+TODO: full simulation run with breakpoint "BP=G4OpBoundaryProcess::GetFacetNormal"
 
 **/
 
@@ -1211,8 +1211,7 @@ qsim::propagate_at_boundary_with_T
 ------------------------------------
 
 Variant of qsim::propagate_at_boundary where a value of theTransmittance
-is passed in as an argument (eg from CustomART calculation) rather then
-calculated here.
+is passed in as an argument rather then calculated here.
 
 HMM: was hoping that passing in theTransmittance would afford some
 simplifications, but it seems almost no simplification is possible
@@ -2037,13 +2036,6 @@ HMM: could use standard surface handling for this but with perfect
 detector surface swapped in.
 
 
-TMM multilayer POM special surface : smatsur_Surface_zplus_sensor_CustomART
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Enabling special surface handling is controlled by ctx.optical.y "ems" enum
-which wheels in the qpmt.h stack calc following C4CustomART::doIt
-for CustomART special surfaces.
-
 Prior to supporting special surfaces, within the command == BOUNDARY used::
 
     command = ctx.s.optical.x == 0 ?
@@ -2142,9 +2134,6 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
         else if( ems == smatsur_Surface_zplus_sensor_A )
         {
             command = propagate_at_surface_Detect( flag, rng, ctx ) ;
-        }
-        else if( ems == smatsur_Surface_zplus_sensor_CustomART )
-        {
         }
     }
     ctx.p.set_flag(flag);

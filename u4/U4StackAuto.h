@@ -43,7 +43,7 @@ G4SteppingManager::Stepping
     static constexpr const char* BoundaryDiscreteReset = R"(
 U4Random::flat
 G4VProcess::ResetNumberOfInteractionLengthLeft
-InstrumentedG4OpBoundaryProcess::ResetNumberOfInteractionLengthLeft
+G4OpBoundaryProcess::ResetNumberOfInteractionLengthLeft
 G4VDiscreteProcess::PostStepGetPhysicalInteractionLength
 G4VProcess::PostStepGPIL
 G4SteppingManager::DefinePhysicalStepLength
@@ -53,7 +53,7 @@ G4SteppingManager::Stepping
     static constexpr const char* BoundaryDiscreteReset2_ = "BoundaryDiscreteReset2" ; // 4
     static constexpr const char* BoundaryDiscreteReset2 = R"(
 U4Random::flat
-InstrumentedG4OpBoundaryProcess::ResetNumberOfInteractionLengthLeft
+G4OpBoundaryProcess::ResetNumberOfInteractionLengthLeft
 G4VDiscreteProcess::PostStepGetPhysicalInteractionLength
 G4SteppingManager::DefinePhysicalStepLength
 G4SteppingManager::Stepping
@@ -124,7 +124,7 @@ G4SteppingManager::Stepping
 
     static constexpr const char* BoundaryBurn_SurfaceReflectTransmitAbsorb = R"(
 U4Random::flat
-InstrumentedG4OpBoundaryProcess::PostStepDoIt
+G4OpBoundaryProcess::PostStepDoIt
 G4SteppingManager::InvokePSDIP
 G4SteppingManager::InvokePostStepDoItProcs
 G4SteppingManager::Stepping
@@ -133,9 +133,9 @@ G4SteppingManager::Stepping
 
     static constexpr const char* BoundaryDiDiTransCoeff = R"(
 U4Random::flat
-InstrumentedG4OpBoundaryProcess::G4BooleanRand
-InstrumentedG4OpBoundaryProcess::DielectricDielectric
-InstrumentedG4OpBoundaryProcess::PostStepDoIt
+G4OpBoundaryProcess::G4BooleanRand
+G4OpBoundaryProcess::DielectricDielectric
+G4OpBoundaryProcess::PostStepDoIt
 G4SteppingManager::InvokePSDIP
 G4SteppingManager::InvokePostStepDoItProcs
 G4SteppingManager::Stepping
@@ -143,9 +143,9 @@ G4SteppingManager::Stepping
 
     static constexpr const char* AbsorptionEffDetect = R"(
 U4Random::flat
-InstrumentedG4OpBoundaryProcess::G4BooleanRand
-InstrumentedG4OpBoundaryProcess::DoAbsorption
-InstrumentedG4OpBoundaryProcess::PostStepDoIt
+G4OpBoundaryProcess::G4BooleanRand
+G4OpBoundaryProcess::DoAbsorption
+G4OpBoundaryProcess::PostStepDoIt
 G4SteppingManager::InvokePSDIP
 G4SteppingManager::InvokePostStepDoItProcs
 G4SteppingManager::Stepping
@@ -194,6 +194,4 @@ inline bool U4StackAuto::IsClassified(unsigned stack)
 {
     return stack != U4Stack_Unclassified ; 
 }
-
-
 
