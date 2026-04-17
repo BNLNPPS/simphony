@@ -1,9 +1,8 @@
 compilation_database_dir: build
 output_directory: diagrams
-generate_method_arguments: none
 
 diagrams:
-  csg_packages:
+  repo_packages:
     type: package
     glob:
       - CSG/*.cc
@@ -13,77 +12,9 @@ diagrams:
       - u4/*.cc
       - g4cx/*.cc
       - src/*.cc
-    using_namespace:
-      - CSG
-      - CSGOptiX
-    include:
-      namespaces:
-        - CSG
-        - CSGOptiX
-      paths:
-        - CSG
-        - CSGOptiX
-        - qudarap
-        - sysrap
-        - u4
-        - g4cx
-        - src
     exclude:
       paths:
+        - tests
+        - examples
+        - extra
         - build
-        - tests
-        - examples
-
-  photon_pipeline_classes:
-    type: class
-    glob:
-      - g4cx/*.cc
-      - u4/*.cc
-      - CSG/*.cc
-      - CSGOptiX/*.cc
-      - qudarap/*.cc
-      - sysrap/*.cc
-    include:
-      namespaces:
-        - g4cx
-        - u4
-        - CSG
-        - CSGOptiX
-      paths:
-        - g4cx
-        - u4
-        - CSG
-        - CSGOptiX
-        - qudarap
-        - sysrap
-    exclude:
-      paths:
-        - tests
-        - examples
-    plantuml:
-      before:
-        - left to right direction
-
-  core_includes:
-    type: include
-    glob:
-      - CSG/*.cc
-      - CSGOptiX/*.cc
-      - qudarap/*.cc
-      - sysrap/*.cc
-      - u4/*.cc
-      - g4cx/*.cc
-      - src/*.cc
-    include:
-      paths:
-        - CSG
-        - CSGOptiX
-        - qudarap
-        - sysrap
-        - u4
-        - g4cx
-        - src
-    exclude:
-      paths:
-        - tests
-        - examples
