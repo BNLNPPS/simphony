@@ -73,10 +73,7 @@ fi
 
 if [ "dbg" == "$arg" ]; then
    [ -f "$log" ] && rm $log 
-   case $(uname) in 
-      Darwin) lldb__ $bin ;;
-      Linux) gdb__ $bin ;;
-   esac
+   gdb__ $bin
    [ $? -ne 0 ] && echo $BASH_SOURCE dbg error $bin && exit 1 
 fi 
 

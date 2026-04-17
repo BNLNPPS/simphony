@@ -15,7 +15,7 @@ Create list of jpg using eg::
     SNAP_LIMIT=64 ./grabsnap.sh --jpg --reverse --out --selectspec not_elv_t --outpath /tmp/ana_snap.txt
 
 
-Note that default maximum open files on macOS appears to be only 256 
+Note that some systems may default to a fairly low maximum open-file limit. 
 
 
 This makes an enormous image in memory before scaling back to the size of the input images::
@@ -56,7 +56,6 @@ if [ -f "$JPGLIST" ]; then
 else
     echo $BASH_SOURCE : MISSING REQUIRED JPGLIST $JPGLIST 
 fi 
-
 
 
 

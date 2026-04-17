@@ -249,10 +249,7 @@ fi
 
 if [ "${arg/dbg}" != "$arg" ]; then
     [ -f "$log" ] && rm $log 
-    case $(uname) in 
-        Darwin) lldb__ $bin ;;
-        Linux)   gdb__ $bin ;;
-    esac
+    gdb__ $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 2
 fi 
 
@@ -327,4 +324,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
 fi 
 
 exit 0 
-

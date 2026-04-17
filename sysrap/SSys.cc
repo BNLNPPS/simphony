@@ -593,22 +593,10 @@ const char* SSys::getenvvar( const char* envkey, const char* fallback )
 
 const char* SSys::username()
 {
-#ifdef _MSC_VER
-    const char* user = SSys::getenvvar("USERNAME") ;
-#else
     const char* user = SSys::getenvvar("USER") ;
-#endif
     return user ? user : "SSys-username-undefined" ; 
 }
 
-
-#ifdef _MSC_VER
-const char* SSys::hostname()
-{
-    // https://stackoverflow.com/questions/27914311/get-computer-name-and-logged-user-name
-    return NULL ; 
-}
-#else
 
 #ifndef HOST_NAME_MAX
 # if defined(_POSIX_HOST_NAME_MAX)
@@ -628,7 +616,6 @@ const char* SSys::hostname()
     gethostname(hostname, HOST_NAME_MAX);
     return hostname[0] == '\0' ? "SSys-hostname-undefined" : strdup(hostname) ; 
 }
-#endif
 
 int SSys::unsetenv( const char* ekey )
 {
@@ -801,7 +788,6 @@ void SSys::Exit(int rc)
     LOG(fatal) << " rc " << rc ; 
     std::raise(SIGINT) ; 
 }
-
 
 
 

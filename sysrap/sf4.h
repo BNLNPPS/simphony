@@ -1,7 +1,7 @@
 #pragma once
 
 /**
-sf4.h (formerly s4.h, renamed to avoid clash with S4.h on case compromised macOS)
+sf4.h (formerly s4.h, renamed to avoid clash with S4.h on case-insensitive filesystems)
 ===================================================================================
 
 **/

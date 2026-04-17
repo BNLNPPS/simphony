@@ -2,17 +2,16 @@
 Six.cc
 ========
 
-Enables the new workflow CSGFoundry geometry developed for use with the all new OptiX 7 API 
-to be used with the old OptiX API versions 5 and 6. 
+Enables the new workflow CSGFoundry geometry developed for use with the all new OptiX 7 API
+to be used with the old OptiX API versions 5 and 6.
 
-BUT it seems that although it has been seen to work with simple geometries 
-this approach is on shaky ground as pointer arithmetic is prohibited in OptiX < 7 code. 
-This is surprising as opticks/CSG CUDA-centric implementation makes lots of 
-use of pointer arithmetic and has proved to work with OptiX 5 on macOS.  
+BUT it seems that although it has been seen to work with simple geometries
+this approach is on shaky ground as pointer arithmetic is prohibited in OptiX < 7 code.
+This is surprising as opticks/CSG CUDA-centric implementation makes lots of
+use of pointer arithmetic and has proved to work with OptiX 5 in older local setups.
 
-Due to this uncertainty should not put great efforts into this Six backward compatibility code. 
-However some effort is warranted as it enables convenient local laptop development. 
-OptiX 7 not being usable on my ancient macOS laptop due to CUDA version restriction.  
+Due to this uncertainty should not put great efforts into this Six backward compatibility code.
+However some effort is warranted as it enabled convenient local development on older hardware.
 
 About the shaky ground
 --------------------------
@@ -33,7 +32,7 @@ Why does it work ?
 -------------------
 
 Maybe because pointer arithmetic is all being done on constant input buffers ?
- 
+
 
 **/
 
@@ -538,4 +537,3 @@ void Six::launch(unsigned width, unsigned height, unsigned depth)
     context->launch( entry_point_index , width, height, depth );  
     LOG(info) << "]" ; 
 }
-

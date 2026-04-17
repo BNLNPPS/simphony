@@ -17,8 +17,4 @@
  * limitations under the License.
  */
 
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
+// Intentionally empty for Linux-only builds.

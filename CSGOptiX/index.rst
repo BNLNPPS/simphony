@@ -171,7 +171,7 @@ cxs.sh [run/ana/]
          (default mode on Linux) 
          invokes CSGOptiXSimulateTest executable
     *ana* 
-         (default mode on Darwin, does not work remotely due to matplotlib/pyvista graphics)
+         (local analysis mode, does not work remotely due to matplotlib/pyvista graphics)
          invokes tests/CSGOptiXSimulateTest.py script
          which uses matplotlib and/or pyvista to create mostly 2D geometry
          plots of the positions of intersects onto geometry    
@@ -184,7 +184,7 @@ cxs_grab.sh
     rsyncs from OPTICKS_KEYDIR_GRABBED/CSG_GGeo into local geocache dirs
 
 cxsd.sh
-    runs cxs.sh with GDB envvar defined to switch on lldb OR gdb debugger
+    runs cxs.sh with GDB envvar defined to switch on gdb
 
 cxs_pub.sh
     pub.py promotes from the below SRC_BASE into presentation repo::
@@ -223,7 +223,7 @@ Census
 -------
 
 =====================  ====================  =================   ============================
- commandline             A:Darwin/OptiX 5      B:Linux/OptiX 6    C:Linux/OptiX 7
+ commandline             A:Legacy OptiX 5      B:Linux/OptiX 6    C:Linux/OptiX 7
 =====================  ====================  =================   ============================
 CSGOptiXRender            fail 1               fail 2 OR hang      OK : long view, no detail
 CSGOptiXSimulate                                                   OK 
@@ -369,6 +369,5 @@ Six.h
 
 OptiX6Test.cu geo_OptiX6Test.cu
     compiled into ptx that gets loaded by Six to create OptiX < 7 pipeline
-
 
 

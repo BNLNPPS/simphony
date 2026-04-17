@@ -976,14 +976,11 @@ inline std::string SGLFW::FormCommand(const char* token, float value)  // static
     return str ;
 }
 
-
-
-
 /**
 SGLFW::getWindowSize
 ---------------------
 
-eg on macOS with retina screen : SGLFW::descWindowSize wh[1024, 768] _wh[2048,1536]
+Example high-DPI result: SGLFW::descWindowSize wh[1024, 768] _wh[2048,1536]
 
 **/
 inline void SGLFW::getWindowSize()
@@ -1299,26 +1296,14 @@ inline void SGLFW::init()
 
     gleqInit();
 
-#if defined __APPLE__
-    glfwWindowHint (GLFW_CONTEXT_VERSION_MAJOR, 3);  // version specifies the minimum, not what will get on mac
-    glfwWindowHint (GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#elif defined _MSC_VER
-    glfwWindowHint (GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint (GLFW_CONTEXT_VERSION_MINOR, 1);
-
-#elif __linux
-
-    if(level > 1) printf(".SGLFW::init.__linux\n");
+    if (level > 1)
+        printf(".SGLFW::init.linux\n");
     glfwWindowHint (GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint (GLFW_CONTEXT_VERSION_MINOR, 6);  // 1/6 ?
     glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // remove stuff deprecated in requested release
     glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     // https://learnopengl.com/In-Practice/Debugging Debug output is core since OpenGL version 4.3,
-#endif
 
 
     // HMM: using fullscreen mode with resolution less than display changes display resolution
@@ -1387,6 +1372,4 @@ inline void SGLFW::setWindowTitle(const char* title)
 {
     glfwSetWindowTitle(window, title);
 }
-
-
 
