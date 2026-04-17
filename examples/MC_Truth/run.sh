@@ -19,21 +19,20 @@ set -euo pipefail
 
 REPO=${REPO:-/workspaces/eic-opticks}
 BIN=${BIN:-$(dirname "$(realpath "$0")")/build/GPUMCTruth}
-EIC_GDML=${EIC_GDML:-$REPO/tests/geom/opticks_raindrop.gdml}
-EIC_MACRO=${EIC_MACRO:-$REPO/tests/run.mac}
-EIC_SEED=${EIC_SEED:-42}
+GDML=${GDML:-$REPO/tests/geom/opticks_raindrop.gdml}
+MACRO=${MACRO:-$REPO/tests/run.mac}
+SEED=${SEED:-42}
 OUTDIR=${OUTDIR:-$(pwd)}
 
 export USER=${USER:-fakeuser}
 export GEOM=${GEOM:-fakegeom}
-export EIC_GDML EIC_MACRO EIC_SEED
 export OPTICKS_MC_TRUTH=1
 export OPTICKS_MC_TRUTH_BENCH=1
 
 cd "$OUTDIR"
 rm -f opticks_hits_output.txt g4_hits_output.txt
 
-"$BIN"
+"$BIN" -g "$GDML" -m "$MACRO" -s "$SEED"
 
 echo
 echo "=== TrackID distribution in opticks_hits_output.txt ==="

@@ -11,6 +11,9 @@ find_package(eic-opticks REQUIRED)
 find_package(Geant4 REQUIRED ui_all vis_all)
 
 add_executable(GPUMCTruth GPUMCTruth.cpp GPUMCTruth.h)
+target_include_directories(GPUMCTruth PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+)
 target_link_libraries(GPUMCTruth
     eic-opticks::G4CX
     eic-opticks::SysRap

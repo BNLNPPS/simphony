@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 
+#include <argparse/argparse.hpp>
+
 #include "FTFP_BERT.hh"
 #include "G4OpticalPhysics.hh"
 #include "G4VModularPhysicsList.hh"
@@ -45,21 +47,28 @@ int main(int argc, char **argv)
 {
     OPTICKS_LOG(argc, argv);
 
-    const char *gdml_env = getenv("EIC_GDML");
-    const char *macro_env = getenv("EIC_MACRO");
-    const char *seed_env = getenv("EIC_SEED");
+    argparse::ArgumentParser program("GPUMCTruth", "0.0.0");
 
-    if (!gdml_env || !macro_env)
+    string gdml_file, macro_name;
+
+    program.add_argument("-g", "--gdml").help("path to GDML file").required().nargs(1).store_into(gdml_file);
+
+    program.add_argument("-m", "--macro").help("path to G4 macro").required().nargs(1).store_into(macro_name);
+
+    program.add_argument("-s", "--seed").help("fixed random seed (default: time-based)").scan<'i', long>();
+
+    try
     {
-        cerr << "Usage: EIC_GDML=<path> EIC_MACRO=<path> [EIC_SEED=<int>] "
-                "[OPTICKS_MC_TRUTH=1] GPUMCTruth"
-             << endl;
+        program.parse_args(argc, argv);
+    }
+    catch (const exception &err)
+    {
+        cerr << err.what() << endl;
+        cerr << program;
         return EXIT_FAILURE;
     }
 
-    string gdml_file(gdml_env);
-    string macro_name(macro_env);
-    long seed = seed_env ? strtol(seed_env, nullptr, 10) : static_cast<long>(time(nullptr));
+    long seed = program.is_used("--seed") ? program.get<long>("--seed") : static_cast<long>(time(nullptr));
     CLHEP::HepRandom::setTheSeed(seed);
     G4cout << "Random seed set to: " << seed << G4endl;
 
