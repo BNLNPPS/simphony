@@ -3,6 +3,10 @@
 # appending the G4 Track ID of the creating particle to each hit line in
 # opticks_hits_output.txt when OPTICKS_MC_TRUTH is set.
 #
+# Setting OPTICKS_MC_TRUTH_BENCH prints an extra "Bench baseline /
+# mctruth / delta" block that isolates the MC-truth lookup cost from
+# the file I/O dominating the regular hit-write loop.
+#
 # Build (once):
 #     cd examples/MC_Truth
 #     cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/eic-opticks
@@ -24,6 +28,7 @@ export USER=${USER:-fakeuser}
 export GEOM=${GEOM:-fakegeom}
 export EIC_GDML EIC_MACRO EIC_SEED
 export OPTICKS_MC_TRUTH=1
+export OPTICKS_MC_TRUTH_BENCH=1
 
 cd "$OUTDIR"
 rm -f opticks_hits_output.txt g4_hits_output.txt

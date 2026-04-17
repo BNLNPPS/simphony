@@ -391,6 +391,42 @@ struct RunAction : G4UserRunAction
             }
 
             const bool emit_trackid = getenv("OPTICKS_MC_TRUTH") != nullptr;
+
+            // Isolated MC-truth benchmark: two loops without file I/O so the
+            // paired delta measures only the lookup cost (binary search +
+            // trackid read), not the ostream formatting that dominates the
+            // regular hit-write loop. Gated by OPTICKS_MC_TRUTH_BENCH so
+            // normal runs pay nothing.
+            if (getenv("OPTICKS_MC_TRUTH_BENCH"))
+            {
+                volatile uint64_t sink = 0;
+                auto bt0 = std::chrono::high_resolution_clock::now();
+                for (int idx = 0; idx < int(num_hits); idx++)
+                {
+                    sphoton h;
+                    sev->getHit(h, idx);
+                    sink ^= h.index;
+                }
+                auto bt1 = std::chrono::high_resolution_clock::now();
+                for (int idx = 0; idx < int(num_hits); idx++)
+                {
+                    sphoton h;
+                    sev->getHit(h, idx);
+                    int g = sev->getHitGenstepIndexFromPhotonIndex(h.index);
+                    int tid = g >= 0 ? int(sev->genstep[g].trackid()) : -1;
+                    sink ^= h.index ^ unsigned(tid);
+                }
+                auto bt2 = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> base_t = bt1 - bt0;
+                std::chrono::duration<double> mc_t   = bt2 - bt1;
+                double base_ns = num_hits > 0 ? 1e9 * base_t.count() / num_hits : 0.0;
+                double mc_ns   = num_hits > 0 ? 1e9 * mc_t.count()   / num_hits : 0.0;
+                std::cout << "Bench baseline:  " << base_t.count() << " s  (" << base_ns << " ns/hit)" << std::endl;
+                std::cout << "Bench mctruth:   " << mc_t.count()   << " s  (" << mc_ns   << " ns/hit)" << std::endl;
+                std::cout << "Bench delta:     " << (mc_t.count() - base_t.count())
+                          << " s  (" << (mc_ns - base_ns) << " ns/hit)   [sink=" << sink << "]" << std::endl;
+            }
+
             auto hit_loop_start = std::chrono::high_resolution_clock::now();
             for (int idx = 0; idx < int(num_hits); idx++)
             {
