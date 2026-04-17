@@ -33,11 +33,8 @@ jobs:
           ignore: include/argparse
           lines-changed-only: true
           thread-comments: update
-          format-review: false
+          format-review: true
           tidy-checks: '-*'
-          tidy-review: false
-          step-summary: true
-          file-annotations: true
 
       - name: Fail fast?!
         if: steps.linter.outputs.checks-failed != 0
