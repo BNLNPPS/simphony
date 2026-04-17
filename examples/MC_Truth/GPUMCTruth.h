@@ -21,8 +21,8 @@
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4THitsCollection.hh"
-#include "G4ThreeVector.hh"
 #include "G4Threading.hh"
+#include "G4ThreeVector.hh"
 #include "G4Track.hh"
 #include "G4TrackStatus.hh"
 #include "G4UserEventAction.hh"
@@ -400,8 +400,8 @@ struct RunAction : G4UserRunAction
             if (getenv("OPTICKS_MC_TRUTH_BENCH"))
             {
                 volatile uint64_t sink = 0;
-                const NP* hit_np = sev->getHit();
-                const sphoton* hits = reinterpret_cast<const sphoton*>(hit_np->bytes());
+                const NP *hit_np = sev->getHit();
+                const sphoton *hits = reinterpret_cast<const sphoton *>(hit_np->bytes());
                 const int M = int(sev->gs.size());
                 auto bt0 = std::chrono::high_resolution_clock::now();
                 for (int idx = 0; idx < int(num_hits); idx++)
@@ -413,30 +413,30 @@ struct RunAction : G4UserRunAction
                 for (int idx = 0; idx < int(num_hits); idx++)
                 {
                     const int64_t pidx = hits[idx].index;
-                    while (g + 1 < M && pidx >= sev->gs[g + 1].offset) ++g;
-                    int tid = pidx < sev->gs[g].offset + sev->gs[g].photons
-                              ? int(sev->genstep[g].trackid()) : -1;
+                    while (g + 1 < M && pidx >= sev->gs[g + 1].offset)
+                        ++g;
+                    int tid = pidx < sev->gs[g].offset + sev->gs[g].photons ? int(sev->genstep[g].trackid()) : -1;
                     sink ^= hits[idx].index ^ unsigned(tid);
                 }
                 auto bt2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> base_t = bt1 - bt0;
-                std::chrono::duration<double> mc_t   = bt2 - bt1;
+                std::chrono::duration<double> mc_t = bt2 - bt1;
                 double base_ns = num_hits > 0 ? 1e9 * base_t.count() / num_hits : 0.0;
-                double mc_ns   = num_hits > 0 ? 1e9 * mc_t.count()   / num_hits : 0.0;
+                double mc_ns = num_hits > 0 ? 1e9 * mc_t.count() / num_hits : 0.0;
                 std::cout << "Bench baseline:  " << base_t.count() << " s  (" << base_ns << " ns/hit)" << std::endl;
-                std::cout << "Bench mctruth:   " << mc_t.count()   << " s  (" << mc_ns   << " ns/hit)" << std::endl;
-                std::cout << "Bench delta:     " << (mc_t.count() - base_t.count())
-                          << " s  (" << (mc_ns - base_ns) << " ns/hit)   [sink=" << sink << "]" << std::endl;
+                std::cout << "Bench mctruth:   " << mc_t.count() << " s  (" << mc_ns << " ns/hit)" << std::endl;
+                std::cout << "Bench delta:     " << (mc_t.count() - base_t.count()) << " s  (" << (mc_ns - base_ns)
+                          << " ns/hit)   [sink=" << sink << "]" << std::endl;
             }
 
             auto hit_loop_start = std::chrono::high_resolution_clock::now();
-            const NP* hit_np_main = sev->getHit();
-            const sphoton* hits_main = reinterpret_cast<const sphoton*>(hit_np_main->bytes());
+            const NP *hit_np_main = sev->getHit();
+            const sphoton *hits_main = reinterpret_cast<const sphoton *>(hit_np_main->bytes());
             const int M_gs = int(sev->gs.size());
             int g_cur = 0;
             for (int idx = 0; idx < int(num_hits); idx++)
             {
-                const sphoton& hit = hits_main[idx];
+                const sphoton &hit = hits_main[idx];
                 G4ThreeVector position = G4ThreeVector(hit.pos.x, hit.pos.y, hit.pos.z);
                 G4ThreeVector direction = G4ThreeVector(hit.mom.x, hit.mom.y, hit.mom.z);
                 G4ThreeVector polarization = G4ThreeVector(hit.pol.x, hit.pol.y, hit.pol.z);
@@ -464,9 +464,10 @@ struct RunAction : G4UserRunAction
                 if (emit_trackid)
                 {
                     const int64_t pidx = hit.index;
-                    while (g_cur + 1 < M_gs && pidx >= sev->gs[g_cur + 1].offset) ++g_cur;
-                    int trackID = pidx < sev->gs[g_cur].offset + sev->gs[g_cur].photons
-                                  ? int(sev->genstep[g_cur].trackid()) : -1;
+                    while (g_cur + 1 < M_gs && pidx >= sev->gs[g_cur + 1].offset)
+                        ++g_cur;
+                    int trackID =
+                        pidx < sev->gs[g_cur].offset + sev->gs[g_cur].photons ? int(sev->genstep[g_cur].trackid()) : -1;
                     outFile << " TrackID=" << trackID;
                 }
                 outFile << std::endl;
@@ -474,8 +475,8 @@ struct RunAction : G4UserRunAction
             auto hit_loop_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> hit_loop_elapsed = hit_loop_end - hit_loop_start;
             std::cout << "Hit-write loop time: " << hit_loop_elapsed.count() << " seconds"
-                      << " (emit_trackid=" << (emit_trackid ? "1" : "0")
-                      << ", num_hits=" << num_hits << ")" << std::endl;
+                      << " (emit_trackid=" << (emit_trackid ? "1" : "0") << ", num_hits=" << num_hits << ")"
+                      << std::endl;
 
             outFile.close();
         }

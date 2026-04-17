@@ -22,7 +22,9 @@ using namespace std;
 struct ActionInitialization : public G4VUserActionInitialization
 {
     G4App *fG4App;
-    ActionInitialization(G4App *app) : G4VUserActionInitialization(), fG4App(app) {}
+    ActionInitialization(G4App *app) : G4VUserActionInitialization(), fG4App(app)
+    {
+    }
 
     virtual void BuildForMaster() const override
     {
@@ -43,9 +45,9 @@ int main(int argc, char **argv)
 {
     OPTICKS_LOG(argc, argv);
 
-    const char *gdml_env  = getenv("EIC_GDML");
+    const char *gdml_env = getenv("EIC_GDML");
     const char *macro_env = getenv("EIC_MACRO");
-    const char *seed_env  = getenv("EIC_SEED");
+    const char *seed_env = getenv("EIC_SEED");
 
     if (!gdml_env || !macro_env)
     {
