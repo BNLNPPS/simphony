@@ -400,21 +400,23 @@ struct RunAction : G4UserRunAction
             if (getenv("OPTICKS_MC_TRUTH_BENCH"))
             {
                 volatile uint64_t sink = 0;
+                const NP* hit_np = sev->getHit();
+                const sphoton* hits = reinterpret_cast<const sphoton*>(hit_np->bytes());
+                const int M = int(sev->gs.size());
                 auto bt0 = std::chrono::high_resolution_clock::now();
                 for (int idx = 0; idx < int(num_hits); idx++)
                 {
-                    sphoton h;
-                    sev->getHit(h, idx);
-                    sink ^= h.index;
+                    sink ^= hits[idx].index;
                 }
                 auto bt1 = std::chrono::high_resolution_clock::now();
+                int g = 0;
                 for (int idx = 0; idx < int(num_hits); idx++)
                 {
-                    sphoton h;
-                    sev->getHit(h, idx);
-                    int g = sev->getHitGenstepIndexFromPhotonIndex(h.index);
-                    int tid = g >= 0 ? int(sev->genstep[g].trackid()) : -1;
-                    sink ^= h.index ^ unsigned(tid);
+                    const int64_t pidx = hits[idx].index;
+                    while (g + 1 < M && pidx >= sev->gs[g + 1].offset) ++g;
+                    int tid = pidx < sev->gs[g].offset + sev->gs[g].photons
+                              ? int(sev->genstep[g].trackid()) : -1;
+                    sink ^= hits[idx].index ^ unsigned(tid);
                 }
                 auto bt2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> base_t = bt1 - bt0;
@@ -428,10 +430,13 @@ struct RunAction : G4UserRunAction
             }
 
             auto hit_loop_start = std::chrono::high_resolution_clock::now();
+            const NP* hit_np_main = sev->getHit();
+            const sphoton* hits_main = reinterpret_cast<const sphoton*>(hit_np_main->bytes());
+            const int M_gs = int(sev->gs.size());
+            int g_cur = 0;
             for (int idx = 0; idx < int(num_hits); idx++)
             {
-                sphoton hit;
-                sev->getHit(hit, idx);
+                const sphoton& hit = hits_main[idx];
                 G4ThreeVector position = G4ThreeVector(hit.pos.x, hit.pos.y, hit.pos.z);
                 G4ThreeVector direction = G4ThreeVector(hit.mom.x, hit.mom.y, hit.mom.z);
                 G4ThreeVector polarization = G4ThreeVector(hit.pol.x, hit.pol.y, hit.pol.z);
@@ -458,8 +463,10 @@ struct RunAction : G4UserRunAction
                         << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid;
                 if (emit_trackid)
                 {
-                    int gsidx = sev->getHitGenstepIndexFromPhotonIndex(hit.index);
-                    int trackID = gsidx >= 0 ? int(sev->genstep[gsidx].trackid()) : -1;
+                    const int64_t pidx = hit.index;
+                    while (g_cur + 1 < M_gs && pidx >= sev->gs[g_cur + 1].offset) ++g_cur;
+                    int trackID = pidx < sev->gs[g_cur].offset + sev->gs[g_cur].photons
+                                  ? int(sev->genstep[g_cur].trackid()) : -1;
                     outFile << " TrackID=" << trackID;
                 }
                 outFile << std::endl;
