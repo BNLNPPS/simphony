@@ -2,10 +2,7 @@
 source $PWD/../bin/GEOM.sh trim   ## sets GEOM envvar based on GEOM.txt file 
 
 msg="=== $BASH_SOURCE :"
-
-case $(uname) in 
-   Linux)  argdef=run  ;;
-esac
+argdef=run
 arg=${1:-$argdef}
 
 usage(){ cat << EOU

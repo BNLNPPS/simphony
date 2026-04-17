@@ -1,8 +1,6 @@
 #!/bin/bash -l 
 cxs_msg="=== $BASH_SOURCE : "
-case $(uname) in 
-   Linux)  argdef="run" ;; 
-esac 
+argdef="run"
 cxs_arg=${1:-$argdef}
 
 BASH_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

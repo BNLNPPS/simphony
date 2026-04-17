@@ -28,9 +28,7 @@ EOU
 }
 
 msg="=== $BASH_SOURCE :"
-case $(uname) in 
-   Linux)  argdef=run  ;;
-esac
+argdef=run
 arg=${1:-$argdef}
 bin=CSGOptiXSimTest
 

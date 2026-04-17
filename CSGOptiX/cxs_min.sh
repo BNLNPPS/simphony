@@ -85,9 +85,7 @@ SDIR=$(dirname $(realpath $BASH_SOURCE))
 
 vars="$vars BASH_SOURCE SDIR"
 
-case $(uname) in
-   Linux) defarg=run_report_info ;;
-esac
+defarg=run_report_info
 
 [ -n "$BP" ] && defarg=dbg
 [ -n "$PLOT" ] && defarg=ana
@@ -208,9 +206,7 @@ export TEST=${TEST:-$test}
 #ctx=Debug_XORWOW
 #ctx=Debug_Philox
 
-case $(uname) in
-    Linux) ctx=$(TEST=ContextString sbuild_test) ;;
-esac
+ctx=$(TEST=ContextString sbuild_test)
 
 export OPTICKS_EVENT_NAME=${ctx}_${TEST}
 ## SEventConfig::Initialize_EventName asserts OPTICKS_EVENT_NAME sbuild::Matches config of the build

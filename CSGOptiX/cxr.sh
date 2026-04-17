@@ -96,9 +96,7 @@ esac
 
 export OPTICKS_GEOM=${OPTICKS_GEOM:-$MOI}  # "sweeper" role , used by Opticks::getOutPrefix   
 
-case $(uname) in 
-   Linux)  optix_version=$(CSGOptiXVersion 2>/dev/null) ;;
-esac
+optix_version=$(CSGOptiXVersion 2>/dev/null)
 
 
 # the OPTICKS_RELDIR and NAMEPREFIX defaults are typically overridden from higher level script
@@ -152,9 +150,7 @@ fi
 
 
 if [ -n "$DEBUG" ]; then 
-    case $(uname) in 
-       Linux)  GDB=gdb    ;;
-    esac
+    GDB=gdb
 fi 
 
 DIV=""

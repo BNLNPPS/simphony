@@ -78,9 +78,7 @@ EOU
 
 cd $(dirname $(realpath $BASH_SOURCE))
 
-case $(uname) in 
-  Linux) defarg="run" ;;
-esac
+defarg="run"
 arg=${1:-$defarg}
 
 source $HOME/.opticks/GEOM/GEOM.sh  # exports GEOM envvar selecting geometry 

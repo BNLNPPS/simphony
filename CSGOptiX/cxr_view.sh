@@ -191,9 +191,7 @@ Mid chimney fixture::
 EOU
 }
 
-case $(uname) in 
-  Linux) defarg="run" ;;
-esac
+defarg="run"
 arg=${1:-$defarg}
 
 DIR=$(dirname $BASH_SOURCE)
