@@ -101,6 +101,16 @@ echo "Opticks: NumHits: $OPTICKS_HITS  (expected $EXPECTED_OPTICKS +/- $TOLERANC
 check_hits "Geant4 NumHits"  "$G4_HITS"      "$EXPECTED_G4"
 check_hits "Opticks NumHits" "$OPTICKS_HITS" "$EXPECTED_OPTICKS"
 
+# ---- Test 3: Cerenkov + Re-emission, no Scintillation (opticks_raindrop_reemit_no_scint.gdml) ----
+echo ""
+echo "=== Test 3: Cerenkov + Re-emission, no Scintillation (opticks_raindrop_reemit_no_scint.gdml) ==="
+
+echo "Running GPURaytrace with seed $SEED ..."
+USER=fakeuser GEOM=fakegeom GPURaytrace \
+    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop_reemit_no_scint.gdml" \
+    -m "$OPTICKS_HOME/tests/run.mac" \
+    -s "$SEED"
+
 # ---- Summary ----
 echo ""
 if [ "$PASS" = true ]; then
