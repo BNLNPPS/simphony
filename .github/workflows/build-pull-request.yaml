@@ -29,7 +29,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          style: microsoft
+          style: file
           ignore: include/argparse
           lines-changed-only: true
           thread-comments: update
