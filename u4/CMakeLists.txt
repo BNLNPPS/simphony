@@ -47,7 +47,6 @@ set(HEADERS
     U4HitGet.h
     U4Track.h
     U4Stack.h
-    Deprecated_U4PhotonInfo.h
     U4GDML.h
     U4Transform.h
     U4Tree.h
