@@ -29,7 +29,6 @@ set(TEST_SOURCES
    U4NistManagerTest.cc
    U4MaterialTest.cc
    U4MaterialPropertyVectorTest.cc
-   Deprecated_U4PhotonInfoTest.cc
    U4TrackInfoTest.cc 
    U4TrackTest.cc
    U4GDMLTest.cc

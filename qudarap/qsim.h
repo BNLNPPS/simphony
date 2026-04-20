@@ -874,6 +874,12 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 
             if (u_reemit < reemission_prob)
             {
+                if (scint == nullptr)
+                {
+                    flag = BULK_ABSORB;
+                    return BREAK;
+                }
+
                 float u_re_wavelength = curand_uniform(&rng);
                 float u_re_mom_ph = curand_uniform(&rng);
                 float u_re_mom_ct = curand_uniform(&rng);
@@ -2617,7 +2623,9 @@ inline QSIM_METHOD void qsim::generate_photon(sphoton& p, RNG& rng, const quad6&
 
         case OpticksGenstep_DsG4Scintillation_r4695:
         case OpticksGenstep_SCINTILLATION:
-                                              scint->generate(        p, rng, gs, photon_id, genstep_id ) ; break ;
+            if (scint != nullptr)
+                scint->generate(p, rng, gs, photon_id, genstep_id);
+            break;
 
         case OpticksGenstep_INPUT_PHOTON:    { p = evt->photon[photon_id] ; p.set_flag(TORCH) ; }        ; break ;
         default:                             generate_photon_dummy(  p, rng, gs, photon_id, genstep_id)  ; break ;
