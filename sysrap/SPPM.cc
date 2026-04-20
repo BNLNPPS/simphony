@@ -22,7 +22,7 @@
 #include <fstream>
 
 #include "SLOG.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SColor.hh"
 #include "SPPM.hh"
 
@@ -222,7 +222,7 @@ void SPPM::dumpHeader( const char* path )
 
 int SPPM::readHeader( const char* path, unsigned& width, unsigned& height, unsigned& mode, unsigned& bits )
 {
-    assert(SStr::EndsWith(path, ".ppm")); 
+    assert(sstr::EndsWith(path, ".ppm")); 
     std::ifstream f(path, std::ios::binary);
     if(f.fail())
     {
@@ -277,7 +277,7 @@ A row of an image is horizontal. A column is vertical. The pixels in the image a
 
 int SPPM::read( const char* path, std::vector<unsigned char>& img, unsigned& width, unsigned& height, const unsigned ncomp, const bool yflip )
 {
-    assert(SStr::EndsWith(path, ".ppm")); 
+    assert(sstr::EndsWith(path, ".ppm")); 
 
     std::ifstream f(path, std::ios::binary);
     if(f.fail())
@@ -481,17 +481,17 @@ unsigned char* SPPM::MakeTestImage(const int width, const int height, const int 
         unsigned char jj = (1.-fj)*255.f ;   
 
         SColor col = SColors::white ; 
-        if( SStr::Contains(config, "checkerboard") )
+        if( sstr::Contains(config, "checkerboard") )
         {
             if( mi < 4 ) col = SColors::black ; 
             else if (mj < 4 ) col = SColors::red ; 
             else col = { jj, jj, jj } ; 
         }
-        else if( SStr::Contains(config, "horizontal_gradient") )
+        else if( sstr::Contains(config, "horizontal_gradient") )
         {
             col = { jj , jj, jj } ; 
         }    
-        else if( SStr::Contains(config, "vertical_gradient") )
+        else if( sstr::Contains(config, "vertical_gradient") )
         {
             col = { ii , ii, ii } ; 
         }    
@@ -503,9 +503,9 @@ unsigned char* SPPM::MakeTestImage(const int width, const int height, const int 
     }
 
 
-    bool add_border = SStr::Contains(config, "add_border") ; 
-    bool add_midline = SStr::Contains(config, "add_midline") ; 
-    bool add_quadline = SStr::Contains(config, "add_quadline") ; 
+    bool add_border = sstr::Contains(config, "add_border") ; 
+    bool add_midline = sstr::Contains(config, "add_midline") ; 
+    bool add_quadline = sstr::Contains(config, "add_quadline") ; 
 
     if(add_border)  SPPM::AddBorder(imgdata, width, height, ncomp, yflip);  
     if(add_midline) SPPM::AddMidline(imgdata, width, height, ncomp, yflip);  
@@ -566,6 +566,5 @@ unsigned SPPM::ImageCompare(const int width, const int height, const int ncomp, 
     }
     return mismatch ; 
 } 
-
 
 

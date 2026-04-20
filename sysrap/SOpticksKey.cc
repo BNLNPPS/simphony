@@ -27,7 +27,7 @@
 #include "SAr.hh"
 #include "SSys.hh"
 #include "SDigest.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SPath.hh"
 #include "SOpticksKey.hh"
 
@@ -64,7 +64,7 @@ SOpticksKey* SOpticksKey::GetKey()
 
 const char* SOpticksKey::StemName( const char* ext, const char* sep )
 {
-    return SStr::Concat(IDSTEM, sep, ext );
+    return sstr::Concat(IDSTEM, sep, ext );
 }
 
 
@@ -152,7 +152,7 @@ SOpticksKey::SOpticksKey(const char* spec)
     m_live(false)
 {
     std::vector<std::string> elem ; 
-    SStr::Split(spec, '.', elem ); 
+    sstr::Split(spec, '.', elem ); 
 
     bool four = elem.size() == 4  ;
     LOG_IF(fatal, !four) << " expecting 4 element spec delimited by dot [" << spec << "]" ;  
@@ -258,7 +258,6 @@ const char* SOpticksKey::getIdPath(const char* base) const
     int create_dirs = 0 ;  // 0:noop
     return SPath::Resolve(base, m_idname, m_idsubd, m_digest, LAYOUT_, create_dirs ) ; 
 }
-
 
 
 

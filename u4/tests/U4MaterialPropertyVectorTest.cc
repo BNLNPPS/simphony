@@ -1,7 +1,6 @@
 #include "OPTICKS_LOG.hh"
 #include "SPath.hh"
 #include "SSys.hh"
-#include "SStr.hh"
 #include "NPFold.h"
 
 #include "G4Material.hh"

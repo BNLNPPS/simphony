@@ -26,7 +26,7 @@ Check a few different iidx of midx 120::
 **/
 #include <csignal>
 #include "SSys.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SSim.hh"
 
 #include "OPTICKS_LOG.hh"
@@ -70,7 +70,7 @@ CSGTargetTest::CSGTargetTest()
 void CSGTargetTest::dumpMOI( const char* MOI )
 {
     std::vector<std::string> vmoi ; 
-    SStr::Split(MOI, ',',  vmoi ); 
+    sstr::Split(MOI, ',',  vmoi ); 
 
     LOG(info) << " MOI " << MOI << " vmoi.size " << vmoi.size() ; 
 
@@ -199,6 +199,5 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
 
 

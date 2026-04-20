@@ -7,7 +7,7 @@
 
 #include "SFrameConfig.hh"
 #include "SComp.h"
-#include "SStr.hh"
+#include "ssys.h"
 #include "SPath.hh"
 #include "SLOG.hh"
 #include "NP.hh"
@@ -58,7 +58,7 @@ Frame::Frame(int width_, int height_, int depth_, uchar4* d_pixel_, float4* d_is
     height(height_),
     depth(depth_),
     channels(4),
-    jpg_quality(SStr::GetEValue<int>("QUALITY", 50)),
+    jpg_quality(ssys::getenv_<int>("QUALITY", 50)),
     img(new SIMG(width, height, channels,  nullptr )),
     num_pixels(width*height),  
     d_pixel(d_pixel_ == nullptr     ? DeviceAlloc<uchar4>(num_pixels, mask & SCOMP_PIXEL   ) : d_pixel_  ),
