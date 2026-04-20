@@ -33,7 +33,6 @@
 #include <sys/wait.h>
 
 #include "SSys.hh"
-#include "SStr.hh"
 #include "SLOG.hh"
 
 #include "scuda.h"
@@ -775,9 +774,9 @@ int SSys::RunPythonCode(const char* code)
          ;   
 
     const char* arg1 = "-c" ; 
-    const char* arg2 = SStr::Concat("'", code, "'") ;  
+    const std::string arg2 = std::string("'") + code + "'" ;  
 
-    int RC = code == NULL ? 101 : SSys::exec(python_executable,arg1, arg2) ;
+    int RC = code == NULL ? 101 : SSys::exec(python_executable,arg1, arg2.c_str()) ;
     LOG(info) << " RC " << RC ; 
     return RC ; 
 }
@@ -788,6 +787,5 @@ void SSys::Exit(int rc)
     LOG(fatal) << " rc " << rc ; 
     std::raise(SIGINT) ; 
 }
-
 
 

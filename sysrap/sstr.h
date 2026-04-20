@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <cstring>
 #include <sstream>
@@ -26,6 +27,7 @@ struct sstr
     static bool MatchAll(   const char* s, const char* q);
     static bool MatchStart( const char* s, const char* q);
     static bool StartsWith( const char* s, const char* q);
+    static bool SimpleMatch(const char* s, const char* q);
     static bool MatchEnd(   const char* s, const char* q);
     static bool EndsWith(   const char* s, const char* q);
 
@@ -199,8 +201,8 @@ inline bool sstr::MatchAll( const char* s, const char* q)
 }
 
 /**
-sstr::MatchStart (NB this can replace SStr::StartsWith with same args)
--------------------------------------------------------------------------
+sstr::MatchStart
+-----------------
 
 The 2nd query string must be less than or equal to the length of the first string and
 all the characters of the query string must match with the first string in order
@@ -233,6 +235,31 @@ same chars as the query string *q*, eg::
 inline bool sstr::StartsWith( const char* s, const char* q)  // synonym for sstr::MatchStart
 {
     return s && q && strlen(q) <= strlen(s) && strncmp(s, q, strlen(q)) == 0 ;
+}
+
+/**
+sstr::SimpleMatch
+-------------------
+
+When *q* ends with '$' or '@' require an exact full-string match of the
+preceding characters, otherwise treat *q* as a prefix.
+
+**/
+
+inline bool sstr::SimpleMatch(const char* s, const char* q)
+{
+    if(s == nullptr || q == nullptr) return false ;
+
+    std::string_view sv(s);
+    std::string_view qv(q);
+
+    if(sv.empty() || qv.empty()) return false ;
+
+    const bool require_exact = qv.back() == '$' || qv.back() == '@' ;
+    if(require_exact) qv.remove_suffix(1);
+
+    if(require_exact) return sv == qv ;
+    return sv.size() >= qv.size() && sv.substr(0, qv.size()) == qv ;
 }
 
 
@@ -1359,5 +1386,4 @@ inline std::vector<std::string>* sstr::LoadList( const char* arg, char delim )
     LoadList(arg, *lines, delim );
     return lines ;
 }
-
 

@@ -2,11 +2,12 @@
 #include <iomanip>
 #include <cstring>
 #include <array>
+#include <algorithm>
 
 
 //#include <vector_types.h>
 
-#include "SStr.hh"
+#include "sstr.h"
 #include "ssys.h"
 #include "NP.hh"
 #include "SLOG.hh"
@@ -18,6 +19,19 @@
 
 #include "DemoGeo.h"
 #include "DemoGrid.h"
+
+namespace
+{
+    void ParseGridSpec(std::array<int,9>& grid, const char* spec)
+    {
+        std::vector<int> values;
+        std::stringstream ss(spec ? spec : "");
+        std::string item;
+        while(std::getline(ss, item, ',')) sstr::split<int>(values, item.c_str(), ':');
+        assert(values.size() == grid.size());
+        std::copy(values.begin(), values.end(), grid.begin());
+    }
+}
 
 DemoGeo::DemoGeo(CSGFoundry* foundry_, const char* geom)
     :
@@ -45,15 +59,15 @@ void DemoGeo::init(const char* geom)
     {
         init_parade();
     }
-    else if(SStr::StartsWith(geom, "clustered_"))
+    else if(sstr::StartsWith(geom, "clustered_"))
     {
         init_clustered( geom + strlen("clustered_"));
     }
-    else if(SStr::StartsWith(geom, "scaled_"))
+    else if(sstr::StartsWith(geom, "scaled_"))
     {
         init_scaled( geom, geom + strlen("scaled_"), outer, layers, numgas );
     }
-    else if(SStr::StartsWith(geom, "layered_"))
+    else if(sstr::StartsWith(geom, "layered_"))
     {
         init_layered( geom + strlen("layered_"), outer, layers );
     }
@@ -142,7 +156,7 @@ void DemoGeo::init_clustered(const char* name)
 
     bool inbox = false ;
     std::array<int,9> cl ;
-    SStr::ParseGridSpec(cl, clusterspec); // string parsed into array of 9 ints
+    ParseGridSpec(cl, clusterspec);
     CSGSolid* so = maker->makeClustered(name, cl[0],cl[1],cl[2],cl[3],cl[4],cl[5],cl[6],cl[7],cl[8], unit, inbox );
     std::cout << "DemoGeo::init_layered" << name << " so.center_extent " << so->center_extent << std::endl ;
 
@@ -218,4 +232,3 @@ std::string DemoGeo::desc() const
     std::string s = ss.str();
     return s ;
 }
-

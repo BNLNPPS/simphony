@@ -22,7 +22,7 @@ See also CSGTargetTest.cc
 
 #include <csignal>
 #include "SSys.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SSim.hh"
 #include "CSGFoundry.h"
 
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
     const char* MOI = SSys::getenvvar("MOI", "sWorld:0:0"); 
     std::vector<std::string> vmoi ; 
-    SStr::Split(MOI, ',',  vmoi );  
+    sstr::Split(MOI, ',',  vmoi );  
     LOG(info) << " MOI " << MOI << " vmoi.size " << vmoi.size() ; 
 
     qat4 q ; 
@@ -74,7 +74,6 @@ int main(int argc, char** argv)
     }
     return 0 ; 
 }
-
 
 
 

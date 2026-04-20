@@ -30,7 +30,7 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include "SEventConfig.hh"
 #include "SGeoConfig.hh"
 #include "SSim.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SEvt.hh"
 #include "SMeta.hh"
 #include "SPath.hh"
@@ -1365,7 +1365,7 @@ void CSGOptiX::snap(const char* path_, bool inverted)
     framebuf->snap( path  );
     LOG(LEVEL) << "] frame.snap " ;
 
-    if(!flight || SStr::Contains(path,"00000"))
+    if(!flight || sstr::Contains(path,"00000"))
     {
         saveMeta(path);
     }
@@ -1414,7 +1414,7 @@ void CSGOptiX::saveMeta(const char* path) const
         js["av"] = av ;
     }
 
-    meta->save(json_path);
+    meta->save(json_path.c_str());
     LOG(LEVEL) << "] json_path " << json_path  ;
 }
 
