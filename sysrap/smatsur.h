@@ -10,8 +10,7 @@ enum {
     smatsur_NoSurface                      = 1,
     smatsur_Surface                        = 2,
     smatsur_Surface_zplus_sensor_A         = 3,
-    smatsur_Surface_zminus                 = 4
- 
+    smatsur_Surface_zminus = 4
 };
  
 #if defined(__CUDACC__) || defined(__CUDABE__)

@@ -2904,7 +2904,7 @@ void SEvt::beginPhoton(const spho& label)
 
     ctx.idx = idx ;
     ctx.evt = evt ;
-    ctx.prd = &current_prd ;   // current_prd is populated by the boundary process stepping hook
+    ctx.prd = &current_prd; // current_prd is populated by the boundary process stepping hook
 
     ctx.p.index = idx ;
     ctx.p.set_flag(genflag);

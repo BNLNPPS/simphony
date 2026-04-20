@@ -33,7 +33,6 @@ struct U4_API U4OpBoundaryProcess
 #include "G4OpBoundaryProcess.hh"
 #include "G4ProcessManager.hh"
 
-
 template <typename T>
 inline T* U4OpBoundaryProcess::Get()
 {

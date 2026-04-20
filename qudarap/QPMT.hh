@@ -114,8 +114,6 @@ struct QUDARAP_API QPMT
 
     NP *pmtcat_scan(int etype, const NP *domain) const;
     NP *spmtid_scan(int etype, const NP *spmtid) const;
-
-
 };
 
 
