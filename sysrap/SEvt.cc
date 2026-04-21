@@ -1881,8 +1881,7 @@ Lifecycle::
                A:SEvt::clear
                QEvt::setGenstep(NP*)
 
-            SCSGOptiX::simulate_launch
-
+            CSGOptiX::simulate_launch
             EGPU.:SEvt::endOfEvent
 
 
@@ -5500,8 +5499,3 @@ NP* SEvt::CountNibbles_Table( const NP* seqnib ) // static
     }
     return seqnib_table ;
 }
-
-
-
-
-
