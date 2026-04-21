@@ -12,6 +12,9 @@ CSGOptiX.h
 #include <glm/fwd.hpp>
 
 #include <optix.h>
+#if OPTIX_VERSION < 70000
+#error "CSGOptiX requires OptiX 7 or newer."
+#endif
 
 #include "plog/Severity.h"
 #include "sfr.h"
@@ -41,14 +44,9 @@ struct Params ;
 class Opticks ;
 class Composition ;
 
-#if OPTIX_VERSION < 70000
-struct Six ;
-struct Dummy ;
-#else
 struct Ctx ;
 struct PIP ;
 struct SBT ;
-#endif
 struct Frame ;
 
 //#include "SCSGOptiX.h"
@@ -92,15 +90,9 @@ struct CSGOPTIX_API CSGOptiX : public SSimulator
     Params*           params  ;
 
 
-#if OPTIX_VERSION < 70000
-    Six* six ;
-    Dummy* dummy0 ;
-    Dummy* dummy1 ;
-#else
     Ctx* ctx ;
     PIP* pip ;
     SBT* sbt ;
-#endif
 
     Frame* framebuf ;
     SMeta* meta ;
@@ -208,4 +200,3 @@ private:
 
     static int   _OPTIX_VERSION() ;
 };
-

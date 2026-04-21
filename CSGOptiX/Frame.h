@@ -4,7 +4,7 @@ Frame.h : Frame as in window, not volume
 ===========================================
 
 When ctor argument pointers are not provided the ctor allocates device buffers.
-This was done for compatibility with the pre-OptiX-7 API.
+Pointer arguments allow callers to provide externally managed CUDA buffers.
 
 HMM: lots of overlap between this and SGLFW 
 
@@ -81,4 +81,3 @@ private:
 #endif
 
 }; 
-

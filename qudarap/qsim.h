@@ -2,7 +2,7 @@
 qsim.h : GPU side struct prepared CPU side by QSim.hh
 ========================================================
 
-qsim.h replaces the OptiX 6 context in a CUDA-centric way.
+qsim.h provides the CUDA-centric simulation state.
 Canonical use is from CSGOptiX/CSGOptiX7.cu:simulate
 
 * qsim.h instance is uploaded once only at CSGOptiX instanciation

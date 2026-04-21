@@ -19,7 +19,7 @@ Usage:
     cd ~/opticks/CSG   # c 
     ./CSGMakerTest.sh 
 
-3. run the render, this works with OptiX 7 (needs manual b7 build) and also by virtue of CSGOptiX/Six.cc with OptiX 5 or 6:: 
+3. run the render with the OptiX 7+ backend::
  
     cd ~/opticks/CSGOptiX    # cx
 

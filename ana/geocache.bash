@@ -1260,16 +1260,14 @@ geocache-load()
 
 geocache-gui-notes(){ cat << EON
 
-
 Adding --save option fails even after setting CUDA_VISIBLE_DEVICES=1::
 
     2019-05-09 15:26:57.701 INFO  [67138] [OpEngine::downloadEvent@149] .
     2019-05-09 15:26:57.701 INFO  [67138] [OContext::download@587] OContext::download PROCEED for sequence as OPTIX_NON_INTEROP
-    terminate called after throwing an instance of 'optix::Exception'
+    terminate called after throwing a legacy API exception
       what():  Invalid value (Details: Function "RTresult _rtBufferGetDevicePointer(RTbuffer, int, void**)" caught exception: Cannot get device pointers from non-CUDA interop buffers.)
     Aborted (core dumped)
     [blyth@localhost opticks]$ 
-
 
 Adding "--compute" with the "--save" succeeds to save 
 
@@ -1455,7 +1453,7 @@ $FUNCNAME
    -1       ASIS
     0       OFF
     1       ON  
-    2       ON with optix::GeometryTriangles
+    2       ON with legacy GeometryTriangles
 ========  ====================================
 
 
@@ -1564,8 +1562,3 @@ OR::
 
 EON
 }
-
-
-
-
-

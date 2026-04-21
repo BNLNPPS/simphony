@@ -10,19 +10,20 @@ find_package(CUDAToolkit REQUIRED)
 
 set(OptiX_INSTALL_DIR "OptiX_INSTALL_DIR-NOTFOUND" CACHE PATH "Path to the installed location of the OptiX SDK.")
 
-if(NOT OptiX_FIND_VERSION)
-    set(OptiX_FIND_VERSION "*")
+set(OptiX_SDK_VERSION_GLOB "*")
+if(OptiX_FIND_VERSION_EXACT AND OptiX_FIND_VERSION)
+    set(OptiX_SDK_VERSION_GLOB "${OptiX_FIND_VERSION}")
 endif()
 
 # If they haven't specified a specific OptiX SDK install directory, search likely default locations for SDKs.
 if(NOT OptiX_INSTALL_DIR)
     if(CMAKE_HOST_WIN32)
         # This is the default OptiX SDK install location on Windows.
-        file(GLOB OPTIX_SDK_DIR "$ENV{ProgramData}/NVIDIA Corporation/OptiX SDK ${OptiX_FIND_VERSION}*")
+        file(GLOB OPTIX_SDK_DIR "$ENV{ProgramData}/NVIDIA Corporation/OptiX SDK ${OptiX_SDK_VERSION_GLOB}*")
     else()
         # On linux, there is no default install location for the SDK, but it does have a default subdir name.
         foreach(dir "/opt" "/usr/local" "$ENV{HOME}" "$ENV{HOME}/Downloads")
-            file(GLOB OPTIX_SDK_DIR "${dir}/NVIDIA-OptiX-SDK-${OptiX_FIND_VERSION}*")
+            file(GLOB OPTIX_SDK_DIR "${dir}/NVIDIA-OptiX-SDK-${OptiX_SDK_VERSION_GLOB}*")
             if(OPTIX_SDK_DIR)
                 break()
             endif()

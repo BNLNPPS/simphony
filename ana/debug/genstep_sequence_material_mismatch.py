@@ -110,10 +110,7 @@ OptiX epsilon
      332 
 
 cu/generate.cu::
-
-    171         rtTrace(top_object, optix::make_Ray(p.position, p.direction, propagate_ray_type, propagate_epsilon, RT_DEFAULT_MAX), prd );
-
-
+    171         legacy ray-tracing call removed from current CSGOptiX backend
 
 Extent of Problem : 9 percent
 -------------------------------
@@ -475,13 +472,10 @@ env/graphics/optixrap/cu/TriangleMesh.cu::
      66 
      67             rtReportIntersection(0);
 
-
-
-
-/Developer/OptiX/include/optixu/optixu_math_namespace.h::
+Legacy triangle intersection helper reference::
 
     2022 /** Intersect ray with CCW wound triangle.  Returns non-normalize normal vector. */
-    2023 OPTIXU_INLINE RT_HOSTDEVICE bool intersect_triangle(const Ray&    ray,
+    2023 LEGACY_INLINE RT_HOSTDEVICE bool intersect_triangle(const Ray&    ray,
     2024                                                     const float3& p0,
     2025                                                     const float3& p1,
     2026                                                     const float3& p2,
@@ -495,7 +489,7 @@ env/graphics/optixrap/cu/TriangleMesh.cu::
     ....
     1956 /** Branchless intesection avoids divergence.
     1957 */
-    1958 OPTIXU_INLINE RT_HOSTDEVICE bool intersect_triangle_branchless(const Ray&    ray,
+    1958 LEGACY_INLINE RT_HOSTDEVICE bool intersect_triangle_branchless(const Ray&    ray,
     1959                                                                const float3& p0,
     1960                                                                const float3& p1,
     1961                                                                const float3& p2,
@@ -580,12 +574,3 @@ if __name__ == '__main__':
                    seqhis, seqmat_(mat),
                    im[p_gsmat[i]], im[p_seqmat[i]] 
                   )    
-
-
-
-
-   
-
-
-
-
