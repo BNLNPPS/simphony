@@ -6,7 +6,7 @@ Runs three configurations of the raindrop geometry (10 MeV e- in water):
 
   cpu      -- Optical photons generated AND tracked on CPU by Geant4
   baseline -- Optical photons generated but NOT tracked (SetStackPhotons=false)
-  gpu      -- Optical photons simulated on GPU via eic-opticks
+  gpu      -- Optical photons simulated on GPU via simphony
 
 Speedup = CPU_optical_time / GPU_simulate_time
   where CPU_optical_time = T(cpu) - T(baseline)
@@ -194,7 +194,7 @@ def run_all(num_events, photon_threshold=0):
         label = {
             "baseline": "baseline (no photon tracking)",
             "cpu": "cpu (photons tracked on CPU)",
-            "gpu": "gpu (photons on GPU via eic-opticks)",
+            "gpu": "gpu (photons on GPU via simphony)",
         }[mode]
         extra = f", threshold={pt}" if pt > 0 else ""
         print(f"\n{'='*60}")
