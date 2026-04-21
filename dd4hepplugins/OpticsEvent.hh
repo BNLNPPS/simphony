@@ -12,7 +12,7 @@ namespace ddeicopticks
 {
 //---------------------------------------------------------------------------//
 /*!
- * DDG4 action plugin for eic-opticks event-level GPU simulation.
+ * DDG4 action plugin for simphony event-level GPU simulation.
  *
  * At begin-of-event: prepares GPU event buffer (SEvt).
  * At end-of-event: triggers GPU optical photon simulation via

@@ -8,7 +8,7 @@ namespace ddeicopticks
 {
 //---------------------------------------------------------------------------//
 /*!
- * DDG4 action plugin for eic-opticks run-level lifecycle.
+ * DDG4 action plugin for simphony run-level lifecycle.
  *
  * At begin-of-run: initializes G4CXOpticks geometry from the Geant4 world
  * volume, translating the geometry to OptiX acceleration structures on GPU.

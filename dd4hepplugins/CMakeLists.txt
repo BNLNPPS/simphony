@@ -1,11 +1,11 @@
 #------------------------------- -*- cmake -*- -------------------------------#
-# eic-opticks DD4hep integration plugins
+# simphony DD4hep integration plugins
 #
-# Builds DD4hep action plugins that integrate eic-opticks GPU-accelerated
+# Builds DD4hep action plugins that integrate simphony GPU-accelerated
 # optical photon simulation into DD4hep/Geant4.
 #
-# Works both as part of the top-level eic-opticks build (in-tree) and as a
-# standalone project against an installed eic-opticks.
+# Works both as part of the top-level simphony build (in-tree) and as a
+# standalone project against an installed simphony.
 #
 # Usage from a DD4hep steering file:
 #   OpticsRun      -- initializes/finalizes G4CXOpticks per run
@@ -17,11 +17,11 @@ if(NOT TARGET G4CX)
     cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
     project(ddeicopticks VERSION 0.1.0 LANGUAGES CXX)
     find_package(DD4hep REQUIRED COMPONENTS DDG4 DDCore)
-    find_package(eic-opticks REQUIRED)
+    find_package(simphony REQUIRED)
     find_package(Geant4 REQUIRED)
-    set(_g4cx   eic-opticks::G4CX)
-    set(_u4     eic-opticks::U4)
-    set(_sysrap eic-opticks::SysRap)
+    set(_g4cx   simphony::G4CX)
+    set(_u4     simphony::U4)
+    set(_sysrap simphony::SysRap)
 else()
     # In-tree: DD4hep already found by parent, targets use local names
     find_package(Geant4 REQUIRED)
@@ -47,7 +47,7 @@ dd4hep_add_plugin(ddeicopticks
     ${_u4}
     ${_sysrap}
 )
-# STANDALONE changes class export macros in eic-opticks headers;
+# STANDALONE changes class export macros in simphony headers;
 # only needed when building outside the main eic-opticks tree.
 if(NOT TARGET G4CX)
     target_compile_definitions(ddeicopticks PRIVATE STANDALONE)

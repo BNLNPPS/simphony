@@ -2,7 +2,7 @@
 """Run GPU and CPU with simplified dRICH geometry (no non-optical PDU components)."""
 import math, os, sys, numpy as np
 
-_SCRIPT_DIR = "/tmp/eic-opticks/dd4hepplugins/examples"
+_SCRIPT_DIR = "/tmp/simphony/dd4hepplugins/examples"
 _GEOM_DIR = os.path.join(_SCRIPT_DIR, "geometry")
 sys.path.insert(0, _SCRIPT_DIR)
 
