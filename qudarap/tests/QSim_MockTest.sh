@@ -5,11 +5,6 @@ QSim_MockTest.sh
 
 ~/o/qudarap/tests/QSim_MockTest.sh
 
-Note that unlike the standard Opticks CMake build
-this script finds Custom4 without consulting 
-the CMAKE_PREFIX_PATH so its convenient for 
-testing new versions.  
-
 EOU
 }
 
@@ -25,11 +20,6 @@ arg=${1:-$defarg}
 
 export BASE=/tmp/$name
 bin=$BASE/$name
-
-#custom4_prefix=${OPTICKS_PREFIX}_externals/custom4/0.1.8
-custom4_prefix=$JUNOTOP/ExternalLibs/custom4/0.1.8
-CUSTOM4_PREFIX=${CUSTOM4_PREFIX:-$custom4_prefix}
-
 
 cuda_prefix=/usr/local/cuda
 CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
@@ -52,7 +42,7 @@ case $CHECK in
 esac
 
 
-vars="BASH_SOURCE BASE FOLD CHECK GEOM bin script name CUSTOM4_PREFIX OPTICKS_PREFIX CUDA_PREFIX NUM"
+vars="BASH_SOURCE BASE FOLD CHECK GEOM bin script name OPTICKS_PREFIX CUDA_PREFIX NUM"
 
 
 if [ "${arg/info}" != "$arg" ]; then 
@@ -60,7 +50,7 @@ if [ "${arg/info}" != "$arg" ]; then
 fi
 
 if [ "${arg/check}" != "$arg" ]; then
-    path="${CUSTOM4_PREFIX}/include/Custom4/C4CustomART.h"
+    path=""
     if [ -f "$path" ]; then
        echo $BASH_SOURCE : path $path : EXISTS
     else
@@ -71,8 +61,6 @@ fi
 # gives exponent has no digits error with c++11
 
 if [ "${arg/build}" != "$arg" ]; then 
-
-    [ ! -d "$CUSTOM4_PREFIX" ] && echo $BASH_SOURCE ERROR CUSTOM4_PREFIX $CUSTOM4_PREFIX DOES NOT EXIST && exit 1
 
     gcc $name.cc \
        ../QPMT.cc \
@@ -94,8 +82,6 @@ if [ "${arg/build}" != "$arg" ]; then
        -I$CUDA_PREFIX/include \
        -I$OPTICKS_PREFIX/externals/glm/glm \
        -I$OPTICKS_PREFIX/externals/plog/include \
-       -DWITH_CUSTOM4 \
-       -I$CUSTOM4_PREFIX/include/Custom4 \
        -o $bin 
 
     [ $? -ne 0 ] && echo $msg build error && exit 1 
@@ -124,5 +110,3 @@ fi
 
 
 exit 0 
-
-

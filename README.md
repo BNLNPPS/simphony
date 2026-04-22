@@ -576,7 +576,7 @@ This gives a compact chronological per-step history in 16 bytes per photon.
 #### Hit determination and MaxBounce
 
 A photon is a "hit" when `(flagmask & hitmask) == hitmask`. The default
-hitmask is `SD` (SURFACE_DETECT = 0x40), but with CustomART PMTs it may be
+hitmask is `SD` (SURFACE_DETECT = 0x40), but for PMT efficiency tagging it may be
 `EC` (EFFICIENCY_COLLECT = 0x2000). The script reads the actual hitmask from
 `NPFold_meta.txt` in the event folder.
 
@@ -605,6 +605,6 @@ Flags are a power-of-two enum where each GPU physics process gets one bit:
 | BOUNDARY_REFLECT | 0x0400 | BR | Fresnel reflection at boundary |
 | BOUNDARY_TRANSMIT | 0x0800 | BT | Transmitted through boundary |
 | NAN_ABORT | 0x1000 | NA | Aborted due to NaN (geometry error) |
-| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by CustomART PMT efficiency |
-| EFFICIENCY_CULL | 0x4000 | EL | Culled by CustomART PMT efficiency |
+| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by PMT efficiency |
+| EFFICIENCY_CULL | 0x4000 | EL | Culled by PMT efficiency |
 | MISS | 0x8000 | MI | Missed all geometry |
