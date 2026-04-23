@@ -17,25 +17,25 @@ endif()
 
 # If they haven't specified a specific OptiX SDK install directory, search likely default locations for SDKs.
 if(NOT OptiX_INSTALL_DIR)
+    set(_optix_all_sdk_dirs "")
     if(CMAKE_HOST_WIN32)
         # This is the default OptiX SDK install location on Windows.
-        file(GLOB OPTIX_SDK_DIR "$ENV{ProgramData}/NVIDIA Corporation/OptiX SDK ${OptiX_SDK_VERSION_GLOB}*")
+        file(GLOB _optix_all_sdk_dirs "$ENV{ProgramData}/NVIDIA Corporation/OptiX SDK ${OptiX_SDK_VERSION_GLOB}*")
     else()
         # On linux, there is no default install location for the SDK, but it does have a default subdir name.
+        # Scan all candidate directories to find the newest SDK that satisfies the version requirement.
         foreach(dir "/opt" "/usr/local" "$ENV{HOME}" "$ENV{HOME}/Downloads")
-            file(GLOB OPTIX_SDK_DIR "${dir}/NVIDIA-OptiX-SDK-${OptiX_SDK_VERSION_GLOB}*")
-            if(OPTIX_SDK_DIR)
-                break()
-            endif()
+            file(GLOB _optix_found_dirs "${dir}/NVIDIA-OptiX-SDK-${OptiX_SDK_VERSION_GLOB}*")
+            list(APPEND _optix_all_sdk_dirs ${_optix_found_dirs})
         endforeach()
     endif()
 
-    # If we found multiple SDKs, try to pick the one with the highest version number
-    list(LENGTH OPTIX_SDK_DIR len)
-    if(${len} GREATER 0)
-        list(SORT OPTIX_SDK_DIR)
-        list(REVERSE OPTIX_SDK_DIR)
-        list(GET OPTIX_SDK_DIR 0 OPTIX_SDK_DIR)
+    # Pick the SDK with the highest version number across all candidate directories.
+    list(LENGTH _optix_all_sdk_dirs _optix_len)
+    if(_optix_len GREATER 0)
+        list(SORT _optix_all_sdk_dirs COMPARE NATURAL)
+        list(REVERSE _optix_all_sdk_dirs)
+        list(GET _optix_all_sdk_dirs 0 OPTIX_SDK_DIR)
     endif()
 endif()
 
