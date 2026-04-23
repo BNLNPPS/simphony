@@ -10,6 +10,50 @@ find_package(CUDAToolkit REQUIRED)
 
 set(OptiX_INSTALL_DIR "OptiX_INSTALL_DIR-NOTFOUND" CACHE PATH "Path to the installed location of the OptiX SDK.")
 
+function(_optix_extract_version optix_sdk_dir out_var)
+    set(_optix_header "${optix_sdk_dir}/include/optix.h")
+    set(_optix_version "")
+
+    if(EXISTS "${_optix_header}")
+        file(READ "${_optix_header}" _optix_header_contents)
+        string(REGEX MATCH "OPTIX_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])" _optix_version_match "${_optix_header_contents}")
+        if(_optix_version_match)
+            set(_optix_version "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
+        endif()
+    endif()
+
+    set(${out_var} "${_optix_version}" PARENT_SCOPE)
+endfunction()
+
+function(_optix_select_sdk_dir out_var)
+    set(_optix_best_dir "")
+    set(_optix_best_version "")
+
+    foreach(_optix_dir IN LISTS ARGN)
+        _optix_extract_version("${_optix_dir}" _optix_dir_version)
+        if(NOT _optix_dir_version)
+            continue()
+        endif()
+
+        if(OptiX_FIND_VERSION)
+            if(OptiX_FIND_VERSION_EXACT)
+                if(NOT _optix_dir_version VERSION_EQUAL OptiX_FIND_VERSION)
+                    continue()
+                endif()
+            elseif(_optix_dir_version VERSION_LESS OptiX_FIND_VERSION)
+                continue()
+            endif()
+        endif()
+
+        if(NOT _optix_best_dir OR _optix_dir_version VERSION_GREATER _optix_best_version)
+            set(_optix_best_dir "${_optix_dir}")
+            set(_optix_best_version "${_optix_dir_version}")
+        endif()
+    endforeach()
+
+    set(${out_var} "${_optix_best_dir}" PARENT_SCOPE)
+endfunction()
+
 set(OptiX_SDK_VERSION_GLOB "*")
 if(OptiX_FIND_VERSION_EXACT AND OptiX_FIND_VERSION)
     set(OptiX_SDK_VERSION_GLOB "${OptiX_FIND_VERSION}")
@@ -30,12 +74,12 @@ if(NOT OptiX_INSTALL_DIR)
         endforeach()
     endif()
 
-    # Pick the SDK with the highest version number across all candidate directories.
+    # Pick the newest SDK by comparing the OptiX version in each candidate's
+    # include/optix.h, not by sorting the full installation path.
     list(LENGTH _optix_all_sdk_dirs _optix_len)
     if(_optix_len GREATER 0)
-        list(SORT _optix_all_sdk_dirs COMPARE NATURAL)
-        list(REVERSE _optix_all_sdk_dirs)
-        list(GET _optix_all_sdk_dirs 0 OPTIX_SDK_DIR)
+        list(REMOVE_DUPLICATES _optix_all_sdk_dirs)
+        _optix_select_sdk_dir(OPTIX_SDK_DIR ${_optix_all_sdk_dirs})
     endif()
 endif()
 
