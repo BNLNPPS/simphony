@@ -30,20 +30,8 @@ struct U4_API U4OpBoundaryProcess
     static unsigned GetStatus() ;
 };
 
-#include "G4ProcessManager.hh"
-#include "G4OpBoundaryProcess.hh"   // need standard enum from here even when using customized boundary process
-
-
-#if defined(WITH_CUSTOM4) 
-#include "C4OpBoundaryProcess.hh"
-#elif defined(WITH_PMTSIM) 
-#include "CustomG4OpBoundaryProcess.hh"
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-#include "InstrumentedG4OpBoundaryProcess.hh"
-#else
 #include "G4OpBoundaryProcess.hh"
-#endif
-
+#include "G4ProcessManager.hh"
 
 template <typename T>
 inline T* U4OpBoundaryProcess::Get()
@@ -77,13 +65,4 @@ inline unsigned U4OpBoundaryProcess::GetStatus()
 }
 
 
-#if defined(WITH_CUSTOM4)
-template unsigned U4OpBoundaryProcess::GetStatus<C4OpBoundaryProcess>() ; 
-#elif defined(WITH_PMTSIM)
-template unsigned U4OpBoundaryProcess::GetStatus<CustomG4OpBoundaryProcess>() ; 
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-template unsigned U4OpBoundaryProcess::GetStatus<InstrumentedG4OpBoundaryProcess>() ; 
-#else
 template unsigned U4OpBoundaryProcess::GetStatus<G4OpBoundaryProcess>() ; 
-#endif
-

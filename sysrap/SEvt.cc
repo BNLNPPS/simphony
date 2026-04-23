@@ -2904,7 +2904,7 @@ void SEvt::beginPhoton(const spho& label)
 
     ctx.idx = idx ;
     ctx.evt = evt ;
-    ctx.prd = &current_prd ;   // current_prd is populated by InstrumentedG4OpBoundaryProcess::PostStepDoIt
+    ctx.prd = &current_prd; // current_prd is populated by the boundary process stepping hook
 
     ctx.p.index = idx ;
     ctx.p.set_flag(genflag);
@@ -5500,7 +5500,6 @@ NP* SEvt::CountNibbles_Table( const NP* seqnib ) // static
     }
     return seqnib_table ;
 }
-
 
 
 

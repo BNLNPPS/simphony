@@ -56,12 +56,6 @@ struct sbuild
     static constexpr const bool _WITH_CHILD = false ;
 #endif
 
-#if defined(WITH_CUSTOM4)
-    static constexpr const bool _WITH_CUSTOM4 = true ;
-#else
-    static constexpr const bool _WITH_CUSTOM4 = false ;
-#endif
-
 #if defined(PLOG_LOCAL)
     static constexpr const bool _PLOG_LOCAL = true ;
 #else
@@ -136,7 +130,6 @@ inline std::string sbuild::Desc() // static
        << " sbuild::RNGMatches(\"Cheese Philox\") : " << sbuild::RNGMatches("Cheese Philox ") << "\n"
        << " _PRODUCTION          : " << ( _PRODUCTION ? "YES" :  "NO " ) << "\n"
        << " _WITH_CHILD          : " << ( _WITH_CHILD ? "YES" :  "NO " ) << "\n"
-       << " _WITH_CUSTOM4        : " << ( _WITH_CUSTOM4 ? "YES" :  "NO " ) << "\n"
        << " _PLOG_LOCAL          : " << ( _PLOG_LOCAL ? "YES" :  "NO " ) << "\n"
        << " _DEBUG_PIDX          : " << ( _DEBUG_PIDX ? "YES" :  "NO " ) << "\n"
        << " _DEBUG_TAG           : " << ( _DEBUG_TAG ? "YES" :  "NO " ) << "\n"

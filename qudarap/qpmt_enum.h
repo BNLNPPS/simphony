@@ -13,13 +13,6 @@ enum {
   qpmt_CETHETA,
   qpmt_CECOSTH,
   qpmt_CATSPEC,
-  qpmt_SPEC,
-  qpmt_SPEC_ce,
-  qpmt_ART,
-  qpmt_COMP,
-  qpmt_LL,
-  qpmt_ARTE,
-  qpmt_ATQC,
   qpmt_S_QESHAPE,
   qpmt_S_QESCALE
 };
@@ -36,13 +29,6 @@ struct qpmt_enum
     static constexpr const char* _qpmt_CETHETA = "qpmt_CETHETA" ;
     static constexpr const char* _qpmt_CECOSTH = "qpmt_CECOSTH" ;
     static constexpr const char* _qpmt_CATSPEC = "qpmt_CATSPEC" ;
-    static constexpr const char* _qpmt_SPEC    = "qpmt_SPEC" ;
-    static constexpr const char* _qpmt_SPEC_ce = "qpmt_SPEC_ce" ;
-    static constexpr const char* _qpmt_ART     = "qpmt_ART" ;
-    static constexpr const char* _qpmt_COMP    = "qpmt_COMP" ;
-    static constexpr const char* _qpmt_LL      = "qpmt_LL" ;
-    static constexpr const char* _qpmt_ARTE    = "qpmt_ARTE" ;
-    static constexpr const char* _qpmt_ATQC    = "qpmt_ATQC" ;
     static constexpr const char* _qpmt_S_QESHAPE = "qpmt_S_QESHAPE" ;
     static constexpr const char* _qpmt_S_QESCALE = "qpmt_S_QESCALE" ;
 
@@ -60,18 +46,10 @@ inline const char* qpmt_enum::Label(int e)
         case qpmt_CETHETA: s = _qpmt_CETHETA ; break ;
         case qpmt_CECOSTH: s = _qpmt_CECOSTH ; break ;
         case qpmt_CATSPEC: s = _qpmt_CATSPEC ; break ;
-        case qpmt_SPEC:    s = _qpmt_SPEC    ; break ;
-        case qpmt_SPEC_ce: s = _qpmt_SPEC_ce ; break ;
-        case qpmt_ART:     s = _qpmt_ART     ; break ;
-        case qpmt_COMP:    s = _qpmt_COMP    ; break ;
-        case qpmt_LL:      s = _qpmt_LL      ; break ;
-        case qpmt_ARTE:    s = _qpmt_ARTE    ; break ;
-        case qpmt_ATQC:    s = _qpmt_ATQC    ; break ;
         case qpmt_S_QESHAPE: s = _qpmt_S_QESHAPE ; break ;
         case qpmt_S_QESCALE: s = _qpmt_S_QESCALE ; break ;
     }
     return s ;
 }
 #endif
-
 
