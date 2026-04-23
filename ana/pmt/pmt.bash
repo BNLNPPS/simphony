@@ -287,7 +287,7 @@ The *pmt* directory hails from **env/nuwa/detdesc/pmt**
 Usage
 ------
 
-To visualize analytic PMT in a box, and test ggeo- optixrap- loading::
+To visualize analytic PMT in a box, and test geometry loading::
 
     ggv-pmt () 
     { 
@@ -530,4 +530,3 @@ pmt-i(){
 pmt-analytic(){ python $(pmt-edir)/analytic.py $*  ; }
 #pmt-gcsg(){     python $(pmt-edir)/gcsg.py $*  ; }
 #
-

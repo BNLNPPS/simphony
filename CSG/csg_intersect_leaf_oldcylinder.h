@@ -3,7 +3,7 @@
 intersect_leaf_oldcylinder
 ------------------------
 
-For ascii art explanation of the maths see optixrap/cu/intersect_ztubs.h
+Older cylinder intersection implementation kept for comparison.
 
 * handling inner radius within the primitive would be useful, but need to simplify first 
 * ideas to simplify
@@ -303,6 +303,5 @@ void intersect_leaf_oldcylinder( bool& valid_isect, float4& isect, const quad& q
 
     valid_isect = false ; 
 }
-
 
 

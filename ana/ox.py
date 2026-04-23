@@ -109,7 +109,7 @@ if __name__ == '__main__':
     for i, oxr in enumerate(ox):
         oxf = oxr[3].view(np.int32)
 
-        # see okc/OpticksPhotonFlags optixrap/cu/generate.cu 
+        # see okc/OpticksPhotonFlags
         bnd_sidx,nidx,idx,pflg  = oxf   ## nidx3 will soon become "the one" 
 
         nrpo = ggeo.get_triplet_index(nidx)

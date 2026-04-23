@@ -26,13 +26,13 @@ Find dated folders beneath a base directory argument or beneath the current dire
 
 ::
 
-    [blyth@localhost issues]$ ~/opticks/ana/datedfolder.py /home/blyth/local/opticks/results/geocache-bench
-    INFO:__main__:DatedFolder.find searching for date stamped folders beneath : /home/blyth/local/opticks/results/geocache-bench 
-    /home/blyth/local/opticks/results/geocache-bench/OFF_TITAN_RTX/20190422_175618
-    /home/blyth/local/opticks/results/geocache-bench/ON_TITAN_RTX/20190422_175618
-    /home/blyth/local/opticks/results/geocache-bench/OFF_TITAN_V/20190422_175618
-    /home/blyth/local/opticks/results/geocache-bench/ON_TITAN_V/20190422_175618
-    /home/blyth/local/opticks/results/geocache-bench/OFF_TITAN_V_AND_TITAN_RTX/20190422_175618
+    [blyth@localhost issues]$ ~/opticks/ana/datedfolder.py /tmp/opticks/results/render-bench
+    INFO:__main__:DatedFolder.find searching for date stamped folders beneath : /tmp/opticks/results/render-bench
+    /tmp/opticks/results/render-bench/OFF_TITAN_RTX/20190422_175618
+    /tmp/opticks/results/render-bench/ON_TITAN_RTX/20190422_175618
+    /tmp/opticks/results/render-bench/OFF_TITAN_V/20190422_175618
+    /tmp/opticks/results/render-bench/ON_TITAN_V/20190422_175618
+    /tmp/opticks/results/render-bench/OFF_TITAN_V_AND_TITAN_RTX/20190422_175618
     [blyth@localhost issues]$ 
 
 """

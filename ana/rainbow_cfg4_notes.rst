@@ -133,12 +133,8 @@ After standard comparison::
    ggv-;ggv-rainbow 
    ggv-;ggv-rainbow --cfg4 
 
-* recompile optixrap- without RECORD define 
+* rebuild without RECORD define
 * run with --nostep option::
 
    ggv-;ggv-rainbow --nostep 
    ggv-;ggv-rainbow --cfg4 --nostep 
-
-
-
-

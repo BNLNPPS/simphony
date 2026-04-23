@@ -435,85 +435,8 @@ of the triangle (ie in/out direction of the normal).
 TODO: duplicate normal calc in geometry shader to visualize the normals
 
 
-env/graphics/optixrap/cu/TriangleMesh.cu::
-
-     34 RT_PROGRAM void mesh_intersect(int primIdx)
-     35 {
-     36     int3 index = indexBuffer[primIdx];
-     37 
-     38     //  tried flipping vertex order in unsuccessful attempt to 
-     39     //  get normal shader colors to match OpenGL
-     40     //  observe with touch mode that n.z often small
-     41     //  ... this is just because surfaces are very often vertical
-     42     //
-     43     float3 p0 = vertexBuffer[index.x];
-     44     float3 p1 = vertexBuffer[index.y];
-     45     float3 p2 = vertexBuffer[index.z];
-     46 
-     47     float3 n;
-     48     float  t, beta, gamma;
-     49     if(intersect_triangle(ray, p0, p1, p2, n, t, beta, gamma))
-     50     {
-     51         if(rtPotentialIntersection( t ))
-     52         {
-     53             // attributes should be set between rtPotential and rtReport
-     54             geometricNormal = normalize(n);
-     55 
-     56             nodeIndex = nodeBuffer[primIdx];
-     57             boundaryIndex = boundaryBuffer[primIdx];
-     58             sensorIndex = sensorBuffer[primIdx];
-     59 
-     60             // doing calculation here might (depending on OptiX compiler cleverness) 
-     61             // repeat for all intersections encountered unnecessarily   
-     62             // instead move the calculation into closest_hit
-     63             //
-     64             // intersectionPosition = ray.origin + t*ray.direction  ; 
-     65             // http://en.wikipedia.org/wiki/Line–plane_intersection
-     66 
-     67             rtReportIntersection(0);
-
-Legacy triangle intersection helper reference::
-
-    2022 /** Intersect ray with CCW wound triangle.  Returns non-normalize normal vector. */
-    2023 LEGACY_INLINE RT_HOSTDEVICE bool intersect_triangle(const Ray&    ray,
-    2024                                                     const float3& p0,
-    2025                                                     const float3& p1,
-    2026                                                     const float3& p2,
-    2027                                                           float3& n,
-    2028                                                           float&  t,
-    2029                                                           float&  beta,
-    2030                                                           float&  gamma)
-    2031 {
-    2032   return intersect_triangle_branchless(ray, p0, p1, p2, n, t, beta, gamma);
-    2033 }
-    ....
-    1956 /** Branchless intesection avoids divergence.
-    1957 */
-    1958 LEGACY_INLINE RT_HOSTDEVICE bool intersect_triangle_branchless(const Ray&    ray,
-    1959                                                                const float3& p0,
-    1960                                                                const float3& p1,
-    1961                                                                const float3& p2,
-    1962                                                                      float3& n,
-    1963                                                                      float&  t,
-    1964                                                                      float&  beta,
-    1965                                                                      float&  gamma)
-    1966 {
-    1967   const float3 e0 = p1 - p0;
-    1968   const float3 e1 = p0 - p2;
-    1969   n  = cross( e1, e0 );
-    1970 
-    1971   const float3 e2 = ( 1.0f / dot( n, ray.direction ) ) * ( p0 - ray.origin );
-    1972   const float3 i  = cross( ray.direction, e2 );
-    1973 
-    1974   beta  = dot( i, e1 );
-    1975   gamma = dot( i, e0 );
-    1976   t     = dot( n, e2 );
-    1977 
-    1978   return ( (t<ray.tmax) & (t>ray.tmin) & (beta>=0.0f) & (gamma>=0.0f) & (beta+gamma<=1) );
-    1979 }
-
-
-
+Normal orientation should be inspected against the current triangle
+intersection implementation.
 
 """
 

@@ -7,14 +7,14 @@ from opticks.ana.prim import Solid
 
 class GParts(object):
     """
-    Opticks executables run with option --savegparts Opticks::isSaveGPartsEnabled() 
+    Reader for persisted GParts directories.
     """
     def __init__(self, kd, basedir="$TMP/GParts"):
         basedir = os.path.expandvars(basedir)
 
         if not os.path.isdir(basedir):
             log.fatal("missing directory %s " % basedir)
-            log.fatal("create using --savegparts option with any Opticks executable that invokes GGeo::deferredCreateGParts" )
+            log.fatal("create a GParts dump before using this reader")
             sys.exit(1)
         pass
 
@@ -69,6 +69,5 @@ if __name__ == '__main__':
     pass
 
  
-
 
 

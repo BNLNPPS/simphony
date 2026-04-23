@@ -24,7 +24,7 @@ benchplot.py
 
 ::
 
-    ip benchplot.py --name geocache-bench360 --include xanalytic --include 10240,5760,1
+    ip benchplot.py --name render-bench --include xanalytic --include 10240,5760,1
 
 
 """
@@ -125,9 +125,3 @@ if __name__ == '__main__':
 
     print("savefig %s " % rg.path)
     plt.savefig(rg.path)
-
-
-
-
-
-

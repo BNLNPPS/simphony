@@ -868,9 +868,8 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 qsim::propagate_at_boundary
 ------------------------------------------
 
-This was brought over from oxrap/cu/propagate.h:propagate_at_boundary_geant4_style
-See env-/g4op-/G4OpBoundaryProcess.cc annotations to follow this
-and compare the Opticks and Geant4 implementations.
+See env-/g4op-/G4OpBoundaryProcess.cc annotations to follow this and compare
+the Opticks and Geant4 implementations.
 
 Input:
 

@@ -101,27 +101,7 @@ cxr_flight.sh
 
     TODO: this is setting CFBASE, that is no longer the way to pick standard geometry 
 
-../bin/flight.sh 
-
-   PRE 7 RENDERING  
-
-   flight-render-jpg  
-       uses single OpFlightPathTest executable invokation with --flightconfig option 
-       to create potentially many .jpg snaps into --flightoutdir
-
-   flight-make-mp4
-       uses ffmpeg to create .mp4 from the .jpg 
-
-    
-../docs/misc/making_flightpath_raytrace_movies.rst
-
-    PRE 7 NOTES 
-
-    OpSnapTest --savegparts   
-
-    using python machinery to inspect geometry : 
-
-    TODO: update with instructions for 7 
+Flight path rendering should use the CSGOptiX render scripts.
 
 
 
