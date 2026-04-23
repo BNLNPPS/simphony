@@ -75,7 +75,7 @@ CSGOptiX* CSGOptiX::Get()
 
 int CSGOptiX::Version()
 {
-    return _OPTIX_VERSION()/10000 ;
+    return _OPTIX_VERSION() / 10000;
 }
 
 
