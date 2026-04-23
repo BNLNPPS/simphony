@@ -49,6 +49,153 @@ cmake -S eic-opticks -B build
 cmake --build build
 ```
 
+## Architecture overview
+
+At a high level, `eic-opticks` uses Geant4 to define the detector and event context, translates that geometry into a CSG representation, and then uses NVIDIA OptiX plus CUDA to generate and propagate optical photons on the GPU. The main bridge is `G4CXOpticks`: `SetGeometry(world)` builds the Opticks-side geometry once, and `simulate(eventID, reset)` launches GPU transport for each event.
+
+For most integrations, new code lives in `src/` and `config/`. The lower-level packages are mostly framework code unless you are extending geometry import, GPU transport, or OptiX kernels.
+
+### Layered view
+
+```mermaid
+flowchart TD
+  subgraph Inputs["User-provided inputs and app code"]
+    gdml["GDML geometry<br/>materials, surfaces, sensor tags"]
+    macro["Geant4 macro<br/>threads, beamOn, optical settings"]
+    cfg["Torch JSON or photon text file"]
+    hooks["App hooks in src/<br/>DetectorConstruction, PrimaryGenerator,<br/>EventAction, RunAction, SteppingAction"]
+  end
+
+  subgraph Apps["Executable layer"]
+    exe["simg4ox and example executables"]
+    gphox["gphox helpers<br/>config and torch generation"]
+  end
+
+  subgraph Bridge["Geant4 to Opticks bridge"]
+    g4cx["g4cx<br/>G4CXOpticks"]
+    u4["u4<br/>Geant4 translation and optical utilities"]
+  end
+
+  subgraph Core["Geometry and GPU runtime"]
+    csg["CSG<br/>CSGFoundry and primitive/intersection model"]
+    csgoptix["CSGOptiX<br/>OptiX AS, SBT, and launch orchestration"]
+    qudarap["qudarap<br/>QSim, QEvt, RNG, and transport physics"]
+    sysrap["sysrap<br/>shared event, photon, array, and config types"]
+  end
+
+  subgraph Outputs["Outputs and analysis"]
+    out["Text outputs and npy event folders"]
+    ana["optiphy/ana, ana/, tests/"]
+  end
+
+  gdml --> exe
+  macro --> exe
+  cfg --> exe
+  hooks --> exe
+  exe --> gphox
+  exe --> g4cx
+  g4cx --> u4
+  u4 --> csg
+  csg --> csgoptix
+  qudarap --> csgoptix
+  sysrap --> u4
+  sysrap --> csg
+  sysrap --> qudarap
+  csgoptix --> out
+  out --> ana
+```
+
+### Runtime data flow
+
+There are two main runtime entry modes:
+
+- **Charged-particle driven**: Geant4 produces Cerenkov and/or scintillation gensteps, and the GPU launch turns those gensteps into photons and propagates them.
+- **Direct photon input**: the app injects photons into `SEvt` with `SetInputPhoton`, using either a torch JSON configuration or a user-provided photon file.
+
+```mermaid
+flowchart LR
+  subgraph Setup["Geometry setup once"]
+    gdml2["GDML world"] --> det["DetectorConstruction"]
+    det --> setgeo["G4CXOpticks::SetGeometry(world)"]
+    setgeo --> u4tree["u4/U4Tree builds stree in SSim"]
+    u4tree --> foundry["CSGFoundry::CreateFromSim"]
+    foundry --> create["CSGOptiX::Create<br/>upload geometry, build GAS/IAS/SBT, load PTX"]
+  end
+
+  subgraph Event["Per-event inputs"]
+    prim["Charged particles in Geant4"] --> gensteps["gensteps collected in SEvt"]
+    photons["Torch JSON or photon file"] --> input["SEvt::SetInputPhoton"]
+  end
+
+  gensteps --> simulate["G4CXOpticks::simulate(eventID)"]
+  input --> simulate
+  create --> simulate
+  simulate --> qsim["QSim generate and propagate photons"]
+  qsim --> launch["OptiX launch and intersection queries"]
+  launch --> evt["Hits and event arrays in SEvt"]
+  evt --> txt["opticks_hits_output.txt and g4_hits_output.txt"]
+  evt --> npy["photon.npy, hit.npy, record.npy, seq.npy"]
+  npy --> py["Python analysis in optiphy/ana and ana/"]
+```
+
+### OptiX pipeline and extension points
+
+At the OptiX level, users normally provide scene content and launch inputs, while `eic-opticks` provides the fixed OptiX programs. In the current codebase, the main OptiX programs live in `CSGOptiX/CSGOptiX7.cu`.
+
+```mermaid
+flowchart LR
+  subgraph User["Usually user-supplied"]
+    scene["Scene content<br/>GDML geometry, optical properties, sensor tags"]
+    launchdata["Launch inputs<br/>gensteps or input photons, event config"]
+    applogic["Geant4 app logic<br/>primary generation and event actions"]
+  end
+
+  subgraph Fixed["Fixed eic-opticks OptiX programs"]
+    rg["__raygen__rg<br/>selects render, simtrace, or simulate"]
+    simrg["simulate raygen path<br/>qsim generate_photon and qsim propagate"]
+    trace["optixTrace"]
+    isect["__intersection__is<br/>CSG primitive intersection"]
+    ch["__closesthit__ch<br/>populate boundary payload"]
+    ms["__miss_ms<br/>world miss payload"]
+  end
+
+  subgraph Ext["Framework extension points"]
+    csgext["Add a new primitive or import rule in CSG/"]
+    physext["Add a transport or optical model in qudarap/"]
+  end
+
+  applogic --> launchdata
+  scene --> rg
+  launchdata --> rg
+  rg --> simrg
+  simrg --> trace
+  trace --> isect
+  trace --> ch
+  trace --> ms
+  csgext -.-> isect
+  physext -.-> simrg
+```
+
+### What users typically provide
+
+| You provide | Where it enters | Purpose |
+|---|---|---|
+| GDML geometry with material and surface properties, plus `SensDet` tags when needed | `DetectorConstruction` -> `G4CXOpticks::SetGeometry` | Defines the world, optical media, and sensitive surfaces |
+| Geant4 macro | Geant4 run manager | Controls threads, `/run/beamOn`, visualization, and whether G4 also tracks optical photons |
+| Primary generator and Geant4 actions in `src/` | Example app headers and executables | Defines beam/source setup, event flow, when GPU simulation is launched, and how outputs are written |
+| Torch JSON config in `config/` | `generate_photons` -> `SEvt::SetInputPhoton` | Direct optical photon injection without charged primaries |
+| Photon text file | `GPUPhotonFileSource` -> `SEvt::SetInputPhoton` | Replay or externally generated photon distributions |
+
+### Where to start in the tree
+
+- Start in `src/` if you are adding a new executable, a new input mode, or custom Geant4 user actions.
+- Move to `g4cx/` and `u4/` when changing Geant4 integration, geometry translation, materials, surfaces, or sensor identification.
+- Move to `CSG/` when adding a new primitive, changing CSG import, or debugging geometry intersections.
+- Move to `qudarap/` and `CSGOptiX/` only when extending GPU transport physics or the OptiX launch programs.
+- Use `optiphy/ana/`, `ana/`, and `tests/` to inspect outputs and validate behavior.
+
+The examples below map these layers to concrete executables and input modes.
+
 ## Docker
 
 Build latest `eic-opticks` image by hand:
