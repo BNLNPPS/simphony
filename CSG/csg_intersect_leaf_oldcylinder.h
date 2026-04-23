@@ -5,7 +5,7 @@ intersect_leaf_oldcylinder
 
 Older cylinder intersection implementation kept for comparison.
 
-* handling inner radius within the primitive would be useful, but need to simplify first 
+* handling inner radius within the primitive would be useful, but need to simplify first
 * ideas to simplify
 
   * adopt natural cylinder frame, require abs(z1) = abs(z2) ie -z:z 
