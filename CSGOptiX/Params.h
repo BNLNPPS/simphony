@@ -9,9 +9,6 @@ Params.h
 **/
 
 #include <optix.h>
-#if OPTIX_VERSION < 70000
-#error "CSGOptiX Params requires OptiX 7 or newer."
-#endif
 // TODO: avoid need for optix.h just for OptixTraversableHandle which is "unsigned long long" typedef
 
 #include <vector_types.h>

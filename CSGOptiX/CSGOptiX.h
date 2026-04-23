@@ -12,9 +12,6 @@ CSGOptiX.h
 #include <glm/fwd.hpp>
 
 #include <optix.h>
-#if OPTIX_VERSION < 70000
-#error "CSGOptiX requires OptiX 7 or newer."
-#endif
 
 #include "plog/Severity.h"
 #include "sfr.h"
