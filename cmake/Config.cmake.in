@@ -11,7 +11,7 @@ find_dependency(GLEW REQUIRED)
 find_dependency(glfw3 REQUIRED)
 find_dependency(CUDAToolkit REQUIRED)
 find_dependency(OpenSSL REQUIRED)
-find_dependency(OptiX REQUIRED)
+find_dependency(OptiX 7 REQUIRED)
 find_dependency(Geant4 REQUIRED)
 find_dependency(CLHEP  REQUIRED)
 

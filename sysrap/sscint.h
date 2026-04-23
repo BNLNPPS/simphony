@@ -1,8 +1,8 @@
 #pragma once
 
 /**
-sscint.h : replace (but stay similar to) : npy/NStep.hpp optixrap/cu/scintillationstep.h
-============================================================================================
+sscint.h : scintillation genstep helpers
+========================================
 
 * FOLLOWING PATTERN OF storch.h and scerenkov.h
 
@@ -132,4 +132,3 @@ inline std::string sscint::desc() const
 
 
 #endif
-

@@ -1,6 +1,6 @@
 set(name CSGOptiX)
 
-find_package(OptiX)
+find_package(OptiX 7 REQUIRED)
 
 set(SOURCES)
 set(OPTIX_SOURCES)

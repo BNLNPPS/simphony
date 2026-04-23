@@ -725,7 +725,7 @@ class Evt(object):
         self.desc['hflags'] = "(hits) final photon step: flags "
         self.desc['hc4'] = "(hits) final photon step: dtype split uint8 view of ox flags"
 
-    htid = property(lambda self:self.ht.view(np.int32)[:,3,2]) ## photon_id of hits, requires optixrap/cu/generate.cu IDENTITY_DEBUG  
+    htid = property(lambda self:self.ht.view(np.int32)[:,3,2]) ## photon_id of hits, requires IDENTITY_DEBUG
 
     def init_records(self):
         """
@@ -1932,7 +1932,7 @@ class Evt(object):
         In [18]: a.rx.shape
         Out[18]: (11235, 10, 2, 4)
 
-        Saved from optixrap/cu/photon.h:rsave 
+        Saved photon record flags.
         """
         m1m2 = self.rx[:,recs,1,2]
         bdfl = self.rx[:,recs,1,3]
@@ -2350,4 +2350,3 @@ if __name__ == '__main__':
 
 
   
-

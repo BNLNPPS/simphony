@@ -1,7 +1,7 @@
 #pragma once
 /**
-storch.h : replace (but stay similar to) : npy/NStep.hpp optixrap/cu/torchstep.h
-===================================================================================
+storch.h : torch genstep helpers
+================================
 
 NB sizeof storch struct is **CONSTRAINED TO MATCH quad6** like all gensteps
 
@@ -180,9 +180,6 @@ On CPU this is invoked using MOCK_CURAND with for example::
 
 Populate "sphoton& p" as parameterized by "const quad6& gs_" which casts to "const storch& gs",
 the photon_id and genstep_id inputs are informational only.
-
-Old workflow equivalent ~/opticks/optixrap/cu/torchstep.h
-
 
 **/
 
@@ -527,6 +524,3 @@ union qtorch
    quad6  q ;
    storch t ;
 };
-
-
-
