@@ -22,17 +22,10 @@ So have to implement all methods in each specialization, or use a separate helpe
 using XORWOW = curandStateXORWOW ;
 using Philox = curandStatePhilox4_32_10 ; 
 
-#if defined(RNG_PHILITEOX)
-#include "curandlite/curandStatePhilox4_32_10_OpticksLite.h"
-using PhiLiteOx = curandStatePhilox4_32_10_OpticksLite ; 
-#endif
-
 #if defined(RNG_XORWOW)
 using RNG = XORWOW ;
 #elif defined(RNG_PHILOX)
 using RNG = Philox ;
-#elif defined(RNG_PHILITEOX)
-using RNG = PhiLiteOx ;
 #endif
 
 
@@ -63,17 +56,6 @@ struct srng<Philox>
     static constexpr bool UPLOAD_RNG_STATES = false ; 
 };
 
-#if defined(RNG_PHILITEOX)
-template<> 
-struct srng<PhiLiteOx>  
-{ 
-    static constexpr char CODE = 'O' ;
-    static constexpr const char* NAME = "PhiLiteOx" ; 
-    static constexpr unsigned SIZE = sizeof(PhiLiteOx) ; 
-    static constexpr bool UPLOAD_RNG_STATES = false ; 
-};
-#endif
-
 // helper function
 template<typename T> 
 inline std::string srng_Desc()
@@ -97,17 +79,12 @@ template<typename T>
 inline bool srng_IsPhilox(){ return strcmp(srng<T>::NAME, "Philox") == 0 ; }
 
 template<typename T> 
-inline bool srng_IsPhiLiteOx(){ return strcmp(srng<T>::NAME, "PhiLiteOx") == 0 ; }
-
-template<typename T> 
 inline bool srng_Matches(const char* arg)
 {
     int match = 0 ; 
     if( arg && strstr(arg, "XORWOW")    && srng_IsXORWOW<T>() )    match += 1 ; 
     if( arg && strstr(arg, "Philox")    && srng_IsPhilox<T>() )    match += 1 ; 
-    if( arg && strstr(arg, "PhiLiteOx") && srng_IsPhiLiteOx<T>() ) match += 1 ; 
     return match == 1 ; 
 } 
 
 #endif
-

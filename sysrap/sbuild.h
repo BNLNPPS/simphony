@@ -87,12 +87,6 @@ struct sbuild
     static constexpr const bool _RNG_PHILOX = false ;
 #endif
 
-#if defined(RNG_PHILITEOX)
-    static constexpr const bool _RNG_PHILITEOX = true ;
-#else
-    static constexpr const bool _RNG_PHILITEOX = false ;
-#endif
-
 
     static const char* RNGName()
     {
@@ -135,7 +129,6 @@ inline std::string sbuild::Desc() // static
        << " _DEBUG_TAG           : " << ( _DEBUG_TAG ? "YES" :  "NO " ) << "\n"
        << " _RNG_XORWOW          : " << ( _RNG_XORWOW ? "YES" :  "NO " ) << "\n"
        << " _RNG_PHILOX          : " << ( _RNG_PHILOX ? "YES" :  "NO " ) << "\n"
-       << " _RNG_PHILITEOX       : " << ( _RNG_PHILITEOX ? "YES" :  "NO " ) << "\n"
        << " sbuild::Matches(\"ALL99_Release_XORWOW\") : " << sbuild::Matches("ALL99_Release_XORWOW") << "\n"
        << " sbuild::Matches(\"ALL99_Release_Philox\") : " << sbuild::Matches("ALL99_Release_Philox") << "\n"
        << " sbuild::Matches(\"ALL99_Debug_XORWOW\") : " << sbuild::Matches("ALL99_Debug_XORWOW") << "\n"
@@ -208,5 +201,3 @@ inline bool sbuild::Matches(const char* arg)
 {
     return RNGMatches(arg) && BuildTypeMatches(arg) ;
 }
-
-
