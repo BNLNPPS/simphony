@@ -203,7 +203,6 @@ int main()
         ki.ni = NI ; 
         ki.nj = NJ ; 
           ki.states = m3 == 1 ? d0 : nullptr ; 
-        //ki.download = g4 == 1 ? true : false ;  
         ki.download = false ;  
         ki.dd = dd ; 
           ki.four_by_four = g3 % 2 == 1 ;  
