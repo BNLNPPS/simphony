@@ -191,8 +191,8 @@ int main()
 
     for(int m=0 ; m < kis.size() ; m++ )
     {
-        int m3 = m % 3 ; 
-        int g3 = m / 3 ; 
+        int m3 = m % 3;
+        int g3 = m / 3;
 
         KernelInfo& ki = kis[m] ; 
         ConfigureLaunch(ki.numBlocks, ki.threadsPerBlock, NI ); 
@@ -205,17 +205,17 @@ int main()
           ki.states = m3 == 1 ? d0 : nullptr ; 
         ki.download = false ;  
         ki.dd = dd ; 
-          ki.four_by_four = g3 % 2 == 1 ;  
+        ki.four_by_four = g3 % 2 == 1;
      
        
-          switch(m3)
+        switch (m3)
         {
            case 0: test_curand_uniform<RNG0>(ki); ki.name = srng<RNG0>::NAME ; break ; 
            case 1: test_curand_uniform<RNG1>(ki); ki.name = srng<RNG1>::NAME ; break ; 
            case 2: test_curand_uniform<RNG2>(ki); ki.name = srng<RNG2>::NAME ; break ; 
         }
 
-          if(m3 == 0 ) std::cout << "\n" ;  
+        if (m3 == 0) std::cout << "\n";
         std::cout << ki.desc() << "\n" ;
 
         if(ki.download)
