@@ -78,7 +78,7 @@ const char* SEventConfig::_HitMaskDefault = "SD" ;
 
 
 #if defined(RNG_XORWOW)
-const char* SEventConfig::_MaxSlotDefault =  ;
+const char* SEventConfig::_MaxSlotDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxGenstepDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxPhotonDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxSimtraceDefault = WITH_STATE_LIMIT ;
