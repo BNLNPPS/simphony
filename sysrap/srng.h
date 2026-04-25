@@ -32,6 +32,7 @@ using RNG = Philox ;
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
 
+#include <cstring>
 #include <sstream>
 #include <string>
 
