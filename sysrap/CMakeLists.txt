@@ -111,11 +111,6 @@ set(SOURCES
     SFastSim_Debug.cc
     SFastSimOpticalModel.cc
 ) 
-    
-
-set(CURANDLITE_HEADERS
-    curandlite/curandStatePhilox4_32_10_OpticksLite.h
-) 
 
 
 set(HEADERS
@@ -646,7 +641,7 @@ PLOG_LOCAL
    integration with packages (like junosw) that do not hide 
    symbols by default  
 
-RNG_XORWOW/RNG_PHILOX/RNG_PHILITEOX
+RNG_XORWOW/RNG_PHILOX
    Use one of these to pick the curandState implementation, in srng.h
    picking RNG_XORWOW requires curandState files which slows
    down initialization greatly when simulating many millions 
@@ -685,7 +680,6 @@ target_compile_definitions( ${name} PUBLIC WITH_SLOG)
 endif()
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
-install(FILES ${CURANDLITE_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/curandlite)
 
 install(TARGETS ${name}
         EXPORT ${PROJECT_NAME}Targets
