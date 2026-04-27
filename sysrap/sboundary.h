@@ -21,6 +21,7 @@ components, then combine the Fresnel transmission/reflection coefficients.
 
 **/
 
+#include "srng_traits.h"
 
 struct sboundary
 {
@@ -67,11 +68,11 @@ struct sboundary
     float3 A_parallel ; 
     float3 alt_pol ;  // check an alternative polarization expression  
 
-    sboundary(RNG& rng, sctx& ctx );  
+    template <typename Rng> sboundary(Rng &rng, sctx &ctx);
 };
 
-inline sboundary::sboundary( RNG& rng, sctx& ctx ) 
-    :
+template <typename Rng>
+inline sboundary::sboundary(Rng &rng, sctx &ctx) :
     p(ctx.p),
     s(ctx.s),
     n1(s.material1.x),
@@ -103,7 +104,7 @@ inline sboundary::sboundary( RNG& rng, sctx& ctx )
     TT(normalize(E2_t)), 
     TransCoeff(tir || n1c1 == 0.f ? 0.f : n2c2*dot(E2_t,E2_t)/n1c1),
     ReflectCoeff(1.f - TransCoeff),
-    u_reflect(curand_uniform(&rng)),
+    u_reflect(srng_uniform(rng)),
     reflect(u_reflect > TransCoeff), 
     flag(reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT),
     Coeff(reflect ? ReflectCoeff : TransCoeff),
