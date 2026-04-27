@@ -129,11 +129,8 @@ MaxCurand
    Used by QRng with XORWOW running when curandState files are needed.
    With chunked curandstate controls how many chunk files and how much
    of the final chunk to load into memory.
-
-   With OLD_MONOLITHIC_CURANDSTATE specifies which monolithic file to load.
-
-   In both cases the value limits the total number of photons that can be
-   XORWOW simulated irrespective of multi-launching to fit within VRAM.
+   The value limits the total number of photons that can be XORWOW
+   simulated irrespective of multi-launching to fit within VRAM.
 
 
 MaxSlot OPTICKS_MAX_SLOT
