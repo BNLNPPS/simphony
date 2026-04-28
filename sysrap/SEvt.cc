@@ -2481,7 +2481,7 @@ sgs SEvt::addGenstep(const quad6& q_)
         // tree->lookup_mtline). Without this fork the WITH_OLD_FRAME branch
         // silently fell back to 0 - a valid matline (interGalactic) - so
         // the Cerenkov sampler read vacuum RINDEX and the cone collapsed to 0.
-        int matline = sim ? sim->lookup_mtline(mtindex) : 0 ;
+        int matline = sim ? sim->lookup_mtline(mtindex) : 0;
 #endif
 
         bool bad_ck = is_cerenkov_gs && matline == -1 ;
