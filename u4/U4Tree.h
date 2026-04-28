@@ -252,11 +252,19 @@ inline U4Tree* U4Tree::Create(
     return tree ;
 }
 
-inline U4Tree::U4Tree(stree *st_, const G4VPhysicalVolume *const top_, U4SensorIdentifier *sid_)
-    : st(st_), top(top_), sid(sid_ ? sid_ : new U4SensorIdentifierDefault), level(st->level), num_surface_standard(-1),
-      rayleigh_table(CreateRayleighTable()), scint(nullptr), wls(nullptr),
-      enable_osur(!ssys::getenvbool(__DISABLE_OSUR_IMPLICIT)), enable_isur(!ssys::getenvbool(__DISABLE_ISUR_IMPLICIT)),
-      material_debug(ssys::getenvint(__MATERIAL_DEBUG, 0)), solid_debug(ssys::getenvint(__SOLID_DEBUG, 0))
+inline U4Tree::U4Tree(stree *st_, const G4VPhysicalVolume *const top_, U4SensorIdentifier *sid_) :
+    st(st_),
+    top(top_),
+    sid(sid_ ? sid_ : new U4SensorIdentifierDefault),
+    level(st->level),
+    num_surface_standard(-1),
+    rayleigh_table(CreateRayleighTable()),
+    scint(nullptr),
+    wls(nullptr),
+    enable_osur(!ssys::getenvbool(__DISABLE_OSUR_IMPLICIT)),
+    enable_isur(!ssys::getenvbool(__DISABLE_ISUR_IMPLICIT)),
+    material_debug(ssys::getenvint(__MATERIAL_DEBUG, 0)),
+    solid_debug(ssys::getenvint(__SOLID_DEBUG, 0))
 {
     init();
 }

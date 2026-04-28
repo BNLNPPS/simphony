@@ -279,11 +279,24 @@ singleton components.
 
 **/
 
-QSim::QSim()
-    : base(QBase::Get()), qev(new QEvt), sev(qev->sev), rng(QRng::Get()), scint(QScint::Get()), qwls(QWls::Get()),
-      cerenkov(QCerenkov::Get()), bnd(QBnd::Get()), debug_(QDebug::Get()), prop(QProp<float>::Get()),
-      pmt(QPMT<float>::Get()), multifilm(QMultiFilm::Get()), sim(nullptr), d_sim(nullptr),
-      dbg(debug_ ? debug_->dbg : nullptr), d_dbg(debug_ ? debug_->d_dbg : nullptr), cx(nullptr)
+QSim::QSim() :
+    base(QBase::Get()),
+    qev(new QEvt),
+    sev(qev->sev),
+    rng(QRng::Get()),
+    scint(QScint::Get()),
+    qwls(QWls::Get()),
+    cerenkov(QCerenkov::Get()),
+    bnd(QBnd::Get()),
+    debug_(QDebug::Get()),
+    prop(QProp<float>::Get()),
+    pmt(QPMT<float>::Get()),
+    multifilm(QMultiFilm::Get()),
+    sim(nullptr),
+    d_sim(nullptr),
+    dbg(debug_ ? debug_->dbg : nullptr),
+    d_dbg(debug_ ? debug_->d_dbg : nullptr),
+    cx(nullptr)
 {
     LOG(LEVEL) << desc() ;
     init();

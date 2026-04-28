@@ -34,11 +34,12 @@ QWls::QWls
 
 **/
 
-QWls::QWls(const NP *wls_icdf, const NP *mat_map, const NP *time_constants, unsigned hd_factor)
-    : dsrc(wls_icdf->ebyte == 8 ? wls_icdf : nullptr), src(wls_icdf->ebyte == 4 ? wls_icdf : NP::MakeNarrow(dsrc)),
-      tex(MakeWlsTex(src, hd_factor)),
-      wls(MakeInstance(tex, mat_map, time_constants, hd_factor, time_constants->shape[0])),
-      d_wls(QU::UploadArray<qwls>(wls, 1, "QWls::QWls/d_wls"))
+QWls::QWls(const NP *wls_icdf, const NP *mat_map, const NP *time_constants, unsigned hd_factor) :
+    dsrc(wls_icdf->ebyte == 8 ? wls_icdf : nullptr),
+    src(wls_icdf->ebyte == 4 ? wls_icdf : NP::MakeNarrow(dsrc)),
+    tex(MakeWlsTex(src, hd_factor)),
+    wls(MakeInstance(tex, mat_map, time_constants, hd_factor, time_constants->shape[0])),
+    d_wls(QU::UploadArray<qwls>(wls, 1, "QWls::QWls/d_wls"))
 {
     INSTANCE = this;
 }

@@ -125,8 +125,12 @@ For each WLS material:
 
 inline U4WLS::U4WLS(const std::vector<const G4Material *> &mats, const std::vector<int> &wls_indices,
                     const std::vector<const G4MaterialPropertyVector *> &wls_components,
-                    const std::vector<double> &wls_time_consts)
-    : icdf(nullptr), mat_map(nullptr), time_constants(nullptr), num_wls(wls_indices.size()), num_mat(mats.size())
+                    const std::vector<double> &wls_time_consts) :
+    icdf(nullptr),
+    mat_map(nullptr),
+    time_constants(nullptr),
+    num_wls(wls_indices.size()),
+    num_mat(mats.size())
 {
     assert(num_wls > 0);
     assert(wls_components.size() == num_wls);

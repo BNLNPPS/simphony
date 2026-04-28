@@ -3,7 +3,7 @@
 #if defined(__CUDACC__) || defined(__CUDABE__)
    #define SSTATE_METHOD __device__
 #else
-   #define SSTATE_METHOD 
+   #define SSTATE_METHOD
 #endif
 
 /**

@@ -149,10 +149,20 @@ struct sstandard
     static NP* unused_create(const sproplist* pl,  const std::vector<std::string>& names, const NPFold* fold );
 };
 
-inline sstandard::sstandard()
-    : dom(nullptr), wavelength(nullptr), energy(nullptr), rayleigh(nullptr), mat(nullptr), sur(nullptr), bd(nullptr),
-      bnd(nullptr), optical(nullptr), icdf(nullptr), wls_icdf(nullptr), wls_mat_map(nullptr),
-      wls_time_constants(nullptr)
+inline sstandard::sstandard() :
+    dom(nullptr),
+    wavelength(nullptr),
+    energy(nullptr),
+    rayleigh(nullptr),
+    mat(nullptr),
+    sur(nullptr),
+    bd(nullptr),
+    bnd(nullptr),
+    optical(nullptr),
+    icdf(nullptr),
+    wls_icdf(nullptr),
+    wls_mat_map(nullptr),
+    wls_time_constants(nullptr)
 {
 }
 

@@ -138,8 +138,16 @@ struct qsim
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
 inline qsim::qsim() // instanciated on CPU (see QSim::init_sim) and copied to device so no ctor in device code
-    : base(nullptr), evt(nullptr), rng(nullptr), bnd(nullptr), multifilm(nullptr), cerenkov(nullptr), scint(nullptr),
-      wls(nullptr), pmt(nullptr)
+    :
+    base(nullptr),
+    evt(nullptr),
+    rng(nullptr),
+    bnd(nullptr),
+    multifilm(nullptr),
+    cerenkov(nullptr),
+    scint(nullptr),
+    wls(nullptr),
+    pmt(nullptr)
 {
 }
 #endif
