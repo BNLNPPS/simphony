@@ -2477,13 +2477,13 @@ sgs SEvt::addGenstep(const quad6& q_)
         unsigned mtindex = matline_ - G4_INDEX_OFFSET ;
         // Both setGeo and setSim populate tree, so this keeps matline lookup
         // on one shared path instead of splitting on WITH_OLD_FRAME.
-        int matline = tree ? tree->lookup_mtline(mtindex) : 0 ;
+        int matline = tree ? tree->lookup_mtline(mtindex) : 0;
 
         bool bad_ck = is_cerenkov_gs && matline == -1 ;
 
         LOG_IF(info, bad_ck )
             << " is_cerenkov_gs " << ( is_cerenkov_gs ? "YES" : "NO " )
-            << " tree " << ( tree ? "YES" : "NO " )
+            << " tree " << (tree ? "YES" : "NO ")
             << " bad_ck "
             << " matline_ " << matline_
             << " matline " << matline
@@ -2492,7 +2492,7 @@ sgs SEvt::addGenstep(const quad6& q_)
             << " G4_INDEX_OFFSET " << G4_INDEX_OFFSET
             << " desc_mt "
             << std::endl
-            << ( tree ? tree->desc_mt() : "no-tree" )
+            << (tree ? tree->desc_mt() : "no-tree")
             << std::endl
             ;
 
