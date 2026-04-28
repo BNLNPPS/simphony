@@ -7,9 +7,6 @@
 #include "stran.h"
 #include "sframe.h"
 
-#include "srngcpu.h"
-using RNG = srngcpu ;
-
 #include "storch.h"
 #include "scerenkov.h"
 #include "sscint.h"
@@ -414,7 +411,3 @@ std::string SEvent::DescSeed( const int* seed, int num_seed, int edgeitems )  //
     std::string s = ss.str();
     return s ;
 }
-
-
-
-
