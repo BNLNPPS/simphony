@@ -1,4 +1,1 @@
 BasedOnStyle: Microsoft
-BreakTemplateDeclarations: MultiLine
-PackConstructorInitializers: Never
-BreakConstructorInitializers: AfterColon
