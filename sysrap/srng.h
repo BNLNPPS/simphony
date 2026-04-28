@@ -17,44 +17,94 @@ So have to implement all methods in each specialization, or use a separate helpe
 
 **/
 
+#include "srng_traits.h"
 #include <curand_kernel.h>
 
 using XORWOW = curandStateXORWOW ;
 using Philox = curandStatePhilox4_32_10 ; 
 
 #if defined(RNG_XORWOW)
-using RNG = XORWOW ;
+using DefaultDeviceRNG = XORWOW;
 #elif defined(RNG_PHILOX)
-using RNG = Philox ;
+using DefaultDeviceRNG = Philox;
 #endif
 
+#if defined(RNG_XORWOW) || defined(RNG_PHILOX)
+#if !defined(MOCK_CURAND) && !defined(MOCK_CUDA)
+using RNG = DefaultDeviceRNG;
+#endif
+#endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
+
+template <> struct srng<XORWOW>
+{
+    static SRNG_METHOD float uniform(XORWOW &state)
+    {
+        return curand_uniform(&state);
+    }
+    static SRNG_METHOD double uniform_double(XORWOW &state)
+    {
+        return curand_uniform_double(&state);
+    }
+};
+
+template <> struct srng<Philox>
+{
+    static SRNG_METHOD float uniform(Philox &state)
+    {
+        return curand_uniform(&state);
+    }
+
+    static SRNG_METHOD double uniform_double(Philox &state)
+    {
+        return curand_uniform_double(&state);
+    }
+};
+
 #else
 
 #include <cstring>
 #include <sstream>
 #include <string>
 
-template<typename T> struct srng {};
-
 // template specializations for the different states
 template<> 
 struct srng<XORWOW>  
 { 
     static constexpr char CODE = 'X' ;
-    static constexpr const char* NAME = "XORWOW" ; 
-    static constexpr unsigned SIZE = sizeof(XORWOW) ; 
-    static constexpr bool UPLOAD_RNG_STATES = true ; 
+    static constexpr const char *NAME = "XORWOW";
+    static constexpr unsigned SIZE = sizeof(XORWOW);
+    static constexpr bool UPLOAD_RNG_STATES = true;
+
+    static inline float uniform(XORWOW &state)
+    {
+        return curand_uniform(&state);
+    }
+
+    static inline double uniform_double(XORWOW &state)
+    {
+        return curand_uniform_double(&state);
+    }
 };
 
 template<> 
 struct srng<Philox>  
 { 
     static constexpr char CODE = 'P' ;
-    static constexpr const char* NAME = "Philox" ; 
-    static constexpr unsigned SIZE = sizeof(Philox) ; 
-    static constexpr bool UPLOAD_RNG_STATES = false ; 
+    static constexpr const char *NAME = "Philox";
+    static constexpr unsigned SIZE = sizeof(Philox);
+    static constexpr bool UPLOAD_RNG_STATES = false;
+
+    static inline float uniform(Philox &state)
+    {
+        return curand_uniform(&state);
+    }
+
+    static inline double uniform_double(Philox &state)
+    {
+        return curand_uniform_double(&state);
+    }
 };
 
 // helper function

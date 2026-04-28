@@ -35,6 +35,7 @@ Techniques to implement the spirit of the old torch gensteps in much less code
 //#include "scurand.h"
 #include "smath.h"
 #include "sphoton.h"
+#include "srng_traits.h"
 #include "storchtype.h"
 
 /**
@@ -68,8 +69,9 @@ struct storch
 
     // NB : organized into 6 quads : are constained not to change that
 
-    STORCH_METHOD static void generate( sphoton& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id );
-
+    template <typename Rng>
+    STORCH_METHOD static void generate(sphoton &p, Rng &rng, const quad6 &gs, unsigned long long photon_id,
+                                       unsigned genstep_id);
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
@@ -183,7 +185,9 @@ the photon_id and genstep_id inputs are informational only.
 
 **/
 
-STORCH_METHOD void storch::generate( sphoton& p, RNG& rng, const quad6& gs_, unsigned long long photon_id, unsigned genstep_id )  // static
+template <typename Rng>
+STORCH_METHOD void storch::generate(sphoton &p, Rng &rng, const quad6 &gs_, unsigned long long photon_id,
+                                    unsigned genstep_id)
 {
     const storch& gs = (const storch&)gs_ ;   // casting between union-ed types : quad6 and storch
 
@@ -213,10 +217,8 @@ STORCH_METHOD void storch::generate( sphoton& p, RNG& rng, const quad6& gs_, uns
         p.time = gs.time ;
         p.mom = gs.mom ;
 
-        float u_zenith  = gs.zenith.x  + curand_uniform(&rng)*(gs.zenith.y-gs.zenith.x)   ;
-        float u_azimuth = gs.azimuth.x + curand_uniform(&rng)*(gs.azimuth.y-gs.azimuth.x) ;
-
-
+        float u_zenith = gs.zenith.x + srng_uniform(rng) * (gs.zenith.y - gs.zenith.x);
+        float u_azimuth = gs.azimuth.x + srng_uniform(rng) * (gs.azimuth.y - gs.azimuth.x);
 
         float r = gs.radius*u_zenith ;
 
@@ -252,8 +254,8 @@ STORCH_METHOD void storch::generate( sphoton& p, RNG& rng, const quad6& gs_, uns
         p.wavelength = gs.wavelength ;
         p.time = gs.time ;
 
-        float u_zenith  = gs.zenith.x  + curand_uniform(&rng)*(gs.zenith.y-gs.zenith.x)   ;
-        float u_azimuth = gs.azimuth.x + curand_uniform(&rng)*(gs.azimuth.y-gs.azimuth.x) ;
+        float u_zenith = gs.zenith.x + srng_uniform(rng) * (gs.zenith.y - gs.zenith.x);
+        float u_azimuth = gs.azimuth.x + srng_uniform(rng) * (gs.azimuth.y - gs.azimuth.x);
 
         float phi = 2.f*M_PIf*u_azimuth ;  // azimuth range 0->2pi
         float sinPhi = sinf(phi);
@@ -311,8 +313,8 @@ STORCH_METHOD void storch::generate( sphoton& p, RNG& rng, const quad6& gs_, uns
 
         do
         {
-            u0_zenith  = gs.zenith.x  + curand_uniform(&rng)*(gs.zenith.y-gs.zenith.x)   ;   // aka polar theta
-            u1_azimuth = gs.azimuth.x + curand_uniform(&rng)*(gs.azimuth.y-gs.azimuth.x) ;   // aka azimuth phi
+            u0_zenith = gs.zenith.x + srng_uniform(rng) * (gs.zenith.y - gs.zenith.x);     // aka polar theta
+            u1_azimuth = gs.azimuth.x + srng_uniform(rng) * (gs.azimuth.y - gs.azimuth.x); // aka azimuth phi
 
             u = 2.f*u0_zenith - 1.f ;
             v = 2.f*u1_azimuth - 1.f ;
