@@ -782,69 +782,80 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 
 
 
-    // WLS absorption competes with regular absorption and Rayleigh scattering.
-    // The process with the shortest sampled distance wins.
-    bool wls_wins = wls_absorption_distance <= absorption_distance && wls_absorption_distance <= scattering_distance ;
+    // WLS absorption only competes in materials that actually have WLS properties.
+    // Without this gate, non-WLS materials would create an extra absorption channel
+    // whenever the WLS distance happened to be the shortest of the three.
+    unsigned mat_idx = s.index.x - 1u; // 0-based material index from 1-based optical index
+    bool has_wls_material = (wls != nullptr) && wls->has_wls(mat_idx);
 
-    if (wls != nullptr && wls_wins && wls_absorption_distance <= distance_to_boundary)
+    bool wls_wins = has_wls_material && wls_absorption_distance <= absorption_distance &&
+                    wls_absorption_distance <= scattering_distance;
+
+    if (wls_wins && wls_absorption_distance <= distance_to_boundary)
     {
         // WLS ABSORPTION: photon absorbed by wavelength shifting material
-        p.time += wls_absorption_distance/group_velocity ;
-        p.pos  += wls_absorption_distance*(p.mom) ;
+        p.time += wls_absorption_distance / group_velocity;
+        p.pos += wls_absorption_distance * (p.mom);
 
-        unsigned mat_idx = s.index.x - 1u ;  // 0-based material index from 1-based optical index
+        // Sample re-emitted wavelength from WLS emission spectrum ICDF
+        float u_wls_wl = curand_uniform(&rng);
+        float new_wavelength = wls->wavelength(mat_idx, u_wls_wl);
 
-        if(wls->has_wls(mat_idx))
+        // Energy conservation: re-emitted photon must have lower energy (longer wavelength).
+        // Matches G4OpWLS algorithm: retry up to 100 times.
+        int attempts = 0;
+        while (new_wavelength < p.wavelength && attempts < 100)
         {
-            // Sample re-emitted wavelength from WLS emission spectrum ICDF
-            float u_wls_wl = curand_uniform(&rng) ;
-            float new_wavelength = wls->wavelength(mat_idx, u_wls_wl) ;
-
-            // Energy conservation: re-emitted photon must have lower energy (longer wavelength).
-            // Matches G4OpWLS algorithm: retry up to 100 times.
-            int attempts = 0 ;
-            while(new_wavelength < p.wavelength && attempts < 100)
-            {
-                u_wls_wl = curand_uniform(&rng) ;
-                new_wavelength = wls->wavelength(mat_idx, u_wls_wl) ;
-                attempts++ ;
-            }
-
-            if(new_wavelength < p.wavelength)
-            {
-                // Failed energy conservation after 100 attempts — absorb without re-emission
-                flag = BULK_ABSORB ;
-                return BREAK ;
-            }
-
-            p.wavelength = new_wavelength ;
-
-            // Isotropic re-emission direction and random polarization
-            float u_wls_mom_ph = curand_uniform(&rng) ;
-            float u_wls_mom_ct = curand_uniform(&rng) ;
-            float u_wls_pol_ph = curand_uniform(&rng) ;
-            float u_wls_pol_ct = curand_uniform(&rng) ;
-
-            p.mom = uniform_sphere(u_wls_mom_ph, u_wls_mom_ct) ;
-            p.pol = normalize(cross(uniform_sphere(u_wls_pol_ph, u_wls_pol_ct), p.mom)) ;
-
-            // Apply WLS time delay (exponential decay)
-            float tc = wls->time_constant(mat_idx) ;
-            if(tc > 0.f)
-            {
-                float u_wls_time = curand_uniform(&rng) ;
-                p.time += -tc * logf(u_wls_time) ;
-            }
-
-            flag = BULK_REEMIT ;
-            return CONTINUE ;
+            u_wls_wl = curand_uniform(&rng);
+            new_wavelength = wls->wavelength(mat_idx, u_wls_wl);
+            attempts++;
         }
-        else
+
+        if (new_wavelength < p.wavelength)
         {
-            // Material map says no WLS — treat as regular absorption
-            flag = BULK_ABSORB ;
-            return BREAK ;
+            // Failed energy conservation after 100 attempts — absorb without re-emission
+            flag = BULK_ABSORB;
+            return BREAK;
         }
+
+        p.wavelength = new_wavelength;
+
+        // Isotropic re-emission direction and polarization perpendicular by construction.
+        // Same pattern as qscint::mom_pol_wavelength to avoid the near-parallel
+        // random-cross-product instability.
+        float u_wls_cost = curand_uniform(&rng);
+        float u_wls_phi = curand_uniform(&rng);
+        float u_wls_pol = curand_uniform(&rng);
+
+        float cost = 1.f - 2.f * u_wls_cost;
+        float sint = sqrtf((1.f - cost) * (1.f + cost));
+        float phi = 2.f * M_PIf * u_wls_phi;
+        float sinp = sinf(phi);
+        float cosp = cosf(phi);
+
+        p.mom.x = sint * cosp;
+        p.mom.y = sint * sinp;
+        p.mom.z = cost;
+
+        p.pol.x = cost * cosp;
+        p.pol.y = cost * sinp;
+        p.pol.z = -sint;
+
+        phi = 2.f * M_PIf * u_wls_pol;
+        sinp = sinf(phi);
+        cosp = cosf(phi);
+        p.pol = normalize(cosp * p.pol + sinp * cross(p.mom, p.pol));
+
+        // Apply WLS time delay (exponential decay)
+        float tc = wls->time_constant(mat_idx);
+        if (tc > 0.f)
+        {
+            float u_wls_time = curand_uniform(&rng);
+            p.time += -tc * logf(u_wls_time);
+        }
+
+        flag = BULK_REEMIT;
+        return CONTINUE;
     }
     else if (absorption_distance <= scattering_distance)
     {

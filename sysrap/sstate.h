@@ -25,7 +25,7 @@ BUT seems no point doing that, can just directly use them from PRD.
 struct sstate
 {
     float4 material1 ;    // refractive_index/absorption_length/scattering_length/reemission_prob
-    float4 m1group2 ;     // material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3
+    float4 m1group2;      // material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3
     float4 material2 ;   
     float4 surface ;      // detect/absorb/reflect_specular/reflect_diffuse
 
@@ -68,27 +68,16 @@ inline void sstate::save(const char* dir) const
 #else
 inline std::ostream& operator<<(std::ostream& os, const sstate& s )   
 {
-    os << "sstate"
-       << std::endl 
-       << " material1 " << s.material1 
-       << " (refractive_index/absorption_length/scattering_length/reemission_prob) " 
-       << std::endl 
+    os << "sstate" << std::endl
+       << " material1 " << s.material1 << " (refractive_index/absorption_length/scattering_length/reemission_prob) "
+       << std::endl
        << " m1group2 " << s.m1group2
-       << " (material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3) "
-       << std::endl 
-       << " material2 " << s.material2 
-       << " (refractive_index/absorption_length/scattering_length/reemission_prob) " 
-       << std::endl 
-       << " surface   " << s.surface
-       << " (detect/absorb/reflect_specular/reflect_diffuse) " 
-       << std::endl 
-       << " optical   " << s.optical
-       << " (x/y/z/w index/type/finish/value) "
-       << std::endl 
-       << " index     " << s.index
-       << " (indices of m1/m2/surf/sensor) "
-       << std::endl 
-       ;
+       << " (material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3) " << std::endl
+       << " material2 " << s.material2 << " (refractive_index/absorption_length/scattering_length/reemission_prob) "
+       << std::endl
+       << " surface   " << s.surface << " (detect/absorb/reflect_specular/reflect_diffuse) " << std::endl
+       << " optical   " << s.optical << " (x/y/z/w index/type/finish/value) " << std::endl
+       << " index     " << s.index << " (indices of m1/m2/surf/sensor) " << std::endl;
     return os; 
 }
 #endif
