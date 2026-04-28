@@ -2475,14 +2475,7 @@ sgs SEvt::addGenstep(const quad6& q_)
         unsigned mtindex = matline_ - G4_INDEX_OFFSET ;
 #ifdef WITH_OLD_FRAME
         int matline = cf ? cf->lookup_mtline(mtindex) : 0 ;
-#else
-        // Post-WITH_OLD_FRAME path: cf is null when SEvt is wired via
-        // setSim (CSGOptiX::InitEvt). Use sim->lookup_mtline (forwards to
-        // tree->lookup_mtline). Without this fork the WITH_OLD_FRAME branch
-        // silently fell back to 0 - a valid matline (interGalactic) - so
-        // the Cerenkov sampler read vacuum RINDEX and the cone collapsed to 0.
-        int matline = sim ? sim->lookup_mtline(mtindex) : 0 ;
-#endif
+int matline = tree ? tree->lookup_mtline(mtindex) : 0;
 
         bool bad_ck = is_cerenkov_gs && matline == -1 ;
 
