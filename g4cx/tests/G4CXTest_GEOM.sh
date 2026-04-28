@@ -13,7 +13,7 @@ Typically on workstation::
 
     ~/opticks/g4cx/tests/G4CXTest_GEOM.sh
     ~/opticks/g4cx/tests/G4CXTest_GEOM.sh dbg
-    LOG=1 BP=C4CustomART::doIt ~/opticks/g4cx/tests/G4CXTest_GEOM.sh dbg
+    LOG=1 BP=G4OpBoundaryProcess::PostStepDoIt ~/opticks/g4cx/tests/G4CXTest_GEOM.sh dbg
 
     PRECOOKED=1 ~/o/G4CXTest_GEOM.sh
 
@@ -488,4 +488,3 @@ if [ "$arg" == "mpcap" -o "$arg" == "mppub" -o "$arg" == "pvcap" -o "$arg" == "p
 fi
 
 exit 0
-

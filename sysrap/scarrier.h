@@ -14,13 +14,6 @@
 #include "scuda.h"
 #include "squad.h"
 
-#if defined(__CUDACC__) || defined(__CUDABE__)
-#else
-#include "srngcpu.h"
-#endif
-
-
-
 struct scarrier
 {
     quad q0 ;
@@ -30,10 +23,9 @@ struct scarrier
     quad q4 ;
     quad q5 ;
 
-
-    SCARRIER_METHOD static void generate( sphoton& p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id );
-
-
+    template <typename Rng>
+    SCARRIER_METHOD static void generate(sphoton &p, Rng &rng, const quad6 &gs, unsigned long long photon_id,
+                                         unsigned genstep_id);
 
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)
 #else
@@ -42,10 +34,13 @@ struct scarrier
 
 };
 
-
-
-inline SCARRIER_METHOD void scarrier::generate( sphoton& p_, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id )  // static
+template <typename Rng>
+inline SCARRIER_METHOD void scarrier::generate(sphoton &p_, Rng &rng, const quad6 &gs, unsigned long long photon_id,
+                                               unsigned genstep_id)
 {
+    (void)rng;
+    (void)genstep_id;
+
     quad4& p = (quad4&)p_ ;
 
     p.q0.f = gs.q2.f ;
@@ -72,6 +67,3 @@ inline void scarrier::FillGenstep( scarrier& gs, int matline, int numphoton_per_
 
 }
 #endif
-
-
-

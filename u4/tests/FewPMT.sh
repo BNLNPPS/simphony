@@ -64,7 +64,7 @@ export LAYOUT
 
 case $VERSION in
   0) version_desc="N=0 unnatural geometry : FastSim/jPOM" ;;
-  1) version_desc="N=1 natural geometry : CustomBoundary" ;;
+  1) version_desc="N=1 natural geometry : PMT optical model" ;;
 esac
 
 case $POM in 
@@ -182,6 +182,5 @@ fi
 # standalone access to PMT data 
 #export PMTSimParamData_BASE=$HOME/.opticks/GEOM/J007/CSGFoundry/SSim/juno
 export PMTSimParamData_BASE=$HOME/.opticks/GEOM/V1J009/CSGFoundry/SSim/extra/jpmt
-
 
 

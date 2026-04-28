@@ -56,7 +56,6 @@ foreach(SRC ${KNOWN_FAIL_TEST_SOURCES})
 endforeach()
 
 
-## HMM: switch to Custom4 (not getting that indirectly via PMTSim) 
 find_package(PMTSim_standalone CONFIG)
 
 if(PMTSim_standalone_FOUND)

@@ -78,13 +78,13 @@ const char* SEventConfig::_HitMaskDefault = "SD" ;
 
 
 #if defined(RNG_XORWOW)
-const char* SEventConfig::_MaxSlotDefault =  ;
+const char* SEventConfig::_MaxSlotDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxGenstepDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxPhotonDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxSimtraceDefault = WITH_STATE_LIMIT ;
 const char* SEventConfig::_MaxCurandDefault = WITH_STATE_LIMIT ;
 
-#elif defined(RNG_PHILOX) || defined(RNG_PHILITEOX)
+#elif defined(RNG_PHILOX)
 const char* SEventConfig::_MaxSlotDefault = "0" ;     // see SEventConfig::SetDevice : set according to VRAM
 const char* SEventConfig::_MaxGenstepDefault = NO_STATE_LIMIT_GENSTEP ;  // adhoc
 const char* SEventConfig::_MaxPhotonDefault = NO_STATE_LIMIT ;
@@ -1973,4 +1973,3 @@ uint64_t SEventConfig::AllocEstimateTotal(int _max_slot)
     delete estimate ;
     return total ;
 }
-

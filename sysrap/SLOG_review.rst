@@ -379,14 +379,11 @@ Same pattern followed by all package loggers ...
     ./ggeo/GGEO_LOG.cc
     ./oglrap/OGLRAP_LOG.cc
     ./ok/OK_LOG.cc
-    ./okg4/OKG4_LOG.cc
-    ./okop/OKOP_LOG.cc
     ./openmeshrap/MESHRAP_LOG.cc
     ./optickscore/OKCORE_LOG.cc
     ./opticksgeo/OKGEO_LOG.cc
     ./opticksgl/OKGL_LOG.cc
     ./opticksnpy/NPY_LOG.cc
-    ./optixrap/OXRAP_LOG.cc
     ./sysrap/SYSRAP_LOG.cc
     ./thrustrap/THRAP_LOG.cc
     simon:opticks blyth$ 
@@ -453,7 +450,6 @@ OPTICKS_LOG.hh::
     167 #ifdef OPTICKS_CFG4
     168     CFG4_LOG::Initialize(instance->prefixlevel_parse( max_level, "CFG4"), app1, NULL );
     169 #endif
-
 
 
 

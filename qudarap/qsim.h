@@ -2,7 +2,7 @@
 qsim.h : GPU side struct prepared CPU side by QSim.hh
 ========================================================
 
-qsim.h replaces the OptiX 6 context in a CUDA-centric way.
+qsim.h provides the CUDA-centric simulation state.
 Canonical use is from CSGOptiX/CSGOptiX7.cu:simulate
 
 * qsim.h instance is uploaded once only at CSGOptiX instanciation
@@ -118,9 +118,6 @@ struct qsim
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
     QSIM_METHOD int     propagate_at_surface(           unsigned& flag, RNG& rng, sctx& ctx );
     QSIM_METHOD int     propagate_at_surface_Detect(    unsigned& flag, RNG& rng, sctx& ctx ) const ;
-#if defined(WITH_CUSTOM4)
-    QSIM_METHOD int propagate_at_surface_CustomART(unsigned &flag, RNG &rng, sctx &ctx) const;
-#endif
 #endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
@@ -238,9 +235,7 @@ to return something other that LambertianReflection.
 | all zero =>          |                               |                              | LambertianReflection |
 +----------------------+-------------------------------+------------------------------+----------------------+
 
-TODO: full simulation run with breakpoint "BP=C4OpBoundaryProcess::GetFacetNormal"
-
-* C4 (not G4) as Custom4 is in use for the boundary process
+TODO: full simulation run with breakpoint "BP=G4OpBoundaryProcess::GetFacetNormal"
 
 **/
 
@@ -941,9 +936,8 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 qsim::propagate_at_boundary
 ------------------------------------------
 
-This was brought over from oxrap/cu/propagate.h:propagate_at_boundary_geant4_style
-See env-/g4op-/G4OpBoundaryProcess.cc annotations to follow this
-and compare the Opticks and Geant4 implementations.
+See env-/g4op-/G4OpBoundaryProcess.cc annotations to follow this and compare
+the Opticks and Geant4 implementations.
 
 Input:
 
@@ -1284,8 +1278,7 @@ qsim::propagate_at_boundary_with_T
 ------------------------------------
 
 Variant of qsim::propagate_at_boundary where a value of theTransmittance
-is passed in as an argument (eg from CustomART calculation) rather then
-calculated here.
+is passed in as an argument rather then calculated here.
 
 HMM: was hoping that passing in theTransmittance would afford some
 simplifications, but it seems almost no simplification is possible
@@ -1772,32 +1765,11 @@ inline QSIM_METHOD int qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx
 
     if( action == BREAK )
     {
-#if defined(WITH_CUSTOM4)
-        int pmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
-        float qe = 1.f;
-        float u_qe = curand_uniform(&rng);
-        if (s_pmt::is_spmtid(pmtid))
-        {
-            const float energy_eV = qpmt<float>::hc_eVnm / ctx.p.wavelength;
-            float qe_shape = pmt->s_qeshape_prop->interpolate(0, energy_eV);
-            float qe_scale = pmt->get_s_qescale_from_spmtid(pmtid);
-            qe = qe_shape * qe_scale;
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-            if (ctx.pidx == base->pidx)
-                printf(
-                    "//qsim.propagate_at_surface.BREAK.is_spmtid pidx %7lld : pmtid %d energy_eV %7.3f qe_shape %7.3f "
-                    "qe_scale %7.3f qe %7.3f detect %7.3f absorb %7.3f reflect_specular %7.3f reflect_diffuse %7.3f \n",
-                    ctx.pidx, pmtid, energy_eV, qe_shape, qe_scale, qe, detect, absorb, s.surface.z, reflect_diffuse_);
-#endif
-        }
-        flag = u_surface < absorb ? SURFACE_ABSORB : (u_qe < qe ? EFFICIENCY_COLLECT : EFFICIENCY_CULL);
-#else
         flag = u_surface < absorb ?
                                       SURFACE_ABSORB
                                   :
                                       SURFACE_DETECT
                                   ;
-#endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
         if(ctx.pidx == base->pidx)
@@ -1827,156 +1799,6 @@ inline QSIM_METHOD int qsim::propagate_at_surface_Detect(unsigned& flag, RNG& rn
     flag = SURFACE_DETECT ;
     return BREAK ;
 }
-
-#if defined(WITH_CUSTOM4)
-
-/**
-qsim::propagate_at_surface_CustomART
--------------------------------------
-
-lpmtid:-1
-   indicates "not-a-sensor", that occurring at this juncture would
-   indicate a sensor_identity issue as CustomART special surfaces
-   are expected to always have sensor identities
-
-
-Where ctx.prd->identity() comes from ? Where is the "+ 1" done ?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. SBT::collectInstances sets OptixInstance::instanceId from sqat4::get_IAS_OptixInstance_instanceId
-   aka "sensor_identifier"
-
-2. CSGFoundry::addInstance for firstcall:true does the "+1" as done by CSGFoundry::addInstanceVector
-
-3. original access to the copyno from Geant4 in U4SensorIdentifierDefault::getInstanceIdentity
-   which is used from U4Tree::identifySensitiveInstances to populate the stree.h snode::sensor_id
-
-**/
-
-inline QSIM_METHOD int qsim::propagate_at_surface_CustomART(unsigned &flag, RNG &rng, sctx &ctx) const
-{
-
-    sphoton &p = ctx.p;
-    const float3 *normal = (float3 *)&ctx.prd->q0.f.x; // geometrical outwards normal
-    int lpmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
-    const float lposcost = ctx.prd->lposcost(); // local frame intersect position cosine theta
-
-    float minus_cos_theta = dot(p.mom, *normal);
-    float dot_pol_cross_mom_nrm = dot(p.pol, cross(p.mom, *normal));
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if (ctx.pidx_debug)
-    {
-        float3 cross_mom_nrm = cross(p.mom, *normal);
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = "
-               "%10.8f \n",
-               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom));
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : pol = np.array([%10.8f,%10.8f,%10.8f]) ; lpol = "
-               "%10.8f \n",
-               ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol));
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = "
-               "%10.8f \n",
-               ctx.pidx, normal->x, normal->y, normal->z, length(*normal));
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : cross_mom_nrm = np.array([%10.8f,%10.8f,%10.8f]) ; "
-               "lcross_mom_nrm = %10.8f  \n",
-               ctx.pidx, cross_mom_nrm.x, cross_mom_nrm.y, cross_mom_nrm.z, length(cross_mom_nrm));
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : dot_pol_cross_mom_nrm = %10.8f \n", ctx.pidx,
-               dot_pol_cross_mom_nrm);
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : minus_cos_theta = %10.8f \n", ctx.pidx,
-               minus_cos_theta);
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : lposcost = %10.8f (expect 0->1)\n", ctx.pidx,
-               lposcost);
-    }
-#endif
-
-    // formerly excluded Custom4 hits onto WP PMTs see ~/j/issues/jok-tds-mu-running-NOT-A-SENSOR-warnings.rst
-    // if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_PMT_END )
-    // if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_ATM_LPMT_END )
-    if (lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_WAL_PMT_END)
-    {
-        flag = NAN_ABORT;
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d : ERROR UNEXPECTED LPMTID : NAN_ABORT \n",
-               ctx.pidx, lpmtid);
-#endif
-        return BREAK;
-    }
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if (ctx.pidx_debug)
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f pmt %p "
-               "pre-ATQC \n",
-               ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, pmt);
-#endif
-
-    float ATQC[4] = {};
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if (lpmtid > -1 && pmt != nullptr)
-        pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ctx.pidx,
-                             ctx.pidx_debug);
-#else
-    if (lpmtid > -1 && pmt != nullptr)
-        pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost);
-#endif
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if (ctx.pidx_debug)
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f lpc %8.4f "
-               "ATQC ( %8.4f %8.4f %8.4f %8.4f  ) \n",
-               ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ATQC[0], ATQC[1],
-               ATQC[2], ATQC[3]);
-#endif
-
-    const float &theAbsorption = ATQC[0];
-    const float &theTransmittance = ATQC[1];
-    const float &theEfficiency = ATQC[2];
-    const float &collectionEfficiency = ATQC[3];
-
-    float u_theAbsorption = curand_uniform(&rng);
-    int action = u_theAbsorption < theAbsorption ? BREAK : CONTINUE;
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if (ctx.pidx_debug)
-        printf("//qsim.propagate_at_surface_CustomART pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) "
-               "u_theAbsorption  %7.3f action %d \n",
-               ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theAbsorption, action);
-#endif
-
-    if (action == BREAK)
-    {
-        float u_theEfficiency = curand_uniform(&rng);
-        float u_collectionEfficiency = curand_uniform(&rng);
-
-        flag = u_theEfficiency < theEfficiency
-                   ? (u_collectionEfficiency < collectionEfficiency ? EFFICIENCY_COLLECT : EFFICIENCY_CULL)
-                   : SURFACE_ABSORB;
-
-        // former SD:SURFACE_DETECT, now becomes EC:EFFICIENCY_COLLECT or EX:EFFICIENCY_CULL depending on
-        // collectionEfficiency and random throw
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if (ctx.pidx_debug)
-            printf("//qsim.propagate_at_surface_CustomART.BREAK.SD/SA EC/EX pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f "
-                   "%8.4f %8.4f ) u_theEfficiency  %8.4f theEfficiency %8.4f flag %d \n",
-                   ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theEfficiency, theEfficiency, flag);
-#endif
-    }
-    else
-    {
-
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if (ctx.pidx_debug)
-            printf("//qsim.propagate_at_surface_CustomART.CONTINUE pidx %7lld lpmtid %d ATQC ( %7.3f %7.3f %7.3f %7.3f "
-                   ") theTransmittance %7.3f  \n",
-                   ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], theTransmittance);
-#endif
-
-        propagate_at_boundary(flag, rng, ctx, theTransmittance);
-    }
-    return action;
-}
-#endif
 
 #endif
 
@@ -2281,13 +2103,6 @@ HMM: could use standard surface handling for this but with perfect
 detector surface swapped in.
 
 
-TMM multilayer POM special surface : smatsur_Surface_zplus_sensor_CustomART
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Enabling special surface handling is controlled by ctx.optical.y "ems" enum
-which wheels in the qpmt.h stack calc following C4CustomART::doIt
-for CustomART special surfaces.
-
 Prior to supporting special surfaces, within the command == BOUNDARY used::
 
     command = ctx.s.optical.x == 0 ?
@@ -2366,19 +2181,6 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
     {
         const int& ems = ctx.s.optical.y ;
 
-#if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if (ctx.pidx == base->pidx)
-        {
-#if defined(WITH_CUSTOM4)
-            printf("//qsim.propagate.body.WITH_CUSTOM4 pidx %7lld  BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems,
-                   lposcost);
-#else
-            printf("//qsim.propagate.body.NOT:WITH_CUSTOM4 pidx %7lld BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems,
-                   lposcost);
-#endif
-        }
-#endif
-
         if( ems == smatsur_NoSurface )
         {
             command = propagate_at_boundary( flag, rng, ctx ) ;
@@ -2399,15 +2201,6 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
         else if( ems == smatsur_Surface_zplus_sensor_A )
         {
             command = propagate_at_surface_Detect( flag, rng, ctx ) ;
-        }
-        else if (ems == smatsur_Surface_zplus_sensor_CustomART)
-        {
-#if defined(WITH_CUSTOM4)
-            command = propagate_at_surface_CustomART(flag, rng, ctx);
-            // command = base->custom_lut == 0u ? propagate_at_surface_CustomART( flag, rng, ctx ) :
-            // propagate_at_surface_MultiFilm(flag, rng, ctx );
-
-#endif
         }
     }
     ctx.p.set_flag(flag);

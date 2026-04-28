@@ -9,11 +9,6 @@ find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-set(Custom4_VERBOSE ON) 
-find_package(Custom4 CONFIG)
-
-message(STATUS "${name} Custom4_FOUND:${Custom4_FOUND}  " )
-
 set(WITH_SLOG YES)
 
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
@@ -115,13 +110,6 @@ set(SOURCES
 
     SFastSim_Debug.cc
     SFastSimOpticalModel.cc
-
-    SOpBoundaryProcess.cc
-) 
-    
-
-set(CURANDLITE_HEADERS
-    curandlite/curandStatePhilox4_32_10_OpticksLite.h
 ) 
 
 
@@ -512,8 +500,6 @@ set(HEADERS
     ssolid.h
     SIntersect.h
     SSimtrace.h
-
-    SOpBoundaryProcess.hh
 )
 
 # using absolute ANADIR avoids build environment requiring it in PATH 
@@ -655,7 +641,7 @@ PLOG_LOCAL
    integration with packages (like junosw) that do not hide 
    symbols by default  
 
-RNG_XORWOW/RNG_PHILOX/RNG_PHILITEOX
+RNG_XORWOW/RNG_PHILOX
    Use one of these to pick the curandState implementation, in srng.h
    picking RNG_XORWOW requires curandState files which slows
    down initialization greatly when simulating many millions 
@@ -663,11 +649,6 @@ RNG_XORWOW/RNG_PHILOX/RNG_PHILITEOX
 
 #]=]
 
-
-if(Custom4_FOUND)
-   target_compile_definitions( ${name} PUBLIC WITH_CUSTOM4 )
-   target_include_directories( ${name} PUBLIC ${Custom4_INCLUDE_DIR})
-endif()
 
 target_compile_definitions( ${name}
     PUBLIC
@@ -699,7 +680,6 @@ target_compile_definitions( ${name} PUBLIC WITH_SLOG)
 endif()
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
-install(FILES ${CURANDLITE_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/curandlite)
 
 install(TARGETS ${name}
         EXPORT ${PROJECT_NAME}Targets

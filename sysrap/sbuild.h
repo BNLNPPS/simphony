@@ -56,12 +56,6 @@ struct sbuild
     static constexpr const bool _WITH_CHILD = false ;
 #endif
 
-#if defined(WITH_CUSTOM4)
-    static constexpr const bool _WITH_CUSTOM4 = true ;
-#else
-    static constexpr const bool _WITH_CUSTOM4 = false ;
-#endif
-
 #if defined(PLOG_LOCAL)
     static constexpr const bool _PLOG_LOCAL = true ;
 #else
@@ -91,12 +85,6 @@ struct sbuild
     static constexpr const bool _RNG_PHILOX = true ;
 #else
     static constexpr const bool _RNG_PHILOX = false ;
-#endif
-
-#if defined(RNG_PHILITEOX)
-    static constexpr const bool _RNG_PHILITEOX = true ;
-#else
-    static constexpr const bool _RNG_PHILITEOX = false ;
 #endif
 
 
@@ -136,13 +124,11 @@ inline std::string sbuild::Desc() // static
        << " sbuild::RNGMatches(\"Cheese Philox\") : " << sbuild::RNGMatches("Cheese Philox ") << "\n"
        << " _PRODUCTION          : " << ( _PRODUCTION ? "YES" :  "NO " ) << "\n"
        << " _WITH_CHILD          : " << ( _WITH_CHILD ? "YES" :  "NO " ) << "\n"
-       << " _WITH_CUSTOM4        : " << ( _WITH_CUSTOM4 ? "YES" :  "NO " ) << "\n"
        << " _PLOG_LOCAL          : " << ( _PLOG_LOCAL ? "YES" :  "NO " ) << "\n"
        << " _DEBUG_PIDX          : " << ( _DEBUG_PIDX ? "YES" :  "NO " ) << "\n"
        << " _DEBUG_TAG           : " << ( _DEBUG_TAG ? "YES" :  "NO " ) << "\n"
        << " _RNG_XORWOW          : " << ( _RNG_XORWOW ? "YES" :  "NO " ) << "\n"
        << " _RNG_PHILOX          : " << ( _RNG_PHILOX ? "YES" :  "NO " ) << "\n"
-       << " _RNG_PHILITEOX       : " << ( _RNG_PHILITEOX ? "YES" :  "NO " ) << "\n"
        << " sbuild::Matches(\"ALL99_Release_XORWOW\") : " << sbuild::Matches("ALL99_Release_XORWOW") << "\n"
        << " sbuild::Matches(\"ALL99_Release_Philox\") : " << sbuild::Matches("ALL99_Release_Philox") << "\n"
        << " sbuild::Matches(\"ALL99_Debug_XORWOW\") : " << sbuild::Matches("ALL99_Debug_XORWOW") << "\n"
@@ -215,5 +201,3 @@ inline bool sbuild::Matches(const char* arg)
 {
     return RNGMatches(arg) && BuildTypeMatches(arg) ;
 }
-
-

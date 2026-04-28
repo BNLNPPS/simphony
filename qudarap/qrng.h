@@ -146,35 +146,3 @@ struct qrng<Philox>
     void set_uploaded_states( void* ){}
 #endif
 };
-
-
-#ifdef RNG_PHILITEOX
-template<>
-struct qrng<PhiloxLite>
-{
-    ULL  seed ;
-    ULL  offset ;
-    ULL  skipahead_event_offset ;
-
-#if defined(__CUDACC__) || defined(__CUDABE__)
-    QRNG_METHOD void init(PhiloxLite& rng, unsigned long long event_idx, unsigned long long photon_idx )
-    {
-        ULL subsequence_ = photon_idx ;
-        curand_init( seed, subsequence_, offset, &rng ) ;
-        ULL skipahead_ = skipahead_event_offset*event_idx ;
-        skipahead( skipahead_, &rng );
-    }
-#else
-    qrng(ULL seed_, ULL offset_, ULL skipahead_event_offset_ )
-        :
-        seed(seed_),
-        offset(offset_),
-        skipahead_event_offset(skipahead_event_offset_)
-    {
-    }
-    void set_uploaded_states( void* ){}
-#endif
-};
-#endif
-
-

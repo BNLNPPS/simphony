@@ -17,9 +17,6 @@ Populated by qsim::fill_state from texture and buffer lookups
 using photon wavelength and the boundary obtained from geometry
 intersect.
 
-Old version of this in OptiXRap/cu also copied things from "PRD" into here ...
-BUT seems no point doing that, can just directly use them from PRD.
-
 **/
 
 struct sstate

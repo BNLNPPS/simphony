@@ -1133,12 +1133,6 @@ inline std::string ssys::Desc()  // static
        << "NOT:WITH_CHILD"
 #endif
        << std::endl
-#ifdef WITH_CUSTOM4
-       << "WITH_CUSTOM4"
-#else
-       << "NOT:WITH_CUSTOM4"
-#endif
-       << std::endl
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else

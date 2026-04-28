@@ -15,9 +15,10 @@ CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 name=srng_test
 bin=/tmp/$name
 
+rng=${RNG:-RNG_PHILOX}
+
 gcc $name.cc \
-    -DWITH_CURANDLITE \
     -I$CUDA_PREFIX/include \
     -I.. \
+    -D$rng \
     -std=c++17 -lstdc++ -g -o $bin && $bin
-
