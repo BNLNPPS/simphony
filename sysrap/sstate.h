@@ -4,21 +4,21 @@
    #define SSTATE_METHOD __device__
 #else
    #define SSTATE_METHOD 
-#endif 
+#endif
 
 /**
 sstate.h
 =========
 
-This was formerly qstate.h but as no CUDA specifics it 
-belongs down in sysrap not up in QUDARap. 
+This was formerly qstate.h but as no CUDA specifics it
+belongs down in sysrap not up in QUDARap.
 
-Populated by qsim::fill_state from texture and buffer lookups 
-using photon wavelength and the boundary obtained from geometry 
-intersect.  
+Populated by qsim::fill_state from texture and buffer lookups
+using photon wavelength and the boundary obtained from geometry
+intersect.
 
-Old version of this in OptiXRap/cu also copied things from "PRD" into here ... 
-BUT seems no point doing that, can just directly use them from PRD. 
+Old version of this in OptiXRap/cu also copied things from "PRD" into here ...
+BUT seems no point doing that, can just directly use them from PRD.
 
 **/
 

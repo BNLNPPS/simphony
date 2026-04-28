@@ -55,17 +55,16 @@ TODO:
 
 #include "sctx.h"
 
-#include "qrng.h"
 #include "qbase.h"
-#include "qprop.h"
-#include "qmultifilm.h"
 #include "qbnd.h"
+#include "qcerenkov.h"
+#include "qmultifilm.h"
+#include "qpmt.h"
+#include "qprop.h"
+#include "qrng.h"
 #include "qscint.h"
 #include "qwls.h"
-#include "qcerenkov.h"
-#include "qpmt.h"
 #include "tcomplex.h"
-
 
 struct qcerenkov ;
 
@@ -78,7 +77,7 @@ struct qsim
     qmultifilm*         multifilm;
     qcerenkov*          cerenkov ;
     qscint*             scint ;
-    qwls*               wls ;
+    qwls *wls;
     qpmt<float>*        pmt ;
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
@@ -119,8 +118,8 @@ struct qsim
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
     QSIM_METHOD int     propagate_at_surface(           unsigned& flag, RNG& rng, sctx& ctx );
     QSIM_METHOD int     propagate_at_surface_Detect(    unsigned& flag, RNG& rng, sctx& ctx ) const ;
-#if defined( WITH_CUSTOM4 )
-    QSIM_METHOD int     propagate_at_surface_CustomART( unsigned& flag, RNG& rng, sctx& ctx ) const ;
+#if defined(WITH_CUSTOM4)
+    QSIM_METHOD int propagate_at_surface_CustomART(unsigned &flag, RNG &rng, sctx &ctx) const;
 #endif
 #endif
 
@@ -141,19 +140,11 @@ struct qsim
 // CTOR
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
-inline qsim::qsim()    // instanciated on CPU (see QSim::init_sim) and copied to device so no ctor in device code
-        :
-        base(nullptr),
-        evt(nullptr),
-        rng(nullptr),
-        bnd(nullptr),
-        multifilm(nullptr),
-        cerenkov(nullptr),
-        scint(nullptr),
-        wls(nullptr),
-        pmt(nullptr)
-    {
-    }
+inline qsim::qsim() // instanciated on CPU (see QSim::init_sim) and copied to device so no ctor in device code
+    : base(nullptr), evt(nullptr), rng(nullptr), bnd(nullptr), multifilm(nullptr), cerenkov(nullptr), scint(nullptr),
+      wls(nullptr), pmt(nullptr)
+{
+}
 #endif
 
 inline QSIM_METHOD void qsim::generate_photon_dummy(sphoton& p_, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const
@@ -220,7 +211,6 @@ inline QSIM_METHOD float qsim::RandGaussQ_shoot( RNG& rng, float mean, float std
     //printf("//qsim.RandGaussQ_shoot mean %10.5f stdDev %10.5f u2 %10.5f v %10.5f \n", mean, stdDev, u2, v  ) ;
     return v ;
 }
-
 
 /**
 qsim::SmearNormal_SigmaAlpha
@@ -727,7 +717,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     const float& scattering_length = s.material1.z ;
     const float& reemission_prob = s.material1.w ;
     const float& group_velocity = ctx.current_group_velocity;
-    const float& wls_absorption_length = s.m1group2.z ;
+    const float &wls_absorption_length = s.m1group2.z;
     const float& distance_to_boundary = ctx.prd->q0.f.w ;
 
 
@@ -737,7 +727,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 #endif
     float u_scattering = curand_uniform(&rng) ;
     float u_absorption = curand_uniform(&rng) ;
-    float u_wls_absorption = (wls != nullptr) ? curand_uniform(&rng) : 2.f ;
+    float u_wls_absorption = (wls != nullptr) ? curand_uniform(&rng) : 2.f;
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
     stagr& tagr = ctx.tagr ;
@@ -752,11 +742,11 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     // see notes/issues/U4LogTest_maybe_replacing_G4Log_G4UniformRand_in_Absorption_and_Scattering_with_float_version_will_avoid_deviations.rst
     float scattering_distance = -scattering_length*KLUDGE_FASTMATH_LOGF(u_scattering);
     float absorption_distance = -absorption_length*KLUDGE_FASTMATH_LOGF(u_absorption);
-    float wls_absorption_distance = -wls_absorption_length*KLUDGE_FASTMATH_LOGF(u_wls_absorption);
+    float wls_absorption_distance = -wls_absorption_length * KLUDGE_FASTMATH_LOGF(u_wls_absorption);
 #else
     float scattering_distance = -scattering_length*logf(u_scattering);
     float absorption_distance = -absorption_length*logf(u_absorption);
-    float wls_absorption_distance = -wls_absorption_length*logf(u_wls_absorption);
+    float wls_absorption_distance = -wls_absorption_length * logf(u_wls_absorption);
 #endif
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
@@ -777,10 +767,6 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 
     }
 #endif
-
-
-
-
 
     // WLS absorption only competes in materials that actually have WLS properties.
     // Without this gate, non-WLS materials would create an extra absorption channel
@@ -1787,26 +1773,24 @@ inline QSIM_METHOD int qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx
     if( action == BREAK )
     {
 #if defined(WITH_CUSTOM4)
-        int pmtid = ctx.prd->identity() - 1 ;     // identity comes from optixInstance.instanceId where 0 means not-a-sensor
-        float qe = 1.f ;
+        int pmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
+        float qe = 1.f;
         float u_qe = curand_uniform(&rng);
-        if( s_pmt::is_spmtid(pmtid) )
+        if (s_pmt::is_spmtid(pmtid))
         {
-            const float energy_eV = qpmt<float>::hc_eVnm/ctx.p.wavelength ;
-            float qe_shape = pmt->s_qeshape_prop->interpolate( 0, energy_eV );
+            const float energy_eV = qpmt<float>::hc_eVnm / ctx.p.wavelength;
+            float qe_shape = pmt->s_qeshape_prop->interpolate(0, energy_eV);
             float qe_scale = pmt->get_s_qescale_from_spmtid(pmtid);
-            qe = qe_shape*qe_scale ;
+            qe = qe_shape * qe_scale;
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-            if(ctx.pidx == base->pidx)
-            printf("//qsim.propagate_at_surface.BREAK.is_spmtid pidx %7lld : pmtid %d energy_eV %7.3f qe_shape %7.3f qe_scale %7.3f qe %7.3f detect %7.3f absorb %7.3f reflect_specular %7.3f reflect_diffuse %7.3f \n" ,
-                ctx.pidx, pmtid, energy_eV, qe_shape, qe_scale, qe, detect, absorb, s.surface.z, reflect_diffuse_ );
+            if (ctx.pidx == base->pidx)
+                printf(
+                    "//qsim.propagate_at_surface.BREAK.is_spmtid pidx %7lld : pmtid %d energy_eV %7.3f qe_shape %7.3f "
+                    "qe_scale %7.3f qe %7.3f detect %7.3f absorb %7.3f reflect_specular %7.3f reflect_diffuse %7.3f \n",
+                    ctx.pidx, pmtid, energy_eV, qe_shape, qe_scale, qe, detect, absorb, s.surface.z, reflect_diffuse_);
 #endif
         }
-        flag = u_surface < absorb ?
-                                      SURFACE_ABSORB
-                                  :
-                                      ( u_qe < qe  ? EFFICIENCY_COLLECT : EFFICIENCY_CULL  )
-                                  ;
+        flag = u_surface < absorb ? SURFACE_ABSORB : (u_qe < qe ? EFFICIENCY_COLLECT : EFFICIENCY_CULL);
 #else
         flag = u_surface < absorb ?
                                       SURFACE_ABSORB
@@ -1844,7 +1828,6 @@ inline QSIM_METHOD int qsim::propagate_at_surface_Detect(unsigned& flag, RNG& rn
     return BREAK ;
 }
 
-
 #if defined(WITH_CUSTOM4)
 
 /**
@@ -1870,118 +1853,128 @@ Where ctx.prd->identity() comes from ? Where is the "+ 1" done ?
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_surface_CustomART(unsigned& flag, RNG& rng, sctx& ctx) const
+inline QSIM_METHOD int qsim::propagate_at_surface_CustomART(unsigned &flag, RNG &rng, sctx &ctx) const
 {
 
-    sphoton& p = ctx.p ;
-    const float3* normal = (float3*)&ctx.prd->q0.f.x ;  // geometrical outwards normal
-    int lpmtid = ctx.prd->identity() - 1 ;  // identity comes from optixInstance.instanceId where 0 means not-a-sensor
-    const float lposcost = ctx.prd->lposcost() ;  // local frame intersect position cosine theta
-
+    sphoton &p = ctx.p;
+    const float3 *normal = (float3 *)&ctx.prd->q0.f.x; // geometrical outwards normal
+    int lpmtid = ctx.prd->identity() - 1; // identity comes from optixInstance.instanceId where 0 means not-a-sensor
+    const float lposcost = ctx.prd->lposcost(); // local frame intersect position cosine theta
 
     float minus_cos_theta = dot(p.mom, *normal);
-    float dot_pol_cross_mom_nrm = dot(p.pol,cross(p.mom,*normal)) ;
+    float dot_pol_cross_mom_nrm = dot(p.pol, cross(p.mom, *normal));
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
+    if (ctx.pidx_debug)
     {
-    float3 cross_mom_nrm = cross(p.mom, *normal) ;
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = %10.8f \n",
-       ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom) );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : pol = np.array([%10.8f,%10.8f,%10.8f]) ; lpol = %10.8f \n",
-       ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol) );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = %10.8f \n",
-       ctx.pidx, normal->x, normal->y, normal->z, length(*normal) );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : cross_mom_nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lcross_mom_nrm = %10.8f  \n",
-           ctx.pidx, cross_mom_nrm.x, cross_mom_nrm.y, cross_mom_nrm.z, length(cross_mom_nrm)  );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : dot_pol_cross_mom_nrm = %10.8f \n", ctx.pidx, dot_pol_cross_mom_nrm );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : minus_cos_theta = %10.8f \n", ctx.pidx, minus_cos_theta );
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld : lposcost = %10.8f (expect 0->1)\n", ctx.pidx, lposcost );
+        float3 cross_mom_nrm = cross(p.mom, *normal);
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : mom = np.array([%10.8f,%10.8f,%10.8f]) ; lmom = "
+               "%10.8f \n",
+               ctx.pidx, p.mom.x, p.mom.y, p.mom.z, length(p.mom));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : pol = np.array([%10.8f,%10.8f,%10.8f]) ; lpol = "
+               "%10.8f \n",
+               ctx.pidx, p.pol.x, p.pol.y, p.pol.z, length(p.pol));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : nrm = np.array([%10.8f,%10.8f,%10.8f]) ; lnrm = "
+               "%10.8f \n",
+               ctx.pidx, normal->x, normal->y, normal->z, length(*normal));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : cross_mom_nrm = np.array([%10.8f,%10.8f,%10.8f]) ; "
+               "lcross_mom_nrm = %10.8f  \n",
+               ctx.pidx, cross_mom_nrm.x, cross_mom_nrm.y, cross_mom_nrm.z, length(cross_mom_nrm));
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : dot_pol_cross_mom_nrm = %10.8f \n", ctx.pidx,
+               dot_pol_cross_mom_nrm);
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : minus_cos_theta = %10.8f \n", ctx.pidx,
+               minus_cos_theta);
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld : lposcost = %10.8f (expect 0->1)\n", ctx.pidx,
+               lposcost);
     }
 #endif
 
     // formerly excluded Custom4 hits onto WP PMTs see ~/j/issues/jok-tds-mu-running-NOT-A-SENSOR-warnings.rst
-    //if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_PMT_END )
-    //if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_ATM_LPMT_END )
-    if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >=   s_pmt::OFFSET_WP_WAL_PMT_END )
+    // if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_PMT_END )
+    // if(lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_ATM_LPMT_END )
+    if (lpmtid < s_pmt::OFFSET_CD_LPMT || lpmtid >= s_pmt::OFFSET_WP_WAL_PMT_END)
     {
-        flag = NAN_ABORT ;
+        flag = NAN_ABORT;
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d : ERROR UNEXPECTED LPMTID : NAN_ABORT \n", ctx.pidx, lpmtid );
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d : ERROR UNEXPECTED LPMTID : NAN_ABORT \n",
+               ctx.pidx, lpmtid);
 #endif
-        return BREAK ;
+        return BREAK;
     }
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f pmt %p pre-ATQC \n",
-           ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, pmt );
+    if (ctx.pidx_debug)
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f pmt %p "
+               "pre-ATQC \n",
+               ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, pmt);
 #endif
 
-    float ATQC[4] = {} ;
+    float ATQC[4] = {};
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if(lpmtid > -1 && pmt != nullptr) pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ctx.pidx, ctx.pidx_debug );
+    if (lpmtid > -1 && pmt != nullptr)
+        pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ctx.pidx,
+                             ctx.pidx_debug);
 #else
-    if(lpmtid > -1 && pmt != nullptr) pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost );
+    if (lpmtid > -1 && pmt != nullptr)
+        pmt->get_lpmtid_ATQC(ATQC, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost);
 #endif
-
-
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
-    printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f lpc %8.4f ATQC ( %8.4f %8.4f %8.4f %8.4f  ) \n",
-           ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ATQC[0], ATQC[1], ATQC[2], ATQC[3] );
+    if (ctx.pidx_debug)
+        printf("//qsim::propagate_at_surface_CustomART pidx %7lld lpmtid %d wl %8.4f mct %8.4f dpcmn %8.4f lpc %8.4f "
+               "ATQC ( %8.4f %8.4f %8.4f %8.4f  ) \n",
+               ctx.pidx, lpmtid, p.wavelength, minus_cos_theta, dot_pol_cross_mom_nrm, lposcost, ATQC[0], ATQC[1],
+               ATQC[2], ATQC[3]);
 #endif
 
-
-    const float& theAbsorption        = ATQC[0];
-    const float& theTransmittance     = ATQC[1];
-    const float& theEfficiency        = ATQC[2];
-    const float& collectionEfficiency = ATQC[3];
+    const float &theAbsorption = ATQC[0];
+    const float &theTransmittance = ATQC[1];
+    const float &theEfficiency = ATQC[2];
+    const float &collectionEfficiency = ATQC[3];
 
     float u_theAbsorption = curand_uniform(&rng);
-    int action = u_theAbsorption < theAbsorption  ? BREAK : CONTINUE ;
-
+    int action = u_theAbsorption < theAbsorption ? BREAK : CONTINUE;
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-    if( ctx.pidx_debug )
-        printf("//qsim.propagate_at_surface_CustomART pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) u_theAbsorption  %7.3f action %d \n",
-        ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theAbsorption, action  );
+    if (ctx.pidx_debug)
+        printf("//qsim.propagate_at_surface_CustomART pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) "
+               "u_theAbsorption  %7.3f action %d \n",
+               ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theAbsorption, action);
 #endif
 
-    if( action == BREAK )
+    if (action == BREAK)
     {
-        float u_theEfficiency = curand_uniform(&rng) ;
+        float u_theEfficiency = curand_uniform(&rng);
         float u_collectionEfficiency = curand_uniform(&rng);
 
-        flag = u_theEfficiency < theEfficiency ?
-                                                    (  u_collectionEfficiency < collectionEfficiency ? EFFICIENCY_COLLECT : EFFICIENCY_CULL )
-                                               :
-                                                    SURFACE_ABSORB
-                                               ;
+        flag = u_theEfficiency < theEfficiency
+                   ? (u_collectionEfficiency < collectionEfficiency ? EFFICIENCY_COLLECT : EFFICIENCY_CULL)
+                   : SURFACE_ABSORB;
 
-        // former SD:SURFACE_DETECT, now becomes EC:EFFICIENCY_COLLECT or EX:EFFICIENCY_CULL depending on collectionEfficiency and random throw
+        // former SD:SURFACE_DETECT, now becomes EC:EFFICIENCY_COLLECT or EX:EFFICIENCY_CULL depending on
+        // collectionEfficiency and random throw
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if( ctx.pidx_debug )
-            printf("//qsim.propagate_at_surface_CustomART.BREAK.SD/SA EC/EX pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f %8.4f %8.4f ) u_theEfficiency  %8.4f theEfficiency %8.4f flag %d \n",
-                                                                    ctx.pidx, lpmtid, ATQC[0],ATQC[1], ATQC[2],ATQC[3],  u_theEfficiency,  theEfficiency, flag );
+        if (ctx.pidx_debug)
+            printf("//qsim.propagate_at_surface_CustomART.BREAK.SD/SA EC/EX pidx %7lld lpmtid %d ATQC ( %8.4f %8.4f "
+                   "%8.4f %8.4f ) u_theEfficiency  %8.4f theEfficiency %8.4f flag %d \n",
+                   ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], u_theEfficiency, theEfficiency, flag);
 #endif
-
     }
     else
     {
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if( ctx.pidx_debug )
-            printf("//qsim.propagate_at_surface_CustomART.CONTINUE pidx %7lld lpmtid %d ATQC ( %7.3f %7.3f %7.3f %7.3f ) theTransmittance %7.3f  \n",
-            ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], theTransmittance  );
+        if (ctx.pidx_debug)
+            printf("//qsim.propagate_at_surface_CustomART.CONTINUE pidx %7lld lpmtid %d ATQC ( %7.3f %7.3f %7.3f %7.3f "
+                   ") theTransmittance %7.3f  \n",
+                   ctx.pidx, lpmtid, ATQC[0], ATQC[1], ATQC[2], ATQC[3], theTransmittance);
 #endif
 
-        propagate_at_boundary( flag, rng, ctx, theTransmittance  );
+        propagate_at_boundary(flag, rng, ctx, theTransmittance);
     }
-    return action ;
+    return action;
 }
 #endif
 
@@ -2374,12 +2367,14 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
         const int& ems = ctx.s.optical.y ;
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
-        if( ctx.pidx == base->pidx )
+        if (ctx.pidx == base->pidx)
         {
 #if defined(WITH_CUSTOM4)
-            printf("//qsim.propagate.body.WITH_CUSTOM4 pidx %7lld  BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems, lposcost );
+            printf("//qsim.propagate.body.WITH_CUSTOM4 pidx %7lld  BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems,
+                   lposcost);
 #else
-            printf("//qsim.propagate.body.NOT:WITH_CUSTOM4 pidx %7lld BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems, lposcost);
+            printf("//qsim.propagate.body.NOT:WITH_CUSTOM4 pidx %7lld BOUNDARY ems %d lposcost %7.3f \n", ctx.pidx, ems,
+                   lposcost);
 #endif
         }
 #endif
@@ -2405,11 +2400,12 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
         {
             command = propagate_at_surface_Detect( flag, rng, ctx ) ;
         }
-        else if( ems == smatsur_Surface_zplus_sensor_CustomART )
+        else if (ems == smatsur_Surface_zplus_sensor_CustomART)
         {
 #if defined(WITH_CUSTOM4)
-            command = propagate_at_surface_CustomART( flag, rng, ctx ) ;
-            //command = base->custom_lut == 0u ? propagate_at_surface_CustomART( flag, rng, ctx ) : propagate_at_surface_MultiFilm(flag, rng, ctx );
+            command = propagate_at_surface_CustomART(flag, rng, ctx);
+            // command = base->custom_lut == 0u ? propagate_at_surface_CustomART( flag, rng, ctx ) :
+            // propagate_at_surface_MultiFilm(flag, rng, ctx );
 
 #endif
         }
@@ -2417,7 +2413,6 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
     ctx.p.set_flag(flag);
     // Q: Does flag need to be single bit at this point OR can multiple "flags" be OR-ed together here ?
     // A: Decided to keep the flag as single bitted, and directly set EFFICENCY_COLLECT/CULL into ctx.p.flagmask
-
 
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
     if( ctx.pidx == base->pidx )
