@@ -70,8 +70,8 @@ cx/CSGOptiX7.cu::
     406 extern "C" __global__ void __closesthit__ch()
     407 {
     408     unsigned iindex = optixGetInstanceIndex() ;    // 0-based index within IAS
-    409     unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see IAS_Builder::Build and InstanceId.h 
-    410     unsigned prim_idx = optixGetPrimitiveIndex() ; // GAS_Builder::MakeCustomPrimitivesBI_11N  (1+index-of-CSGPrim within CSGSolid/GAS)
+    409     unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see SBT::collectInstances and InstanceId.h
+    410     unsigned prim_idx = optixGetPrimitiveIndex() ; // see SBT::createGAS / SOPTIX_BuildInput_CPA  (1+index-of-CSGPrim within CSGSolid/GAS)
     411     unsigned identity = (( prim_idx & 0xffff ) << 16 ) | ( instance_id & 0xffff ) ;
 
 TODO: find way to fully reproduce the Opticks identity with instance index, 
@@ -560,5 +560,3 @@ inline bool U4Step::IsSameMaterialPVBorder( const G4Step* step, const char* q_ma
 {
     return IsSameMaterial(step, q_matname) && IsPVBorder(step, q_pvname1, q_pvname2 ); 
 }
-
-

@@ -14,11 +14,7 @@ list(APPEND SOURCES
 
     Ctx.cc
     Properties.cc
-    GAS.cc
-    GAS_Builder.cc
     PIP.cc
-    IAS.cc
-    IAS_Builder.cc
     SBT.cc
 )
 

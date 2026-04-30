@@ -230,20 +230,6 @@ Frame.h
 
 BI.h
     wrapper for OptixBuildInput 
-AS.h
-    common acceleration structure base struct for GAS and IAS
-GAS.h
-    bis vector of BI build inputs 
-IAS.h
-    vector of transforms and d_instances 
-
-GAS_Builder.h
-    building OptiX geometry acceleration structure, 
-    canonical usage from SBT::createGAS
-
-IAS_Builder.h
-    building OptiX instance acceleration structure, 
-    canonical usage from SBT::createIAS
 
 Binding.h
     GPU/CPU types, including SbtRecord : RaygenData, MissData, HitGroupData (effectively Prim)
