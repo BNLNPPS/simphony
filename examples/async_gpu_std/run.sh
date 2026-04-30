@@ -9,17 +9,17 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-GDML="${REPO_ROOT}/apex.gdml"
-MACRO="${REPO_ROOT}/tests/run.mac"
+GDML="${SCRIPT_DIR}/apex.gdml"
+MACRO="${SCRIPT_DIR}/run.mac"
 MODE="${1:---async}"
 
-if [ ! -f "$GDML" ]; then
-    echo "ERROR: $GDML not found"
-    echo "Run from the eic-opticks root or ensure apex.gdml exists."
-    exit 1
-fi
+for f in "$GDML" "$MACRO"; do
+    if [ ! -f "$f" ]; then
+        echo "ERROR: $f not found"
+        exit 1
+    fi
+done
 
 echo "=== async_gpu_std example (std-only worker thread) ==="
 echo "GDML:        $GDML"
