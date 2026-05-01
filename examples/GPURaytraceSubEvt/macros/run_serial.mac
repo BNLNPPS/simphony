@@ -1,0 +1,11 @@
+# Serial-mode baseline macro.
+#   - selected at the binary level via --mode serial
+#   - no /run/numberOfThreads (would be ignored / rejected in serial mode)
+#   - stackPhotons=false matches subevt and event-mt modes for a fair
+#     wall-time comparison
+#   - beamOn 1
+/process/optical/cerenkov/setStackPhotons false
+/process/optical/scintillation/setStackPhotons false
+/run/verbose 0
+/run/initialize
+/run/beamOn 1
