@@ -67,12 +67,12 @@ That should match Opticks only with simple geom without repeated prim or instanc
 
 cx/CSGOptiX7.cu::
 
-    406 extern "C" __global__ void __closesthit__ch()
-    407 {
-    408     unsigned iindex = optixGetInstanceIndex() ;    // 0-based index within IAS
-    409     unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see SBT::collectInstances and InstanceId.h
-    410     unsigned prim_idx = optixGetPrimitiveIndex() ; // see SBT::createGAS / SOPTIX_BuildInput_CPA  (1+index-of-CSGPrim within CSGSolid/GAS)
-    411     unsigned identity = (( prim_idx & 0xffff ) << 16 ) | ( instance_id & 0xffff ) ;
+    747 extern "C" __global__ void __closesthit__ch()
+    748 {
+    749     unsigned iindex = optixGetInstanceIndex() ;     // 0-based index within IAS
+    750     unsigned identity = optixGetInstanceId() ;      // user supplied instanceId, see SBT::collectInstances
+    751     unsigned iindex_identity = (( iindex & 0xffffu ) << 16 ) | ( identity & 0xffffu ) ;
+    752     // optixGetPrimitiveIndex() is only used within the triangle branch (TriMesh lookup)
 
 TODO: find way to fully reproduce the Opticks identity with instance index, 
 probably that would mean dealing with long lists of volume names : the difficulty
