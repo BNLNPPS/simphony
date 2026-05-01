@@ -783,8 +783,16 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     if (wls_wins && wls_absorption_distance <= distance_to_boundary)
     {
         // WLS ABSORPTION: photon absorbed by wavelength shifting material
-        p.time += wls_absorption_distance / group_velocity;
-        p.pos += wls_absorption_distance * (p.mom);
+        //
+        // Subprecision floor: when wls_absorption_distance is below float32
+        // precision at world coords, p.pos += dist*mom rounds to no-op and the
+        // photon stays on the boundary, causing BVH ambiguity on the next trace.
+        // Force minimum step of 4 ulps along the entering direction.
+        const float pos_max = fmaxf(fmaxf(fabsf(p.pos.x), fabsf(p.pos.y)), fabsf(p.pos.z));
+        const float min_step = pos_max * 4.7683716e-7f; // 4 * 2^-23
+        const float eff_wls_distance = fmaxf(wls_absorption_distance, min_step);
+        p.time += eff_wls_distance / group_velocity;
+        p.pos += eff_wls_distance * (p.mom);
 
         // Sample re-emitted wavelength from WLS emission spectrum ICDF
         float u_wls_wl = curand_uniform(&rng);
