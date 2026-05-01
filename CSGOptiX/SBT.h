@@ -27,6 +27,7 @@ struct CSGPrim ;
 struct Properties ;
 struct SScene ;
 struct SOPTIX_Accel ;
+struct SOPTIX_BuildInput;
 struct SOPTIX_MeshGroup ;
 struct SCUDA_MeshGroup ;
 
@@ -58,12 +59,13 @@ struct SBT
     std::map<unsigned, SOPTIX_Accel*> vgas ;
     std::map<unsigned, const SOPTIX_MeshGroup*> xgas ;
     typedef std::map<unsigned, SOPTIX_Accel*>::const_iterator IT ;
+
     std::vector<SOPTIX_Accel*> vias ;
+    std::vector<SOPTIX_BuildInput*> vbis;
 
     static std::string Desc();
     SBT(const PIP* pip_ );
     ~SBT();
-
 
     void init();
     void destroy();

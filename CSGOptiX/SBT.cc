@@ -96,6 +96,13 @@ void SBT::init()
 
 void SBT::destroy()
 {
+    // delete accel objects before build inputs: SOPTIX_Accel::bis holds raw pointers into build inputs
+    for (const auto& kv : vgas) delete kv.second;
+    vgas.clear();
+    for (SOPTIX_Accel* ias : vias) delete ias;
+    vias.clear();
+    for (SOPTIX_BuildInput* bi : vbis) delete bi;
+    vbis.clear();
     destroyRaygen();
     destroyMiss();
     destroyHitgroup();
@@ -333,6 +340,7 @@ void SBT::createGAS(unsigned gas_idx)
         SCSGPrimSpec ps = foundry->getPrimSpec(gas_idx);
         bi = new SOPTIX_BuildInput_CPA(ps) ;
         gas = SOPTIX_Accel::Create(Ctx::context, bi );
+        vbis.push_back(bi);
     }
     vgas[gas_idx] = gas ;
 }
@@ -407,12 +415,8 @@ void SBT::createIAS(unsigned ias_idx)
     SOPTIX_BuildInput* ia = new SOPTIX_BuildInput_IA(instances) ;
     SOPTIX_Accel* ias = SOPTIX_Accel::Create(Ctx::context, ia );
     vias.push_back(ias);
-
+    vbis.push_back(ia);
 }
-
-
-
-
 
 /**
 SBT::collectInstances
