@@ -1,5 +1,10 @@
 BasedOnStyle: Microsoft
-ColumnLimit: 0
-BreakTemplateDeclarations: MultiLine
-PackConstructorInitializers: Never
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionDeclarations: false
 BreakConstructorInitializers: AfterColon
+BreakTemplateDeclarations: MultiLine
+ColumnLimit: 0
+PackConstructorInitializers: Never
