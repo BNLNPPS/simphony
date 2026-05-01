@@ -1,12 +1,10 @@
 # Event-MT baseline macro for comparing against subevt mode.
 #   - selected at the binary level via --mode event-mt
 #   - thread count is set via --threads (consistent with run_subevt.mac)
-#   - stackPhotons=false matches subevt and serial modes
+#   - stackPhotons is set in C++ based on --subevt-route; do NOT override here
 #   - beamOn 1: with event-MT this is effectively serial — only one worker
 #     gets the event. Useful as a control: subevt should beat this on a
 #     single high-multiplicity event.
-/process/optical/cerenkov/setStackPhotons false
-/process/optical/scintillation/setStackPhotons false
 /run/verbose 0
 /run/initialize
 /run/beamOn 1

@@ -1,10 +1,24 @@
 // GPURaytraceSubEvt.h — sub-event parallel variant of GPURaytraceQuasi.
 //
 // Same DetectorConstruction / PhotonSD / PrimaryGenerator / EventAction /
-// RunAction / SteppingAction / TrackingAction as examples/GPURaytraceQuasi,
-// with the diagnostic prefix renamed and the worker thread id added so that
-// firing of the QuasiCerenkov / QuasiScintillation intercept on >=2 distinct
-// sub-event workers is observable.
+// RunAction / TrackingAction as examples/GPURaytraceQuasi, with the diagnostic
+// prefix renamed and the worker thread id added.
+//
+// SteppingAction has two capture modes selected at construction:
+//
+//   CAPTURE_PARENT (used with --subevt-route cascade and --mode {serial,event-mt}
+//                   default): genstep captured at the charged-parent step via
+//                   the existing QuasiCerenkov / QuasiScintillation post-step
+//                   intercept, identical to GPURaytraceQuasi.
+//
+//   CAPTURE_TOKEN  (used with --subevt-route photon): with stackPhotons=true
+//                   upstream, G4QuasiCerenkov::PostStepDoIt pushes one
+//                   G4QuasiOpticalPhoton secondary per parent step carrying
+//                   G4QuasiOpticalData via G4VAuxiliaryTrackInformation. The
+//                   tokens are routed to sub-event workers; on the
+//                   QuasiOpticalPhoton step, this SteppingAction extracts the
+//                   aux info and builds the genstep from it. The parent-step
+//                   intercept is skipped (would double-count).
 //
 // Sub-event mode wiring lives in GPURaytraceSubEvt.cpp (main +
 // ActionInitialization).
@@ -17,22 +31,27 @@
 #include "G4AutoLock.hh"
 #include "G4BooleanSolid.hh"
 #include "G4Cerenkov.hh"
+#include "G4CerenkovQuasiTrackInfo.hh"
 #include "G4Electron.hh"
 #include "G4Event.hh"
 #include "G4GDMLParser.hh"
 #include "G4LogicalVolumeStore.hh"
+#include "G4Material.hh"
+#include "G4MaterialPropertiesTable.hh"
 #include "G4OpBoundaryProcess.hh"
 #include "G4OpticalPhoton.hh"
 #include "G4PhysicalConstants.hh"
 #include "G4PrimaryParticle.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4QuasiCerenkov.hh"
+#include "G4QuasiOpticalData.hh"
 #include "G4QuasiOpticalPhoton.hh"
 #include "G4QuasiScintillation.hh"
 #include "G4RunManager.hh"
 #include "G4RunManagerFactory.hh"
 #include "G4SDManager.hh"
 #include "G4Scintillation.hh"
+#include "G4ScintillationQuasiTrackInfo.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Threading.hh"
@@ -43,6 +62,7 @@
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
 #include "G4UserTrackingAction.hh"
+#include "G4VAuxiliaryTrackInformation.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VProcess.hh"
 #include "G4VUserDetectorConstruction.hh"
@@ -50,10 +70,13 @@
 
 #include "g4cx/G4CXOpticks.hh"
 #include "sysrap/NP.hh"
+#include "sysrap/OpticksGenstep.h"
 #include "sysrap/SEvt.hh"
 #include "sysrap/STrackInfo.h"
+#include "sysrap/scerenkov.h"
 #include "sysrap/spho.h"
 #include "sysrap/sphoton.h"
+#include "sysrap/sscint.h"
 #include "u4/U4.hh"
 #include "u4/U4Random.hh"
 #include "u4/U4StepPoint.hh"
@@ -90,6 +113,162 @@ std::string str_tolower(std::string s)
 {
     std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
     return s;
+}
+
+// ============================================================================
+// Genstep construction from G4QuasiOpticalPhoton aux info (CAPTURE_TOKEN mode)
+//
+// In photon-route + stackPhotons=true, G4QuasiCerenkov::PostStepDoIt creates
+// a single G4QuasiOpticalPhoton secondary per parent step, positioned at the
+// parent's pre-step (x0, t0) and decorated with G4CerenkovQuasiTrackInfo /
+// G4ScintillationQuasiTrackInfo via G4VAuxiliaryTrackInformation. The
+// G4QuasiOpticalData payload is everything we need to rebuild the eic-opticks
+// genstep (quad6) without the original parent G4Track/G4Step in hand.
+//
+// Field mapping is mechanical: every quad6 field has a corresponding source
+// in the aux info or on the token track itself. See sysrap/scerenkov.h and
+// sysrap/sscint.h for the target layout.
+//
+// The PDG encoding (ck->code / sc->code) is not consumed by Opticks's GPU
+// kernel — left as 0.
+// ============================================================================
+
+static quad6 MakeGenstep_QuasiCerenkov(const G4Track *token, const G4CerenkovQuasiTrackInfo *info)
+{
+    G4QuasiOpticalData data = info->GetQuasiOpticalData();
+
+    G4ThreeVector pos = token->GetPosition(); // parent's pre-step position (set in PostStepDoIt)
+    G4double time = token->GetGlobalTime();   // parent's pre-step global time
+
+    G4double pre_velocity = data.pre_velocity;
+    G4double post_velocity = data.pre_velocity + data.delta_velocity;
+    G4double mean_velocity = 0.5 * (pre_velocity + post_velocity);
+    G4double beta = mean_velocity / c_light;
+    G4double BetaInverse = beta > 0 ? 1.0 / beta : 0.0;
+
+    // Pmin / Pmax / nMax derived from the parent material's RINDEX vector.
+    const G4MaterialTable *matTable = G4Material::GetMaterialTable();
+    const G4Material *mat = (data.mat_index < matTable->size()) ? (*matTable)[data.mat_index] : nullptr;
+    G4double Pmin = 0.0, Pmax = 0.0, nMax = 1.0;
+    if (mat)
+    {
+        G4MaterialPropertiesTable *MPT = mat->GetMaterialPropertiesTable();
+        if (MPT)
+        {
+            G4MaterialPropertyVector *Rindex = MPT->GetProperty(kRINDEX);
+            if (Rindex && Rindex->GetVectorLength() > 0)
+            {
+                Pmin = Rindex->Energy(0);
+                Pmax = Rindex->GetMaxEnergy();
+                nMax = Rindex->GetMaxValue();
+            }
+        }
+    }
+    G4double maxCos = (nMax > 0) ? BetaInverse / nMax : 0.0;
+    G4double maxSin2 = (1.0 - maxCos) * (1.0 + maxCos);
+    G4double Wmin_nm = Pmax > 0 ? h_Planck * c_light / Pmax / nm : 0.0;
+    G4double Wmax_nm = Pmin > 0 ? h_Planck * c_light / Pmin / nm : 0.0;
+
+    quad6 gs;
+    gs.zero();
+    scerenkov *ck = (scerenkov *)(&gs);
+
+    ck->gentype = OpticksGenstep_G4Cerenkov_modified;
+    ck->trackid = token->GetParentID();
+    ck->matline = data.mat_index + SEvt::G4_INDEX_OFFSET;
+    ck->numphoton = data.num_photons;
+
+    ck->pos.x = pos.x();
+    ck->pos.y = pos.y();
+    ck->pos.z = pos.z();
+    ck->time = time;
+
+    ck->DeltaPosition.x = data.delta_position.x();
+    ck->DeltaPosition.y = data.delta_position.y();
+    ck->DeltaPosition.z = data.delta_position.z();
+    ck->step_length = data.step_length;
+
+    ck->code = 0;
+    ck->charge = data.charge;
+    ck->weight = token->GetWeight();
+    ck->preVelocity = pre_velocity;
+
+    ck->BetaInverse = BetaInverse;
+    ck->Wmin = Wmin_nm;
+    ck->Wmax = Wmax_nm;
+    ck->maxCos = maxCos;
+
+    ck->maxSin2 = maxSin2;
+    ck->MeanNumberOfPhotons1 = info->GetPreNumPhotons();
+    ck->MeanNumberOfPhotons2 = info->GetPostNumPhotons();
+    ck->postVelocity = post_velocity;
+    return gs;
+}
+
+static quad6 MakeGenstep_QuasiScintillation(const G4Track *token, const G4ScintillationQuasiTrackInfo *info)
+{
+    G4QuasiOpticalData data = info->GetQuasiOpticalData();
+
+    G4ThreeVector pos = token->GetPosition();
+    G4double time = token->GetGlobalTime();
+
+    G4double pre_velocity = data.pre_velocity;
+    G4double post_velocity = data.pre_velocity + data.delta_velocity;
+    G4double mean_velocity = 0.5 * (pre_velocity + post_velocity);
+
+    quad6 gs;
+    gs.zero();
+    sscint *sc = (sscint *)(&gs);
+
+    sc->gentype = OpticksGenstep_DsG4Scintillation_r4695;
+    sc->trackid = token->GetParentID();
+    sc->matline = data.mat_index + SEvt::G4_INDEX_OFFSET;
+    sc->numphoton = data.num_photons;
+
+    sc->pos.x = pos.x();
+    sc->pos.y = pos.y();
+    sc->pos.z = pos.z();
+    sc->time = time;
+
+    sc->DeltaPosition.x = data.delta_position.x();
+    sc->DeltaPosition.y = data.delta_position.y();
+    sc->DeltaPosition.z = data.delta_position.z();
+    sc->step_length = data.step_length;
+
+    sc->code = 0;
+    sc->charge = data.charge;
+    sc->weight = token->GetWeight();
+    sc->meanVelocity = mean_velocity;
+
+    sc->scnt = 1;
+    sc->ScintillationTime = info->GetScintTime();
+    return gs;
+}
+
+// Iterate the auxiliary track info map and dispatch to the right genstep
+// builder. Returns true if a genstep was extracted and pushed.
+static bool ExtractAndPushQuasiGenstep(const G4Track *token)
+{
+    auto *aux_map = token->GetAuxiliaryTrackInformationMap();
+    if (!aux_map)
+        return false;
+
+    for (auto const &[modelId, aux] : *aux_map)
+    {
+        if (auto *cInfo = G4CerenkovQuasiTrackInfo::Cast(aux))
+        {
+            quad6 gs = MakeGenstep_QuasiCerenkov(token, cInfo);
+            SEvt::AddGenstep(gs);
+            return true;
+        }
+        if (auto *sInfo = G4ScintillationQuasiTrackInfo::Cast(aux))
+        {
+            quad6 gs = MakeGenstep_QuasiScintillation(token, sInfo);
+            SEvt::AddGenstep(gs);
+            return true;
+        }
+    }
+    return false;
 }
 
 struct PhotonHit : public G4VHit
@@ -398,10 +577,18 @@ struct RunAction : G4UserRunAction
 
 struct SteppingAction : G4UserSteppingAction
 {
-    SEvt *sev;
+    enum CaptureMode
+    {
+        CAPTURE_PARENT, // genstep captured at the charged-parent post-step
+        CAPTURE_TOKEN,  // genstep captured on the G4QuasiOpticalPhoton step
+    };
 
-    SteppingAction(SEvt *sev) :
-        sev(sev)
+    SEvt *sev;
+    CaptureMode fCaptureMode;
+
+    SteppingAction(SEvt *sev, CaptureMode mode = CAPTURE_PARENT) :
+        sev(sev),
+        fCaptureMode(mode)
     {
     }
 
@@ -421,13 +608,38 @@ struct SteppingAction : G4UserSteppingAction
             }
         }
 
-        // G4QuasiCerenkov / G4QuasiScintillation create a G4QuasiOpticalPhoton secondary
-        // per parent step (carrying the burst metadata as aux info). We capture the
-        // genstep at the parent's step in the QuasiCerenkov / QuasiScintillation branches
-        // below, so the secondary itself has no further purpose — kill it to avoid
-        // tracking through a particle with no registered processes.
+        // G4QuasiCerenkov / G4QuasiScintillation create a G4QuasiOpticalPhoton
+        // secondary per parent step (carrying the burst metadata as aux info).
         if (aStep->GetTrack()->GetDefinition() == G4QuasiOpticalPhoton::Definition())
         {
+            if (fCaptureMode == CAPTURE_TOKEN)
+            {
+                // Photon-route: extract the burst metadata from auxiliary track
+                // information, build the genstep, push it into SEvt. Lock since
+                // SEvt is process-wide and multiple sub-event workers may step
+                // tokens concurrently.
+                //
+                // KNOWN LIMITATION: in --mode subevt, the auxiliary track
+                // information is not preserved across the master->worker
+                // sub-event handoff (G4 11.4.1 sub-event marshalling appears
+                // not to copy the aux map when re-instantiating tracks on the
+                // worker). aux_map_size observed as 0 on workers in subevt
+                // mode; ExtractAndPushQuasiGenstep returns false and no
+                // genstep is captured. Works correctly in --mode serial and
+                // --mode event-mt where no marshalling occurs.
+                G4AutoLock lock(&genstep_mutex);
+                bool ok = ExtractAndPushQuasiGenstep(aStep->GetTrack());
+                static thread_local bool quasi_token_dump_done = false;
+                if (!quasi_token_dump_done)
+                {
+                    auto *aux_map = aStep->GetTrack()->GetAuxiliaryTrackInformationMap();
+                    G4cout << "[GPURaytraceSubEvt] tid=" << G4Threading::G4GetThreadId()
+                           << " first QuasiOpticalPhoton seen: ok=" << ok
+                           << " aux_map_size=" << (aux_map ? aux_map->size() : 0) << G4endl;
+                    quasi_token_dump_done = true;
+                }
+            }
+            // In both modes the token has no further purpose — kill it.
             aStep->GetTrack()->SetTrackStatus(fStopAndKill);
             return;
         }
@@ -440,6 +652,11 @@ struct SteppingAction : G4UserSteppingAction
                 aTrack->SetTrackStatus(fStopAndKill);
             }
         }
+
+        // In CAPTURE_TOKEN mode the genstep is captured at the QuasiOpticalPhoton
+        // step (above); skip the parent-step intercept to avoid double-counting.
+        if (fCaptureMode == CAPTURE_TOKEN)
+            return;
 
         G4SteppingManager *fpSteppingManager =
             G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
@@ -572,13 +789,13 @@ struct TrackingAction : G4UserTrackingAction
 
 struct G4App
 {
-    G4App(std::filesystem::path gdml_file) :
+    G4App(std::filesystem::path gdml_file, SteppingAction::CaptureMode capture_mode) :
         sev(SEvt::CreateOrReuse_EGPU()),
         det_cons_(new DetectorConstruction(gdml_file)),
         prim_gen_(new PrimaryGenerator(sev)),
         event_act_(new EventAction(sev)),
         run_act_(new RunAction(event_act_)),
-        stepping_(new SteppingAction(sev)),
+        stepping_(new SteppingAction(sev, capture_mode)),
         tracking_(new TrackingAction(sev))
     {
     }
