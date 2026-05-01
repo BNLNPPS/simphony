@@ -31,7 +31,9 @@
 struct ActionInitialization : public G4VUserActionInitialization
 {
     G4App *fG4App;
-    ActionInitialization(G4App *app) : fG4App(app) {}
+    ActionInitialization(G4App *app) : fG4App(app)
+    {
+    }
 
     void BuildForMaster() const override
     {
@@ -50,15 +52,15 @@ struct ActionInitialization : public G4VUserActionInitialization
 
 static void usage(const char *prog)
 {
-    std::cerr <<
-        "Usage: " << prog << " [options]\n"
-        "  -g, --gdml PATH      GDML file (default: apex.gdml)\n"
-        "  -m, --macro PATH     Geant4 macro (default: run.mac)\n"
-        "  -s, --seed N         random seed (default: time())\n"
-        "  -i, --interactive    open interactive viewer\n"
-        "      --async          double-buffered async GPU (default)\n"
-        "      --sync           end-of-run GPU simulation\n"
-        "  -h, --help           show this message\n";
+    std::cerr << "Usage: " << prog
+              << " [options]\n"
+                 "  -g, --gdml PATH      GDML file (default: apex.gdml)\n"
+                 "  -m, --macro PATH     Geant4 macro (default: run.mac)\n"
+                 "  -s, --seed N         random seed (default: time())\n"
+                 "  -i, --interactive    open interactive viewer\n"
+                 "      --async          double-buffered async GPU (default)\n"
+                 "      --sync           end-of-run GPU simulation\n"
+                 "  -h, --help           show this message\n";
 }
 
 int main(int argc, char **argv)

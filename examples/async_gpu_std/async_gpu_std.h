@@ -75,8 +75,8 @@
 
 namespace
 {
-G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;        // sync-mode SEvt collection
-std::mutex g4hits_mutex;                            // accumulator across worker threads
+G4Mutex genstep_mutex = G4MUTEX_INITIALIZER; // sync-mode SEvt collection
+std::mutex g4hits_mutex;                     // accumulator across worker threads
 std::vector<std::array<float, 16>> g4_accumulated_hits;
 } // namespace
 
@@ -92,8 +92,7 @@ bool IsSubtractionSolid(G4VSolid *solid)
         return true;
     if (G4BooleanSolid *bs = dynamic_cast<G4BooleanSolid *>(solid))
     {
-        if (IsSubtractionSolid(bs->GetConstituentSolid(0)) ||
-            IsSubtractionSolid(bs->GetConstituentSolid(1)))
+        if (IsSubtractionSolid(bs->GetConstituentSolid(0)) || IsSubtractionSolid(bs->GetConstituentSolid(1)))
             return true;
     }
     return false;
@@ -131,8 +130,14 @@ struct GenstepBuffer
         genstep_count++;
     }
 
-    bool empty() const { return gensteps.empty(); }
-    size_t size() const { return gensteps.size(); }
+    bool empty() const
+    {
+        return gensteps.empty();
+    }
+    size_t size() const
+    {
+        return gensteps.size();
+    }
 };
 
 struct GPUTask
@@ -140,8 +145,12 @@ struct GPUTask
     int batch_id;
     std::shared_ptr<GenstepBuffer> buffer;
 
-    GPUTask() : batch_id(-1), buffer(nullptr) {}
-    GPUTask(int bid, std::shared_ptr<GenstepBuffer> buf) : batch_id(bid), buffer(std::move(buf)) {}
+    GPUTask() : batch_id(-1), buffer(nullptr)
+    {
+    }
+    GPUTask(int bid, std::shared_ptr<GenstepBuffer> buf) : batch_id(bid), buffer(std::move(buf))
+    {
+    }
 };
 
 // ============================================================================
@@ -183,11 +192,8 @@ class GPUTaskManager
     std::atomic<uint64_t> total_gpu_time_us_{0};
 
   public:
-    GPUTaskManager(int64_t threshold = DEFAULT_PHOTON_THRESHOLD,
-                   size_t max_queue = DEFAULT_MAX_QUEUE_SIZE)
-        : photon_threshold_(threshold),
-          max_queue_size_(max_queue),
-          active_buffer_(std::make_shared<GenstepBuffer>())
+    GPUTaskManager(int64_t threshold = DEFAULT_PHOTON_THRESHOLD, size_t max_queue = DEFAULT_MAX_QUEUE_SIZE)
+        : photon_threshold_(threshold), max_queue_size_(max_queue), active_buffer_(std::make_shared<GenstepBuffer>())
     {
         if (const char *e = std::getenv("GPU_PHOTON_FLUSH_THRESHOLD"))
             photon_threshold_ = std::atoll(e);
@@ -195,7 +201,10 @@ class GPUTaskManager
             max_queue_size_ = std::max(1, std::atoi(e));
     }
 
-    ~GPUTaskManager() { shutdown(); }
+    ~GPUTaskManager()
+    {
+        shutdown();
+    }
 
     void start()
     {
@@ -205,8 +214,7 @@ class GPUTaskManager
         worker_ = std::thread(&GPUTaskManager::workerLoop, this);
 
         G4cout << "GPUTaskManager [std]: started"
-               << " threshold=" << photon_threshold_
-               << " max_queue=" << max_queue_size_ << G4endl;
+               << " threshold=" << photon_threshold_ << " max_queue=" << max_queue_size_ << G4endl;
     }
 
     void shutdown()
@@ -238,10 +246,8 @@ class GPUTaskManager
             worker_.join();
 
         G4cout << "GPUTaskManager [std]: shutdown"
-               << " batches=" << completed_batches_.load()
-               << " photons=" << total_photons_.load()
-               << " hits=" << total_hits_.load()
-               << " gpu_time=" << (total_gpu_time_us_.load() / 1e6) << "s" << G4endl;
+               << " batches=" << completed_batches_.load() << " photons=" << total_photons_.load()
+               << " hits=" << total_hits_.load() << " gpu_time=" << (total_gpu_time_us_.load() / 1e6) << "s" << G4endl;
     }
 
     // Hot path — invoked from SteppingAction
@@ -277,8 +283,7 @@ class GPUTaskManager
         }
         if (to_submit)
         {
-            G4cout << "GPUTaskManager [std]: final flush ("
-                   << to_submit->photon_count << " photons)" << G4endl;
+            G4cout << "GPUTaskManager [std]: final flush (" << to_submit->photon_count << " photons)" << G4endl;
             submitBuffer(to_submit);
         }
         waitForDrain();
@@ -290,11 +295,26 @@ class GPUTaskManager
         queue_drained_.wait(lock, [this]() { return task_queue_.empty(); });
     }
 
-    int getCompletedBatches() const { return completed_batches_.load(); }
-    uint64_t getTotalHits() const { return total_hits_.load(); }
-    uint64_t getTotalPhotons() const { return total_photons_.load(); }
-    int64_t getThreshold() const { return photon_threshold_; }
-    double getTotalGPUTime() const { return total_gpu_time_us_.load() / 1e6; }
+    int getCompletedBatches() const
+    {
+        return completed_batches_.load();
+    }
+    uint64_t getTotalHits() const
+    {
+        return total_hits_.load();
+    }
+    uint64_t getTotalPhotons() const
+    {
+        return total_photons_.load();
+    }
+    int64_t getThreshold() const
+    {
+        return photon_threshold_;
+    }
+    double getTotalGPUTime() const
+    {
+        return total_gpu_time_us_.load() / 1e6;
+    }
 
   private:
     void submitBuffer(std::shared_ptr<GenstepBuffer> buffer)
@@ -307,15 +327,12 @@ class GPUTaskManager
 
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
-            queue_not_full_.wait(lock, [this]() {
-                return task_queue_.size() < max_queue_size_ || shutdown_;
-            });
+            queue_not_full_.wait(lock, [this]() { return task_queue_.size() < max_queue_size_ || shutdown_; });
             if (shutdown_)
                 return;
 
             task_queue_.push(std::move(task));
-            G4cout << "GPUTaskManager [std]: queued batch " << batch_id
-                   << " (" << buffer->photon_count << " photons, "
+            G4cout << "GPUTaskManager [std]: queued batch " << batch_id << " (" << buffer->photon_count << " photons, "
                    << buffer->genstep_count << " gensteps)"
                    << " queue_size=" << task_queue_.size() << G4endl;
         }
@@ -324,17 +341,14 @@ class GPUTaskManager
 
     void workerLoop()
     {
-        G4cout << "GPUTaskManager [std]: worker thread started (tid="
-               << std::this_thread::get_id() << ")" << G4endl;
+        G4cout << "GPUTaskManager [std]: worker thread started (tid=" << std::this_thread::get_id() << ")" << G4endl;
 
         while (true)
         {
             GPUTask task;
             {
                 std::unique_lock<std::mutex> lock(queue_mutex_);
-                queue_not_empty_.wait(lock, [this]() {
-                    return !task_queue_.empty() || shutdown_;
-                });
+                queue_not_empty_.wait(lock, [this]() { return !task_queue_.empty() || shutdown_; });
                 if (task_queue_.empty() && shutdown_)
                     break;
 
@@ -358,8 +372,7 @@ class GPUTaskManager
     void runBatch(int batch_id, std::shared_ptr<GenstepBuffer> buffer)
     {
         G4cout << "=== GPU Batch " << batch_id << " ==="
-               << " photons=" << buffer->photon_count
-               << " gensteps=" << buffer->genstep_count << G4endl;
+               << " photons=" << buffer->photon_count << " gensteps=" << buffer->genstep_count << G4endl;
 
         G4CXOpticks *gx = G4CXOpticks::Get();
         SEvt *sev = SEvt::Get_EGPU();
@@ -371,8 +384,7 @@ class GPUTaskManager
 
         sev->clear_genstep();
         NP *gs_array = NP::Make<float>(buffer->gensteps.size(), 6, 4);
-        std::memcpy(gs_array->values<float>(), buffer->gensteps.data(),
-                    buffer->gensteps.size() * sizeof(quad6));
+        std::memcpy(gs_array->values<float>(), buffer->gensteps.data(), buffer->gensteps.size() * sizeof(quad6));
         sev->addGenstep(gs_array);
 
         auto t0 = std::chrono::high_resolution_clock::now();
@@ -416,9 +428,8 @@ class GPUTaskManager
 // Genstep construction (bypass U4 / SEvt for async path)
 // ============================================================================
 
-static quad6 MakeGenstep_Cerenkov(const G4Track *aTrack, const G4Step *aStep, G4int numPhotons,
-                                  G4double betaInverse, G4double pmin, G4double pmax,
-                                  G4double maxCos, G4double maxSin2,
+static quad6 MakeGenstep_Cerenkov(const G4Track *aTrack, const G4Step *aStep, G4int numPhotons, G4double betaInverse,
+                                  G4double pmin, G4double pmax, G4double maxCos, G4double maxSin2,
                                   G4double meanNumberOfPhotons1, G4double meanNumberOfPhotons2)
 {
     G4StepPoint *pre = aStep->GetPreStepPoint();
@@ -468,8 +479,8 @@ static quad6 MakeGenstep_Cerenkov(const G4Track *aTrack, const G4Step *aStep, G4
     return gs;
 }
 
-static quad6 MakeGenstep_Scintillation(const G4Track *aTrack, const G4Step *aStep, G4int numPhotons,
-                                       G4int scnt, G4double ScintillationTime)
+static quad6 MakeGenstep_Scintillation(const G4Track *aTrack, const G4Step *aStep, G4int numPhotons, G4int scnt,
+                                       G4double ScintillationTime)
 {
     G4StepPoint *pre = aStep->GetPreStepPoint();
     G4StepPoint *post = aStep->GetPostStepPoint();
@@ -516,10 +527,9 @@ static quad6 MakeGenstep_Scintillation(const G4Track *aTrack, const G4Step *aSte
 struct PhotonHit : public G4VHit
 {
     PhotonHit() = default;
-    PhotonHit(unsigned id, G4double energy, G4double time, G4ThreeVector position,
-              G4ThreeVector direction, G4ThreeVector polarization)
-        : fid(id), fenergy(energy), ftime(time), fposition(position), fdirection(direction),
-          fpolarization(polarization)
+    PhotonHit(unsigned id, G4double energy, G4double time, G4ThreeVector position, G4ThreeVector direction,
+              G4ThreeVector polarization)
+        : fid(id), fenergy(energy), ftime(time), fposition(position), fdirection(direction), fpolarization(polarization)
     {
     }
 
@@ -559,8 +569,7 @@ struct PhotonSD : public G4VSensitiveDetector
             return false;
 
         G4double energy_eV = track->GetTotalEnergy() / CLHEP::eV;
-        PhotonHit *hit = new PhotonHit(0, energy_eV, track->GetGlobalTime(),
-                                       aStep->GetPostStepPoint()->GetPosition(),
+        PhotonHit *hit = new PhotonHit(0, energy_eV, track->GetGlobalTime(), aStep->GetPostStepPoint()->GetPosition(),
                                        aStep->GetPostStepPoint()->GetMomentumDirection(),
                                        aStep->GetPostStepPoint()->GetPolarization());
         fPhotonHitsCollection->insert(hit);
@@ -579,18 +588,19 @@ struct PhotonSD : public G4VSensitiveDetector
         {
             PhotonHit *h = (*fPhotonHitsCollection)[i];
             float wl = (h->fenergy > 0) ? static_cast<float>(1239.84198 / h->fenergy) : 0.f;
-            g4_accumulated_hits.push_back({float(h->fposition.x()), float(h->fposition.y()),
-                                           float(h->fposition.z()), float(h->ftime),
-                                           float(h->fdirection.x()), float(h->fdirection.y()),
-                                           float(h->fdirection.z()), 0.f,
-                                           float(h->fpolarization.x()), float(h->fpolarization.y()),
-                                           float(h->fpolarization.z()), wl,
-                                           0.f, 0.f, 0.f, float(h->fid)});
+            g4_accumulated_hits.push_back({float(h->fposition.x()), float(h->fposition.y()), float(h->fposition.z()),
+                                           float(h->ftime), float(h->fdirection.x()), float(h->fdirection.y()),
+                                           float(h->fdirection.z()), 0.f, float(h->fpolarization.x()),
+                                           float(h->fpolarization.y()), float(h->fpolarization.z()), wl, 0.f, 0.f, 0.f,
+                                           float(h->fid)});
         }
         fTotalG4Hits += n;
     }
 
-    G4int GetTotalG4Hits() const { return fTotalG4Hits; }
+    G4int GetTotalG4Hits() const
+    {
+        return fTotalG4Hits;
+    }
 };
 
 // ============================================================================
@@ -602,7 +612,9 @@ struct DetectorConstruction : G4VUserDetectorConstruction
     std::filesystem::path gdml_file_;
     G4GDMLParser parser_;
 
-    DetectorConstruction(std::filesystem::path gdml_file) : gdml_file_(gdml_file) {}
+    DetectorConstruction(std::filesystem::path gdml_file) : gdml_file_(gdml_file)
+    {
+    }
 
     G4VPhysicalVolume *Construct() override
     {
@@ -617,10 +629,8 @@ struct DetectorConstruction : G4VUserDetectorConstruction
             for (auto lv : *lvStore)
             {
                 G4String lname = str_tolower(lv->GetName());
-                if (lname.find("detect") != std::string::npos ||
-                    lname.find("sipm") != std::string::npos ||
-                    lname.find("sensor") != std::string::npos ||
-                    lname.find("pmt") != std::string::npos ||
+                if (lname.find("detect") != std::string::npos || lname.find("sipm") != std::string::npos ||
+                    lname.find("sensor") != std::string::npos || lname.find("pmt") != std::string::npos ||
                     lname.find("arapuca") != std::string::npos)
                 {
                     G4String sdName = "PhotonDetector_" + lv->GetName();
@@ -647,7 +657,9 @@ struct DetectorConstruction : G4VUserDetectorConstruction
 struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
     SEvt *sev;
-    PrimaryGenerator(SEvt *sev) : sev(sev) {}
+    PrimaryGenerator(SEvt *sev) : sev(sev)
+    {
+    }
 
     void GeneratePrimaries(G4Event *event) override
     {
@@ -674,7 +686,9 @@ struct EventAction : G4UserEventAction
     SEvt *sev;
     G4int fTotalG4Hits{0};
 
-    EventAction(SEvt *sev) : sev(sev) {}
+    EventAction(SEvt *sev) : sev(sev)
+    {
+    }
 
     void EndOfEventAction(const G4Event *event) override
     {
@@ -694,7 +708,10 @@ struct EventAction : G4UserEventAction
         }
     }
 
-    G4int GetTotalG4Hits() const { return fTotalG4Hits; }
+    G4int GetTotalG4Hits() const
+    {
+        return fTotalG4Hits;
+    }
 };
 
 // ============================================================================
@@ -706,7 +723,9 @@ struct RunAction : G4UserRunAction
     EventAction *fEventAction;
     GPUTaskManager *fGPUTaskMgr{nullptr};
 
-    RunAction(EventAction *ea, GPUTaskManager *mgr = nullptr) : fEventAction(ea), fGPUTaskMgr(mgr) {}
+    RunAction(EventAction *ea, GPUTaskManager *mgr = nullptr) : fEventAction(ea), fGPUTaskMgr(mgr)
+    {
+    }
 
     void BeginOfRunAction(const G4Run *) override
     {
@@ -784,7 +803,9 @@ struct SteppingAction : G4UserSteppingAction
     SEvt *sev;
     GPUTaskManager *fGPUTaskMgr{nullptr};
 
-    SteppingAction(SEvt *sev, GPUTaskManager *mgr = nullptr) : sev(sev), fGPUTaskMgr(mgr) {}
+    SteppingAction(SEvt *sev, GPUTaskManager *mgr = nullptr) : sev(sev), fGPUTaskMgr(mgr)
+    {
+    }
 
     void UserSteppingAction(const G4Step *aStep) override
     {
@@ -793,8 +814,7 @@ struct SteppingAction : G4UserSteppingAction
             aStep->GetTrack()->GetCurrentStepNumber() > 10000)
             aStep->GetTrack()->SetTrackStatus(fStopAndKill);
 
-        G4SteppingManager *sm =
-            G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
+        G4SteppingManager *sm = G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
         if (sm->GetfStepStatus() == fAtRestDoItProc)
             return;
 
@@ -838,15 +858,15 @@ struct SteppingAction : G4UserSteppingAction
                     const G4Event *ev = G4EventManager::GetEventManager()->GetConstCurrentEvent();
                     if (!ev)
                         return;
-                    quad6 gs = MakeGenstep_Cerenkov(track, aStep, numPhotons, BetaInverse,
-                                                   Pmin, Pmax, maxCos, maxSin2, mean1, mean2);
+                    quad6 gs = MakeGenstep_Cerenkov(track, aStep, numPhotons, BetaInverse, Pmin, Pmax, maxCos, maxSin2,
+                                                    mean1, mean2);
                     fGPUTaskMgr->addGenstep(gs, numPhotons, ev->GetEventID());
                 }
                 else
                 {
                     G4AutoLock lock(&genstep_mutex);
-                    U4::CollectGenstep_G4Cerenkov_modified(track, aStep, numPhotons, BetaInverse,
-                                                           Pmin, Pmax, maxCos, maxSin2, mean1, mean2);
+                    U4::CollectGenstep_G4Cerenkov_modified(track, aStep, numPhotons, BetaInverse, Pmin, Pmax, maxCos,
+                                                           maxSin2, mean1, mean2);
                 }
             }
             else if (pname == "Scintillation")
@@ -864,8 +884,7 @@ struct SteppingAction : G4UserSteppingAction
 
                 const G4int tcKeys[3] = {kSCINTILLATIONTIMECONSTANT1, kSCINTILLATIONTIMECONSTANT2,
                                          kSCINTILLATIONTIMECONSTANT3};
-                const G4int yieldKeys[3] = {kSCINTILLATIONYIELD1, kSCINTILLATIONYIELD2,
-                                            kSCINTILLATIONYIELD3};
+                const G4int yieldKeys[3] = {kSCINTILLATIONYIELD1, kSCINTILLATIONYIELD2, kSCINTILLATIONYIELD3};
 
                 G4double tc[3] = {0, 0, 0};
                 G4double yield[3] = {0, 0, 0};
@@ -876,9 +895,8 @@ struct SteppingAction : G4UserSteppingAction
                     if (MPT->ConstPropertyExists(tcKeys[c]))
                     {
                         tc[c] = MPT->GetConstProperty(tcKeys[c]);
-                        yield[c] = MPT->ConstPropertyExists(yieldKeys[c])
-                                       ? MPT->GetConstProperty(yieldKeys[c])
-                                       : (c == 0 ? 1.0 : 0.0);
+                        yield[c] = MPT->ConstPropertyExists(yieldKeys[c]) ? MPT->GetConstProperty(yieldKeys[c])
+                                                                          : (c == 0 ? 1.0 : 0.0);
                         yieldSum += yield[c];
                         nComp = c + 1;
                     }
@@ -893,9 +911,7 @@ struct SteppingAction : G4UserSteppingAction
                     G4int remaining = numPhotons;
                     for (G4int c = 0; c < nComp; c++)
                     {
-                        G4int n = (c == nComp - 1)
-                                      ? remaining
-                                      : static_cast<G4int>(numPhotons * yield[c] / yieldSum);
+                        G4int n = (c == nComp - 1) ? remaining : static_cast<G4int>(numPhotons * yield[c] / yieldSum);
                         remaining -= n;
                         if (n > 0)
                         {
@@ -910,9 +926,7 @@ struct SteppingAction : G4UserSteppingAction
                     G4int remaining = numPhotons;
                     for (G4int c = 0; c < nComp; c++)
                     {
-                        G4int n = (c == nComp - 1)
-                                      ? remaining
-                                      : static_cast<G4int>(numPhotons * yield[c] / yieldSum);
+                        G4int n = (c == nComp - 1) ? remaining : static_cast<G4int>(numPhotons * yield[c] / yieldSum);
                         remaining -= n;
                         if (n > 0)
                             U4::CollectGenstep_DsG4Scintillation_r4695(track, aStep, n, c + 1, tc[c]);
@@ -930,11 +944,17 @@ struct SteppingAction : G4UserSteppingAction
 struct TrackingAction : G4UserTrackingAction
 {
     SEvt *sev;
-    TrackingAction(SEvt *sev) : sev(sev) {}
+    TrackingAction(SEvt *sev) : sev(sev)
+    {
+    }
 
-    void PreUserTrackingAction(const G4Track *) override {}
+    void PreUserTrackingAction(const G4Track *) override
+    {
+    }
 
-    void PostUserTrackingAction(const G4Track *) override {}
+    void PostUserTrackingAction(const G4Track *) override
+    {
+    }
 };
 
 // ============================================================================
@@ -954,21 +974,20 @@ struct G4App
     TrackingAction *tracking_;
 
     G4App(std::filesystem::path gdml_file, bool enable_async = true)
-        : sev(SEvt::CreateOrReuse_EGPU()),
-          gpu_task_mgr_(enable_async ? new GPUTaskManager() : nullptr),
-          det_cons_(new DetectorConstruction(gdml_file)),
-          prim_gen_(new PrimaryGenerator(sev)),
-          event_act_(new EventAction(sev)),
-          run_act_(new RunAction(event_act_, gpu_task_mgr_)),
-          stepping_(new SteppingAction(sev, gpu_task_mgr_)),
-          tracking_(new TrackingAction(sev))
+        : sev(SEvt::CreateOrReuse_EGPU()), gpu_task_mgr_(enable_async ? new GPUTaskManager() : nullptr),
+          det_cons_(new DetectorConstruction(gdml_file)), prim_gen_(new PrimaryGenerator(sev)),
+          event_act_(new EventAction(sev)), run_act_(new RunAction(event_act_, gpu_task_mgr_)),
+          stepping_(new SteppingAction(sev, gpu_task_mgr_)), tracking_(new TrackingAction(sev))
     {
         if (gpu_task_mgr_)
-            G4cout << "G4App [std]: async GPU mode (threshold="
-                   << gpu_task_mgr_->getThreshold() << " photons)" << G4endl;
+            G4cout << "G4App [std]: async GPU mode (threshold=" << gpu_task_mgr_->getThreshold() << " photons)"
+                   << G4endl;
         else
             G4cout << "G4App [std]: sync GPU mode (end-of-run)" << G4endl;
     }
 
-    ~G4App() { delete gpu_task_mgr_; }
+    ~G4App()
+    {
+        delete gpu_task_mgr_;
+    }
 };
