@@ -133,12 +133,18 @@ std::string str_tolower(std::string s)
 // kernel — left as 0.
 // ============================================================================
 
-static quad6 MakeGenstep_QuasiCerenkov(const G4Track *token, const G4CerenkovQuasiTrackInfo *info)
+static quad6 MakeGenstep_QuasiCerenkov(const G4Step *aStep, const G4Track *token,
+                                       const G4CerenkovQuasiTrackInfo *info)
 {
     G4QuasiOpticalData data = info->GetQuasiOpticalData();
 
-    G4ThreeVector pos = token->GetPosition(); // parent's pre-step position (set in PostStepDoIt)
-    G4double time = token->GetGlobalTime();   // parent's pre-step global time
+    // The QuasiOpticalPhoton secondary is born at the parent's pre-step (x0,t0)
+    // per G4QuasiCerenkov::PostStepDoIt line 273 (`new G4Track(quasiPhoton, t0, x0)`).
+    // By the time UserSteppingAction fires, token->GetPosition() reflects the
+    // POST-step of the token's first step, not its birth position. Read birth
+    // values from aStep->GetPreStepPoint() instead.
+    G4ThreeVector pos = aStep->GetPreStepPoint()->GetPosition();
+    G4double time = aStep->GetPreStepPoint()->GetGlobalTime();
 
     G4double pre_velocity = data.pre_velocity;
     G4double post_velocity = data.pre_velocity + data.delta_velocity;
@@ -205,12 +211,15 @@ static quad6 MakeGenstep_QuasiCerenkov(const G4Track *token, const G4CerenkovQua
     return gs;
 }
 
-static quad6 MakeGenstep_QuasiScintillation(const G4Track *token, const G4ScintillationQuasiTrackInfo *info)
+static quad6 MakeGenstep_QuasiScintillation(const G4Step *aStep, const G4Track *token,
+                                            const G4ScintillationQuasiTrackInfo *info)
 {
     G4QuasiOpticalData data = info->GetQuasiOpticalData();
 
-    G4ThreeVector pos = token->GetPosition();
-    G4double time = token->GetGlobalTime();
+    // See note in MakeGenstep_QuasiCerenkov on why we read pos/time from aStep
+    // pre-step rather than token->GetPosition().
+    G4ThreeVector pos = aStep->GetPreStepPoint()->GetPosition();
+    G4double time = aStep->GetPreStepPoint()->GetGlobalTime();
 
     G4double pre_velocity = data.pre_velocity;
     G4double post_velocity = data.pre_velocity + data.delta_velocity;
@@ -247,8 +256,9 @@ static quad6 MakeGenstep_QuasiScintillation(const G4Track *token, const G4Scinti
 
 // Iterate the auxiliary track info map and dispatch to the right genstep
 // builder. Returns true if a genstep was extracted and pushed.
-static bool ExtractAndPushQuasiGenstep(const G4Track *token)
+static bool ExtractAndPushQuasiGenstep(const G4Step *aStep)
 {
+    const G4Track *token = aStep->GetTrack();
     auto *aux_map = token->GetAuxiliaryTrackInformationMap();
     if (!aux_map)
         return false;
@@ -257,13 +267,13 @@ static bool ExtractAndPushQuasiGenstep(const G4Track *token)
     {
         if (auto *cInfo = G4CerenkovQuasiTrackInfo::Cast(aux))
         {
-            quad6 gs = MakeGenstep_QuasiCerenkov(token, cInfo);
+            quad6 gs = MakeGenstep_QuasiCerenkov(aStep, token, cInfo);
             SEvt::AddGenstep(gs);
             return true;
         }
         if (auto *sInfo = G4ScintillationQuasiTrackInfo::Cast(aux))
         {
-            quad6 gs = MakeGenstep_QuasiScintillation(token, sInfo);
+            quad6 gs = MakeGenstep_QuasiScintillation(aStep, token, sInfo);
             SEvt::AddGenstep(gs);
             return true;
         }
@@ -628,7 +638,7 @@ struct SteppingAction : G4UserSteppingAction
                 // genstep is captured. Works correctly in --mode serial and
                 // --mode event-mt where no marshalling occurs.
                 G4AutoLock lock(&genstep_mutex);
-                bool ok = ExtractAndPushQuasiGenstep(aStep->GetTrack());
+                bool ok = ExtractAndPushQuasiGenstep(aStep);
                 static thread_local bool quasi_token_dump_done = false;
                 if (!quasi_token_dump_done)
                 {
