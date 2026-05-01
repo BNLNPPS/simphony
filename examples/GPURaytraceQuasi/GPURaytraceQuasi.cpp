@@ -35,7 +35,10 @@
 class QuasiOpticalPhysics : public G4VPhysicsConstructor
 {
   public:
-    QuasiOpticalPhysics(const G4String &name = "QuasiOptical") : G4VPhysicsConstructor(name) {}
+    QuasiOpticalPhysics(const G4String &name = "QuasiOptical") :
+        G4VPhysicsConstructor(name)
+    {
+    }
     ~QuasiOpticalPhysics() override = default;
 
     void ConstructParticle() override
@@ -104,7 +107,9 @@ struct ActionInitialization : public G4VUserActionInitialization
 
   public:
     // Note the signature: now we take a pointer to the G4App itself
-    ActionInitialization(G4App *app) : G4VUserActionInitialization(), fG4App(app)
+    ActionInitialization(G4App *app) :
+        G4VUserActionInitialization(),
+        fG4App(app)
     {
     }
 

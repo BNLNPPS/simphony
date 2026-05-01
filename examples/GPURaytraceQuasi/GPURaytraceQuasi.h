@@ -88,15 +88,25 @@ struct PhotonHit : public G4VHit
     PhotonHit() = default;
 
     PhotonHit(unsigned id, G4double energy, G4double time, G4ThreeVector position, G4ThreeVector direction,
-              G4ThreeVector polarization)
-        : fid(id), fenergy(energy), ftime(time), fposition(position), fdirection(direction), fpolarization(polarization)
+              G4ThreeVector polarization) :
+        fid(id),
+        fenergy(energy),
+        ftime(time),
+        fposition(position),
+        fdirection(direction),
+        fpolarization(polarization)
     {
     }
 
     // Copy constructor
-    PhotonHit(const PhotonHit &right)
-        : G4VHit(right), fid(right.fid), fenergy(right.fenergy), ftime(right.ftime), fposition(right.fposition),
-          fdirection(right.fdirection), fpolarization(right.fpolarization)
+    PhotonHit(const PhotonHit &right) :
+        G4VHit(right),
+        fid(right.fid),
+        fenergy(right.fenergy),
+        ftime(right.ftime),
+        fposition(right.fposition),
+        fdirection(right.fdirection),
+        fpolarization(right.fpolarization)
     {
     }
 
@@ -143,7 +153,9 @@ using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
 
 struct PhotonSD : public G4VSensitiveDetector
 {
-    PhotonSD(G4String name) : G4VSensitiveDetector(name), fHCID(-1)
+    PhotonSD(G4String name) :
+        G4VSensitiveDetector(name),
+        fHCID(-1)
     {
         G4String HCname = name + "_HC";
         collectionName.insert(HCname);
@@ -225,7 +237,8 @@ struct PhotonSD : public G4VSensitiveDetector
 
 struct DetectorConstruction : G4VUserDetectorConstruction
 {
-    DetectorConstruction(std::filesystem::path gdml_file) : gdml_file_(gdml_file)
+    DetectorConstruction(std::filesystem::path gdml_file) :
+        gdml_file_(gdml_file)
     {
     }
 
@@ -293,7 +306,8 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
     SEvt *sev;
 
-    PrimaryGenerator(SEvt *sev) : sev(sev)
+    PrimaryGenerator(SEvt *sev) :
+        sev(sev)
     {
     }
 
@@ -318,7 +332,8 @@ struct EventAction : G4UserEventAction
     SEvt *sev;
     G4int fTotalG4Hits{0};
 
-    EventAction(SEvt *sev) : sev(sev)
+    EventAction(SEvt *sev) :
+        sev(sev)
     {
     }
 
@@ -352,7 +367,8 @@ struct RunAction : G4UserRunAction
 {
     EventAction *fEventAction;
 
-    RunAction(EventAction *eventAction) : fEventAction(eventAction)
+    RunAction(EventAction *eventAction) :
+        fEventAction(eventAction)
     {
     }
 
@@ -428,7 +444,8 @@ struct SteppingAction : G4UserSteppingAction
 {
     SEvt *sev;
 
-    SteppingAction(SEvt *sev) : sev(sev)
+    SteppingAction(SEvt *sev) :
+        sev(sev)
     {
     }
 
@@ -584,7 +601,8 @@ struct TrackingAction : G4UserTrackingAction
     const G4Track *transient_fSuspend_track = nullptr;
     SEvt *sev;
 
-    TrackingAction(SEvt *sev) : sev(sev)
+    TrackingAction(SEvt *sev) :
+        sev(sev)
     {
     }
 
@@ -603,12 +621,15 @@ struct TrackingAction : G4UserTrackingAction
 
 struct G4App
 {
-    G4App(std::filesystem::path gdml_file)
-        : sev(SEvt::CreateOrReuse_EGPU()), det_cons_(new DetectorConstruction(gdml_file)),
-          prim_gen_(new PrimaryGenerator(sev)), event_act_(new EventAction(sev)), run_act_(new RunAction(event_act_)),
-          stepping_(new SteppingAction(sev)),
+    G4App(std::filesystem::path gdml_file) :
+        sev(SEvt::CreateOrReuse_EGPU()),
+        det_cons_(new DetectorConstruction(gdml_file)),
+        prim_gen_(new PrimaryGenerator(sev)),
+        event_act_(new EventAction(sev)),
+        run_act_(new RunAction(event_act_)),
+        stepping_(new SteppingAction(sev)),
 
-          tracking_(new TrackingAction(sev))
+        tracking_(new TrackingAction(sev))
     {
     }
 
