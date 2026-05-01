@@ -731,7 +731,7 @@ CSGOptiX::simulate
 
 NB the distinction between this and simulate_launch, this
 uses QSim::simulate to do genstep setup prior to calling
-CSGOptiX::simulate_launch via the SCSGOptiX.h protocol
+CSGOptiX::simulate_launch through the SSimulator launcher interface.
 
 The QSim::simulate argument reset:true is used in order
 to invoke SEvt::endOfEvent after the save, this is because
@@ -781,7 +781,7 @@ CSGOptiX::simtrace
 
 NB the distinction between this and simtrace_launch, this
 uses QSim::simtrace to do genstep setup prior to calling
-CSGOptiX::simtrace_launch via the SCSGOptiX.h protocol
+CSGOptiX::simtrace_launch through the SSimulator launcher interface.
 
 Simtrace effectively always has reset:true because it
 always uses SEvt saving, unlike "simulate" which needs
@@ -1150,7 +1150,7 @@ CSGOptiX::render_launch CSGOptiX::simtrace_launch CSGOptiX::simulate_launch
 All the launch set (double)dt
 
 CAUTION : *simulate_launch* and *simtrace_launch*
-MUST BE invoked from QSim::simulate and QSim::simtrace using the SCSGOptiX.h protocol.
+MUST BE invoked from QSim::simulate and QSim::simtrace.
 This is because genstep preparations are needed prior to launch.
 
 These three methods currently all call *CSGOptiX::launch*

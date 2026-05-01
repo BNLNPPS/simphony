@@ -46,9 +46,6 @@ struct PIP ;
 struct SBT ;
 struct Frame ;
 
-//#include "SCSGOptiX.h"
-//struct CSGOPTIX_API CSGOptiX : public SCSGOptiX
-
 #include "SSimulator.h"
 
 struct CSGOPTIX_API CSGOptiX : public SSimulator

@@ -1,6 +1,5 @@
 #include <sstream>
 #include <cstring>
-#include <csignal>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
@@ -15,7 +14,6 @@
 
 #include "scontext.h"
 
-#include "sbuild.h"
 #include "sphoton.h"
 
 #include "SPath.hh"   // only SPath::Make to replace
@@ -1249,40 +1247,14 @@ int SEventConfig::Initialize() // static
 SEventConfig::Initialize_EventName
 -----------------------------------
 
-Examples that would match some builds::
-
-   export OPTICKS_EVENT_NAME="SomePrefix_Debug_Philox_SomeSuffix"
-   export OPTICKS_EVENT_NAME="Debug_XORWOW"
+OPTICKS_EVENT_NAME is used as a label in the default event reldir.
+Build-configuration matching used to live here, but it was disabled
+before the build-matching helper was removed.
 
 **/
 
 void SEventConfig::Initialize_EventName()
 {
-    if(EventName()==nullptr) return ;
-    bool require_match = false ;
-    if(!require_match) return ;
-
-    bool build_matches_EventName = sbuild::Matches(EventName()) ;
-
-    LOG(LEVEL)
-        << "\n"
-        << " kEventName " << kEventName << "\n"
-        << " SEventConfig::EventName() " << EventName() << "\n"
-        << " build_matches_EventName " << ( build_matches_EventName ? "YES" : "NO " ) << "\n"
-        << sbuild::Desc()
-        ;
-
-    LOG_IF( error, !build_matches_EventName)
-        << "\n"
-        << " kEventName " << kEventName << "\n"
-        << " SEventConfig::EventName() " << EventName() << "\n"
-        << " build_matches_EventName " << ( build_matches_EventName ? "YES" : "NO " ) << "\n"
-        << sbuild::Desc()
-        << " FIX by changing " << kEventName << " or rebuilding with suitable config "
-        ;
-
-    assert(build_matches_EventName);
-    if(!build_matches_EventName) std::raise(SIGINT);
 }
 
 

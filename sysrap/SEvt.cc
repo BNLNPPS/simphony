@@ -1883,8 +1883,7 @@ Lifecycle::
                A:SEvt::clear
                QEvt::setGenstep(NP*)
 
-            SCSGOptiX::simulate_launch
-
+            CSGOptiX::simulate_launch
             EGPU.:SEvt::endOfEvent
 
 

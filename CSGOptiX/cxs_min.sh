@@ -203,13 +203,9 @@ test=input_photon_poolcover_refine
 export TEST=${TEST:-$test}
 
 
-#ctx=Debug_XORWOW
-#ctx=Debug_Philox
-
-ctx=$(TEST=ContextString sbuild_test)
+ctx=${OPTICKS_EVENT_CONTEXT:-Debug_Philox}
 
 export OPTICKS_EVENT_NAME=${ctx}_${TEST}
-## SEventConfig::Initialize_EventName asserts OPTICKS_EVENT_NAME sbuild::Matches config of the build
 
 
 opticks_event_reldir=ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-none}   ## matches SEventConfig::_DefaultEventReldir OPTICKS_EVENT_RELDIR

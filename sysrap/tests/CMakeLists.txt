@@ -21,7 +21,6 @@ set(TEST_SOURCES
    SMapTest.cc
    SCountTest.cc
    SSeqTest.cc
-   SBase36Test.cc
    SSortKVTest.cc
    SPairVecTest.cc
    SDigestTest.cc
@@ -123,7 +122,6 @@ set(TEST_SOURCES
 
    ssys_test.cc
    srng_test.cc
-   sbuild_test.cc
 
    SCurandStateMonolithicTest.cc
 
