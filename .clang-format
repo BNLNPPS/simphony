@@ -1,4 +1,5 @@
 BasedOnStyle: Microsoft
+ColumnLimit: 0
 BreakTemplateDeclarations: MultiLine
 PackConstructorInitializers: Never
 BreakConstructorInitializers: AfterColon
