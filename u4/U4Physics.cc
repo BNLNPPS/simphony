@@ -21,19 +21,7 @@ Boundary class changes need to match in all the below::
 #include "G4FastSimulationManagerProcess.hh"
 
 
-#if defined(WITH_CUSTOM4) && defined(WITH_PMTSIM)
 #include "G4OpBoundaryProcess.hh"
-#include "C4OpBoundaryProcess.hh"
-#include "PMTSimParamSvc/PMTAccessor.h"
-#elif defined(WITH_CUSTOM4) && !defined(WITH_PMTSIM)
-#include "G4OpBoundaryProcess.hh"
-#include "C4OpBoundaryProcess.hh"
-#include "SPMTAccessor.h"
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-#include "InstrumentedG4OpBoundaryProcess.hh"
-#else
-#include "G4OpBoundaryProcess.hh"
-#endif
 
 
 #include "SLOG.hh"
@@ -206,28 +194,11 @@ std::string U4Physics::Switches()  // static
 {
     std::stringstream ss ;
     ss << "U4Physics::Switches" << std::endl ;
-#if defined(WITH_CUSTOM4)
-    ss << "WITH_CUSTOM4" << std::endl ;
-#else
-    ss << "NOT:WITH_CUSTOM4" << std::endl ;
-#endif
 #if defined(WITH_PMTSIM)
     ss << "WITH_PMTSIM" << std::endl ;
 #else
     ss << "NOT:WITH_PMTSIM" << std::endl ;
 #endif
-#if defined(WITH_CUSTOM4) && defined(WITH_PMTSIM)
-    ss << "WITH_CUSTOM4_AND_WITH_PMTSIM" << std::endl ;
-#else
-    ss << "NOT:WITH_CUSTOM4_AND_WITH_PMTSIM" << std::endl ;
-#endif
-
-#if defined(WITH_CUSTOM4) && !defined(WITH_PMTSIM)
-    ss << "WITH_CUSTOM4_AND_NOT_WITH_PMTSIM" << std::endl ;
-#else
-    ss << "NOT:WITH_CUSTOM4_AND_NOT_WITH_PMTSIM" << std::endl ;
-#endif
-
 #if defined(DEBUG_TAG)
     ss << "DEBUG_TAG" << std::endl ;
 #else
@@ -370,62 +341,7 @@ void U4Physics::ConstructOp_opticalphoton(G4ProcessManager* pmanager, const G4St
     if(fFastSim)       pmanager->AddDiscreteProcess(fFastSim);
 }
 
-
-
-
-
-
-/**
-U4Physics::CreateBoundaryProcess
----------------------------------
-
-Looks like this needs updating now that it
-is normal to use WITH_CUSTOM4 within junosw+opticks
-without using WITH_PMTSIM
-
-* NB : BOUNDARY CLASS CHANGES HERE MUST PARALLEL THOSE IN U4OpBoundaryProcess.h
-
-  * OTHERWISE GET "UNEXPECTED BoundaryFlag ZERO "
-
-**/
-
 G4VProcess* U4Physics::CreateBoundaryProcess()  // static
 {
-    G4VProcess* proc = nullptr ;
-
-#if defined(WITH_PMTSIM) && defined(WITH_CUSTOM4)
-    const char* path = "$PMTSimParamData_BASE" ;  // directory with PMTSimParamData subfolder
-    const PMTSimParamData* data = PMTAccessor::LoadData(path) ;
-    LOG(LEVEL) << "load path "  << path << " giving PMTSimParamData.data: " << ( data ? "YES" : "NO" ) ;
-    //LOG_IF(LEVEL, data != nullptr ) << *data ;
-
-    const PMTAccessor* pmt = PMTAccessor::Create(data) ;
-    const C4IPMTAccessor* ipmt = pmt ;
-    proc = new C4OpBoundaryProcess(ipmt);
-
-    LOG(LEVEL) << "create C4OpBoundaryProcess :  WITH_CUSTOM4 WITH_PMTSIM " ;
-
-#elif defined(WITH_CUSTOM4)
-    const char* jpmt = spath::Resolve("$CFBaseFromGEOM/CSGFoundry/SSim/extra/jpmt");
-    const SPMTAccessor* pmt = SPMTAccessor::Load(jpmt) ;
-    const char* geom = ssys::getenvvar("GEOM", "no-GEOM") ;
-    LOG_IF(fatal, pmt == nullptr )
-        << " FAILED TO SPMTAccessor::Load from [" << jpmt << "]"
-        << " GEOM " << ( geom ? geom : "-" )
-        ;
-
-    assert(pmt) ;  // trying to get C4 to work without the PMT info, just assert when really need PMT info
-    const C4IPMTAccessor* ipmt = pmt ;
-    proc = new C4OpBoundaryProcess(ipmt);
-    LOG(LEVEL) << "create C4OpBoundaryProcess :  WITH_CUSTOM4 NOT:WITH_PMTSIM " ;
-
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-    proc = new InstrumentedG4OpBoundaryProcess();
-    LOG(LEVEL) << "create InstrumentedG4OpBoundaryProcess : NOT (WITH_PMTSIM and WITH_CUSTOM4) " ;
-#else
-    proc = new G4OpBoundaryProcess();
-    //LOG(LEVEL) << "create G4OpBoundaryProcess : NOT (WITH_PMTSIM and WITH_CUSTOM4) " ;
-#endif
-    return proc ;
+    return new G4OpBoundaryProcess();
 }
-

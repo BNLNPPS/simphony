@@ -22,8 +22,8 @@
 truncation.py
 ===============
 
-Pseudo duplication of oxrap/cu/generate.cu for easy thinking about truncation, 
-and implementing seqhis steered propagations.
+Pseudo propagation model for easy thinking about truncation and implementing
+seqhis steered propagations.
 
 record_max
      has a hard limit at 16, from 4bits*16 = 64 bits  
@@ -174,10 +174,6 @@ def generate():
     RSAVE("after", slot, slot_offset, bounce)
     pass
 
-
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     generate()
-

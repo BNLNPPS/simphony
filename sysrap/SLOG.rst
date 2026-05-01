@@ -161,8 +161,6 @@ The tags for each project are listed below.
               oglrap                         OGLRAP 
              cudarap                        CUDARAP 
            thrustrap                          THRAP 
-            optixrap                          OXRAP 
-           opticksop                           OKOP 
            opticksgl                           OKGL 
                   ok                             OK 
                 cfg4                           CFG4 
@@ -232,5 +230,4 @@ Can do that by changing the typedef in SLOG_INIT.hh::
      35 
 
 Unfortunately that forces full recompile of everything 
-
 

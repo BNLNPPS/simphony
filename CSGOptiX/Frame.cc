@@ -31,10 +31,10 @@ Frame::Frame
 Instanciated by:
 
 1. CSGOptiX::CSGOptiX with null device pointer args
-2. Six::Six with device pointers fed in 
+2. callers that provide externally managed CUDA buffers
 
-Accepting device buffer pointer arguments was done to allow this 
-class to be used with OptiX 6 workflow optix::Buffer
+Accepting device buffer pointer arguments allows the frame to write into
+external render targets.
 
 HMM: could use QEvt to hold the pixel, isect, photon ?
 **/
@@ -204,5 +204,3 @@ void Frame::snap( const char* path )
 
     LOG(LEVEL) << "]" ; 
 }
-
-

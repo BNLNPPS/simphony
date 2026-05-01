@@ -21,7 +21,6 @@ set(TEST_SOURCES
    SMapTest.cc
    SCountTest.cc
    SSeqTest.cc
-   SBase36Test.cc
    SSortKVTest.cc
    SPairVecTest.cc
    SDigestTest.cc
@@ -49,7 +48,6 @@ set(TEST_SOURCES
    OpticksCSGTest.cc
    hash_define_without_value.cc
    SDirectTest.cc 
-   S_freopen_redirect_test.cc
    S_get_option_Test.cc
 
    SIdTest.cc
@@ -124,7 +122,6 @@ set(TEST_SOURCES
 
    ssys_test.cc
    srng_test.cc
-   sbuild_test.cc
 
    SCurandStateMonolithicTest.cc
 
