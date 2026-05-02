@@ -12,6 +12,11 @@
       "ghcr.io/bnlnpps/eic-opticks:base"
     ]
   },
+  "features": {
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+      "packages": "clang-format-20,clangd-20,clang-tidy-20"
+    }
+  },
   "remoteEnv": {
     "CODEX_HOME": "${containerWorkspaceFolder}/.codex"
   },
