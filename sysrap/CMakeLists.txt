@@ -9,11 +9,6 @@ find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-set(Custom4_VERBOSE ON) 
-find_package(Custom4 CONFIG)
-
-message(STATUS "${name} Custom4_FOUND:${Custom4_FOUND}  " )
-
 set(WITH_SLOG YES)
 
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
@@ -55,7 +50,6 @@ set(SOURCES
 
     STimes.cc
     SLogger.cc
-    SBase36.cc
     SSortKV.cc
     SPairVec.cc
     md5.cc
@@ -72,7 +66,6 @@ set(SOURCES
     SEnabled.cc
     SRand.cc
 
-    SMockViz.cc
     SRngSpec.cc
 
     CheckGeo.cc
@@ -116,13 +109,6 @@ set(SOURCES
 
     SFastSim_Debug.cc
     SFastSimOpticalModel.cc
-
-    SOpBoundaryProcess.cc
-) 
-    
-
-set(CURANDLITE_HEADERS
-    curandlite/curandStatePhilox4_32_10_OpticksLite.h
 ) 
 
 
@@ -131,8 +117,6 @@ set(HEADERS
 
     SYSRAP_LOG.hh
     SYSRAP_API_EXPORT.hh
-    SYSRAP_HEAD.hh
-    SYSRAP_TAIL.hh
     SLOG.hh
     slog.h 
 
@@ -254,7 +238,6 @@ set(HEADERS
 
     STimes.hh
     SLogger.hh
-    SBase36.hh
     SSortKV.hh
     SPairVec.hh
     OpticksCSG.h
@@ -262,7 +245,6 @@ set(HEADERS
     SAr.hh
     SArr.hh
     SArgs.hh
-    S_freopen_redirect.hh
     S_get_option.hh
 
     STime.hh
@@ -282,14 +264,12 @@ set(HEADERS
     SEnabled.hh
     SRand.hh
 
-    SMockViz.hh
     SRngSpec.hh
 
     CheckGeo.hh
     SLabelCache.hh
 
     SRng.hh
-    SBuf.hh
 
     SName.h 
     SLabel.h 
@@ -299,7 +279,6 @@ set(HEADERS
     tcomplex.h
 
     srng.h
-    sbuild.h
     srngcpu.h
     scurand.h  
 
@@ -325,7 +304,6 @@ set(HEADERS
     sframe.h
     sfr.h
     SCE.h 
-    SCSGOptiX.h 
 
     SPMT.h 
     SPMTAccessor.h 
@@ -476,7 +454,6 @@ set(HEADERS
  
 
     SU.hh
-    SComponent_OLD.hh 
     SComp.h 
 
     SEventConfig.hh
@@ -494,13 +471,10 @@ set(HEADERS
     SSim.hh
     SPropMockup.h
 
-    S4Material.h
     S4MaterialPropertyVector.h
 
     SNameOrder.h
     S4.h 
-    S4Surface.h 
-    S4TreeBorder.h
 
     S4RandomMonitor.h
     S4RandomArray.h
@@ -509,17 +483,13 @@ set(HEADERS
     SFastSim_Debug.hh
     SFastSimOpticalModel.hh
     STrackInfo.h
-    SVolume.h
     SPhoton_Debug.h
     SUniformRand.h
 
     sgeomdefs.h 
     sfmt.h
     ssolid.h
-    SIntersect.h
     SSimtrace.h
-
-    SOpBoundaryProcess.hh
 )
 
 # using absolute ANADIR avoids build environment requiring it in PATH 
@@ -661,7 +631,7 @@ PLOG_LOCAL
    integration with packages (like junosw) that do not hide 
    symbols by default  
 
-RNG_XORWOW/RNG_PHILOX/RNG_PHILITEOX
+RNG_XORWOW/RNG_PHILOX
    Use one of these to pick the curandState implementation, in srng.h
    picking RNG_XORWOW requires curandState files which slows
    down initialization greatly when simulating many millions 
@@ -669,11 +639,6 @@ RNG_XORWOW/RNG_PHILOX/RNG_PHILITEOX
 
 #]=]
 
-
-if(Custom4_FOUND)
-   target_compile_definitions( ${name} PUBLIC WITH_CUSTOM4 )
-   target_include_directories( ${name} PUBLIC ${Custom4_INCLUDE_DIR})
-endif()
 
 target_compile_definitions( ${name}
     PUBLIC
@@ -705,7 +670,6 @@ target_compile_definitions( ${name} PUBLIC WITH_SLOG)
 endif()
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
-install(FILES ${CURANDLITE_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/curandlite)
 
 install(TARGETS ${name}
         EXPORT ${PROJECT_NAME}Targets

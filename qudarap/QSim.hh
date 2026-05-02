@@ -38,6 +38,7 @@ struct QBase ;
 struct QEvt ;
 struct QRng ;
 struct QScint ;
+struct QWls;
 struct QCerenkov ;
 struct QBnd ;
 struct QMultiFilm;
@@ -74,6 +75,7 @@ struct QUDARAP_API QSim
 
     const QRng*      rng ;
     const QScint*    scint ;
+    const QWls *qwls;
     const QCerenkov* cerenkov ;
     const QBnd*      bnd ;
     const QOptical*  optical ;
@@ -98,6 +100,7 @@ struct QUDARAP_API QSim
 private:
     QSim();
     void init();
+    void requireScint(const char *caller) const;
 
     static constexpr const char* _QSim__REQUIRE_PMT = "QSim__REQUIRE_PMT" ;
     static const bool   REQUIRE_PMT;
@@ -141,7 +144,7 @@ public:
     std::string desc() const ;
     std::string descFull() const ;
     std::string descComponents() const ;
-
+    bool hasScint() const;
 
     // TODO: relocate non-essential methods into tests or elsewhere
 
@@ -212,5 +215,4 @@ public:
     static std::string Desc(char delim='\n');
     static std::string Switches();
 };
-
 

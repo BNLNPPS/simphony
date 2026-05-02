@@ -351,18 +351,5 @@ std::string U4StepPoint::Desc(const G4StepPoint* point)
     return s ;
 }
 
-#if defined(WITH_CUSTOM4)
-template unsigned U4StepPoint::Flag<C4OpBoundaryProcess>(const G4StepPoint*, bool, bool& );
-template std::string U4StepPoint::Desc<C4OpBoundaryProcess>(const G4StepPoint* point);
-#elif defined(WITH_PMTSIM)
-template unsigned U4StepPoint::Flag<CustomG4OpBoundaryProcess>(const G4StepPoint*, bool, bool& );
-template std::string U4StepPoint::Desc<CustomG4OpBoundaryProcess>(const G4StepPoint* point);
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-template unsigned U4StepPoint::Flag<InstrumentedG4OpBoundaryProcess>(const G4StepPoint*, bool, bool& );
-template std::string U4StepPoint::Desc<InstrumentedG4OpBoundaryProcess>(const G4StepPoint* point);
-#else
 template unsigned U4StepPoint::Flag<G4OpBoundaryProcess>(const G4StepPoint*, bool, bool& );
 template std::string U4StepPoint::Desc<G4OpBoundaryProcess>(const G4StepPoint* point);
-#endif
-
-

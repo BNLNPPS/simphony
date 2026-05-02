@@ -51,10 +51,10 @@ orthogonal unit vectors.::
 
                 |  u.x * u.z / up   -u.y / up    u.x  |        
         d  =    |  u.y * u.z / up   +u.x / up    u.y  |      p
-                |   -up               0.         u.z  |      
-    
-Taking dot products between and within columns shows that to 
-be the case for normalized u. See oxrap/rotateUz.h for the algebra. 
+                |   -up               0.         u.z  |
+
+Taking dot products between and within columns shows that to be the case for
+normalized u.
 
 Special cases:
 
@@ -89,6 +89,5 @@ inline QUTIL_METHOD void qutil::rotateUz(float3& d, const float3& u )
         d.z = -d.z; 
     }      
 }
-
 
 

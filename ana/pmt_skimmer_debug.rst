@@ -40,8 +40,6 @@ to set he groupvel property to the phase velocity.
 
 Fixed Opticks TIR bug::
 
-    optixrap-/propagate.h
-
 
     241 __device__ void propagate_at_boundary_geant4_style( Photon& p, State& s, curandState &rng)
     242 {
@@ -87,8 +85,3 @@ After fix  (with the GROUPVEL phase velocity kludge in CPropLib) and fixpol over
      ( 28) om:                    Pyrex os:                          is:                          im:                   Vacuum
      ...
      (122) om:                     Rock os:                          is:                          im:                  RadRock
-
-
-
-
-

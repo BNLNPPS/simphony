@@ -15,11 +15,7 @@ cd $(dirname $(realpath $BASH_SOURCE))
 name=sdigest_test 
 bin=/tmp/$name
 
-opt="-Wdeprecated-declarations"
-case $(uname) in 
-  Darwin) opt="" ;;
-   Linux) opt="-lssl -lcrypto " ;;
-esac
+opt="-lssl -lcrypto "
 
 
 defarg=info_build_run

@@ -19,7 +19,7 @@ Usage:
     cd ~/opticks/CSG   # c 
     ./CSGMakerTest.sh 
 
-3. run the render, this works with OptiX 7 (needs manual b7 build) and also by virtue of CSGOptiX/Six.cc with OptiX 5 or 6:: 
+3. run the render with the OptiX 7+ backend::
  
     cd ~/opticks/CSGOptiX    # cx
 
@@ -124,7 +124,7 @@ source $PWD/../bin/GEOM.sh trim   ## sets GEOM envvar
 if [ "$(uname)" == "Linux" ]; then
     cfname=GeoChain/$GEOM            
 else
-    cfname=GeoChain_Darwin/$GEOM            
+    cfname=GeoChain/$GEOM            
 fi
 
 
@@ -173,4 +173,3 @@ echo $msg invoke ./cxr.sh
 ./cxr.sh 
 
 exit 0
-

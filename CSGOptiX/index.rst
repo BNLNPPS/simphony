@@ -9,8 +9,8 @@ TODO
 * cxs paths need to keep the digest at pub stage 
 
 
-3D render scripts (most using the OptiX 7 CSG,CSGOptiX machinery, a few using pre7 OpSnapTest,OptiXRap) 
---------------------------------------------------------------------------------------------------------
+3D render scripts using the OptiX 7+ CSG/CSGOptiX machinery
+-----------------------------------------------------------
 
 cxr.sh
     script that runs the CSGOptiXRenderTest executable
@@ -101,27 +101,7 @@ cxr_flight.sh
 
     TODO: this is setting CFBASE, that is no longer the way to pick standard geometry 
 
-../bin/flight.sh 
-
-   PRE 7 RENDERING  
-
-   flight-render-jpg  
-       uses single OpFlightPathTest executable invokation with --flightconfig option 
-       to create potentially many .jpg snaps into --flightoutdir
-
-   flight-make-mp4
-       uses ffmpeg to create .mp4 from the .jpg 
-
-    
-../docs/misc/making_flightpath_raytrace_movies.rst
-
-    PRE 7 NOTES 
-
-    OpSnapTest --savegparts   
-
-    using python machinery to inspect geometry : 
-
-    TODO: update with instructions for 7 
+Flight path rendering should use the CSGOptiX render scripts.
 
 
 
@@ -171,7 +151,7 @@ cxs.sh [run/ana/]
          (default mode on Linux) 
          invokes CSGOptiXSimulateTest executable
     *ana* 
-         (default mode on Darwin, does not work remotely due to matplotlib/pyvista graphics)
+         (local analysis mode, does not work remotely due to matplotlib/pyvista graphics)
          invokes tests/CSGOptiXSimulateTest.py script
          which uses matplotlib and/or pyvista to create mostly 2D geometry
          plots of the positions of intersects onto geometry    
@@ -184,7 +164,7 @@ cxs_grab.sh
     rsyncs from OPTICKS_KEYDIR_GRABBED/CSG_GGeo into local geocache dirs
 
 cxsd.sh
-    runs cxs.sh with GDB envvar defined to switch on lldb OR gdb debugger
+    runs cxs.sh with GDB envvar defined to switch on gdb
 
 cxs_pub.sh
     pub.py promotes from the below SRC_BASE into presentation repo::
@@ -214,47 +194,11 @@ sync.sh
 
 cf.sh
     find commands for manually comparison of renders  
-     
-
-
-
-
-Census
--------
-
-=====================  ====================  =================   ============================
- commandline             A:Darwin/OptiX 5      B:Linux/OptiX 6    C:Linux/OptiX 7
-=====================  ====================  =================   ============================
-CSGOptiXRender            fail 1               fail 2 OR hang      OK : long view, no detail
-CSGOptiXSimulate                                                   OK 
-./cxr_overview.sh         OK                   fail 1              OK 
-./cxr_view.sh             fail 1               hang                OK : PMTs, no struts 
-./cxr_solid.sh            fail 1               hang                OK 
-./cxr.sh 
-=====================  ====================  =================   ============================
-
-
-A
-   build: cx ; om 
-B
-   build: cx ; om 
-   rsync: cx ; ./grab.sh 
-C
-   build: cx ; ./build7.sh 
-   rsync: cx ; ./grab.sh 
-
-
-
-
-
-
-
 
 CSGOptiXSimulate
 -----------------
 
 * requires OPTICKS_KEYDIR envvar (+OPTICKS_KEY?) pointing to a recent geocache with LS_ori material 
-
 
 scratch workflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,38 +209,8 @@ CSGOptiX::prepareSimulateParam
 2. create seeds from the gensteps (QSeed)
 3. set gensteps, seeds, photons refs in Params 
 
-
-4. optix7 launch 
-5. download photons 
-
-
-
-
-
-
-
-
-Failure Modes
-----------------
-
-1::
-
-    2021-08-20 10:47:27.933 INFO  [1880522] [CSGOptiX::render@287] [
-    2021-08-20 10:47:27.933 INFO  [1880522] [Six::launch@437] [ params.width 1920 params.height 1080
-    libc++abi.dylib: terminating with uncaught exception of type optix::Exception: Unknown error (Details: Function "RTresult _rtContextLaunch2D(RTcontext, unsigned int, RTsize, RTsize)" caught exception: Encountered a CUDA error: cudaDriver().CuMemcpyDtoHAsync( dstHost, srcDevice, byteCount, hStream.get() ) returned (700): Illegal address)
-    Abort trap: 6
-    epsilon:CSGOptiX blyth$ 
-
-
-2::
-
-    2021-08-20 19:21:37.525 INFO  [269834] [Six::createContextBuffer@99] node_buffer 0x7f7445a26c00
-    terminate called after throwing an instance of 'optix::Exception'
-      what():  Invalid value (Details: Function "RTresult _rtBufferSetDevicePointer(RTbuffer, int, void*)" caught exception: Setting buffer device pointers for devices on which OptiX isn't being run is disallowed.)
-    Aborted (core dumped)
-
-
-
+4. OptiX launch
+5. download photons
 
 code
 -------
@@ -306,9 +220,7 @@ tests/CSGOptiXRender.cc
     one or more renders and saves them to jpg   
 
 CSGOptiX.h
-    top level struct using either OptiX pre-7 OR 7 
-    holds PIP and SBT instances which handle the 
-    OptiX geometry  
+    top level struct holding PIP and SBT instances which handle the OptiX geometry
 
 Params.h
     workhorse for communicating between CPU and GPU 
@@ -363,12 +275,3 @@ InstanceId.h
 
 OPTIX_CHECK.h
     error check macro for optix 7 calls
-
-Six.h
-    optix pre-7 rendering of CSGFoundary geometry
-
-OptiX6Test.cu geo_OptiX6Test.cu
-    compiled into ptx that gets loaded by Six to create OptiX < 7 pipeline
-
-
-

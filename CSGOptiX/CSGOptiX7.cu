@@ -331,8 +331,6 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
 simulate : uses params for input: gensteps, seeds and output photons
 ----------------------------------------------------------------------
 
-Contrast with the monolithic old way with OptiXRap/cu/generate.cu:generate
-
 This method aims to get as much as possible of its functionality from
 separately implemented and tested headers.
 

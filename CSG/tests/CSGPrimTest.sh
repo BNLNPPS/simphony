@@ -15,10 +15,8 @@ gcc -g \
 
 [ $? -ne 0 ] && echo compile error && exit 1
 
-case $(uname) in
-  Darwin) var=DYLD_LIBRARY_PATH debugger=lldb_  ;;
-  Linux)  var=LD_LIBRARY_PATH   debugger=gdb    ;;
-esac
+var=LD_LIBRARY_PATH
+debugger=gdb
 
 cmd="$var=${CUDA_PREFIX}/lib  /tmp/$name $*"
 echo $cmd
@@ -26,4 +24,3 @@ eval $cmd
 [ $? -ne 0 ] && echo run error && exit 2
 
 exit 0 
-

@@ -25,13 +25,11 @@ curand_uniform_test.cc
 #include "sstamp.h"
 
 #include "curand_kernel.h"
-#include "curandlite/curandStatePhilox4_32_10_OpticksLite.h"
 
 
 using RNG0 = curandStateXORWOW ; 
 using RNG1 = curandStateXORWOW ; 
 using RNG2 = curandStatePhilox4_32_10 ; 
-using RNG3 = curandStatePhilox4_32_10_OpticksLite ; 
 
 
 /**
@@ -188,13 +186,13 @@ int main()
     int64_t t2 = sstamp::Now(); 
     std::cout << " t2 - t1 : loadAndUpload [us] " << ( t2 - t1 ) << "\n" ; 
   
-    std::array<KernelInfo,16> kis; 
+    std::array<KernelInfo,12> kis; 
 
 
     for(int m=0 ; m < kis.size() ; m++ )
     {
-        int m4 = m % 4 ; 
-        int g4 = m / 4 ; 
+        int m3 = m % 3;
+        int g3 = m / 3;
 
         KernelInfo& ki = kis[m] ; 
         ConfigureLaunch(ki.numBlocks, ki.threadsPerBlock, NI ); 
@@ -204,22 +202,20 @@ int main()
         ki.dt0 = t2 - t1 ; 
         ki.ni = NI ; 
         ki.nj = NJ ; 
-        ki.states = m4 == 1 ? d0 : nullptr ; 
-        //ki.download = g4 == 1 ? true : false ;  
+          ki.states = m3 == 1 ? d0 : nullptr ; 
         ki.download = false ;  
         ki.dd = dd ; 
-        ki.four_by_four = g4 % 2 == 1 ;  
+        ki.four_by_four = g3 % 2 == 1;
      
        
-        switch(m4)
+        switch (m3)
         {
            case 0: test_curand_uniform<RNG0>(ki); ki.name = srng<RNG0>::NAME ; break ; 
            case 1: test_curand_uniform<RNG1>(ki); ki.name = srng<RNG1>::NAME ; break ; 
            case 2: test_curand_uniform<RNG2>(ki); ki.name = srng<RNG2>::NAME ; break ; 
-           case 3: test_curand_uniform<RNG2>(ki); ki.name = srng<RNG3>::NAME ; break ; 
         }
 
-        if(m4 == 0 ) std::cout << "\n" ;  
+        if (m3 == 0) std::cout << "\n";
         std::cout << ki.desc() << "\n" ;
 
         if(ki.download)
@@ -234,5 +230,3 @@ int main()
 
     return 0 ; 
 }
-
-

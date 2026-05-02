@@ -71,23 +71,13 @@ for v in $vv ; do printf "%30s : %s\n" "$v" "${!v}" ; done
 
 get-cmake-prefix(){ echo $CMAKE_PREFIX_PATH | tr ":" "\n" | grep $1 ; }
 
-if [ "$(uname)" == "Darwin" ]; then
-    g4-prefix(){    get-cmake-prefix g4 ; }
-    g4-libdir(){    echo $(g4-prefix)/lib ; }
-    clhep-prefix(){ get-cmake-prefix clhep ; }
-else
-    g4-prefix(){    get-cmake-prefix Geant4 ; }
-    g4-libdir(){    echo $(g4-prefix)/lib64 ; }
-    clhep-prefix(){ get-cmake-prefix CLHEP ; }
-fi
+g4-prefix(){    get-cmake-prefix Geant4 ; }
+g4-libdir(){    echo $(g4-prefix)/lib64 ; }
+clhep-prefix(){ get-cmake-prefix CLHEP ; }
 
 CLHEP_PREFIX=$(clhep-prefix)
 G4_PREFIX=$(g4-prefix)
 G4_LIBDIR=$(g4-libdir)
-
-if [ "$(uname)" == "Darwin" ]; then
-    export DYLD_LIBRARY_PATH=$CLHEP_PREFIX/lib:$G4_LIBDIR
-fi
 
 
 allsolid="Orb Box Tet Tubs Cons Torus"
@@ -148,4 +138,3 @@ fi
 
 
 exit 0
-

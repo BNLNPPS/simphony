@@ -43,15 +43,10 @@ else
     bin=CSGPrimTest 
 
     if [ -n "$DEBUG" ]; then 
-       if [ "$(uname)" == "Darwin" ]; then
-           lldb__ $bin
-       else
-           gdb $bin
-       fi
+       gdb $bin
     else
        $bin
     fi 
 fi
-
 
 

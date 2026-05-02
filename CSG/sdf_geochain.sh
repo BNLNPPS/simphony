@@ -71,11 +71,7 @@ geom=AltXJfixtureConstruction
 catgeom=$(cat ~/.opticks/GEOM.txt 2>/dev/null | grep -v \#) && [ -n "$catgeom" ] && echo $msg catgeom $catgeom override of default geom $geom && geom=$(echo ${catgeom%%_*})
 export GEOM=${GEOM:-$geom}
 
-if [ "$(uname)" == "Linux" ]; then
-    cfname=GeoChain/$GEOM    
-else
-    cfname=GeoChain_Darwin/$GEOM    
-fi
+cfname=GeoChain/$GEOM    
 
 moi=ALL
 
@@ -102,8 +98,8 @@ which $bin
 
 
 
-if [ -n "$DBG" -a "$(uname)" == "Darwin" ]; then
-   lldb__ $bin
+if [ -n "$DBG" ]; then
+   gdb__ $bin
 else
    $bin
 fi
@@ -114,5 +110,4 @@ ${IPYTHON:-ipython} -i tests/CSGSignedDistanceFieldTest.py
 [ $? -ne 0 ] && echo $msg ana error && exit 2
 
 exit 0
-
 

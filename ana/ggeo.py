@@ -136,14 +136,10 @@ Using suppression of some prolific names can dump all interesting names at once:
     epsilon:ana blyth$ 
 
 
-
-
-
-
 A convenient visualization workflow is to use the above python triple indexing to find PV names to target, eg::
 
-    OTracerTest --targetpvn lFasteners_phys   ## do not include the 0x reference in the targetted name, as it will differ between machines/invokations 
-    OTracerTest --target    69078             ## using raw indices is NOT advisable as they go stale very quickly with changed geometry
+    CSGOptiXRenderTest --targetpvn lFasteners_phys   ## do not include the 0x reference in the targetted name, as it will differ between machines/invokations
+    CSGOptiXRenderTest --target    69078             ## using raw indices is NOT advisable as they go stale very quickly with changed geometry
 
 Volume idsmry dumping::
 
