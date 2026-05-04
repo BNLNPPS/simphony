@@ -12,6 +12,9 @@
       "ghcr.io/bnlnpps/eic-opticks:base"
     ]
   },
+  "features": {
+    "./features/llvm": {}
+  },
   "remoteEnv": {
     "CODEX_HOME": "${containerWorkspaceFolder}/.codex"
   },
