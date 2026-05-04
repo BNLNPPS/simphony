@@ -17,9 +17,14 @@ install -d -m 0755 /etc/apt/keyrings
 
 wget -qO /etc/apt/keyrings/apt.llvm.org.asc https://apt.llvm.org/llvm-snapshot.gpg.key
 
-# Use the generic apt.llvm.org suite.
+if [ "${LLVM_REQUESTED_VERSION}" = "latest" ] || [ -z "${LLVM_REQUESTED_VERSION}" ]; then
+    LLVM_APT_SUITE="llvm-toolchain-${VERSION_CODENAME}"
+else
+    LLVM_APT_SUITE="llvm-toolchain-${VERSION_CODENAME}-${LLVM_REQUESTED_VERSION}"
+fi
+
 cat > /etc/apt/sources.list.d/llvm.list <<EOF
-deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] https://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME} main
+deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] https://apt.llvm.org/${VERSION_CODENAME}/ ${LLVM_APT_SUITE} main
 EOF
 
 apt-get update -y
