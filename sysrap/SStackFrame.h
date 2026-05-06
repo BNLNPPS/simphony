@@ -82,50 +82,6 @@ inline char* SStackFrame::TrimArgs(const char* signature)
 }
 
 
-#ifdef __APPLE__
-inline void SStackFrame::parse()
-{
-    /**
-    4   libG4processes.dylib                0x00000001090baee5 _ZN12G4VEmProcess36PostStepGetPhysicalInteractionLengthERK7G4TrackdP16G4ForceCondition + 661 
-    **/ 
-    for( char *p = line ; *p ; ++p )
-    {   
-        if (( *p == '_' ) && ( *(p-1) == ' ' )) name = p-1;  // starting from first underscore after space 
-        else if ( *p == '+' ) offset = p-1;
-    }   
-
-    if( name && offset && ( name < offset ))
-    {   
-        *name++ = '\0';    // plant terminator into line
-        *offset++ = '\0';  // plant terminator into name  
-        func = demangle(); 
-    }  
-
-}
-
-
-inline void SStackFrame::dump(std::ostream& out)
-{
-     if( func )
-     {
-         out 
-             << std::setw(30) << std::left << line  
-             << " "
-             << std::setw(100) << std::left << func
-             << " "
-             << std::setw(10) << std::left << offset 
-             << " " 
-             << std::endl 
-             ;
-     }
-     else
-     {
-         out << line << std::endl ; 
-
-     }
-}
-
-#else
 inline void SStackFrame::parse()
 {
     /**
@@ -164,7 +120,6 @@ inline void SStackFrame::dump(std::ostream& out)
 
      }
 }
-#endif
 
 inline char* SStackFrame::demangle() // demangling fails for non C++ symbols
 {
@@ -172,5 +127,4 @@ inline char* SStackFrame::demangle() // demangling fails for non C++ symbols
     char* ret = abi::__cxa_demangle( name, NULL, NULL, &status );
     return status == 0 ? ret : NULL ; 
 }
-
 

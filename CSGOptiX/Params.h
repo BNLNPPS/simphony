@@ -38,11 +38,7 @@ struct Params
     qat4*      tran ;
     qat4*      itra ;
 
-#if OPTIX_VERSION < 70000
-    void*                   handle ;
-#else
     OptixTraversableHandle  handle ;
-#endif
 
     // frame rendering
     uchar4*    pixels ;
@@ -120,4 +116,3 @@ struct Params
 #endif
 
 };
-

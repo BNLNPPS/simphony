@@ -40,6 +40,8 @@ Survey usage, mostly ExecutableName::
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <limits.h>
+#include <unistd.h>
 
 
 
@@ -82,49 +84,6 @@ inline int32_t sproc::parseLine(char* line){
 }
 
 
-#ifdef _MSC_VER
-inline void sproc::Query(int32_t& virtual_size_kb, int32_t& resident_size_kb )
-{
-    virtual_size_kb = 0 ; 
-    resident_size_kb = 0 ; 
-}
-#elif defined(__APPLE__)
-
-#include<mach/mach.h>
-
-/**
-https://developer.apple.com/forums/thread/105088
-**/
-
-inline int sproc::Query(int32_t& virtual_size_kb, int32_t& resident_size_kb )
-{
-    struct mach_task_basic_info info;
-    mach_msg_type_number_t size = MACH_TASK_BASIC_INFO_COUNT;
-    kern_return_t kerr = task_info(mach_task_self(),
-                                   MACH_TASK_BASIC_INFO,
-                                   (task_info_t)&info,
-                                   &size);
-
-    int rc = 0 ; 
-    if( kerr == KERN_SUCCESS ) 
-    {
-        vm_size_t virtual_ = info.virtual_size  ;  
-        vm_size_t resident_ = info.resident_size  ;  
-
-        virtual_size_kb = int32_t(virtual_/K)  ;   // narrowing 
-        resident_size_kb = int32_t(resident_/K) ;  // narrowing 
-    }
-    else
-    {
-        rc = 1 ; 
-        std::cerr  << mach_error_string(kerr) << std::endl   ; 
-    }
-    return rc ; 
-}
-
-
-#else
-    
 // https://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
 
 inline int sproc::Query(int32_t& virtual_size, int32_t& resident_size )
@@ -146,9 +105,6 @@ inline int sproc::Query(int32_t& virtual_size, int32_t& resident_size )
     fclose(file);
     return found == 2 ? 0 : 1 ; 
 }
-
-
-#endif
 
 
 
@@ -190,42 +146,10 @@ inline float sproc::ResidentSetSizeMB()
 sproc::ExecutablePath
 -----------------------
 
-* https://stackoverflow.com/questions/799679/programmatically-retrieving-the-absolute-path-of-an-os-x-command-line-app/1024933#1024933
+ * Linux `/proc/self/exe` implementation.
 
 **/
 
-
-#ifdef _MSC_VER
-inline char* sproc::ExecutablePath(bool basename)
-{
-    return nullptr ; 
-}
-#elif defined(__APPLE__)
-
-#include <mach-o/dyld.h>
-
-inline char* sproc::ExecutablePath(bool basename)
-{
-    char buf[PATH_MAX];
-    uint32_t size = sizeof(buf);
-    bool ok = _NSGetExecutablePath(buf, &size) == 0 ; 
-
-    if(!ok) std::cerr 
-        << "_NSGetExecutablePath FAIL " 
-        << " size " << size 
-        << " buf " << buf 
-        << std::endl
-        ;
-
-    assert(ok); 
-    char* s = basename ? strrchr(buf, '/') : NULL ;  
-    return s ? strdup(s+1) : strdup(buf) ; 
-}
-#else
-
-
-#include <unistd.h>
-#include <limits.h>
 
 inline char* sproc::ExecutablePath(bool basename)
 {
@@ -236,8 +160,6 @@ inline char* sproc::ExecutablePath(bool basename)
     char* s = basename ? strrchr(buf, '/') : NULL ;  
     return s ? strdup(s+1) : strdup(buf) ; 
 }
-
-#endif
 
 
 inline char* sproc::_ExecutableName()
@@ -270,5 +192,4 @@ inline char* sproc::ExecutableName()
     char* exe = ( is_python && script ) ? script : exe0 ; 
     return exe ; 
 }
-
 

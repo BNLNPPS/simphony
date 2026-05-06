@@ -73,8 +73,6 @@ struct SIMG
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
-#elif defined(_MSC_VER)
-
 #endif
 
 
@@ -92,8 +90,6 @@ struct SIMG
 #elif defined(__GNUC__) || defined(__GNUG__)
 
 #pragma GCC diagnostic pop
-
-#elif defined(_MSC_VER)
 #endif
 
 
@@ -340,6 +336,5 @@ inline void SIMG::annotate( const char* bottom_line, const char* top_line, int l
     if( bottom_line )
         ttf->annotate( data, int(channels), int(width), int(height), line_height, bottom_line, true );  
 }
-
 
 

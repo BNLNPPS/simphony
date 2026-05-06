@@ -51,7 +51,7 @@ echo $msg ext $ext
 echo $msg pub $pub
 echo $msg s5p $s5p 1280px_720px 
 
-if [ -n "$img" -a "$(uname)" == "Darwin" -a -n "$PUB" ]; then 
+if [ -n "$img" -a -n "$PUB" ]; then 
     mkdir -p $(dirname $pub)
     if [ -f "$pub" ]; then 
         echo $msg published path exists already : NOT COPYING : set PUB to an ext string to distinguish the name or more permanently arrange for a different path   
@@ -63,5 +63,4 @@ if [ -n "$img" -a "$(uname)" == "Darwin" -a -n "$PUB" ]; then
         echo $msg add s5p to s5_background_image.txt
     fi
 fi
-
 

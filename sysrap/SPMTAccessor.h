@@ -4,7 +4,7 @@ SPMTAccessor.h
 ===============
 
 Provides access to JUNO PMT data during standalone
-optical only testing WITH_CUSTOM4 and without j/PMTSim.
+optical-only testing without j/PMTSim.
 For example::
 
    ~/opticks/g4cx/tests/G4CXTest_GEOM.sh
@@ -24,12 +24,7 @@ in qpmt.h
 #include "sstr.h"
 #include "SPMT.h"
 
-#ifdef WITH_CUSTOM4
-#include "C4IPMTAccessor.h"
-struct SPMTAccessor : public C4IPMTAccessor
-#else
 struct SPMTAccessor
-#endif
 {
     static constexpr const char* TYPENAME = "SPMTAccessor" ;
     static SPMTAccessor* Load(const char* path);
@@ -37,14 +32,14 @@ struct SPMTAccessor
     const SPMT* pmt ;
     bool VERBOSE ;
 
-    //[C4IPMTAccessor protocol methods
+    // Accessor protocol methods
     int         get_num_lpmt() const ;
     double      get_qescale( int pmtid ) const ;
     int         get_pmtcat( int pmtid ) const ;
     double      get_pmtid_qe( int pmtid, double energy_MeV ) const ;
     void        get_stackspec( std::array<double, 16>& ss, int pmtcat, double energy_eV ) const ;
     const char* get_typename() const ;
-    //]
+    //
 
     static std::string Desc(std::array<double, 16>& ss );
 };
@@ -97,9 +92,8 @@ inline int SPMTAccessor::get_pmtcat( int pmtid ) const
 SPMTAccessor::get_pmtid_qe
 ----------------------------
 
-From C4CustomART::doIt it is apparent that PMTAccessor which
-SPMTAccessor aims to stand in for in standalone running
-without j/PMTSim is inconsistent in its energy units.
+PMTAccessor, which SPMTAccessor stands in for during standalone
+running without j/PMTSim, is inconsistent in its energy units.
 
 +----------------------------+-------------+
 |  Method                    | energy unit |
@@ -173,7 +167,6 @@ inline const char* SPMTAccessor::get_typename() const
 {
     return TYPENAME ;
 }
-
 
 
 

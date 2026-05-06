@@ -910,11 +910,7 @@ inline bool ssys::is_remote_session()
 
 inline const char* ssys::username()
 {
-#ifdef _MSC_VER
-    const char* user = ssys::getenvvar("USERNAME", "no-USERNAME") ;
-#else
     const char* user = ssys::getenvvar("USER", "no-USER" ) ;
-#endif
     return user ? user : "ssys-username-undefined" ;
 }
 
@@ -1137,12 +1133,6 @@ inline std::string ssys::Desc()  // static
        << "NOT:WITH_CHILD"
 #endif
        << std::endl
-#ifdef WITH_CUSTOM4
-       << "WITH_CUSTOM4"
-#else
-       << "NOT:WITH_CUSTOM4"
-#endif
-       << std::endl
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else
@@ -1171,18 +1161,12 @@ inline std::string ssys::PWD()  // static
     return getenvvar("PWD");    // note no newline
 }
 
-
-#ifdef _MSC_VER
-#else
 #include <unistd.h>
 extern char **environ;
-#endif
 
 
 inline void ssys::getenv_with_prefix(std::vector<std::pair<std::string,std::string>>& kvs, const char* prefix)
 {
-#ifdef _MSC_VER
-#else
     int i=0 ;
     char delim='=' ;
     while(environ[i])
@@ -1197,7 +1181,5 @@ inline void ssys::getenv_with_prefix(std::vector<std::pair<std::string,std::stri
         if(!match_prefix) continue ;
         kvs.push_back( std::pair<std::string,std::string>( k, v ) );
     }
-#endif
 }
-
 

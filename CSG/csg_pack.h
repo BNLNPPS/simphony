@@ -23,8 +23,6 @@
 pack.h
 ========
 
-* * https://bitbucket.org/simoncblyth/opticks/src/master/optixrap/cu/pack.h
-
 .. contents:: Table of Contents
    :depth: 2
 
@@ -61,5 +59,4 @@ Returns 8 bit constituent from the packed 32 bits.
 #define UNPACK4_1( packed ) (  ((packed) >>  8) & 0xff )
 #define UNPACK4_2( packed ) (  ((packed) >> 16) & 0xff )
 #define UNPACK4_3( packed ) (  ((packed) >> 24) & 0xff )
-
 

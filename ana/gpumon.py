@@ -54,12 +54,9 @@ class NGPU(object):
     def index(self, loc):
         return self.d.keys().index(loc) if self.d.has_key(loc) else -1 
 
-
-
 if __name__ == '__main__':
 
-     #a_name = "OKTest"
-     a_name = "OTracerTest"
+     a_name = "CSGOptiXRenderTest"
      b_name = "OKX4Test"
  
      a_path = sys.argv[1] if len(sys.argv) > 1 else "$TMP/%s_GPUMon.npy" % a_name
@@ -78,7 +75,3 @@ if __name__ == '__main__':
      for loc in sorted(locs, key=lambda loc:max(a.index(loc), b.index(loc))):
          print fmt % ( loc, a.brief(loc),  b.brief(loc) ) 
      pass
-
-
-
-

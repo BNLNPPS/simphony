@@ -121,10 +121,7 @@ class Part(object):
         methods of dd.py:Primitive subclasses, 
         currently only Sphere and Tubs.
 
-        Geometry defined here is used in::
-
-            oxrap/cu/intersect_analytic.cu
-            oxrap/cu/intersect_ztubs.h etc..
+        Geometry defined here is used by analytic intersection checks.
          
         """
         self.typ = typ
@@ -249,10 +246,7 @@ class BBox(object):
         assert xyz[X] == xyz[Y] == 0. 
         return "BB %30s %30s z %6.2f" % (str(self.min_), str(self.max_), xyz[Z] )
 
-
-
 if __name__ == '__main__':
 
     bb = BBox([-100,-100,-100],[100,100,100])
     print bb 
-

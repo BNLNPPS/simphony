@@ -4,13 +4,7 @@
 
 #include "QRng.hh"
 #include "SCurandSpec.h"
-
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-#include "SCurandStateMonolithic.hh"
-#else
 #include "SEventConfig.hh"
-#include "SCurandState.h"
-#endif
 
 #include "sdirectory.h"
 #include "ssys.h"
@@ -55,12 +49,8 @@ QRng::QRng(unsigned skipahead_event_offset_)
     parse_rc(SCurandSpec::ParseSeedOffset(seed, offset, SEED_OFFSET )),
     qr(new qrng<RNG>(seed, offset, skipahead_event_offset)), 
     d_qr(nullptr),
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-    rngmax(0)
-#else
     rngmax(SEventConfig::MaxCurand()),
     cs(nullptr)
-#endif
 {
     init(); 
 }
@@ -82,11 +72,7 @@ template<> void QRng::initStates<XORWOW>()
     assert( is_XORWOW ); 
 
     LOG(info) << "initStates<XORWOW> LoadAndUpload and set_uploaded_states " ; 
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-    XORWOW* d_uploaded_states = LoadAndUpload(rngmax, SCurandStateMonolithic::Path()) ;  
-#else
     XORWOW* d_uploaded_states = LoadAndUpload(rngmax, cs); 
-#endif
     qr->set_uploaded_states( d_uploaded_states ); 
 }
 
@@ -138,125 +124,6 @@ QRng::~QRng()
 {
 }
 
-
-
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-
-const char* QRng::Load_FAIL_NOTES = R"(
-QRng::Load_FAIL_NOTES
-=================================
-
-QRng::Load failed to load the RNG files. 
-These files should have been created during the *opticks-full* installation 
-by the bash function *opticks-prepare-installation* 
-which runs *qudarap-prepare-installation*. 
-
-Investigate by looking at the contents of the RNG directory, 
-as shown below::
-
-    epsilon:~ blyth$ ls -l  ~/.opticks/rngcache/RNG/
-    total 892336
-    -rw-r--r--  1 blyth  staff   44000000 Oct  6 19:43 QCurandState_1000000_0_0.bin
-    -rw-r--r--  1 blyth  staff  132000000 Oct  6 19:53 QCurandState_3000000_0_0.bin
-    epsilon:~ blyth$ 
-
-
-)" ;
-
-#else
-const char* QRng::Load_FAIL_NOTES = R"(
-QRng::Load_FAIL_NOTES
-===============================
-
-TODO : for new chunked impl
-
-)" ;
-
-#endif
-
-
-
-
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-
-/**
-QRng::LoadAndUpload
---------------------
-
-In the old monolithic impl rngmax is an output argument obtained from file_size/item_size 
-and at the same time kinda an input to specify which file to load. 
-
-In the new chunked impl with partial chunk loading the rngmax is an input value
-that can be set to anything. 
-
-**/
-
-XORWOW* QRng::LoadAndUpload(ULL& rngmax, const char* path)  // static 
-{
-    XORWOW* h_states = Load(rngmax, path); 
-    XORWOW* d_states = UploadAndFree(h_states, rngmax ); 
-    return d_states ; 
-}
-
-XORWOW* QRng::Load(ULL& rngmax, const char* path)  // static 
-{
-    bool null_path = path == nullptr ; 
-    LOG_IF(fatal, null_path ) << " QRng::Load null path " ; 
-    assert( !null_path );  
-
-    FILE *fp = fopen(path,"rb");
-    bool failed = fp == nullptr ; 
-    LOG_IF(fatal, failed ) << " unabled to open file [" << path << "]" ; 
-    LOG_IF(error, failed ) << Load_FAIL_NOTES  ; 
-    assert(!failed); 
-
-
-    fseek(fp, 0L, SEEK_END);
-    long file_size = ftell(fp);
-    rewind(fp);
-
-    long type_size = sizeof(RNG) ;  
-    long item_size = 44 ; 
-
-    rngmax = file_size/item_size ; 
-
-
-    LOG(LEVEL) 
-        << " path " << path 
-        << " file_size " << file_size 
-        << " item_size " << item_size 
-        << " type_size " << type_size 
-        << " rngmax " << rngmax
-        ; 
-
-    assert( file_size % item_size == 0 );  
-
-    XORWOW* rng_states = (XORWOW*)malloc(sizeof(XORWOW)*rngmax);
-
-    for(ULL i = 0 ; i < rngmax ; ++i )
-    {   
-        XORWOW& rng = rng_states[i] ;
-        fread(&rng.d,                     sizeof(unsigned int),1,fp);   //  1
-        fread(&rng.v,                     sizeof(unsigned int),5,fp);   //  5 
-        fread(&rng.boxmuller_flag,        sizeof(int)         ,1,fp);   //  1 
-        fread(&rng.boxmuller_flag_double, sizeof(int)         ,1,fp);   //  1
-        fread(&rng.boxmuller_extra,       sizeof(float)       ,1,fp);   //  1
-        fread(&rng.boxmuller_extra_double,sizeof(double)      ,1,fp);   //  2    11*4 = 44 
-    }   
-    fclose(fp);
-
-    return rng_states ; 
-}
-
-XORWOW* QRng::UploadAndFree(XORWOW* h_states, ULL num_states )  // static 
-{
-    const char* label_0 = "QRng::UploadAndFree/rng_states" ; 
-    XORWOW* d_states = QU::UploadArray<XORWOW>(h_states, num_states, label_0 ) ;   
-    free(h_states); 
-    return d_states ;  
-}
-
-#else
 
 /**
 QRng::LoadAndUpload
@@ -434,8 +301,6 @@ XORWOW* QRng::LoadAndUpload(ULL _rngmax, const SCurandState& cs)  // static
     return complete ? d0 : nullptr ; 
 }
 
-#endif
-
 
 /**
 QRng::Save
@@ -533,5 +398,4 @@ void QRng::generate( T* uu, unsigned ni, unsigned nv, unsigned evid )
 
 template void QRng::generate<float>( float*,   unsigned, unsigned, unsigned ); 
 template void QRng::generate<double>( double*, unsigned, unsigned, unsigned ); 
-
 
