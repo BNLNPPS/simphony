@@ -32,9 +32,11 @@ using namespace std;
 
 struct ActionInitialization : public G4VUserActionInitialization
 {
-    G4App *fG4App;
+    G4App* fG4App;
 
-    ActionInitialization(G4App *app) : G4VUserActionInitialization(), fG4App(app)
+    ActionInitialization(G4App* app) :
+        G4VUserActionInitialization(),
+        fG4App(app)
     {
     }
 
@@ -53,14 +55,14 @@ struct ActionInitialization : public G4VUserActionInitialization
     }
 };
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
     argparse::ArgumentParser program("async_gpu_launch", "0.0.0");
 
     string gdml_file, macro_name;
-    bool interactive;
+    bool   interactive;
 
     program.add_argument("-g", "--gdml")
         .help("path to GDML file")
@@ -91,7 +93,7 @@ int main(int argc, char **argv)
     {
         program.parse_args(argc, argv);
     }
-    catch (const exception &err)
+    catch (const exception& err)
     {
         cerr << err.what() << endl;
         cerr << program;
@@ -112,22 +114,22 @@ int main(int argc, char **argv)
     G4cout << "Mode: " << (enable_async ? "ASYNC" : "SYNC") << G4endl;
 
     // Physics
-    G4VModularPhysicsList *physics = new FTFP_BERT;
+    G4VModularPhysicsList* physics = new FTFP_BERT;
     physics->RegisterPhysics(new G4OpticalPhysics);
 
-    auto *run_mgr = G4RunManagerFactory::CreateRunManager();
+    auto* run_mgr = G4RunManagerFactory::CreateRunManager();
     run_mgr->SetUserInitialization(physics);
 
     // Application
-    G4App *g4app = new G4App(gdml_file, enable_async);
+    G4App* g4app = new G4App(gdml_file, enable_async);
 
-    ActionInitialization *actionInit = new ActionInitialization(g4app);
+    ActionInitialization* actionInit = new ActionInitialization(g4app);
     run_mgr->SetUserInitialization(actionInit);
     run_mgr->SetUserInitialization(g4app->det_cons_);
 
     // UI
-    G4UIExecutive *uix = nullptr;
-    G4VisManager *vis = nullptr;
+    G4UIExecutive* uix = nullptr;
+    G4VisManager*  vis = nullptr;
 
     if (interactive)
     {
@@ -136,7 +138,7 @@ int main(int argc, char **argv)
         vis->Initialize();
     }
 
-    G4UImanager *ui = G4UImanager::GetUIpointer();
+    G4UImanager* ui = G4UImanager::GetUIpointer();
     ui->ApplyCommand("/control/execute " + macro_name);
 
     if (interactive)

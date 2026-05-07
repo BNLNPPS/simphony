@@ -82,6 +82,7 @@ namespace
 {
 G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
 G4Mutex g4hits_mutex = G4MUTEX_INITIALIZER;
+
 std::vector<std::array<float, 16>> g4_accumulated_hits;
 } // namespace
 
@@ -89,17 +90,17 @@ std::vector<std::array<float, 16>> g4_accumulated_hits;
 // Geometry helpers
 // ============================================================================
 
-bool IsSubtractionSolid(G4VSolid *solid)
+bool IsSubtractionSolid(G4VSolid* solid)
 {
     if (!solid)
         return false;
-    if (dynamic_cast<G4SubtractionSolid *>(solid))
+    if (dynamic_cast<G4SubtractionSolid*>(solid))
         return true;
-    G4BooleanSolid *booleanSolid = dynamic_cast<G4BooleanSolid *>(solid);
+    G4BooleanSolid* booleanSolid = dynamic_cast<G4BooleanSolid*>(solid);
     if (booleanSolid)
     {
-        G4VSolid *solidA = booleanSolid->GetConstituentSolid(0);
-        G4VSolid *solidB = booleanSolid->GetConstituentSolid(1);
+        G4VSolid* solidA = booleanSolid->GetConstituentSolid(0);
+        G4VSolid* solidB = booleanSolid->GetConstituentSolid(1);
         if (IsSubtractionSolid(solidA) || IsSubtractionSolid(solidB))
             return true;
     }
@@ -119,10 +120,10 @@ std::string str_tolower(std::string s)
 struct GenstepBuffer
 {
     std::vector<quad6> gensteps;
-    std::vector<sgs> labels;
-    int64_t photon_count = 0;
-    int64_t genstep_count = 0;
-    int event_id = 0;
+    std::vector<sgs>   labels;
+    int64_t            photon_count = 0;
+    int64_t            genstep_count = 0;
+    int                event_id = 0;
 
     void clear()
     {
@@ -132,7 +133,7 @@ struct GenstepBuffer
         genstep_count = 0;
     }
 
-    void addGenstep(const quad6 &gs, int64_t numphotons)
+    void addGenstep(const quad6& gs, int64_t numphotons)
     {
         sgs label;
         label.index = gensteps.size();
@@ -172,23 +173,25 @@ class GPUTaskManager
     int64_t photon_threshold_;
 
     std::shared_ptr<GenstepBuffer> active_buffer_;
-    G4Mutex buffer_mutex_;
+    G4Mutex                        buffer_mutex_;
 
     std::unique_ptr<G4TaskGroup<void, void>> task_group_;
-    G4Mutex gpu_mutex_;
+    G4Mutex                                  gpu_mutex_;
 
     // Statistics
-    std::atomic<int> batch_counter_{0};
-    std::atomic<int> completed_batches_{0};
+    std::atomic<int>      batch_counter_{0};
+    std::atomic<int>      completed_batches_{0};
     std::atomic<uint64_t> total_hits_{0};
     std::atomic<uint64_t> total_photons_{0};
     std::atomic<uint64_t> total_gpu_time_us_{0};
 
   public:
-    GPUTaskManager(int64_t threshold = DEFAULT_PHOTON_THRESHOLD)
-        : photon_threshold_(threshold), active_buffer_(std::make_shared<GenstepBuffer>()), task_group_(nullptr)
+    GPUTaskManager(int64_t threshold = DEFAULT_PHOTON_THRESHOLD) :
+        photon_threshold_(threshold),
+        active_buffer_(std::make_shared<GenstepBuffer>()),
+        task_group_(nullptr)
     {
-        const char *env_thresh = std::getenv("GPU_PHOTON_FLUSH_THRESHOLD");
+        const char* env_thresh = std::getenv("GPU_PHOTON_FLUSH_THRESHOLD");
         if (env_thresh)
             photon_threshold_ = std::atoll(env_thresh);
     }
@@ -225,7 +228,7 @@ class GPUTaskManager
     }
 
     // Hot path — called from SteppingAction
-    void addGenstep(const quad6 &gs, int64_t numphotons, int eventID)
+    void addGenstep(const quad6& gs, int64_t numphotons, int eventID)
     {
         std::shared_ptr<GenstepBuffer> buffer_to_submit;
 
@@ -316,8 +319,8 @@ class GPUTaskManager
         G4cout << "  Photons:  " << buffer->photon_count << G4endl;
         G4cout << "  Gensteps: " << buffer->genstep_count << G4endl;
 
-        G4CXOpticks *gx = G4CXOpticks::Get();
-        SEvt *sev = SEvt::Get_EGPU();
+        G4CXOpticks* gx = G4CXOpticks::Get();
+        SEvt*        sev = SEvt::Get_EGPU();
 
         if (!gx || !sev)
         {
@@ -327,7 +330,7 @@ class GPUTaskManager
 
         // Load buffered gensteps into SEvt
         sev->clear_genstep();
-        NP *gs_array = NP::Make<float>(buffer->gensteps.size(), 6, 4);
+        NP* gs_array = NP::Make<float>(buffer->gensteps.size(), 6, 4);
         memcpy(gs_array->values<float>(), buffer->gensteps.data(), buffer->gensteps.size() * sizeof(quad6));
         sev->addGenstep(gs_array);
 
@@ -356,13 +359,13 @@ class GPUTaskManager
         G4cout << "=== GPU Batch " << batch_id << " Complete ===" << G4endl;
     }
 
-    void saveHits(int batch_id, SEvt *sev, unsigned int num_hits)
+    void saveHits(int batch_id, SEvt* sev, unsigned int num_hits)
     {
         // Save as .npy (sphoton layout: N x 4 x 4 float32)
         std::ostringstream fname;
         fname << "gpu_hits_batch_" << batch_id << ".npy";
 
-        NP *arr = NP::Make<float>(num_hits, 4, 4);
+        NP* arr = NP::Make<float>(num_hits, 4, 4);
         for (unsigned idx = 0; idx < num_hits; idx++)
         {
             sphoton hit;
@@ -378,24 +381,24 @@ class GPUTaskManager
 // Genstep construction helpers (bypass U4/SEvt for async mode)
 // ============================================================================
 
-static quad6 MakeGenstep_Cerenkov(const G4Track *aTrack, const G4Step *aStep, G4int numPhotons, G4double betaInverse,
+static quad6 MakeGenstep_Cerenkov(const G4Track* aTrack, const G4Step* aStep, G4int numPhotons, G4double betaInverse,
                                   G4double pmin, G4double pmax, G4double maxCos, G4double maxSin2,
                                   G4double meanNumberOfPhotons1, G4double meanNumberOfPhotons2)
 {
-    G4StepPoint *pPreStepPoint = aStep->GetPreStepPoint();
-    G4StepPoint *pPostStepPoint = aStep->GetPostStepPoint();
-    G4ThreeVector x0 = pPreStepPoint->GetPosition();
-    G4double t0 = pPreStepPoint->GetGlobalTime();
-    G4ThreeVector deltaPosition = aStep->GetDeltaPosition();
-    const G4DynamicParticle *aParticle = aTrack->GetDynamicParticle();
-    const G4Material *aMaterial = aTrack->GetMaterial();
+    G4StepPoint*             pPreStepPoint = aStep->GetPreStepPoint();
+    G4StepPoint*             pPostStepPoint = aStep->GetPostStepPoint();
+    G4ThreeVector            x0 = pPreStepPoint->GetPosition();
+    G4double                 t0 = pPreStepPoint->GetGlobalTime();
+    G4ThreeVector            deltaPosition = aStep->GetDeltaPosition();
+    const G4DynamicParticle* aParticle = aTrack->GetDynamicParticle();
+    const G4Material*        aMaterial = aTrack->GetMaterial();
 
     G4double Wmin_nm = h_Planck * c_light / pmax / nm;
     G4double Wmax_nm = h_Planck * c_light / pmin / nm;
 
     quad6 gs;
     gs.zero();
-    scerenkov *ck = (scerenkov *)(&gs);
+    scerenkov* ck = (scerenkov*)(&gs);
 
     ck->gentype = OpticksGenstep_G4Cerenkov_modified;
     ck->trackid = aTrack->GetTrackID();
@@ -430,21 +433,21 @@ static quad6 MakeGenstep_Cerenkov(const G4Track *aTrack, const G4Step *aStep, G4
     return gs;
 }
 
-static quad6 MakeGenstep_Scintillation(const G4Track *aTrack, const G4Step *aStep, G4int numPhotons, G4int scnt,
+static quad6 MakeGenstep_Scintillation(const G4Track* aTrack, const G4Step* aStep, G4int numPhotons, G4int scnt,
                                        G4double ScintillationTime)
 {
-    G4StepPoint *pPreStepPoint = aStep->GetPreStepPoint();
-    G4StepPoint *pPostStepPoint = aStep->GetPostStepPoint();
-    G4ThreeVector x0 = pPreStepPoint->GetPosition();
-    G4double t0 = pPreStepPoint->GetGlobalTime();
-    G4ThreeVector deltaPosition = aStep->GetDeltaPosition();
-    G4double meanVelocity = (pPreStepPoint->GetVelocity() + pPostStepPoint->GetVelocity()) / 2.;
-    const G4DynamicParticle *aParticle = aTrack->GetDynamicParticle();
-    const G4Material *aMaterial = aTrack->GetMaterial();
+    G4StepPoint*             pPreStepPoint = aStep->GetPreStepPoint();
+    G4StepPoint*             pPostStepPoint = aStep->GetPostStepPoint();
+    G4ThreeVector            x0 = pPreStepPoint->GetPosition();
+    G4double                 t0 = pPreStepPoint->GetGlobalTime();
+    G4ThreeVector            deltaPosition = aStep->GetDeltaPosition();
+    G4double                 meanVelocity = (pPreStepPoint->GetVelocity() + pPostStepPoint->GetVelocity()) / 2.;
+    const G4DynamicParticle* aParticle = aTrack->GetDynamicParticle();
+    const G4Material*        aMaterial = aTrack->GetMaterial();
 
     quad6 gs;
     gs.zero();
-    sscint *sc = (sscint *)(&gs);
+    sscint* sc = (sscint*)(&gs);
 
     sc->gentype = OpticksGenstep_DsG4Scintillation_r4695;
     sc->trackid = aTrack->GetTrackID();
@@ -480,19 +483,29 @@ struct PhotonHit : public G4VHit
 {
     PhotonHit() = default;
     PhotonHit(unsigned id, G4double energy, G4double time, G4ThreeVector position, G4ThreeVector direction,
-              G4ThreeVector polarization)
-        : fid(id), fenergy(energy), ftime(time), fposition(position), fdirection(direction), fpolarization(polarization)
+              G4ThreeVector polarization) :
+        fid(id),
+        fenergy(energy),
+        ftime(time),
+        fposition(position),
+        fdirection(direction),
+        fpolarization(polarization)
     {
     }
-    PhotonHit(const PhotonHit &right)
-        : G4VHit(right), fid(right.fid), fenergy(right.fenergy), ftime(right.ftime), fposition(right.fposition),
-          fdirection(right.fdirection), fpolarization(right.fpolarization)
+    PhotonHit(const PhotonHit& right) :
+        G4VHit(right),
+        fid(right.fid),
+        fenergy(right.fenergy),
+        ftime(right.ftime),
+        fposition(right.fposition),
+        fdirection(right.fdirection),
+        fpolarization(right.fpolarization)
     {
     }
 
-    unsigned fid{0};
-    G4double fenergy{0};
-    G4double ftime{0};
+    unsigned      fid{0};
+    G4double      fenergy{0};
+    G4double      ftime{0};
     G4ThreeVector fposition;
     G4ThreeVector fdirection;
     G4ThreeVector fpolarization;
@@ -502,16 +515,17 @@ using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
 
 struct PhotonSD : public G4VSensitiveDetector
 {
-    PhotonHitsCollection *fPhotonHitsCollection{nullptr};
-    G4int fHCID{-1};
-    G4int fTotalG4Hits{0};
+    PhotonHitsCollection* fPhotonHitsCollection{nullptr};
+    G4int                 fHCID{-1};
+    G4int                 fTotalG4Hits{0};
 
-    PhotonSD(const G4String &name) : G4VSensitiveDetector(name)
+    PhotonSD(const G4String& name) :
+        G4VSensitiveDetector(name)
     {
         collectionName.insert("photon_hits");
     }
 
-    void Initialize(G4HCofThisEvent *hce) override
+    void Initialize(G4HCofThisEvent* hce) override
     {
         fPhotonHitsCollection = new PhotonHitsCollection(SensitiveDetectorName, collectionName[0]);
         if (fHCID < 0)
@@ -519,14 +533,14 @@ struct PhotonSD : public G4VSensitiveDetector
         hce->AddHitsCollection(fHCID, fPhotonHitsCollection);
     }
 
-    G4bool ProcessHits(G4Step *aStep, G4TouchableHistory *) override
+    G4bool ProcessHits(G4Step* aStep, G4TouchableHistory*) override
     {
-        G4Track *theTrack = aStep->GetTrack();
+        G4Track* theTrack = aStep->GetTrack();
         if (theTrack->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return false;
 
-        G4double theEnergy = theTrack->GetTotalEnergy() / CLHEP::eV;
-        PhotonHit *newHit = new PhotonHit(
+        G4double   theEnergy = theTrack->GetTotalEnergy() / CLHEP::eV;
+        PhotonHit* newHit = new PhotonHit(
             0, theEnergy, theTrack->GetGlobalTime(), aStep->GetPostStepPoint()->GetPosition(),
             aStep->GetPostStepPoint()->GetMomentumDirection(), aStep->GetPostStepPoint()->GetPolarization());
         fPhotonHitsCollection->insert(newHit);
@@ -534,7 +548,7 @@ struct PhotonSD : public G4VSensitiveDetector
         return true;
     }
 
-    void EndOfEvent(G4HCofThisEvent *) override
+    void EndOfEvent(G4HCofThisEvent*) override
     {
         G4int NbHits = fPhotonHitsCollection->entries();
         if (NbHits > 0)
@@ -542,8 +556,8 @@ struct PhotonSD : public G4VSensitiveDetector
             G4AutoLock lock(&g4hits_mutex);
             for (G4int i = 0; i < NbHits; i++)
             {
-                PhotonHit *hit = (*fPhotonHitsCollection)[i];
-                float wl = (hit->fenergy > 0) ? static_cast<float>(1239.84198 / hit->fenergy) : 0.f;
+                PhotonHit* hit = (*fPhotonHitsCollection)[i];
+                float      wl = (hit->fenergy > 0) ? static_cast<float>(1239.84198 / hit->fenergy) : 0.f;
                 g4_accumulated_hits.push_back({float(hit->fposition.x()), float(hit->fposition.y()),
                                                float(hit->fposition.z()), float(hit->ftime), float(hit->fdirection.x()),
                                                float(hit->fdirection.y()), float(hit->fdirection.z()), 0.f,
@@ -567,19 +581,20 @@ struct PhotonSD : public G4VSensitiveDetector
 struct DetectorConstruction : G4VUserDetectorConstruction
 {
     std::filesystem::path gdml_file_;
-    G4GDMLParser parser_;
+    G4GDMLParser          parser_;
 
-    DetectorConstruction(std::filesystem::path gdml_file) : gdml_file_(gdml_file)
+    DetectorConstruction(std::filesystem::path gdml_file) :
+        gdml_file_(gdml_file)
     {
     }
 
-    G4VPhysicalVolume *Construct() override
+    G4VPhysicalVolume* Construct() override
     {
         parser_.Read(gdml_file_.string(), false);
-        G4VPhysicalVolume *world = parser_.GetWorldVolume();
+        G4VPhysicalVolume* world = parser_.GetWorldVolume();
         G4CXOpticks::SetGeometry(world);
 
-        G4LogicalVolumeStore *lvStore = G4LogicalVolumeStore::GetInstance();
+        G4LogicalVolumeStore*  lvStore = G4LogicalVolumeStore::GetInstance();
         static G4VisAttributes invisibleVisAttr(false);
         if (lvStore && !lvStore->empty())
         {
@@ -593,12 +608,12 @@ struct DetectorConstruction : G4VUserDetectorConstruction
                     G4String sdName = "PhotonDetector_" + lv->GetName();
                     if (!G4SDManager::GetSDMpointer()->FindSensitiveDetector(sdName, false))
                     {
-                        PhotonSD *photonSD = new PhotonSD(sdName);
+                        PhotonSD* photonSD = new PhotonSD(sdName);
                         G4SDManager::GetSDMpointer()->AddNewDetector(photonSD);
                         lv->SetSensitiveDetector(photonSD);
                     }
                 }
-                G4VSolid *solid = lv->GetSolid();
+                G4VSolid* solid = lv->GetSolid();
                 if (solid && IsSubtractionSolid(solid))
                     lv->SetVisAttributes(&invisibleVisAttr);
             }
@@ -613,22 +628,23 @@ struct DetectorConstruction : G4VUserDetectorConstruction
 
 struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
-    SEvt *sev;
-    PrimaryGenerator(SEvt *sev) : sev(sev)
+    SEvt* sev;
+    PrimaryGenerator(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void GeneratePrimaries(G4Event *event) override
+    void GeneratePrimaries(G4Event* event) override
     {
         G4ThreeVector position_mm(0.0 * m, 0.0 * m, 0.0 * m);
-        G4double time_ns = 0;
+        G4double      time_ns = 0;
         G4ThreeVector direction(0, 0.2, 0.8);
 
-        G4PrimaryParticle *particle = new G4PrimaryParticle(G4Electron::Definition());
+        G4PrimaryParticle* particle = new G4PrimaryParticle(G4Electron::Definition());
         particle->SetKineticEnergy(10 * MeV);
         particle->SetMomentumDirection(direction);
 
-        G4PrimaryVertex *vertex = new G4PrimaryVertex(position_mm, time_ns);
+        G4PrimaryVertex* vertex = new G4PrimaryVertex(position_mm, time_ns);
         vertex->SetPrimary(particle);
         event->AddPrimaryVertex(vertex);
     }
@@ -640,25 +656,26 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
 struct EventAction : G4UserEventAction
 {
-    SEvt *sev;
+    SEvt* sev;
     G4int fTotalG4Hits{0};
 
-    EventAction(SEvt *sev) : sev(sev)
+    EventAction(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void EndOfEventAction(const G4Event *event) override
+    void EndOfEventAction(const G4Event* event) override
     {
-        G4HCofThisEvent *hce = event->GetHCofThisEvent();
+        G4HCofThisEvent* hce = event->GetHCofThisEvent();
         if (!hce)
             return;
         G4int nCollections = hce->GetNumberOfCollections();
         for (G4int i = 0; i < nCollections; i++)
         {
-            G4VHitsCollection *hc = hce->GetHC(i);
+            G4VHitsCollection* hc = hce->GetHC(i);
             if (!hc)
                 continue;
-            PhotonHitsCollection *phc = dynamic_cast<PhotonHitsCollection *>(hc);
+            PhotonHitsCollection* phc = dynamic_cast<PhotonHitsCollection*>(hc);
             if (phc)
                 fTotalG4Hits += phc->entries();
             else
@@ -685,21 +702,22 @@ struct TrackingAction;
 
 struct RunAction : G4UserRunAction
 {
-    EventAction *fEventAction;
-    GPUTaskManager *fGPUTaskMgr{nullptr}; // null = sync mode
+    EventAction*    fEventAction;
+    GPUTaskManager* fGPUTaskMgr{nullptr}; // null = sync mode
 
-    RunAction(EventAction *eventAction, GPUTaskManager *gpuMgr = nullptr)
-        : fEventAction(eventAction), fGPUTaskMgr(gpuMgr)
+    RunAction(EventAction* eventAction, GPUTaskManager* gpuMgr = nullptr) :
+        fEventAction(eventAction),
+        fGPUTaskMgr(gpuMgr)
     {
     }
 
-    void BeginOfRunAction(const G4Run *) override
+    void BeginOfRunAction(const G4Run*) override
     {
         if (G4Threading::IsMasterThread() && fGPUTaskMgr)
             fGPUTaskMgr->start();
     }
 
-    void EndOfRunAction(const G4Run *) override
+    void EndOfRunAction(const G4Run*) override
     {
         if (!G4Threading::IsMasterThread())
             return;
@@ -719,15 +737,15 @@ struct RunAction : G4UserRunAction
         else
         {
             // Sync mode: run all gensteps at once
-            G4CXOpticks *gx = G4CXOpticks::Get();
+            G4CXOpticks* gx = G4CXOpticks::Get();
 
             auto start = std::chrono::high_resolution_clock::now();
             gx->simulate(0, false);
             cudaDeviceSynchronize();
-            auto end = std::chrono::high_resolution_clock::now();
+            auto                          end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = end - start;
 
-            SEvt *sev = SEvt::Get_EGPU();
+            SEvt*        sev = SEvt::Get_EGPU();
             unsigned int num_hits = sev->GetNumHit(0);
 
             G4cout << "\n=== Sync GPU Summary ===" << G4endl;
@@ -740,7 +758,7 @@ struct RunAction : G4UserRunAction
             // Save GPU hits
             if (num_hits > 0)
             {
-                NP *gpu_h = NP::Make<float>(num_hits, 4, 4);
+                NP* gpu_h = NP::Make<float>(num_hits, 4, 4);
                 for (unsigned idx = 0; idx < num_hits; idx++)
                 {
                     sphoton hit;
@@ -755,10 +773,10 @@ struct RunAction : G4UserRunAction
         // Save G4 hits
         {
             G4AutoLock lock(&g4hits_mutex);
-            size_t ng4 = g4_accumulated_hits.size();
+            size_t     ng4 = g4_accumulated_hits.size();
             if (ng4 > 0)
             {
-                NP *g4h = NP::Make<float>(ng4, 4, 4);
+                NP* g4h = NP::Make<float>(ng4, 4, 4);
                 memcpy(g4h->bytes(), g4_accumulated_hits.data(), ng4 * 16 * sizeof(float));
                 g4h->save("g4_hits.npy");
                 G4cout << "Saved G4 hits (" << ng4 << ") to g4_hits.npy" << G4endl;
@@ -773,20 +791,22 @@ struct RunAction : G4UserRunAction
 
 struct SteppingAction : G4UserSteppingAction
 {
-    SEvt *sev;
-    GPUTaskManager *fGPUTaskMgr{nullptr};
+    SEvt*           sev;
+    GPUTaskManager* fGPUTaskMgr{nullptr};
 
-    SteppingAction(SEvt *sev, GPUTaskManager *gpuMgr = nullptr) : sev(sev), fGPUTaskMgr(gpuMgr)
+    SteppingAction(SEvt* sev, GPUTaskManager* gpuMgr = nullptr) :
+        sev(sev),
+        fGPUTaskMgr(gpuMgr)
     {
     }
 
-    void UserSteppingAction(const G4Step *aStep) override
+    void UserSteppingAction(const G4Step* aStep) override
     {
-        G4Track *aTrack;
-        G4int fNumPhotons = 0;
+        G4Track* aTrack;
+        G4int    fNumPhotons = 0;
 
-        G4StepPoint *postStep = aStep->GetPostStepPoint();
-        G4VPhysicalVolume *volume = postStep->GetPhysicalVolume();
+        G4StepPoint*       postStep = aStep->GetPostStepPoint();
+        G4VPhysicalVolume* volume = postStep->GetPhysicalVolume();
 
         // Kill optical photons stuck in reflection loops
         if (aStep->GetTrack()->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
@@ -796,15 +816,15 @@ struct SteppingAction : G4UserSteppingAction
         }
 
         // Collect gensteps from Cerenkov and Scintillation processes
-        G4SteppingManager *fpSteppingManager =
+        G4SteppingManager* fpSteppingManager =
             G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
         G4StepStatus stepStatus = fpSteppingManager->GetfStepStatus();
 
         if (stepStatus == fAtRestDoItProc)
             return;
 
-        G4ProcessVector *procPost = fpSteppingManager->GetfPostStepDoItVector();
-        size_t MAXofPostStepLoops = fpSteppingManager->GetMAXofPostStepLoops();
+        G4ProcessVector* procPost = fpSteppingManager->GetfPostStepDoItVector();
+        size_t           MAXofPostStepLoops = fpSteppingManager->GetMAXofPostStepLoops();
 
         for (size_t i3 = 0; i3 < MAXofPostStepLoops; i3++)
         {
@@ -812,16 +832,16 @@ struct SteppingAction : G4UserSteppingAction
             if ((*procPost)[i3]->GetProcessName() == "Cerenkov")
             {
                 aTrack = aStep->GetTrack();
-                const G4DynamicParticle *aParticle = aTrack->GetDynamicParticle();
-                G4double charge = aParticle->GetDefinition()->GetPDGCharge();
-                const G4Material *aMaterial = aTrack->GetMaterial();
-                G4MaterialPropertiesTable *MPT = aMaterial->GetMaterialPropertiesTable();
-                G4MaterialPropertyVector *Rindex = MPT->GetProperty(kRINDEX);
+                const G4DynamicParticle*   aParticle = aTrack->GetDynamicParticle();
+                G4double                   charge = aParticle->GetDefinition()->GetPDGCharge();
+                const G4Material*          aMaterial = aTrack->GetMaterial();
+                G4MaterialPropertiesTable* MPT = aMaterial->GetMaterialPropertiesTable();
+                G4MaterialPropertyVector*  Rindex = MPT->GetProperty(kRINDEX);
 
                 if (!Rindex || Rindex->GetVectorLength() == 0)
                     return;
 
-                G4Cerenkov *proc = (G4Cerenkov *)(*procPost)[i3];
+                G4Cerenkov* proc = (G4Cerenkov*)(*procPost)[i3];
                 fNumPhotons = proc->GetNumPhotons();
 
                 if (fNumPhotons > 0)
@@ -841,7 +861,7 @@ struct SteppingAction : G4UserSteppingAction
                     if (fGPUTaskMgr)
                     {
                         // ASYNC: construct quad6 directly into buffer
-                        const G4Event *event = G4EventManager::GetEventManager()->GetConstCurrentEvent();
+                        const G4Event* event = G4EventManager::GetEventManager()->GetConstCurrentEvent();
                         if (!event)
                             return;
                         quad6 gs = MakeGenstep_Cerenkov(aTrack, aStep, fNumPhotons, BetaInverse, Pmin, Pmax, maxCos,
@@ -862,13 +882,13 @@ struct SteppingAction : G4UserSteppingAction
             // --- Scintillation ---
             if ((*procPost)[i3]->GetProcessName() == "Scintillation")
             {
-                G4Scintillation *proc1 = (G4Scintillation *)(*procPost)[i3];
+                G4Scintillation* proc1 = (G4Scintillation*)(*procPost)[i3];
                 fNumPhotons = proc1->GetNumPhotons();
                 if (fNumPhotons > 0)
                 {
                     aTrack = aStep->GetTrack();
-                    const G4Material *aMaterial = aTrack->GetMaterial();
-                    G4MaterialPropertiesTable *MPT = aMaterial->GetMaterialPropertiesTable();
+                    const G4Material*          aMaterial = aTrack->GetMaterial();
+                    G4MaterialPropertiesTable* MPT = aMaterial->GetMaterialPropertiesTable();
                     if (!MPT || !MPT->ConstPropertyExists(kSCINTILLATIONTIMECONSTANT1))
                         return;
 
@@ -879,7 +899,7 @@ struct SteppingAction : G4UserSteppingAction
                     G4double tc[3] = {0, 0, 0};
                     G4double yield[3] = {0, 0, 0};
                     G4double yieldSum = 0;
-                    G4int nComp = 0;
+                    G4int    nComp = 0;
 
                     for (G4int c = 0; c < 3; c++)
                     {
@@ -896,7 +916,7 @@ struct SteppingAction : G4UserSteppingAction
                     if (fGPUTaskMgr)
                     {
                         // ASYNC: construct quad6 directly into buffer
-                        const G4Event *event = G4EventManager::GetEventManager()->GetConstCurrentEvent();
+                        const G4Event* event = G4EventManager::GetEventManager()->GetConstCurrentEvent();
                         if (!event)
                             return;
                         int eventid = event->GetEventID();
@@ -922,7 +942,7 @@ struct SteppingAction : G4UserSteppingAction
                     {
                         // SYNC: standard SEvt path
                         G4AutoLock lock(&genstep_mutex);
-                        G4int nRemaining = fNumPhotons;
+                        G4int      nRemaining = fNumPhotons;
                         for (G4int c = 0; c < nComp; c++)
                         {
                             G4int nPhotComp;
@@ -948,18 +968,19 @@ struct SteppingAction : G4UserSteppingAction
 
 struct TrackingAction : G4UserTrackingAction
 {
-    const G4Track *transient_fSuspend_track = nullptr;
-    SEvt *sev;
+    const G4Track* transient_fSuspend_track = nullptr;
+    SEvt*          sev;
 
-    TrackingAction(SEvt *sev) : sev(sev)
+    TrackingAction(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void PreUserTrackingAction(const G4Track *) override
+    void PreUserTrackingAction(const G4Track*) override
     {
     }
 
-    void PostUserTrackingAction(const G4Track *track) override
+    void PostUserTrackingAction(const G4Track* track) override
     {
         if (track->GetTrackStatus() == fSuspend)
             transient_fSuspend_track = track;
@@ -972,21 +993,25 @@ struct TrackingAction : G4UserTrackingAction
 
 struct G4App
 {
-    SEvt *sev;
-    GPUTaskManager *gpu_task_mgr_;
+    SEvt*           sev;
+    GPUTaskManager* gpu_task_mgr_;
 
-    G4VUserDetectorConstruction *det_cons_;
-    G4VUserPrimaryGeneratorAction *prim_gen_;
-    EventAction *event_act_;
-    RunAction *run_act_;
-    SteppingAction *stepping_;
-    TrackingAction *tracking_;
+    G4VUserDetectorConstruction*   det_cons_;
+    G4VUserPrimaryGeneratorAction* prim_gen_;
+    EventAction*                   event_act_;
+    RunAction*                     run_act_;
+    SteppingAction*                stepping_;
+    TrackingAction*                tracking_;
 
-    G4App(std::filesystem::path gdml_file, bool enable_async = true)
-        : sev(SEvt::CreateOrReuse_EGPU()), gpu_task_mgr_(enable_async ? new GPUTaskManager() : nullptr),
-          det_cons_(new DetectorConstruction(gdml_file)), prim_gen_(new PrimaryGenerator(sev)),
-          event_act_(new EventAction(sev)), run_act_(new RunAction(event_act_, gpu_task_mgr_)),
-          stepping_(new SteppingAction(sev, gpu_task_mgr_)), tracking_(new TrackingAction(sev))
+    G4App(std::filesystem::path gdml_file, bool enable_async = true) :
+        sev(SEvt::CreateOrReuse_EGPU()),
+        gpu_task_mgr_(enable_async ? new GPUTaskManager() : nullptr),
+        det_cons_(new DetectorConstruction(gdml_file)),
+        prim_gen_(new PrimaryGenerator(sev)),
+        event_act_(new EventAction(sev)),
+        run_act_(new RunAction(event_act_, gpu_task_mgr_)),
+        stepping_(new SteppingAction(sev, gpu_task_mgr_)),
+        tracking_(new TrackingAction(sev))
     {
         if (gpu_task_mgr_)
             G4cout << "G4App: Async GPU mode (threshold=" << gpu_task_mgr_->getThreshold() << " photons)" << G4endl;
