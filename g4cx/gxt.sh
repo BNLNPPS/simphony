@@ -134,11 +134,7 @@ cd $(dirname $(realpath $BASH_SOURCE))
 
 msg="=== $BASH_SOURCE :"
 
-case $(uname) in
-  Linux)  defarg="run"  ;;
-  Darwin) defarg="ana"  ;;
-esac
-
+defarg="run"
 arg=${1:-$defarg}
 
 case $arg in
@@ -380,4 +376,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
 fi
 
 exit 0
-

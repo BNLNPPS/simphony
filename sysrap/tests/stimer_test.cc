@@ -221,35 +221,33 @@ void test_TimePoint_0()
 
 }
 
-
 /**
 
 
-Previously has to divide the Linux epoch count 
-by 1000 to be comparable with the Darwin one.
+Previously had to divide the Linux epoch count
+by 1000 to be comparable with an older platform-specific value.
 
-Instead of such a hack, changed EpochCount to 
-standardize on microsecond epoch counts. 
-This makes the time stamps comparable modulo 7 hours time difference. 
+Instead of such a hack, changed EpochCount to
+standardize on microsecond epoch counts.
+This makes the time stamps comparable modulo 7 hours time difference.
 
-N[blyth@localhost tests]$ ./stimer_test.sh 
+N[blyth@localhost tests]$ ./stimer_test.sh
  stimer::Format(1681469652582925) : Fri, 14.04.2023 18:54:12
  stimer::Format(1681467459953485) : Fri, 14.04.2023 18:17:39
  stimer::Format(1681467438445254) : Fri, 14.04.2023 18:17:18
 N[blyth@localhost tests]$ date
 Fri Apr 14 18:54:19 CST 2023
-N[blyth@localhost tests]$ 
+N[blyth@localhost tests]$
 
-epsilon:tests blyth$ ./stimer_test.sh 
+epsilon:tests blyth$ ./stimer_test.sh
  stimer::Format(1681469695498380) : Fri, 14.04.2023 11:54:55
  stimer::Format(1681467459953485) : Fri, 14.04.2023 11:17:39
  stimer::Format(1681467438445254) : Fri, 14.04.2023 11:17:18
 epsilon:tests blyth$ date
 Fri Apr 14 11:55:00 BST 2023
-epsilon:tests blyth$ 
+epsilon:tests blyth$
 
 **/
-
 
 void test_EpochCountNow_0()
 {

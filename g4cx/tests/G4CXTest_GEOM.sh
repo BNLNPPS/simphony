@@ -13,7 +13,7 @@ Typically on workstation::
 
     ~/opticks/g4cx/tests/G4CXTest_GEOM.sh
     ~/opticks/g4cx/tests/G4CXTest_GEOM.sh dbg
-    LOG=1 BP=C4CustomART::doIt ~/opticks/g4cx/tests/G4CXTest_GEOM.sh dbg
+    LOG=1 BP=G4OpBoundaryProcess::PostStepDoIt ~/opticks/g4cx/tests/G4CXTest_GEOM.sh dbg
 
     PRECOOKED=1 ~/o/G4CXTest_GEOM.sh
 
@@ -205,8 +205,7 @@ VERSION=${VERSION:-$version}
 export VERSION    ## used in SEvt output directory name ALL$VERSION
 
 
-#ctx=$(TEST=ContextString sbuild_test)  ## eg Debug_Philox see sbuild.h
-ctx=Debug_Philox
+ctx=${OPTICKS_EVENT_CONTEXT:-Debug_Philox}
 #export OPTICKS_EVENT_NAME=$ctx  # used by SEventConfig::EventReldir "OPTICKS_EVENT_RELDIR"
 export OPTICKS_EVENT_NAME=${ctx}_${TEST}
 
@@ -488,4 +487,3 @@ if [ "$arg" == "mpcap" -o "$arg" == "mppub" -o "$arg" == "pvcap" -o "$arg" == "p
 fi
 
 exit 0
-

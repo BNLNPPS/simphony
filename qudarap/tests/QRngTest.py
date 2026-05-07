@@ -2,7 +2,7 @@
 """
 ::
  
-    PICK=AB ~/o/qudarap/tests/QRngTest.sh pdb 
+    ~/o/qudarap/tests/QRngTest.sh pdb
 
 """
 import logging 
@@ -98,51 +98,22 @@ class QRngTest(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     TEST = os.environ.get("TEST", "generate") 
-    PICK = os.environ.get("PICK", "A") 
 
     TYPE = "float"
-    a_IMPL = "CHUNKED_CURANDSTATE"
-    b_IMPL = "OLD_MONOLITHIC_CURANDSTATE"
+    impl = "CHUNKED_CURANDSTATE"
 
-    a_reldir = "%s/%s" % (TYPE, a_IMPL)
-    b_reldir = "%s/%s" % (TYPE, b_IMPL)
+    reldir = "%s/%s" % (TYPE, impl)
 
-    reldir = None
-    if PICK == "A":reldir = a_reldir
-    if PICK == "B":reldir = b_reldir
+    print("%s:TEST:%s FOLD:%s reldir:%s" % ( sys.argv[0], TEST, QRngTest.FOLD, reldir))
 
-    print("%s:TEST:%s PICK:%s FOLD:%s reldir:%s" % ( sys.argv[0], TEST, PICK, QRngTest.FOLD, reldir))
+    t = QRngTest(reldir)
 
-    if PICK in tuple("AB"):       
-        t = QRngTest(reldir)  
-
-        if TEST == "generate": 
-            uu = t.uu
-            uuh = t.uuh
-            print("uu.shape\n",uu.shape)
-            print("uu[:10]\n",uu[:10])
-            t.check_skipahead_shifts(1)
-            #t.uu_plot()
-        else:
-            print("%s:TEST:%s unhandled : run ana/pdb individually for each TEST" % (sys.argv[0],TEST) )
-        pass
-
-    elif PICK == "AB":
-        a = QRngTest(a_reldir)  
-        b = QRngTest(b_reldir)  
-
-        if TEST == "generate":
-            auu = a.uu
-            buu = b.uu
-            auu_buu_match = np.all( auu == buu )  
-            print("auu.shape\n",auu.shape)
-            print("buu.shape\n",buu.shape)
-            print("auu_buu_match:%d\n" % auu_buu_match)
-            assert auu_buu_match
-        else:
-            print("%s:TEST:%s unhandled : run ana/pdb individually for each TEST" % (sys.argv[0],TEST) )
-        pass
-    pass
+    if TEST == "generate":
+        uu = t.uu
+        uuh = t.uuh
+        print("uu.shape\n",uu.shape)
+        print("uu[:10]\n",uu[:10])
+        t.check_skipahead_shifts(1)
+    else:
+        print("%s:TEST:%s unhandled : run ana/pdb individually for each TEST" % (sys.argv[0],TEST) )
 pass
-
-

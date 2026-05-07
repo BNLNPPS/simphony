@@ -22,7 +22,7 @@
 
 
 
-Torchstep are read by optixrap/cu/torchstep.h:tsload
+Torchstep layout debugging notes.
 
 
 ::
@@ -115,5 +115,4 @@ log = logging.getLogger(__name__)
 if __name__ == '__main__':
      os.environ["TMP"] = os.path.expandvars("/tmp/$USER/opticks")
      a = np.load(os.path.expandvars("$TMP/torchdbg.npy"))
-
 

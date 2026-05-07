@@ -6,23 +6,65 @@ on:
       - main
       - test
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
 
   build-push:
-    runs-on: [gpu]
+    runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        target: [release, develop]
+        include:
+          - target: release
+            os: ubuntu24.04
+            cuda_version: 13.2.0
+            optix_version: 9.1.0
+            geant4_version: 11.4.1
+            cmake_version: 4.3.1
+          - target: release
+            os: ubuntu24.04
+            cuda_version: 13.0.2
+            optix_version: 9.0.0
+            geant4_version: 11.4.1
+            cmake_version: 4.2.1
+          - target: release
+            os: ubuntu22.04
+            cuda_version: 12.1.1
+            optix_version: 8.0.0
+            geant4_version: 11.3.2
+            cmake_version: 3.22.1
+          - target: develop
+            os: ubuntu24.04
+            cuda_version: 13.0.2
+            optix_version: 9.0.0
+            geant4_version: 11.4.1
+            cmake_version: 4.2.1
+          - target: develop
+            os: ubuntu24.04
+            cuda_version: 12.5.1
+            optix_version: 9.0.0
+            geant4_version: 11.4.1
+            cmake_version: 3.28.3
+          - target: develop
+            os: ubuntu22.04
+            cuda_version: 12.1.1
+            optix_version: 8.0.0
+            geant4_version: 11.3.2
+            cmake_version: 3.22.1
 
     steps:
       - name: Define environment variables
         run: |
-          echo IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo IMAGE_TAG=$(echo ${{ matrix.target }}) >> $GITHUB_ENV
-          if [ "${{ matrix.target }}" = "release" ]; then
-            echo IMAGE_TAG=latest >> $GITHUB_ENV
-          fi
+          IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+          CACHE_IMAGE_NAME=${IMAGE_NAME}-buildcache
+          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
+          echo IMAGE_TAG=${BUILD_VARIANT} >> $GITHUB_ENV
+          echo CACHE_REF=${CACHE_IMAGE_NAME}:${BUILD_VARIANT} >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,33 +79,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build and push to registries
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: |
-           ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-           docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           target: ${{ matrix.target }}
-          cache-from: type=local,src=/home/runner/.buildx-cache
-          cache-to: type=local,dest=/home/runner/.buildx-cache-new,mode=max
+          build-args: |
+            OS=${{ matrix.os }}
+            CUDA_VERSION=${{ matrix.cuda_version }}
+            OPTIX_VERSION=${{ matrix.optix_version }}
+            GEANT4_VERSION=${{ matrix.geant4_version }}
+            CMAKE_VERSION=${{ matrix.cmake_version }}
+          cache-from: type=registry,ref=${{ env.CACHE_REF }}
+          cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
 
-      - name: Move cache
-        # Temp fix
-        # https://github.com/docker/build-push-action/issues/252
-        # https://github.com/moby/buildkit/issues/1896
+      - name: Add devel alias tag for default CUDA
+        if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.os == 'ubuntu24.04' && matrix.cuda_version == '13.0.2' && matrix.optix_version == '9.0.0' && matrix.geant4_version == '11.4.1' && matrix.cmake_version == '4.2.1' }}
         run: |
-          rm -rf /home/runner/.buildx-cache
-          mv /home/runner/.buildx-cache-new /home/runner/.buildx-cache
+          docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:develop ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   cleanup:
     runs-on: ubuntu-latest
     needs: build-push
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          packages: ${{ github.event.repository.name }},${{ github.event.repository.name }}-buildcache

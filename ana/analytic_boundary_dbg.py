@@ -22,9 +22,8 @@
 tboolean.py: CSG boolean geometry tracetest 
 =======================================================
 
-For analysis of photon_buffer written by oxrap/cu/generate.cu:tracetest
-which is intended for testing geometrical intersection only, with 
-no propagation.
+For analysis of tracetest photon buffers intended for testing geometrical
+intersection only, with no propagation.
 
 Unsigned boundaries 1 and 124 all from CSG intersection, the 215 was a
 abitrary marker written by evaluative_csg::
@@ -140,7 +139,7 @@ if __name__ == '__main__':
 
     ox = evt.ox
 
-    ## assume layout written by oxrap/cu/generate.cu:tracetest ##
+    ## assume tracetest photon buffer layout ##
 
     p0 = ox[:,0,:W]
     d0 = ox[:,1,:W]
@@ -170,4 +169,3 @@ if __name__ == '__main__':
 
 
     plt.show()
-

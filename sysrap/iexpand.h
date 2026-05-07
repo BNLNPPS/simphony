@@ -56,8 +56,9 @@ genstep index.
 
 **/
 
-
 #include <thrust/device_vector.h>
+#include <thrust/distance.h>
+#include <thrust/iterator/iterator_traits.h>
 #include <thrust/reduce.h>
 #include <thrust/gather.h>
 #include <thrust/scan.h>
@@ -87,7 +88,7 @@ void iexpand(InputIterator  counts_first,
              OutputIterator output_first,
              OutputIterator output_last)
 {
-  typedef typename thrust::iterator_difference<InputIterator>::type difference_type;
+  typedef typename thrust::iterator_traits<InputIterator>::difference_type difference_type;
   
   difference_type counts_size = thrust::distance(counts_first, counts_last);  // eg number of gensteps
   difference_type output_size = thrust::distance(output_first, output_last);  // eg number of photon "seeds" : back referencing genstep index 
@@ -151,6 +152,3 @@ void iexpand(InputIterator  counts_first,
 
 
 }
-
-
-

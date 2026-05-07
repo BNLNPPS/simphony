@@ -25,37 +25,8 @@ twhite.py: Wavelength Distribution Check
 Creates plot comparing simulated photon wavelength spectrum 
 from :doc:`../tests/twhite` against blackbody expectation.
 
-This is checking the *source_lookup* implementation and 
-the inverse CDF *source_texture* that it uses.  
-
-.. code-block:: cpp
-
-    ## optixrap/cu/wavelength_lookup.h
-
-    014 rtTextureSampler<float, 2>  source_texture ;
-     15 rtDeclareVariable(float4, source_domain, , );
-     ..
-     41 static __device__ __inline__ float source_lookup(float u)
-     42 {
-     43     float ui = u/source_domain.z + 0.5f ;
-     44     return tex2D(source_texture, ui, 0.5f );  // line 0
-     45 }
-     46 
-     47 static __device__ __inline__ void source_check()
-     48 {
-     49     float nm_a = source_lookup(0.0f);
-     50     float nm_b = source_lookup(0.5f);
-     51     float nm_c = source_lookup(1.0f);
-     52     rtPrintf("source_check nm_a %10.3f %10.3f %10.3f  \n",  nm_a, nm_b, nm_c );
-     53 }
-
-    ## optixrap/cu/torchstep.h
-
-    241 __device__ void
-    242 generate_torch_photon(Photon& p, TorchStep& ts, RNG &rng)
-    243 {
-    244       p.wavelength = ts.wavelength > 50.f ? ts.wavelength : source_lookup(curand_uniform(&rng));  // Planck black body source 6500K standard illuminant 
-    245 
+This is checking wavelength sampling against the source distribution used by
+torch photon generation.
 
 
 See Also
@@ -125,5 +96,4 @@ if __name__ == '__main__':
     plt.axis( [w.min() - 100, w.max() + 100, 0, fcounts.max()*1.1 ]) 
 
     #plt.hist(w, bins=256)   # 256 is number of unique wavelengths (from record compression)
-
 

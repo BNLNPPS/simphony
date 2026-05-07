@@ -24,11 +24,7 @@ EOU
 
 msg="=== $BASH_SOURCE :"
 
-case $(uname) in
-  Linux)  defarg="run"  ;;
-  Darwin) defarg="ls"  ;;
-esac
-
+defarg="run"
 arg=${1:-$defarg}
 
 case $arg in
@@ -99,10 +95,7 @@ if [ "run" == "$arg" ]; then
 fi
 
 if [ "dbg" == "$arg" ]; then
-    case $(uname) in
-        Linux) gdb $bin -ex r  ;;
-        Darwin) lldb__ $bin ;;
-    esac
+    gdb $bin -ex r
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 2
 fi
 
@@ -148,4 +141,3 @@ if [ "jpg" == "$arg" ]; then
 fi
 
 exit 0
-

@@ -134,11 +134,7 @@ Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth)
     plan(nullptr),
     tran(nullptr),
     itra(nullptr),
-#if OPTIX_VERSION < 70000
-    handle(nullptr),
-#else
     handle(0),
-#endif
     pixels(nullptr),
     isect(nullptr),
     fphoton(nullptr),
@@ -205,4 +201,3 @@ void Params::upload()
 }
 
 #endif
-

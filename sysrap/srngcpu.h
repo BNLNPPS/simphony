@@ -24,6 +24,7 @@ To extend that see::
 
 #include <random>
 #include "s_seq.h"
+#include "srng_traits.h"
 
 struct srngcpu
 {
@@ -118,7 +119,19 @@ inline std::string srngcpu::demo(int n)
 inline float  curand_uniform(srngcpu* state ){         return state->generate_float() ; }
 inline double curand_uniform_double(srngcpu* state ){ return state->generate_double() ; }
 
+template <> struct srng<srngcpu>
+{
+    static constexpr char CODE = 'C';
+    static constexpr const char *NAME = "srngcpu";
+    static constexpr unsigned SIZE = sizeof(srngcpu);
+    static constexpr bool UPLOAD_RNG_STATES = false;
 
-
-
-
+    static inline float uniform(srngcpu &state)
+    {
+        return state.generate_float();
+    }
+    static inline double uniform_double(srngcpu &state)
+    {
+        return state.generate_double();
+    }
+};

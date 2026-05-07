@@ -15,7 +15,6 @@ TODO: instead of this use actual qcerenkov.h together with srngcpu.h ?
 #include <vector>
 
 #include "srngcpu.h"
-using RNG = srngcpu ; 
 
 #include "scuda.h"
 #include "squad.h"
@@ -31,8 +30,6 @@ NP* make_cerenkov_photon( const NP* gs, const NP* se )
     const quad6* gg = (quad6*)gs->bytes() ;  
     const int*   seed = (int*)se->bytes() ;  
 
-    RNG rng ; 
-  
     int tot_photon = se->shape[0] ; 
     NP* ph = NP::Make<float>( tot_photon, 4, 4); 
     sphoton* pp = (sphoton*)ph->bytes() ; 
@@ -69,4 +66,3 @@ int main(int argc, char** argv)
     test_generate(); 
     return 0 ; 
 }
-

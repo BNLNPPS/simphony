@@ -3,29 +3,26 @@
 #if defined(__CUDACC__) || defined(__CUDABE__)
    #define SSTATE_METHOD __device__
 #else
-   #define SSTATE_METHOD 
-#endif 
+   #define SSTATE_METHOD
+#endif
 
 /**
 sstate.h
 =========
 
-This was formerly qstate.h but as no CUDA specifics it 
-belongs down in sysrap not up in QUDARap. 
+This was formerly qstate.h but as no CUDA specifics it
+belongs down in sysrap not up in QUDARap.
 
-Populated by qsim::fill_state from texture and buffer lookups 
-using photon wavelength and the boundary obtained from geometry 
-intersect.  
-
-Old version of this in OptiXRap/cu also copied things from "PRD" into here ... 
-BUT seems no point doing that, can just directly use them from PRD. 
+Populated by qsim::fill_state from texture and buffer lookups
+using photon wavelength and the boundary obtained from geometry
+intersect.
 
 **/
 
 struct sstate
 {
     float4 material1 ;    // refractive_index/absorption_length/scattering_length/reemission_prob
-    float4 m1group2 ;     // group_velocity/spare1/spare2/spare3
+    float4 m1group2;      // material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3
     float4 material2 ;   
     float4 surface ;      // detect/absorb/reflect_specular/reflect_diffuse
 
@@ -42,6 +39,9 @@ struct sstate
     void save(const char* dir) const ; 
 #endif
 
+    SSTATE_METHOD float material1_group_velocity() const { return m1group2.x; }
+    SSTATE_METHOD float material2_group_velocity() const { return m1group2.y; }
+    SSTATE_METHOD void  set_material2_group_velocity(float gv) { m1group2.y = gv; }
 
 };
 
@@ -65,27 +65,16 @@ inline void sstate::save(const char* dir) const
 #else
 inline std::ostream& operator<<(std::ostream& os, const sstate& s )   
 {
-    os << "sstate"
-       << std::endl 
-       << " material1 " << s.material1 
-       << " (refractive_index/absorption_length/scattering_length/reemission_prob) " 
-       << std::endl 
+    os << "sstate" << std::endl
+       << " material1 " << s.material1 << " (refractive_index/absorption_length/scattering_length/reemission_prob) "
+       << std::endl
        << " m1group2 " << s.m1group2
-       << " (group_velocity/spare1/spare2/spare3) "
-       << std::endl 
-       << " material2 " << s.material2 
-       << " (refractive_index/absorption_length/scattering_length/reemission_prob) " 
-       << std::endl 
-       << " surface   " << s.surface
-       << " (detect/absorb/reflect_specular/reflect_diffuse) " 
-       << std::endl 
-       << " optical   " << s.optical
-       << " (x/y/z/w index/type/finish/value) "
-       << std::endl 
-       << " index     " << s.index
-       << " (indices of m1/m2/surf/sensor) "
-       << std::endl 
-       ;
+       << " (material1_group_velocity/material2_group_velocity/wls_absorption_length/spare3) " << std::endl
+       << " material2 " << s.material2 << " (refractive_index/absorption_length/scattering_length/reemission_prob) "
+       << std::endl
+       << " surface   " << s.surface << " (detect/absorb/reflect_specular/reflect_diffuse) " << std::endl
+       << " optical   " << s.optical << " (x/y/z/w index/type/finish/value) " << std::endl
+       << " index     " << s.index << " (indices of m1/m2/surf/sensor) " << std::endl;
     return os; 
 }
 #endif
@@ -134,6 +123,3 @@ But if decide to pursure streamlined qstate with mixed up fields
 the named field access would be helpful to isolate user code from changes to the struct. 
 
 **/
-
-
-

@@ -15,10 +15,7 @@ EOU
 }
 cd $(dirname $(realpath $BASH_SOURCE))
 
-case $(uname) in 
-   Darwin) defarg=build_env_run_ana ;; 
-   Linux)  defarg=build_env_run ;; 
-esac
+defarg=build_env_run
 arg=${1:-$defarg}
 
 
@@ -152,10 +149,7 @@ CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 
 if [ "${arg/build}" != "$arg" ]; then 
 
-    case $(uname) in 
-        Darwin) libline="-L$OPTICKS_PREFIX/lib" ;;
-        Linux) libline="-L$OPTICKS_PREFIX/lib64 -lm -lssl -lcrypto" ;; 
-    esac
+    libline="-L$OPTICKS_PREFIX/lib64 -lm -lssl -lcrypto"
 
     ## WHY DOES THIS NEED THE LIB, NOT JUST HEADERS ?
 

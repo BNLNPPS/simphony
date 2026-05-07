@@ -1,0 +1,128 @@
+<lccdd>
+  <info name="Raindrop" title="Simple optical test geometry for eic-opticks"
+        author="test" url="none" status="test" version="1.0">
+    <comment>
+      Minimal optical geometry for eic-opticks DD4hep integration testing.
+      Matches eic-opticks tests/geom/opticks_raindrop_with_scintillation.gdml
+      Nested boxes: Vacuum(240) > Lead(220) > Air(200) > Water(100) mm
+      Water has RINDEX and scintillation. Air has RINDEX.
+      Border surface between air medium and lead container (MediumContainerSurf).
+      Skin surface on lead container (ContainerSkinSurf).
+    </comment>
+  </info>
+
+  <define>
+    <constant name="world_side" value="500*mm"/>
+    <constant name="world_x"   value="world_side"/>
+    <constant name="world_y"   value="world_side"/>
+    <constant name="world_z"   value="world_side"/>
+  </define>
+
+  <properties>
+    <matrix name="RINDEX__OpAir" coldim="2" values="
+      1.55*eV  1.0
+      15.5*eV  1.0
+    "/>
+    <matrix name="RINDEX__OpWater" coldim="2" values="
+      1.55*eV  1.333
+      15.5*eV  1.333
+    "/>
+    <matrix name="ABSLENGTH__OpWater" coldim="2" values="
+      1.55*eV  1000*mm
+      15.5*eV  1000*mm
+    "/>
+    <matrix name="RINDEX__OpLead" coldim="2" values="
+      1.512*eV  1.0
+      5.512*eV  1.1
+    "/>
+    <matrix name="ABSLENGTH__OpLead" coldim="2" values="
+      1.512*eV  1*mm
+      5.512*eV  1*mm
+    "/>
+    <matrix name="EFFICIENCY__DropSurf" coldim="2" values="
+      2.034*eV  1.0
+      4.136*eV  1.0
+    "/>
+    <matrix name="REFLECTIVITY__DropSurf" coldim="2" values="
+      2.034*eV  0.0
+      4.136*eV  0.0
+    "/>
+  </properties>
+
+  <includes>
+    <gdmlFile ref="${DD4hepINSTALL}/DDDetectors/compact/elements.xml"/>
+  </includes>
+
+  <materials>
+    <material name="Air">
+      <D type="density" unit="g/cm3" value="0.0012"/>
+      <fraction n="0.754" ref="N"/>
+      <fraction n="0.234" ref="O"/>
+      <fraction n="0.012" ref="Ar"/>
+    </material>
+
+    <material name="Vacuum">
+      <D type="density" unit="g/cm3" value="1e-25"/>
+      <fraction n="1.0" ref="N"/>
+    </material>
+
+    <material name="OpAir">
+      <D type="density" unit="g/cm3" value="0.001214"/>
+      <fraction n="0.7" ref="N"/>
+      <fraction n="0.3" ref="O"/>
+      <property name="RINDEX" ref="RINDEX__OpAir"/>
+    </material>
+
+    <material name="OpWater">
+      <D type="density" unit="g/cm3" value="1.0"/>
+      <fraction n="0.112" ref="H"/>
+      <fraction n="0.888" ref="O"/>
+      <property name="RINDEX"                    ref="RINDEX__OpWater"/>
+      <property name="ABSLENGTH"                 ref="ABSLENGTH__OpWater"/>
+    </material>
+
+    <material name="OpLead">
+      <D type="density" unit="g/cm3" value="11.35"/>
+      <fraction n="1.0" ref="Pb"/>
+      <property name="RINDEX" ref="RINDEX__OpLead"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH__OpLead"/>
+    </material>
+  </materials>
+
+  <world material="Vacuum">
+    <shape type="Box" dx="world_x" dy="world_y" dz="world_z"/>
+  </world>
+
+  <display>
+    <vis name="ContainerVis" alpha="0.3" r="0.5" g="0.5" b="0.5" showDaughters="true" visible="true"/>
+    <vis name="MediumVis"    alpha="0.2" r="0.8" g="0.8" b="1.0" showDaughters="true" visible="true"/>
+    <vis name="DropVis"      alpha="0.5" r="0.0" g="0.0" b="1.0" showDaughters="true" visible="true"/>
+  </display>
+
+  <surfaces>
+    <opticalsurface name="/world/Raindrop#MediumContainerSurf"
+                    finish="polished" model="glisur" type="dielectric_dielectric">
+      <property name="EFFICIENCY"    ref="EFFICIENCY__DropSurf"/>
+      <property name="REFLECTIVITY"  ref="REFLECTIVITY__DropSurf"/>
+    </opticalsurface>
+    <opticalsurface name="/world/Raindrop#ContainerSkinSurf"
+                    finish="polished" model="glisur" type="dielectric_dielectric">
+      <property name="EFFICIENCY"    ref="EFFICIENCY__DropSurf"/>
+    </opticalsurface>
+  </surfaces>
+
+  <detectors>
+    <detector id="1" name="Raindrop" type="DD4hep_Raindrop" readout="RaindropHits" vis="ContainerVis">
+      <container x="110*mm" y="110*mm" z="110*mm" material="OpLead"  vis="ContainerVis"/>
+      <medium    x="100*mm" y="100*mm" z="100*mm" material="OpAir"   vis="MediumVis"/>
+      <drop      x="50*mm"  y="50*mm"  z="50*mm"  material="OpWater" vis="DropVis"/>
+    </detector>
+  </detectors>
+
+  <readouts>
+    <readout name="RaindropHits">
+      <id>system:8,medium:4,drop:4</id>
+    </readout>
+  </readouts>
+
+</lccdd>

@@ -22,11 +22,7 @@
 rayleigh.py 
 =============================================
 
-Without selection scatter distrib plots from 
-arrays created by:
-
-* optixrap/tests/ORayleighTest.cc
-* cfg4/tests/OpRayleighTest.cc
+Without selection scatter distrib plots from arrays created by CFG4 tests.
 
 
 """
@@ -82,5 +78,4 @@ if __name__ == '__main__':
         plt.hist(b, bins=bins, histtype="step", label=label)
     pass
     plt.show()
-
 

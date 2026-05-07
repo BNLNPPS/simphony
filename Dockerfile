@@ -6,7 +6,7 @@ ARG CUDA_VERSION=13.0.2
 FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS base
 
 ARG OPTIX_VERSION=9.0.0
-ARG GEANT4_VERSION=11.3.2
+ARG GEANT4_VERSION=11.4.1
 ARG CMAKE_VERSION=4.2.1
 ARG CMAKE_BUILD_JOBS
 
@@ -28,7 +28,7 @@ RUN apt update \
 RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz \
     | tar -xz --strip-components=1 -C /usr/local
 
-RUN mkdir -p /opt/clhep/src && curl -sL https://gitlab.cern.ch/CLHEP/CLHEP/-/archive/CLHEP_2_4_7_1/CLHEP-CLHEP_2_4_7_1.tar.gz | tar -xz --strip-components 1 -C /opt/clhep/src \
+RUN mkdir -p /opt/clhep/src && curl -sL https://gitlab.cern.ch/CLHEP/CLHEP/-/archive/CLHEP_2_4_7_2/CLHEP-CLHEP_2_4_7_2.tar.gz | tar -xz --strip-components 1 -C /opt/clhep/src \
  && cmake -S /opt/clhep/src -B /opt/clhep/build \
  && cmake --build /opt/clhep/build --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install \
  && rm -fr /opt/clhep

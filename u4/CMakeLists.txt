@@ -3,9 +3,7 @@ set(desc "Geant4 Low Level Utilities")
 
 find_package(Geant4 REQUIRED)
 find_package(CLHEP  REQUIRED) 
-find_package(XercesC REQUIRED)
 
-find_package(Custom4 CONFIG)  # have to be explicit as Custom4 needed without j/PMTSim
 find_package(PMTSim_standalone CONFIG)
 
 
@@ -34,11 +32,6 @@ set(SOURCES
     U4Physics.cc
 )
 
-set(OTHER_SOURCES
-    InstrumentedG4OpBoundaryProcess.cc
-)
-
-
 set(HEADERS
     U4_LOG.hh
     U4_API_EXPORT.hh
@@ -48,7 +41,6 @@ set(HEADERS
     U4HitGet.h
     U4Track.h
     U4Stack.h
-    Deprecated_U4PhotonInfo.h
     U4GDML.h
     U4Transform.h
     U4Tree.h
@@ -69,6 +61,7 @@ set(HEADERS
     U4Material.hh
     U4Mat.h
     U4Scint.h
+    U4WLS.h
 
     U4Volume.h
     U4Surface.h
@@ -102,8 +95,6 @@ set(HEADERS
     Local_DsG4Scintillation.hh
     U4Physics.hh
 
-    U4PMTAccessor.h
-
     U4Process.h
     U4PhysicsTable.h
     U4PhysicsVector.h
@@ -118,18 +109,12 @@ set(HEADERS
     U4Version.h
 )
 
-set(OTHER_HEADERS
-    InstrumentedG4OpBoundaryProcess.hh
-)
-
 
 add_library(${name} ${SOURCES} ${HEADERS} )
 
 target_link_libraries( ${name} PUBLIC
     SysRap 
     CLHEP::CLHEP
-    XercesC::XercesC
-    GDXML
     Geant4::G4gdml
     Geant4::G4particles
     Geant4::G4track
@@ -149,11 +134,6 @@ target_compile_definitions( ${name} PUBLIC GLM_ENABLE_EXPERIMENTAL )
 target_compile_definitions( ${name} PRIVATE G4USE_STD11 )
 target_compile_definitions( ${name} PRIVATE STANDALONE )
 
-
-if(Custom4_FOUND)
-    target_link_libraries( ${name} PUBLIC Custom4::Custom4 )
-    target_compile_definitions( ${name} PRIVATE WITH_CUSTOM4 )  # MINTING A DEF ? MAYBE COMES WITH THE TARGET ANYHOW
-endif()
 
 if(PMTSim_standalone_FOUND)
     target_link_libraries( ${name} PUBLIC Opticks::PMTSim_standalone )

@@ -11,11 +11,11 @@ Create the standard geometry::
 Run the sim using CSGOptiXSimTest executable::
 
     cx
-    ./cxsim.sh run   # remote, "run" is default on Linux, "ana" on Darwin 
+    ./cxsim.sh run   # default Linux execution path
     ./cxsim.sh dbg   # remote, run under gdb 
 
     ./cxsim.sh grab  # local, grabbing from remote
-    ./cxsim.sh ana   # local "ana" is default on Darwin, analysis using CSGOptiXSimTest.py script
+    ./cxsim.sh ana   # analysis using CSGOptiXSimTest.py script
 
 
     PIDX=0 ./cxsim.sh  #  restrict photon level python output to a single photon index
@@ -28,10 +28,7 @@ EOU
 }
 
 msg="=== $BASH_SOURCE :"
-case $(uname) in 
-   Linux)  argdef=run  ;;
-   Darwin) argdef=ana  ;;
-esac
+argdef=run
 arg=${1:-$argdef}
 bin=CSGOptiXSimTest
 

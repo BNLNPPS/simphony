@@ -146,10 +146,7 @@ Scatter Tests
 ---------------
 
 **rayleigh.py**
-    Without selection scatter distrib plots from arrays created by:
-
-    optixrap/tests/ORayleighTest.cc 
-    cfg4/tests/OpRayleighTest.cc
+    Without selection scatter distrib plots from arrays created by CFG4 tests.
 
 
 Source Tests
@@ -182,7 +179,7 @@ Analytic/NCSG Geometry tests
 -----------------------------
 
 **analytic_boundary_dbg.py**
-    analysis of photon_buffer written by oxrap/cu/generate.cu:tracetest
+    analysis of tracetest photon buffers
 
     TODO: rename, too special case to share name with tboolean-   
 
@@ -478,7 +475,7 @@ seqmat.py
      debugging seqmat mismatch, zeros.
 
 truncation.py
-     pseudo duplication of oxrap/cu/generate.cu for easy thinking about truncation
+     pseudo propagation model for easy thinking about truncation
      and thinking about seqhis steered propagations 
 
 

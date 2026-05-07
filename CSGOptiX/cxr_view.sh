@@ -191,10 +191,7 @@ Mid chimney fixture::
 EOU
 }
 
-case $(uname) in 
-  Linux) defarg="run" ;;
-  Darwin) defarg="grab_open" ;; 
-esac
+defarg="run"
 arg=${1:-$defarg}
 
 DIR=$(dirname $BASH_SOURCE)
@@ -252,4 +249,3 @@ export TOPLINE="./cxr_view.sh $MOI      # EYE $EYE LOOK $LOOK UP $UP      EMM $E
 source $DIR/cxr.sh $arg     
 
 exit 0
-

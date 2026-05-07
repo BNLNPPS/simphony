@@ -22,10 +22,7 @@ fi
 
 if [ "${arg/dbg}" != "$arg" ]; then 
 
-   case $(uname) in
-     Linux) gdb__  $bin ;;
-     Darwin) lldb__  $bin ;;
-   esac
+   gdb__  $bin
 
    [ $? -ne 0 ] && echo $msg dbg $bin error && exit 2
 fi 
@@ -38,4 +35,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi 
 
 exit 0 
-

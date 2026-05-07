@@ -11,7 +11,7 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type")
 endif()
 
-project(eic-opticks VERSION 0.3.0 LANGUAGES CXX CUDA)
+project(eic-opticks VERSION 0.5.0 LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,13 +33,21 @@ add_subdirectory(qudarap)
 add_subdirectory(qudarap/tests)
 add_subdirectory(CSGOptiX)
 add_subdirectory(CSGOptiX/tests)
-add_subdirectory(gdxml)
-add_subdirectory(gdxml/tests)
 add_subdirectory(u4)
 add_subdirectory(u4/tests)
 add_subdirectory(g4cx)
 add_subdirectory(g4cx/tests)
 add_subdirectory(src)
+
+# Optional DD4hep integration plugins
+find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
+if(DD4hep_FOUND)
+    message(STATUS "DD4hep found -- building dd4hepplugins")
+    add_subdirectory(dd4hepplugins)
+    add_subdirectory(dd4hepplugins/examples)
+else()
+    message(STATUS "DD4hep not found -- skipping dd4hepplugins")
+endif()
 
 # Export configs
 include(CMakePackageConfigHelpers)

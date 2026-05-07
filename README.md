@@ -155,6 +155,7 @@ EIC-Opticks provides several examples demonstrating GPU-accelerated optical phot
 | `GPUPhotonSource` | Optical photons (torch) | Any GDML | G4 + GPU side-by-side validation |
 | `GPUPhotonSourceMinimal` | Optical photons (torch) | Any GDML | GPU-only test |
 | `GPUPhotonFileSource` | Optical photons (text file) | Any GDML | GPU-only, user-defined photons from file |
+| WLS test | Wavelength shifting | WLS sphere + detector shell | Validate GPU WLS physics |
 
 ### Example 1: GPUCerenkov (Cerenkov Only)
 
@@ -297,6 +298,55 @@ GPUPhotonFileSource -g tests/geom/opticks_raindrop.gdml -p my_photons.txt -m run
 
 **Source files:** `src/GPUPhotonFileSource.cpp`, `src/GPUPhotonFileSource.h`
 
+### Example 6: Wavelength Shifting (WLS) Test
+
+This test validates the GPU wavelength shifting implementation using a dedicated
+geometry with a WLS sphere surrounded by a detector shell:
+
+```
+Geometry: wls_test.gdml
+├── Air world (r=200 mm)
+│   ├── WLS sphere (r=20 mm) ← Absorbs UV, re-emits visible
+│   └── Glass detector shell (r=28-30 mm) ← 100% detection efficiency
+```
+
+The WLS material absorbs UV photons (350 nm) and re-emits them isotropically at
+longer wavelengths (peak ~481 nm) with a 0.5 ns exponential time delay. The test
+fires 1000 monochromatic 350 nm photons from the origin into the WLS sphere.
+
+```bash
+GPUPhotonSourceMinimal -g tests/geom/wls_test.gdml -c wls_test -m tests/run.mac -s 42
+```
+
+**Expected results:**
+- ~990/1000 photons detected (10 absorbed after failing energy conservation)
+- All hits wavelength-shifted from 350 nm to mean ~487 nm
+- Energy conservation: no hits with wavelength < 350 nm
+- Isotropic re-emission: mean momentum direction near zero
+- Time delay: mean ~0.6 ns (propagation + 0.5 ns exponential WLS decay)
+
+**GDML WLS properties required** (same syntax for G4 10.x and 11.x):
+```xml
+<define>
+    <matrix coldim="2" name="WLSABSLENGTH" values="1.77e-06 10000.0 ... 4.13e-06 0.01"/>
+    <matrix coldim="2" name="WLSCOMPONENT" values="1.77e-06 0.00 ... 3.10e-06 0.00"/>
+    <matrix coldim="1" name="WLSTIMECONSTANT" values="0.5"/>
+</define>
+<materials>
+    <material name="WLSMaterial">
+        <property name="WLSABSLENGTH" ref="WLSABSLENGTH"/>
+        <property name="WLSCOMPONENT" ref="WLSCOMPONENT"/>
+        <property name="WLSTIMECONSTANT" ref="WLSTIMECONSTANT"/>
+    </material>
+</materials>
+```
+
+Unlike scintillation properties, WLS property names are the same in both Geant4
+10.x and 11.x — no dual-naming is needed.
+
+**Test files:** `tests/geom/wls_test.gdml`, `config/wls_test.json`
+**Implementation docs:** `docs/WLS_IMPLEMENTATION.md`
+
 ### Torch configuration
 
 `GPUPhotonSource` and `GPUPhotonSourceMinimal` read photon source parameters from a
@@ -317,6 +367,7 @@ JSON config file (default `config/dev.json`). Key fields:
 |---------|-------------|-------------|-----------------|----------------------|---------------------|
 | Cerenkov genstep collection | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Scintillation genstep collection | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Wavelength shifting (WLS) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Torch photon generation | ✗ | ✗ | ✓ | ✓ | ✗ |
 | Photon input from text file | ✗ | ✗ | ✗ | ✗ | ✓ |
 | G4 optical photon tracking | ✓ | ✓ | ✓ | ✗ | ✗ |
@@ -576,7 +627,7 @@ This gives a compact chronological per-step history in 16 bytes per photon.
 #### Hit determination and MaxBounce
 
 A photon is a "hit" when `(flagmask & hitmask) == hitmask`. The default
-hitmask is `SD` (SURFACE_DETECT = 0x40), but with CustomART PMTs it may be
+hitmask is `SD` (SURFACE_DETECT = 0x40), but for PMT efficiency tagging it may be
 `EC` (EFFICIENCY_COLLECT = 0x2000). The script reads the actual hitmask from
 `NPFold_meta.txt` in the event folder.
 
@@ -605,6 +656,6 @@ Flags are a power-of-two enum where each GPU physics process gets one bit:
 | BOUNDARY_REFLECT | 0x0400 | BR | Fresnel reflection at boundary |
 | BOUNDARY_TRANSMIT | 0x0800 | BT | Transmitted through boundary |
 | NAN_ABORT | 0x1000 | NA | Aborted due to NaN (geometry error) |
-| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by CustomART PMT efficiency |
-| EFFICIENCY_CULL | 0x4000 | EL | Culled by CustomART PMT efficiency |
+| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by PMT efficiency |
+| EFFICIENCY_CULL | 0x4000 | EL | Culled by PMT efficiency |
 | MISS | 0x8000 | MI | Missed all geometry |
