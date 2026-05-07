@@ -11,6 +11,7 @@ set(TEST_SOURCES
    QPolyTest.cc
    QSimDescTest.cc
    QPropTest.cc 
+   QPMTTest.cc
    QEvt_Lifecycle_Test.cc
    QSimCreateTest.cc 
    QUTest.cc
@@ -118,28 +119,3 @@ foreach(SRC ${KNOWN_FAIL_TEST_SOURCES})
     add_executable(${TGT} ${SRC})
     target_link_libraries(${TGT} QUDARap )
 endforeach()
-
-
-find_package(PMTSim_standalone CONFIG)
-
-if(PMTSim_standalone_FOUND)
-
-    set(PMTSIM_TEST_SOURCES
-        QPMTTest.cc 
-    )
-
-    foreach(SRC ${PMTSIM_TEST_SOURCES})
-        get_filename_component(TGT ${SRC} NAME_WE)
-        add_executable(${TGT} ${SRC})
-
-        set(testname ${name}.${TGT})
-        add_test(${testname} ${TGT})
-
-        target_link_libraries(${TGT} QUDARap )
-        target_link_libraries( ${TGT} Opticks::PMTSim_standalone )
-        target_compile_definitions( ${TGT} PRIVATE WITH_PMTSIM)
-    endforeach()
-
-else()
-    message(STATUS "${name} PMTSim_standalone_FOUND:${PMTSim_standalone_FOUND}  " )
-endif()

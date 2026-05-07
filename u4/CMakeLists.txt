@@ -4,8 +4,6 @@ set(desc "Geant4 Low Level Utilities")
 find_package(Geant4 REQUIRED)
 find_package(CLHEP  REQUIRED) 
 
-find_package(PMTSim_standalone CONFIG)
-
 
 set(SOURCES
     U4_LOG.cc
@@ -132,12 +130,6 @@ target_compile_definitions( ${name} PUBLIC OPTICKS_U4 ) # THIS MUST BE PUBLIC FO
 target_compile_definitions( ${name} PUBLIC GLM_ENABLE_EXPERIMENTAL )
 
 target_compile_definitions( ${name} PRIVATE G4USE_STD11 )
-
-if(PMTSim_standalone_FOUND)
-    target_link_libraries( ${name} PUBLIC Opticks::PMTSim_standalone )
-    target_compile_definitions( ${name} PRIVATE WITH_PMTSIM PMTSIM_STANDALONE WITH_NP )
-    ## THE DEFS CANNOT BE PUBLIC : AS CAUSE ISSUES FOR JUNOSW BUILD WITH OPTICKS
-endif()
 
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/u4)

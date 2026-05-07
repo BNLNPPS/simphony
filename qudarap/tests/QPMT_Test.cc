@@ -10,6 +10,7 @@ that is expedient for executable name based bookkeeping.
 #include <cuda_runtime.h>
 #include "OPTICKS_LOG.hh"
 #include "get_jpmt_fold.h"
+#include "SPMT.h"
 #include "QPMTTest.h"
 
 int main(int argc, char** argv)
@@ -18,7 +19,7 @@ int main(int argc, char** argv)
 
     std::cout << " Before: " << QPMT<float>::Desc() << std::endl ;
 
-    const NPFold* jpmt = get_jpmt_fold();
+    const NPFold* jpmt = SPMT::Serialize();
 
     QPMTTest<float> t(jpmt);
     NPFold* f = t.serialize();

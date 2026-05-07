@@ -121,27 +121,14 @@ set(TGT U4HitTest)
 add_executable(${TGT} ${U4HitTest_SOURCES})
 target_link_libraries(${TGT} U4 CSG CUDA::cudart)
 
-message(STATUS "${CMAKE_CURRENT_LIST_FILE} : PMTSim_standalone_FOUND     : ${PMTSim_standalone_FOUND}")
-set(PMTSim_TESTS
+set(BUILD_ONLY_SOURCES
    U4SimulateTest.cc
    U4SimtraceTest.cc
 )
 
-if(PMTSim_standalone_FOUND)
-
-    foreach(SRC ${PMTSim_TESTS})
-        get_filename_component(TGT ${SRC} NAME_WE)
-        add_executable(${TGT} ${SRC})
-        target_compile_definitions( ${TGT} PRIVATE MOCK_CURAND ) 
-        target_compile_definitions( ${TGT} PRIVATE WITH_NP )    ## for _PMTSimParamData 
-        target_compile_definitions( ${TGT} PRIVATE POM_DEBUG )   
-
-        target_link_libraries(${TGT} U4 SysRap)
-
-           target_compile_definitions( ${TGT} PRIVATE WITH_PMTSIM )   
-           target_compile_definitions( ${TGT} PRIVATE PMTSIM_STANDALONE )   
-           target_link_libraries(${TGT} PMTSim_standalone)
-
-    endforeach()
-
-endif()
+foreach(SRC ${BUILD_ONLY_SOURCES})
+    get_filename_component(TGT ${SRC} NAME_WE)
+    add_executable(${TGT} ${SRC})
+    target_compile_definitions( ${TGT} PRIVATE MOCK_CURAND )
+    target_link_libraries(${TGT} U4 SysRap)
+endforeach()

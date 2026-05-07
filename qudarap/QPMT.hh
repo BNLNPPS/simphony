@@ -5,10 +5,8 @@ QPMT.hh : projecting PMT properties onto device using qpmt.h
 
 * narrowing (or widening, or copying) inputs to template type done in ctor
 
-* QPMT.hh does not directly depend on the JUNO specific JPMT.h, instead
-  the QPMT ctor accepts the arrays that JPMT.h collects from property files
-
-  * hence JPMT.h (via PMTSim) only used in tests qudarap/tests/QPMTTest.cc not in qudarap
+* QPMT.hh does not directly depend on any external PMT geometry package.
+  The QPMT ctor accepts serialized PMT property arrays prepared by the test helpers.
 
 * QPMT.hh/qpmt.h layout has some similarities to QCerenkov.hh/qcerenkov.h
 

@@ -43,10 +43,6 @@ is a default one with zero ce.w extent.
 #include "U4Physics.hh"
 #include "U4VPrimaryGenerator.h"
 
-#ifdef WITH_PMTSIM
-#include "PMTSim.hh"
-#endif
-
 
 struct U4App
     : 
@@ -220,12 +216,6 @@ void U4App::EndOfEventAction(const G4Event* event)
 
     const char* savedir = SEvt::GetSaveDir(1); 
     SaveMeta(savedir); 
-
-#if defined(WITH_PMTSIM) && defined(POM_DEBUG)
-    PMTSim::ModelTrigger_Debug_Save(savedir) ; 
-#else
-    LOG(info) << "not-(WITH_PMTSIM and POM_DEBUG)"  ; 
-#endif
 }
 
 void U4App::PreUserTrackingAction(const G4Track* trk){  fRecorder->PreUserTrackingAction(trk); }
@@ -290,6 +280,5 @@ void U4App::Main()  // static
 
     LOG(info) << SLOG::Banner() << " " << " savedir " << SEvt::GetSaveDir(1) ; 
 }
-
 
 
