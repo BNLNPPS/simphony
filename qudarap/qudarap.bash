@@ -85,7 +85,6 @@ EON
 
 
 qudarap-prepare-sizes-Linux-(){  echo ${OPTICKS_QUDARAP_RNGMAX:-1,3,10} ; }
-qudarap-prepare-sizes-Darwin-(){ echo ${OPTICKS_QUDARAP_RNGMAX:-1,3} ; }
 qudarap-prepare-sizes(){ $FUNCNAME-$(uname)- | tr "," "\n"  ; }
 qudarap-rngdir(){ echo $(opticks-rngdir) ; }
 

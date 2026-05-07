@@ -198,14 +198,14 @@ g4-;g4-cls G4VDiscreteProcess::
 
 Noticed that returns from::
 
-     InstrumentedG4OpBoundaryProcess::PostStepDoIt
+     G4OpBoundaryProcess::PostStepDoIt
      G4OpAbsorption::PostStepDoIt
      G4OpRayleigh::PostStepDoIt
 
 All do G4VDiscreteProcess::PostStepDoIt, eg::
 
      182 G4VParticleChange*
-     183 InstrumentedG4OpBoundaryProcess::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep)
+     183 G4OpBoundaryProcess::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep)
      184 {
      ...
      623         return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
@@ -235,6 +235,5 @@ void U4Process::ClearNumberOfInteractionLengthLeft(const G4Track& aTrack, const 
         }
     }
 }
-
 
 

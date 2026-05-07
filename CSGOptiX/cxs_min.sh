@@ -85,10 +85,7 @@ SDIR=$(dirname $(realpath $BASH_SOURCE))
 
 vars="$vars BASH_SOURCE SDIR"
 
-case $(uname) in
-   Linux) defarg=run_report_info ;;
-   Darwin) defarg=ana ;;
-esac
+defarg=run_report_info
 
 [ -n "$BP" ] && defarg=dbg
 [ -n "$PLOT" ] && defarg=ana
@@ -206,16 +203,9 @@ test=input_photon_poolcover_refine
 export TEST=${TEST:-$test}
 
 
-#ctx=Debug_XORWOW
-#ctx=Debug_Philox
-
-case $(uname) in
-   Darwin) ctx=Debug_Philox ;;
-    Linux) ctx=$(TEST=ContextString sbuild_test) ;;
-esac
+ctx=${OPTICKS_EVENT_CONTEXT:-Debug_Philox}
 
 export OPTICKS_EVENT_NAME=${ctx}_${TEST}
-## SEventConfig::Initialize_EventName asserts OPTICKS_EVENT_NAME sbuild::Matches config of the build
 
 
 opticks_event_reldir=ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-none}   ## matches SEventConfig::_DefaultEventReldir OPTICKS_EVENT_RELDIR
@@ -747,4 +737,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
         source epub.sh
     fi
 fi
-

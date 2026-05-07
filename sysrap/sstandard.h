@@ -105,6 +105,9 @@ struct sstandard
 
     const NP* icdf ;
 
+    const NP *wls_icdf;
+    const NP *wls_mat_map;
+    const NP *wls_time_constants;
 
     sstandard();
 
@@ -146,9 +149,7 @@ struct sstandard
     static NP* unused_create(const sproplist* pl,  const std::vector<std::string>& names, const NPFold* fold );
 };
 
-
-inline sstandard::sstandard()
-    :
+inline sstandard::sstandard() :
     dom(nullptr),
     wavelength(nullptr),
     energy(nullptr),
@@ -158,7 +159,10 @@ inline sstandard::sstandard()
     bd(nullptr),
     bnd(nullptr),
     optical(nullptr),
-    icdf(nullptr)
+    icdf(nullptr),
+    wls_icdf(nullptr),
+    wls_mat_map(nullptr),
+    wls_time_constants(nullptr)
 {
 }
 
@@ -211,6 +215,10 @@ inline NPFold* sstandard::serialize() const
 
     fold->add(snam::ICDF, icdf) ;
 
+    fold->add(snam::WLS_ICDF, wls_icdf);
+    fold->add(snam::WLS_MAT_MAP, wls_mat_map);
+    fold->add(snam::WLS_TIME_CONSTANTS, wls_time_constants);
+
     return fold ;
 }
 
@@ -228,6 +236,10 @@ inline void sstandard::import(const NPFold* fold )
     optical = fold->get(snam::OPTICAL);
 
     icdf = fold->get(snam::ICDF);
+
+    wls_icdf = fold->get(snam::WLS_ICDF);
+    wls_mat_map = fold->get(snam::WLS_MAT_MAP);
+    wls_time_constants = fold->get(snam::WLS_TIME_CONSTANTS);
 }
 
 inline void sstandard::save(const char* base, const char* rel )

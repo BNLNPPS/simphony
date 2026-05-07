@@ -68,7 +68,7 @@ zoom=1.0
 size=1280,720,1
 sizescale=1.5
 
-# [ "$(uname)" == "Darwin" ] && cvd=0    # only one GPU on laptop : BUT are usually just grabbing from remote
+# [ "$(uname)" == "Linux" ] && cvd=0
 
 export CVDLabel="CVD${CUDA_VISIBLE_DEVICES}" 
 
@@ -96,10 +96,7 @@ esac
 
 export OPTICKS_GEOM=${OPTICKS_GEOM:-$MOI}  # "sweeper" role , used by Opticks::getOutPrefix   
 
-case $(uname) in 
-   Darwin) optix_version=70000 ;;   ## HMM: assuming remote using that version
-   Linux)  optix_version=$(CSGOptiXVersion 2>/dev/null) ;;
-esac
+optix_version=$(CSGOptiXVersion 2>/dev/null)
 
 
 # the OPTICKS_RELDIR and NAMEPREFIX defaults are typically overridden from higher level script
@@ -153,10 +150,7 @@ fi
 
 
 if [ -n "$DEBUG" ]; then 
-    case $(uname) in 
-       Darwin) GDB=lldb__ ;;
-       Linux)  GDB=gdb    ;;
-    esac
+    GDB=gdb
 fi 
 
 DIV=""
@@ -213,4 +207,3 @@ elif [ "$arg" == "info" ]; then
     vars="BASH_SOURCE BASE TMPDIR LOGDIR NAMEPREFIX SDIR optix_version"
     for var in $vars ; do printf " %20s : %s \n" "$var" "${!var}" ; done
 fi 
-

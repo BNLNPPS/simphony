@@ -19,13 +19,10 @@ export FOLD=/tmp/$name
 mkdir -p $FOLD
 bin=$FOLD/$name
 
-custom4_prefix=${OPTICKS_PREFIX}_externals/custom4/0.1.6
-CUSTOM4_PREFIX=${CUSTOM4_PREFIX:-$custom4_prefix}
-
 cuda_prefix=/usr/local/cuda
 CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 
-vars="BASH_SOURCE SDIR FOLD GEOM bin name CUSTOM4_PREFIX CUDA_PREFIX"
+vars="BASH_SOURCE SDIR FOLD GEOM bin name CUDA_PREFIX"
 
 
 if [ "${arg/info}" != "$arg" ]; then 
@@ -37,10 +34,8 @@ if [ "${arg/build}" != "$arg" ]; then
        -g \
        -std=c++11 -lstdc++ \
        -DMOCK_CURAND \
-       -DWITH_CUSTOM4 \
        -I.. \
        -I$OPTICKS_PREFIX/include/SysRap  \
-       -I$CUSTOM4_PREFIX/include/Custom4 \
        -I$CUDA_PREFIX/include \
        -I$OPTICKS_PREFIX/externals/glm/glm \
        -I$OPTICKS_PREFIX/externals/plog/include \
@@ -56,10 +51,7 @@ if [ "${arg/run}" != "$arg" ]; then
 fi
 
 if [ "${arg/dbg}" != "$arg" ]; then 
-    case $(uname) in 
-        Darwin) lldb__ $bin ;;
-        Linux)  gdb__ $bin ;;
-    esac
+    gdb__ $bin
     [ $? -ne 0 ] && echo $msg dbg error && exit 3 
 fi
 
@@ -69,5 +61,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi
 
 exit 0 
-
-

@@ -37,7 +37,7 @@ of the geocache used.
 
     bench.py --digest 52 --since 6pm
 
-    bench.py --name geocache-bench360
+    bench.py --name render-bench
          fullname of the results dir
 
     bench.py --name 360
@@ -51,7 +51,7 @@ of the geocache used.
 
 ::
 
-    ipython -i $(which bench.py) -- --name geocache-bench360 --include xanalytic --include 10240,5760,1
+    ipython -i $(which bench.py) -- --name render-bench --include xanalytic --include 10240,5760,1
 
 
 """

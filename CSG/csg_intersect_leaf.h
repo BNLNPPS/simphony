@@ -59,7 +59,7 @@ intersect_leaf_disc
 distance_leaf
 intersect_leaf
 
-Bringing over functions from  ~/opticks/optixrap/cu/csg_intersect_primitive.h
+Leaf intersection helpers shared by CPU and CUDA geometry tests.
 
 **/
 
@@ -322,4 +322,3 @@ void intersect_leaf(bool& valid_isect, float4& isect, const CSGNode* node, const
 
 #endif
 }
-

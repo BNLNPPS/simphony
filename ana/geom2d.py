@@ -30,11 +30,7 @@ class Geom2d(object):
     """
     Scratch geometry, for designing flight paths
 
-    Note that the GParts are not standardly saved, need to run 
-    an Opticks executable such as OpSnapTest with option --savegparts::
-
-       OpSnapTest --savegparts 
-
+    Scratch geometry data is loaded from a geocache key directory.
     """
     def __init__(self, kd, ridx=0):
         fp = open(os.path.join(kd, "cachemeta.json"), "r")
@@ -167,9 +163,3 @@ if __name__ == '__main__':
 
 
     mm0.render(ax, art3d=art3d)
-
-
-
-
-
-

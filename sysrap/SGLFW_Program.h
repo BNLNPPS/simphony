@@ -189,11 +189,11 @@ SGLFW_Program::createFromText
 
 Compiles and links shader strings into a program referred from integer *program*
 
-On macOS with the below get "runtime error, unsupported version"::
+Older local OpenGL stacks may reject the below with "runtime error, unsupported version"::
 
     #version 460 core
 
-On macOS with the below::
+While the below works with those older stacks::
 
     #version 410 core
 
@@ -445,5 +445,4 @@ inline void SGLFW_Program::Print_shader_info_log(unsigned id)  // static
     printf("SGLFW_Program::Print_shader_info_log GL index %u:\n%s\n", id, log);
     assert(0);
 }
-
 
