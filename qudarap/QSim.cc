@@ -17,7 +17,6 @@
 #include "SEvent.hh"
 #include "SEventConfig.hh"
 
-//#include "SCSGOptiX.h"
 #include "SSimulator.h"
 
 #include "SGenstep.h"
@@ -396,7 +395,7 @@ void QSim::requireScint(const char *caller) const
 QSim::setLauncher
 ------------------
 
-Formerly used SCSGOptiX
+Stores the launcher used for sim and simtrace callbacks.
 
 **/
 void QSim::setLauncher(SSimulator* cx_ )

@@ -173,8 +173,7 @@ MaxTime (ns)
 
 
 EventName [OPTICKS_EVENT_NAME envvar]
-    When OPTICKS_EVENT_NAME is defined it is constrained to match the build settings
-    and it also controls the default event reldir used by SEvt::save
+    When OPTICKS_EVENT_NAME is defined it controls the default event reldir used by SEvt::save
     (requires kEventName to match the token used as part of _EventReldirDefault)
 
 **/

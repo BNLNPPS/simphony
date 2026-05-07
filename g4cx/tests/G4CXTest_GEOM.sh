@@ -205,8 +205,7 @@ VERSION=${VERSION:-$version}
 export VERSION    ## used in SEvt output directory name ALL$VERSION
 
 
-#ctx=$(TEST=ContextString sbuild_test)  ## eg Debug_Philox see sbuild.h
-ctx=Debug_Philox
+ctx=${OPTICKS_EVENT_CONTEXT:-Debug_Philox}
 #export OPTICKS_EVENT_NAME=$ctx  # used by SEventConfig::EventReldir "OPTICKS_EVENT_RELDIR"
 export OPTICKS_EVENT_NAME=${ctx}_${TEST}
 

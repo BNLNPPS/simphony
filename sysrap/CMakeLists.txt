@@ -50,7 +50,6 @@ set(SOURCES
 
     STimes.cc
     SLogger.cc
-    SBase36.cc
     SSortKV.cc
     SPairVec.cc
     md5.cc
@@ -239,7 +238,6 @@ set(HEADERS
 
     STimes.hh
     SLogger.hh
-    SBase36.hh
     SSortKV.hh
     SPairVec.hh
     OpticksCSG.h
@@ -272,7 +270,6 @@ set(HEADERS
     SLabelCache.hh
 
     SRng.hh
-    SBuf.hh
 
     SName.h 
     SLabel.h 
@@ -282,7 +279,6 @@ set(HEADERS
     tcomplex.h
 
     srng.h
-    sbuild.h
     srngcpu.h
     scurand.h  
 
@@ -308,7 +304,6 @@ set(HEADERS
     sframe.h
     sfr.h
     SCE.h 
-    SCSGOptiX.h 
 
     SPMT.h 
     SPMTAccessor.h 
@@ -476,13 +471,10 @@ set(HEADERS
     SSim.hh
     SPropMockup.h
 
-    S4Material.h
     S4MaterialPropertyVector.h
 
     SNameOrder.h
     S4.h 
-    S4Surface.h 
-    S4TreeBorder.h
 
     S4RandomMonitor.h
     S4RandomArray.h
@@ -491,14 +483,12 @@ set(HEADERS
     SFastSim_Debug.hh
     SFastSimOpticalModel.hh
     STrackInfo.h
-    SVolume.h
     SPhoton_Debug.h
     SUniformRand.h
 
     sgeomdefs.h 
     sfmt.h
     ssolid.h
-    SIntersect.h
     SSimtrace.h
 )
 
