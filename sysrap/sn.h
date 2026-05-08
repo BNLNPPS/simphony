@@ -465,6 +465,8 @@ struct SYSRAP_API sn
         double nz_nrm_z
     );
 
+
+    static sn* Trapezoid(double z, double y, double x, double ltx);
     static sn* Cone(double r1, double z1, double r2, double z2);
     static sn* Sphere(double radius);
     static sn* ZSphere(double radius, double z1, double z2);
@@ -3064,6 +3066,7 @@ inline sn* sn::Cylinder(double radius, double z1, double z2) // static
 }
 
 /**
+
 sn::CutCylinder
 ----------------
 
@@ -3215,6 +3218,23 @@ inline void sn::CutCylinderZRange(
 }
 
 
+
+/**
+ * Support right angular wedge from STEP.
+ *
+ * References:
+ *
+ *   https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids
+ *   https://github.com/Geant4/geant4/blob/master/source/geometry/solids/CSG/include/G4Trap.hh
+ */
+inline sn* sn::Trapezoid(double z, double y, double x, double ltx)
+{
+    assert( x > 0 && y > 0 && z > 0 && ltx > 0 && ltx < x );
+    sn* nd = Create(CSG_TRAPEZOID);
+    nd->setPA(x, y, z, 0.f, ltx, 0.f);
+    nd->setBB(-0.5*x, -0.5*y, -0.5*z, +0.5*x, +0.5*y, +0.5*z);
+    return nd;
+}
 
 inline sn* sn::Cone(double r1, double z1, double r2, double z2)  // static
 {
@@ -5465,6 +5485,12 @@ inline void sn::setAABB_LeafFrame()
         CutCylinderZRange(zmin, zmax, R, dz, pz_nrm_x, pz_nrm_y, pz_nrm_z, nz_nrm_x, nz_nrm_y, nz_nrm_z );
 
         setBB( -R, -R, zmin, +R, +R, zmax );
+    }
+    else if( typecode == CSG_TRAPEZOID )
+    {
+        double x, y, z, unused1, ltx, unused2;
+        getParam_(x, y, z, unused1, ltx, unused2);
+        setBB(-0.5*x, -0.5*y, -0.5*z, +0.5*x, +0.5*y, +0.5*z);
     }
     else if( typecode == CSG_DISC )
     {

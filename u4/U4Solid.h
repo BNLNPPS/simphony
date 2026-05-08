@@ -43,6 +43,7 @@ npy/NNodeUncoincide npy/NNodeNudger
 #include "G4Box.hh"
 #include "G4Tubs.hh"
 #include "G4CutTubs.hh"
+#include "G4Trap.hh"
 #include "G4Polycone.hh"
 #include "G4Cons.hh"
 #include "G4Hype.hh"
@@ -68,6 +69,7 @@ enum {
     _G4Ellipsoid,
     _G4Box,
     _G4Tubs,
+    _G4Trap,
     _G4Polycone,
     _G4Cons,
     _G4Hype,
@@ -87,6 +89,7 @@ struct U4Solid
     static constexpr const char* G4Ellipsoid_         = "Ell" ;
     static constexpr const char* G4Box_               = "Box" ;
     static constexpr const char* G4Tubs_              = "Tub" ;
+    static constexpr const char* G4Trap_              = "Trp" ;
     static constexpr const char* G4Polycone_          = "Pol" ;
     static constexpr const char* G4Cons_              = "Con" ;
     static constexpr const char* G4Hype_              = "Hyp" ;
@@ -135,6 +138,7 @@ private:
     void init_Ellipsoid();
     void init_Box();
     void init_Tubs();
+    void init_Trap();
     void init_Polycone();
     void init_Cons();
     void init_Hype();
@@ -283,6 +287,7 @@ inline int U4Solid::Type(const char* name)   // static
     if( strcmp(name, "G4Ellipsoid") == 0 )         type = _G4Ellipsoid ;
     if( strcmp(name, "G4Box") == 0 )               type = _G4Box ;
     if( strcmp(name, "G4Tubs") == 0 )              type = _G4Tubs ;
+    if( strcmp(name, "G4Trap") == 0 )              type = _G4Trap ;
     if( strcmp(name, "G4Polycone") == 0 )          type = _G4Polycone ;
     if( strcmp(name, "G4Cons") == 0 )              type = _G4Cons ;
     if( strcmp(name, "G4Hype") == 0 )              type = _G4Hype ;
@@ -306,6 +311,7 @@ inline const char* U4Solid::Tag(int type)   // static
         case _G4Ellipsoid:         tag = G4Ellipsoid_         ; break ;
         case _G4Box:               tag = G4Box_               ; break ;
         case _G4Tubs:              tag = G4Tubs_              ; break ;
+        case _G4Trap:              tag = G4Trap_              ; break ;
         case _G4Polycone:          tag = G4Polycone_          ; break ;
         case _G4Cons:              tag = G4Cons_              ; break ;
         case _G4Hype:              tag = G4Hype_              ; break ;
@@ -403,6 +409,7 @@ inline void U4Solid::init_Constituents()
         case _G4Ellipsoid         : init_Ellipsoid()             ; break ;
         case _G4Box               : init_Box()                   ; break ;
         case _G4Tubs              : init_Tubs()                  ; break ;
+        case _G4Trap              : init_Trap()                  ; break ;
         case _G4Polycone          : init_Polycone()              ; break ;
         case _G4Cons              : init_Cons()                  ; break ;
         case _G4Hype              : init_Hype()                  ; break ;
@@ -878,6 +885,20 @@ inline void U4Solid::init_CutTubs()
 }
 
 
+
+
+inline void U4Solid::init_Trap()
+{
+    const G4Trap* trap = dynamic_cast<const G4Trap*>(solid);
+    assert(trap);
+
+    double z   = 2*trap->GetZHalfLength()/CLHEP::mm;
+    double y   = 2*trap->GetYHalfLength1()/CLHEP::mm;
+    double x   = 2*trap->GetXHalfLength1()/CLHEP::mm;
+    double ltx = 2*trap->GetXHalfLength2()/CLHEP::mm;
+
+    root = sn::Trapezoid(z, y, x, ltx);
+}
 
 
 inline void U4Solid::init_Polycone()
