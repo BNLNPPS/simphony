@@ -11,19 +11,20 @@
 #include <sys/stat.h>
 #include <vector>
 
-#include <nlohmann/json.hpp>
 #include <cuda_runtime.h>
+#include <nlohmann/json.hpp>
 
 #include "sysrap/SEventConfig.hh"
 
 #include "config.h"
 #include "config_path.h"
 
-namespace gphox {
+namespace gphox
+{
 
 using namespace std;
 
-constexpr const char *GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
+constexpr const char* GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
 
 namespace
 {
@@ -57,7 +58,7 @@ auto FindEventMode(std::string_view name)
 
 } // namespace
 
-bool FileExists(const std::string &path)
+bool FileExists(const std::string& path)
 {
     if (path.empty())
         return false;
@@ -85,13 +86,13 @@ Config::Config(std::string config_name) :
     output_dir{DefaultOutputDir()},
     torch{}
 {
-  ReadConfig(Locate(name + ".json"));
-  Apply();
+    ReadConfig(Locate(name + ".json"));
+    Apply();
 }
 
-std::string Config::PtxPath(const std::string &ptx_name)
+std::string Config::PtxPath(const std::string& ptx_name)
 {
-    const char *env_path = std::getenv(GPHOX_PTX_PATH_ENV);
+    const char* env_path = std::getenv(GPHOX_PTX_PATH_ENV);
     if (env_path && FileExists(env_path))
         return env_path;
 
@@ -109,49 +110,49 @@ std::string Config::PtxPath(const std::string &ptx_name)
 
 std::string Config::Locate(std::string filename) const
 {
-  std::vector<std::string> search_paths;
+    std::vector<std::string> search_paths;
 
-  const std::string user_dir{std::getenv("GPHOX_CONFIG_DIR") ? std::getenv("GPHOX_CONFIG_DIR") : ""};
+    const std::string user_dir{std::getenv("GPHOX_CONFIG_DIR") ? std::getenv("GPHOX_CONFIG_DIR") : ""};
 
-  if (user_dir.empty())
-  {
-    std::string paths(GPHOX_CONFIG_SEARCH_PATHS);
-
-    size_t last = 0;
-    size_t next = 0;
-    while ((next = paths.find(':', last)) != std::string::npos)
+    if (user_dir.empty())
     {
-      search_paths.push_back(paths.substr(last, next-last));
-      last = next + 1;
+        std::string paths(GPHOX_CONFIG_SEARCH_PATHS);
+
+        size_t last = 0;
+        size_t next = 0;
+        while ((next = paths.find(':', last)) != std::string::npos)
+        {
+            search_paths.push_back(paths.substr(last, next - last));
+            last = next + 1;
+        }
+
+        search_paths.push_back(paths.substr(last));
+    }
+    else
+    {
+        search_paths.push_back(user_dir);
     }
 
-    search_paths.push_back(paths.substr(last));
-  }
-  else
-  {
-    search_paths.push_back(user_dir);
-  }
-
-  struct stat buffer;
-  std::string filepath{""};
-  for (std::string path : search_paths)
-  {
-    std::string fpath{path + "/" + filename};
-    if (stat(fpath.c_str(), &buffer) == 0)
+    struct stat buffer;
+    std::string filepath{""};
+    for (std::string path : search_paths)
     {
-      filepath = fpath;
-      break;
+        std::string fpath{path + "/" + filename};
+        if (stat(fpath.c_str(), &buffer) == 0)
+        {
+            filepath = fpath;
+            break;
+        }
     }
-  }
 
-  if (filepath.empty())
-  {
-    std::string errmsg{"Could not find config file \"" + filename + "\" in "};
-    for (std::string path : search_paths) errmsg += (path + ":");
-    throw std::runtime_error(errmsg);
-  }
+    if (filepath.empty())
+    {
+        std::string errmsg{"Could not find config file \"" + filename + "\" in "};
+        for (std::string path : search_paths) errmsg += (path + ":");
+        throw std::runtime_error(errmsg);
+    }
 
-  return filepath;
+    return filepath;
 }
 
 EventMode Config::ParseEventMode(std::string_view name)
@@ -190,49 +191,50 @@ std::string_view Config::EventModeName(EventMode mode)
  */
 void Config::ReadConfig(std::string filepath)
 {
-  nlohmann::json json;
+    nlohmann::json json;
 
-  try {
-    std::ifstream ifs(filepath);
-    ifs >> json;
-
-    if (json.contains("torch"))
+    try
     {
-        nlohmann::json torch_ = json["torch"];
+        std::ifstream ifs(filepath);
+        ifs >> json;
 
-        torch = {
-            .gentype = OpticksGenstep_::Type(torch_["gentype"]),
-            .trackid = torch_["trackid"],
-            .matline = torch_["matline"],
-            .numphoton = torch_["numphoton"],
-            .pos = make_float3(torch_["pos"][0], torch_["pos"][1], torch_["pos"][2]),
-            .time = torch_["time"],
-            .mom = normalize(make_float3(torch_["mom"][0], torch_["mom"][1], torch_["mom"][2])),
-            .weight = torch_["weight"],
-            .pol = make_float3(torch_["pol"][0], torch_["pol"][1], torch_["pol"][2]),
-            .wavelength = torch_["wavelength"],
-            .zenith = make_float2(torch_["zenith"][0], torch_["zenith"][1]),
-            .azimuth = make_float2(torch_["azimuth"][0], torch_["azimuth"][1]),
-            .radius = torch_["radius"],
-            .distance = torch_["distance"],
-            .mode = torch_["mode"],
-            .type = storchtype::Type(torch_["type"])};
+        if (json.contains("torch"))
+        {
+            nlohmann::json torch_ = json["torch"];
+
+            torch = {
+                .gentype = OpticksGenstep_::Type(torch_["gentype"]),
+                .trackid = torch_["trackid"],
+                .matline = torch_["matline"],
+                .numphoton = torch_["numphoton"],
+                .pos = make_float3(torch_["pos"][0], torch_["pos"][1], torch_["pos"][2]),
+                .time = torch_["time"],
+                .mom = normalize(make_float3(torch_["mom"][0], torch_["mom"][1], torch_["mom"][2])),
+                .weight = torch_["weight"],
+                .pol = make_float3(torch_["pol"][0], torch_["pol"][1], torch_["pol"][2]),
+                .wavelength = torch_["wavelength"],
+                .zenith = make_float2(torch_["zenith"][0], torch_["zenith"][1]),
+                .azimuth = make_float2(torch_["azimuth"][0], torch_["azimuth"][1]),
+                .radius = torch_["radius"],
+                .distance = torch_["distance"],
+                .mode = torch_["mode"],
+                .type = storchtype::Type(torch_["type"])};
+        }
+
+        nlohmann::json event_ = json["event"];
+
+        event_mode = ParseEventMode(event_["mode"].get<std::string>());
+        maxslot = event_["maxslot"].get<int>();
+        output_dir = ReadOutputDir(event_);
     }
-
-    nlohmann::json event_ = json["event"];
-
-    event_mode = ParseEventMode(event_["mode"].get<std::string>());
-    maxslot = event_["maxslot"].get<int>();
-    output_dir = ReadOutputDir(event_);
-  }
-  catch (nlohmann::json::exception& e)
-  {
-      throw std::runtime_error{"Failed reading config parameters from " + filepath + "\n" + e.what()};
-  }
-  catch (std::invalid_argument& e)
-  {
-      throw std::runtime_error{"Invalid config value in " + filepath + "\n" + e.what()};
-  }
+    catch (nlohmann::json::exception& e)
+    {
+        throw std::runtime_error{"Failed reading config parameters from " + filepath + "\n" + e.what()};
+    }
+    catch (std::invalid_argument& e)
+    {
+        throw std::runtime_error{"Invalid config value in " + filepath + "\n" + e.what()};
+    }
 }
 
 void Config::Apply() const
@@ -244,4 +246,4 @@ void Config::Apply() const
     SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetOutFold(output_dir_str.c_str());
 }
-}
+} // namespace gphox

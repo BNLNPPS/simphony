@@ -8,7 +8,8 @@
 #include "sysrap/srng.h"
 #include "sysrap/storch.h"
 
-namespace gphox {
+namespace gphox
+{
 
 enum class EventMode
 {
@@ -31,36 +32,34 @@ enum class EventMode
  */
 class Config
 {
- public:
+  public:
+    Config(std::string config_name = "dev");
 
-  Config(std::string config_name = "dev");
+    void Apply() const;
 
-  void Apply() const;
+    static std::filesystem::path DefaultOutputDir();
+    static EventMode ParseEventMode(std::string_view name);
+    static std::string ValidEventModes();
+    static std::string_view EventModeName(EventMode mode);
+    static std::string PtxPath(const std::string& ptx_name = "CSGOptiX7.ptx");
 
-  static std::filesystem::path DefaultOutputDir();
-  static EventMode ParseEventMode(std::string_view name);
-  static std::string ValidEventModes();
-  static std::string_view EventModeName(EventMode mode);
-  static std::string PtxPath(const std::string &ptx_name = "CSGOptiX7.ptx");
+    /// A unique name associated with this Config
+    std::string name;
 
-  /// A unique name associated with this Config
-  std::string name;
+    /// Event persistence mode applied to SEventConfig.
+    EventMode event_mode;
 
-  /// Event persistence mode applied to SEventConfig.
-  EventMode event_mode;
+    /// Maximum event slots applied to SEventConfig.
+    int maxslot;
 
-  /// Maximum event slots applied to SEventConfig.
-  int maxslot;
+    /// Base directory for event output folders.
+    std::filesystem::path output_dir;
 
-  /// Base directory for event output folders.
-  std::filesystem::path output_dir;
+    storch torch;
 
-  storch torch;
-
- private:
-
-  std::string Locate(std::string filename) const;
-  void ReadConfig(std::string filepath);
+  private:
+    std::string Locate(std::string filename) const;
+    void ReadConfig(std::string filepath);
 };
 
-}
+} // namespace gphox
