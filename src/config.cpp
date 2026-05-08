@@ -56,8 +56,6 @@ auto FindEventMode(std::string_view name)
     return std::ranges::find(EventModeInfos, name, &EventModeInfo::name);
 }
 
-} // namespace
-
 bool FileExists(const std::string& path)
 {
     if (path.empty())
@@ -66,9 +64,37 @@ bool FileExists(const std::string& path)
     return std::filesystem::exists(path, ec) && !ec;
 }
 
-std::filesystem::path Config::DefaultOutputDir()
+std::string ValidEventModes()
 {
-    return std::filesystem::current_path();
+    std::string names;
+    for (const auto& info : EventModeInfos)
+    {
+        if (!names.empty())
+            names += ", ";
+        names += info.name;
+    }
+    return names;
+}
+
+std::string_view EventModeName(EventMode mode)
+{
+    const auto it = FindEventMode(mode);
+    if (it != EventModeInfos.end())
+        return it->name;
+
+    return "Minimal";
+}
+
+EventMode ReadEventMode(const nlohmann::json& event)
+{
+    std::string name = event["mode"].get<std::string>();
+
+    const auto it = FindEventMode(name);
+    if (it != EventModeInfos.end())
+        return it->mode;
+
+    throw std::invalid_argument{
+        "Invalid event.mode \"" + std::string{name} + "\". Expected one of: " + ValidEventModes()};
 }
 
 std::filesystem::path ReadOutputDir(const nlohmann::json& event)
@@ -76,14 +102,16 @@ std::filesystem::path ReadOutputDir(const nlohmann::json& event)
     if (event.contains("output_dir"))
         return event["output_dir"].get<std::string>();
 
-    return Config::DefaultOutputDir();
+    return std::filesystem::current_path();
 }
+
+} // namespace
 
 Config::Config(std::string config_name) :
     name{config_name},
     event_mode{EventMode::Minimal},
     maxslot{0},
-    output_dir{DefaultOutputDir()},
+    output_dir{std::filesystem::current_path()},
     torch{}
 {
     ReadConfig(Locate(name + ".json"));
@@ -155,37 +183,6 @@ std::string Config::Locate(std::string filename) const
     return filepath;
 }
 
-EventMode Config::ParseEventMode(std::string_view name)
-{
-    const auto it = FindEventMode(name);
-    if (it != EventModeInfos.end())
-        return it->mode;
-
-    throw std::invalid_argument(
-        "Invalid event.mode \"" + std::string{name} + "\". Expected one of: " + ValidEventModes());
-}
-
-std::string Config::ValidEventModes()
-{
-    std::string names;
-    for (const auto& info : EventModeInfos)
-    {
-        if (!names.empty())
-            names += ", ";
-        names += info.name;
-    }
-    return names;
-}
-
-std::string_view Config::EventModeName(EventMode mode)
-{
-    const auto it = FindEventMode(mode);
-    if (it != EventModeInfos.end())
-        return it->name;
-
-    return "Minimal";
-}
-
 /**
  * Expects a valid filepath.
  */
@@ -223,7 +220,7 @@ void Config::ReadConfig(std::string filepath)
 
         nlohmann::json event_ = json["event"];
 
-        event_mode = ParseEventMode(event_["mode"].get<std::string>());
+        event_mode = ReadEventMode(event_);
         maxslot = event_["maxslot"].get<int>();
         output_dir = ReadOutputDir(event_);
     }
@@ -246,4 +243,5 @@ void Config::Apply() const
     SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetOutFold(output_dir_str.c_str());
 }
+
 } // namespace gphox

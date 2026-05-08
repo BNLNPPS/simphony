@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "sysrap/srng.h"
@@ -35,12 +34,6 @@ class Config
   public:
     Config(std::string config_name = "dev");
 
-    void Apply() const;
-
-    static std::filesystem::path DefaultOutputDir();
-    static EventMode ParseEventMode(std::string_view name);
-    static std::string ValidEventModes();
-    static std::string_view EventModeName(EventMode mode);
     static std::string PtxPath(const std::string& ptx_name = "CSGOptiX7.ptx");
 
     /// A unique name associated with this Config
@@ -60,6 +53,7 @@ class Config
   private:
     std::string Locate(std::string filename) const;
     void ReadConfig(std::string filepath);
+    void Apply() const;
 };
 
 } // namespace gphox
