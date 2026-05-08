@@ -150,11 +150,6 @@ if(NLJSON_FOUND)
 endif()
 
 
-if(WITH_SIMG)
-   list(APPEND TEST_SOURCES SIMGTest.cc)
-endif()
-
-
 set(_TEST_SOURCES
    UnwindTest.cc
 )

@@ -15,7 +15,6 @@ HMM: lots of overlap between this and SGLFW
 #include "squad.h"
 #include "plog/Severity.h"
 
-struct SIMG ; 
 #include "CSGOPTIX_API_EXPORT.hh"
 
 struct CSGOPTIX_API Frame
@@ -27,9 +26,7 @@ struct CSGOPTIX_API Frame
     int height ; 
     int depth ; 
     int channels ; 
-    int jpg_quality ; 
 
-    SIMG*      img ; 
     unsigned num_pixels ; 
 
     std::vector<float4> isect ; 
@@ -55,24 +52,14 @@ public:
     void download_(bool flip_vertical); 
     void download();           // with flip_vertical:true
     void download_inverted();  // with flip_vertical:false
-    void snap(const char* path ); 
+    void snap(const char* path);
 
-private: 
+  private:
+    void flipPixelVertical();
+    void writePixels(const char* path) const;
+    void writeIsect(const char* dir, const char* name) const;
 
-    void write(const char* outdir, int quality=0) const ;
-
-    void writePNG(const char* path) const ;
-    void writePNG(const char* dir, const char* name) const ;
-
-    void writeJPG(const char* path, int quality=0) const ;
-    void writeJPG(const char* dir, const char* name, int quality=0) const ;
-
-    void writeIsect(  const char* dir, const char* name) const ;
-
-
-    unsigned getNumPixels() const ; 
-    unsigned char* getPixelData() const ;
-    float*         getIntersectData() const ;
+    float* getIntersectData() const;
 
 #ifdef WITH_FRAME_PHOTON
     void writeFPhoton( const char* dir, const char* name) const ;

@@ -177,15 +177,14 @@ private:
     const CSGFoundry* getFoundry() const ;
     static std::string AnnotationTime( double dt, const char* extra=nullptr );
     const char* getDefaultSnapPath() const ;
-    void snap(const char* path, bool inverted );  // part of SRenderer protocol base
-
+    void snap(const char* path, bool inverted); // part of SRenderer protocol base
 
 #ifdef WITH_FRAME_PHOTON
     void writeFramePhoton(const char* dir, const char* name);
 #endif
     int  render_flightpath();
 
-    void saveMeta(const char* jpg_path) const ;
+    void saveMeta(const char* path) const;
 
     static constexpr const char* CTX_LOGNAME = "CSGOptiX__Ctx.log"  ;
     void write_Ctx_log(const char* dir=nullptr) const ;
