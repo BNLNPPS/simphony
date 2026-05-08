@@ -174,7 +174,6 @@ storch_test.sh
 #stree_sur_test.sh
 #stree_test.sh
 #strid_test.sh
-#STTFTest.sh
 #stv_test.sh
 #SUniformRand_test.sh
 #SUTest.sh

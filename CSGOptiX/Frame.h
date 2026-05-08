@@ -55,7 +55,6 @@ public:
     void download_(bool flip_vertical); 
     void download();           // with flip_vertical:true
     void download_inverted();  // with flip_vertical:false
-    void annotate( const char* bottom_line=nullptr, const char* top_line=nullptr, int line_height=24  );
     void snap(const char* path ); 
 
 private: 

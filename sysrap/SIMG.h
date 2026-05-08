@@ -1,13 +1,7 @@
 #pragma once
 /**
-SIMG.h : High Level Image load/save methods implemented with stb_image.h 
-===========================================================================
-
-Note that STTF managed truetype fonts are now handled with an 
-internal instance rather than a global one from SLOG as this
-simplifies dependencies enabling headeronly access to this functionality. 
-
-
+SIMG.h : High Level Image load/save methods implemented with stb_image.h
+==========================================================================
 **/
 #include <string>
 #include <cstring>
@@ -18,13 +12,8 @@ simplifies dependencies enabling headeronly access to this functionality.
 #include "sdirectory.h"
 #include "np.h"
 
-struct STTF ; 
-
-
 struct SIMG 
 {
-   STTF* ttf ;  
-
    int width ; 
    int height ; 
    int channels ; 
@@ -41,8 +30,6 @@ struct SIMG
    virtual ~SIMG();  
 
    std::string desc() const ; 
-
-   void annotate( const char* bottom_line=nullptr, const char* top_line=nullptr, int line_height=24 ) ;
 
    void writeNPY() const ; 
    void writeNPY(const char* dir, const char* name) const ; 
@@ -92,13 +79,6 @@ struct SIMG
 #pragma GCC diagnostic pop
 #endif
 
-
-
-
-#define STTF_IMPLEMENTATION 1 
-#include "STTF.h"
-
-
 inline bool SIMG::EndsWith( const char* s, const char* q) // static 
 {
     int pos = strlen(s) - strlen(q) ;
@@ -121,7 +101,6 @@ inline const char* SIMG::ChangeExt( const char* s, const char* x1, const char* x
 
 inline SIMG::SIMG(const char* path, int desired_channels) 
     :
-    ttf(nullptr),
     width(0),
     height(0),
     channels(0),
@@ -134,7 +113,6 @@ inline SIMG::SIMG(const char* path, int desired_channels)
 
 inline SIMG::SIMG(int width_, int height_, int channels_, unsigned char* data_) 
     :
-    ttf(nullptr),
     width(width_),
     height(height_),
     channels(channels_),
@@ -306,35 +284,3 @@ inline const char* SIMG::Ext(const char* path)
     std::string ext = s.substr(pos) ;  
     return strdup(ext.c_str()); 
 }
-
-
-
-/**
-SIMG::annotate
----------------
-
-Accessing ttf in the ctor rather than doing it here at point of use turns out to be flakey somehow ?
-Possibly related to this being implemented in the header ?
-
-**/
-
-
-inline void SIMG::annotate( const char* bottom_line, const char* top_line, int line_height )
-{
-    if(ttf == nullptr) ttf = STTF::Create() ; 
-
-    assert(ttf); 
-    if(!ttf->valid || line_height > int(height)) 
-    {
-        std::cerr << "SIMG::annotate : ttf invalid OR line_height too large \n" ; 
-        return ; 
-    } 
-
-    if( top_line )
-        ttf->annotate( data, int(channels), int(width), int(height), line_height, top_line, false );  
-
-    if( bottom_line )
-        ttf->annotate( data, int(channels), int(width), int(height), line_height, bottom_line, true );  
-}
-
-
