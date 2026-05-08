@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     CLHEP::HepRandom::setTheSeed(seed);
     G4cout << "Random seed set to: " << seed << G4endl;
 
-    gphox::Config cfg(config_name);
+    gphox::Config(config_name);
 
     // Configure Geant4
     // The physics list must be instantiated before other user actions
