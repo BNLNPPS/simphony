@@ -225,14 +225,13 @@ void Config::ReadConfig(std::string filepath)
     maxslot = event_["maxslot"].get<int>();
     output_dir = ReadOutputDir(event_);
   }
-  catch (nlohmann::json::exception& e) {
-    std::string errmsg{"Failed reading config parameters from " + filepath + "\n" + e.what()};
-    throw std::runtime_error{errmsg};
-  }
-  catch (std::exception& e)
+  catch (nlohmann::json::exception& e)
   {
-      std::string errmsg{"Failed reading config parameters from " + filepath + "\n" + e.what()};
-      throw std::runtime_error{errmsg};
+      throw std::runtime_error{"Failed reading config parameters from " + filepath + "\n" + e.what()};
+  }
+  catch (std::invalid_argument& e)
+  {
+      throw std::runtime_error{"Invalid config value in " + filepath + "\n" + e.what()};
   }
 }
 
