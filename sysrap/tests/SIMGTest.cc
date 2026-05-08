@@ -32,12 +32,6 @@ int main(int argc, char** argv)
     SIMG img(path); 
     std::cout << img.desc() << std::endl ; 
 
-    std::stringstream ss ;
-    ss << "SIMGTest " << s_time::Format() ; 
-    std::string s = ss.str(); 
-
-    img.annotate(s.c_str()); 
-
     img.writePNG(); 
     img.writeJPG(100); 
     img.writeJPG(50); 
@@ -48,4 +42,3 @@ int main(int argc, char** argv)
   
     return 0 ; 
 }
-

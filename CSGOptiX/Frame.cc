@@ -130,11 +130,6 @@ float*         Frame::getIntersectData() const { return d_isect ? (float*)isect.
 float*         Frame::getFPhotonData() const {   return d_fphoton ? (float*)fphoton.data()     : nullptr ; }
 #endif
 
-void Frame::annotate( const char* bottom_line, const char* top_line, int line_height )
-{
-    img->annotate( bottom_line, top_line, line_height ); 
-}
-
 void Frame::write(const char* outdir_, int quality) const 
 {
     const char* outdir = SPath::Resolve(outdir_, DIRPATH); 

@@ -34,16 +34,14 @@ Duties of the *snap* method
 -----------------------------
 
 1. download the frame buffer into CPU side pixels buffer
-2. annotate pixels buffer with top/bottom lines 
-3. save pixels buffer to to file at the path provided
+2. save pixels buffer to to file at the path provided
 
 **/
 
 class SRenderer {
    public:
       virtual double render() = 0 ;
-      virtual void snap(const char* path, const char* bottom_line, const char* top_line, unsigned line_height, bool inverted ) = 0 ;  
+      virtual void snap(const char* path, bool inverted ) = 0 ;
 
 };
-
 

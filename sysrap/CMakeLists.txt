@@ -562,9 +562,6 @@ if(WITH_SIMG)
     list(APPEND HEADERS   SIMG_Frame.h  )   
 endif()
 
-list(APPEND HEADERS stb_truetype.h)
-list(APPEND HEADERS STTF.h)    
-
 
 set(WITH_NP YES)
 

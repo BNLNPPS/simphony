@@ -22,7 +22,6 @@ Test with::
 struct sconfig
 {
     static const char* OpticksInstallPrefix();
-    static const char* DefaultSTTFPath(); 
     static std::string Desc(); 
 };
 
@@ -40,22 +39,11 @@ inline const char* sconfig::OpticksInstallPrefix()
 #endif    
 }
 
-inline const char* sconfig::DefaultSTTFPath()  // static
-{
-    std::stringstream ss ; 
-    ss << OpticksInstallPrefix()
-       << "/externals/imgui/imgui/extra_fonts/Cousine-Regular.ttf"
-       ;
-    std::string ttf = ss.str();
-    return strdup(ttf.c_str()); 
-}
-
 inline std::string sconfig::Desc()
 {
     std::stringstream ss ; 
     ss << "[sconfig::Desc\n" ; 
     ss << "sconfig::OpticksInstallPrefix()  " << OpticksInstallPrefix() << "\n" ; 
-    ss << "sconfig::DefaultSTTFPath()       " << DefaultSTTFPath() << "\n" ; 
     ss << "]sconfig::Desc\n" ; 
     return ss.str(); 
 }
