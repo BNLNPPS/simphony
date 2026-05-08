@@ -82,7 +82,8 @@ Config::Config(std::string config_name) :
     name{config_name},
     event_mode{EventMode::Minimal},
     maxslot{0},
-    output_dir{DefaultOutputDir()}
+    output_dir{DefaultOutputDir()},
+    torch{}
 {
   ReadConfig(Locate(name + ".json"));
   Apply();
