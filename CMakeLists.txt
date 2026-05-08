@@ -42,6 +42,8 @@ add_subdirectory(u4/tests)
 add_subdirectory(g4cx)
 add_subdirectory(g4cx/tests)
 add_subdirectory(src)
+add_subdirectory(examples/viztracks)
+add_subdirectory(examples/AlignGpuCpuTracks)
 
 # Optional DD4hep integration plugins
 find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
