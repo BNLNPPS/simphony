@@ -38,7 +38,7 @@ void QTexRotate<T>::rotate(float theta)
 
     cudaDeviceSynchronize();
     cudaCheckErrors("cudaDeviceSynchronize");
-    // Fatal error: cudaDeviceSynchronize (linear filtering not supported for non-float type at SIMGStandaloneTest.cu:123)
+    // Fatal error: cudaDeviceSynchronize (linear filtering not supported for non-float type)
 
     if(rotate_dst == nullptr)
     {
@@ -51,5 +51,4 @@ void QTexRotate<T>::rotate(float theta)
 
 
 template struct QUDARAP_API QTexRotate<uchar4>;
-
 

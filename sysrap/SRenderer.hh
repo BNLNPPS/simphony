@@ -26,9 +26,9 @@ SRenderer : Protocol base
 Duties of the *render* method
 --------------------------------
 
-1. access eye-look-up and camera parameters from Composition and update GPU context accordingly 
+1. access eye-look-up and camera parameters from Composition and update GPU context accordingly
 2. do the launch, recording the time
-3. return the launch time    
+3. return the launch time
 
 Duties of the *snap* method
 -----------------------------
@@ -41,7 +41,6 @@ Duties of the *snap* method
 class SRenderer {
    public:
       virtual double render() = 0 ;
-      virtual void snap(const char* path, bool inverted ) = 0 ;
-
+      virtual void snap(const char* path, bool inverted) = 0;
 };
 

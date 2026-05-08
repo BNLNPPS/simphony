@@ -134,12 +134,11 @@ inline void CSGOptiXRenderInteractiveTest::init()
 
 }
 
-
 /**
 CSGOptiXRenderInteractiveTest::handle_snap_cx
 ----------------------------------------------
 
-Saves ray trace geometry screenshots when certain keys pressed.
+Saves ray trace geometry frame dumps when certain keys pressed.
 Formerly done between render_launch and unmap
 
 **/
@@ -219,4 +218,3 @@ int main(int argc, char** argv)
     }
     return 0 ;
 }
-
