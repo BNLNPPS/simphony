@@ -18,7 +18,7 @@ def expected_diff_for_version(version):
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--base",
-    default="/tmp",
+    default="./",
     help="directory containing the ALL... event folders",
 )
 args = parser.parse_args()

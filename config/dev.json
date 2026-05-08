@@ -26,6 +26,6 @@
   "event": {
     "mode": "DebugLite",
     "maxslot": 1000000,
-    "output_dir": "/tmp"
+    "output_dir": "./"
   }
 }
