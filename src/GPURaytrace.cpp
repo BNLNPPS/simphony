@@ -3,7 +3,6 @@
 #include <argparse/argparse.hpp>
 
 #include "FTFP_BERT.hh"
-#include "G4OpticalParameters.hh"
 #include "G4OpticalPhysics.hh"
 #include "G4VModularPhysicsList.hh"
 
@@ -103,7 +102,6 @@ int main(int argc, char **argv)
     // The physics list must be instantiated before other user actions
     G4VModularPhysicsList *physics = new FTFP_BERT;
     physics->RegisterPhysics(new G4OpticalPhysics);
-    G4OpticalParameters::Instance()->SetWLSTimeProfile("exponential");
 
     auto *run_mgr = G4RunManagerFactory::CreateRunManager();
     run_mgr->SetUserInitialization(physics);
