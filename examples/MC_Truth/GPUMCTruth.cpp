@@ -23,8 +23,10 @@ using namespace std;
 
 struct ActionInitialization : public G4VUserActionInitialization
 {
-    G4App *fG4App;
-    ActionInitialization(G4App *app) : G4VUserActionInitialization(), fG4App(app)
+    G4App* fG4App;
+    ActionInitialization(G4App* app) :
+        G4VUserActionInitialization(),
+        fG4App(app)
     {
     }
 
@@ -43,7 +45,7 @@ struct ActionInitialization : public G4VUserActionInitialization
     }
 };
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
@@ -61,7 +63,7 @@ int main(int argc, char **argv)
     {
         program.parse_args(argc, argv);
     }
-    catch (const exception &err)
+    catch (const exception& err)
     {
         cerr << err.what() << endl;
         cerr << program;
@@ -72,19 +74,19 @@ int main(int argc, char **argv)
     CLHEP::HepRandom::setTheSeed(seed);
     G4cout << "Random seed set to: " << seed << G4endl;
 
-    G4VModularPhysicsList *physics = new FTFP_BERT;
+    G4VModularPhysicsList* physics = new FTFP_BERT;
     physics->RegisterPhysics(new G4OpticalPhysics);
 
-    auto *run_mgr = G4RunManagerFactory::CreateRunManager();
+    auto* run_mgr = G4RunManagerFactory::CreateRunManager();
     run_mgr->SetUserInitialization(physics);
 
-    G4App *g4app = new G4App(gdml_file);
+    G4App* g4app = new G4App(gdml_file);
 
-    ActionInitialization *actionInit = new ActionInitialization(g4app);
+    ActionInitialization* actionInit = new ActionInitialization(g4app);
     run_mgr->SetUserInitialization(actionInit);
     run_mgr->SetUserInitialization(g4app->det_cons_);
 
-    G4UImanager *ui = G4UImanager::GetUIpointer();
+    G4UImanager* ui = G4UImanager::GetUIpointer();
     ui->ApplyCommand("/control/execute " + macro_name);
 
     return EXIT_SUCCESS;

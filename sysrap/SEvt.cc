@@ -5021,7 +5021,7 @@ int SEvt::getHitGenstepIndexFromPhotonIndex(unsigned pidx) const
     int hi = int(gs.size()) - 1;
     while (lo <= hi)
     {
-        int mid = (lo + hi) / 2;
+        int     mid = (lo + hi) / 2;
         int64_t off = gs[mid].offset;
         int64_t end = off + gs[mid].photons;
         if (int64_t(pidx) < off)

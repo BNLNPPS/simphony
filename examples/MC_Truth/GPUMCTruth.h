@@ -53,21 +53,21 @@ namespace
 G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
 }
 
-bool IsSubtractionSolid(G4VSolid *solid)
+bool IsSubtractionSolid(G4VSolid* solid)
 {
     if (!solid)
         return false;
 
     // Check if the solid is directly a G4SubtractionSolid
-    if (dynamic_cast<G4SubtractionSolid *>(solid))
+    if (dynamic_cast<G4SubtractionSolid*>(solid))
         return true;
 
     // If the solid is a Boolean solid, check its constituent solids
-    G4BooleanSolid *booleanSolid = dynamic_cast<G4BooleanSolid *>(solid);
+    G4BooleanSolid* booleanSolid = dynamic_cast<G4BooleanSolid*>(solid);
     if (booleanSolid)
     {
-        G4VSolid *solidA = booleanSolid->GetConstituentSolid(0);
-        G4VSolid *solidB = booleanSolid->GetConstituentSolid(1);
+        G4VSolid* solidA = booleanSolid->GetConstituentSolid(0);
+        G4VSolid* solidB = booleanSolid->GetConstituentSolid(1);
 
         // Recursively check the constituent solids
         if (IsSubtractionSolid(solidA) || IsSubtractionSolid(solidB))
@@ -89,20 +89,30 @@ struct PhotonHit : public G4VHit
     PhotonHit() = default;
 
     PhotonHit(unsigned id, G4double energy, G4double time, G4ThreeVector position, G4ThreeVector direction,
-              G4ThreeVector polarization)
-        : fid(id), fenergy(energy), ftime(time), fposition(position), fdirection(direction), fpolarization(polarization)
+              G4ThreeVector polarization) :
+        fid(id),
+        fenergy(energy),
+        ftime(time),
+        fposition(position),
+        fdirection(direction),
+        fpolarization(polarization)
     {
     }
 
     // Copy constructor
-    PhotonHit(const PhotonHit &right)
-        : G4VHit(right), fid(right.fid), fenergy(right.fenergy), ftime(right.ftime), fposition(right.fposition),
-          fdirection(right.fdirection), fpolarization(right.fpolarization)
+    PhotonHit(const PhotonHit& right) :
+        G4VHit(right),
+        fid(right.fid),
+        fenergy(right.fenergy),
+        ftime(right.ftime),
+        fposition(right.fposition),
+        fdirection(right.fdirection),
+        fpolarization(right.fpolarization)
     {
     }
 
     // Assignment operator
-    const PhotonHit &operator=(const PhotonHit &right)
+    const PhotonHit& operator=(const PhotonHit& right)
     {
         if (this != &right)
         {
@@ -118,7 +128,7 @@ struct PhotonHit : public G4VHit
     }
 
     // Equality operator
-    G4bool operator==(const PhotonHit &right) const
+    G4bool operator==(const PhotonHit& right) const
     {
         return (this == &right);
     }
@@ -132,9 +142,9 @@ struct PhotonHit : public G4VHit
     }
 
     // Member variables
-    G4int fid{0};
-    G4double fenergy{0};
-    G4double ftime{0};
+    G4int         fid{0};
+    G4double      fenergy{0};
+    G4double      ftime{0};
     G4ThreeVector fposition{0, 0, 0};
     G4ThreeVector fdirection{0, 0, 0};
     G4ThreeVector fpolarization{0, 0, 0};
@@ -144,14 +154,16 @@ using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
 
 struct PhotonSD : public G4VSensitiveDetector
 {
-    PhotonSD(G4String name) : G4VSensitiveDetector(name), fHCID(-1)
+    PhotonSD(G4String name) :
+        G4VSensitiveDetector(name),
+        fHCID(-1)
     {
         G4String HCname = name + "_HC";
         collectionName.insert(HCname);
         G4cout << collectionName.size() << "   PhotonSD name:  " << name << " collection Name: " << HCname << G4endl;
     }
 
-    void Initialize(G4HCofThisEvent *hce) override
+    void Initialize(G4HCofThisEvent* hce) override
     {
         fPhotonHitsCollection = new PhotonHitsCollection(SensitiveDetectorName, collectionName[0]);
         if (fHCID < 0)
@@ -162,16 +174,16 @@ struct PhotonSD : public G4VSensitiveDetector
         hce->AddHitsCollection(fHCID, fPhotonHitsCollection);
     }
 
-    G4bool ProcessHits(G4Step *aStep, G4TouchableHistory *) override
+    G4bool ProcessHits(G4Step* aStep, G4TouchableHistory*) override
     {
-        G4Track *theTrack = aStep->GetTrack();
+        G4Track* theTrack = aStep->GetTrack();
         if (theTrack->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return false;
 
         G4double theEnergy = theTrack->GetTotalEnergy() / CLHEP::eV;
 
         // Create a new hit (CopyNr is set to 0 as DetectorID is omitted)
-        PhotonHit *newHit = new PhotonHit(
+        PhotonHit* newHit = new PhotonHit(
             0, // CopyNr set to 0
             theEnergy, theTrack->GetGlobalTime(), aStep->GetPostStepPoint()->GetPosition(),
             aStep->GetPostStepPoint()->GetMomentumDirection(), aStep->GetPostStepPoint()->GetPolarization());
@@ -181,7 +193,7 @@ struct PhotonSD : public G4VSensitiveDetector
         return true;
     }
 
-    void EndOfEvent(G4HCofThisEvent *) override
+    void EndOfEvent(G4HCofThisEvent*) override
     {
         G4int NbHits = fPhotonHitsCollection->entries();
         G4cout << "PhotonSD::EndOfEvent Number of PhotonHits: " << NbHits << G4endl;
@@ -189,7 +201,7 @@ struct PhotonSD : public G4VSensitiveDetector
 
     void AddOpticksHits()
     {
-        SEvt *sev = SEvt::Get_EGPU();
+        SEvt*        sev = SEvt::Get_EGPU();
         unsigned int num_hits = sev->GetNumHit(0);
 
         for (int idx = 0; idx < int(num_hits); idx++)
@@ -199,7 +211,7 @@ struct PhotonSD : public G4VSensitiveDetector
             G4ThreeVector position = G4ThreeVector(hit.pos.x, hit.pos.y, hit.pos.z);
             G4ThreeVector direction = G4ThreeVector(hit.mom.x, hit.mom.y, hit.mom.z);
             G4ThreeVector polarization = G4ThreeVector(hit.pol.x, hit.pol.y, hit.pol.z);
-            int theCreationProcessid;
+            int           theCreationProcessid;
             if (OpticksPhoton::HasCerenkovFlag(hit.flagmask))
             {
                 theCreationProcessid = 0;
@@ -214,29 +226,30 @@ struct PhotonSD : public G4VSensitiveDetector
             }
             std::cout << hit.wavelength << " " << position << " " << direction << " " << polarization << std::endl;
 
-            PhotonHit *newHit = new PhotonHit(0, hit.wavelength, hit.time, position, direction, polarization);
+            PhotonHit* newHit = new PhotonHit(0, hit.wavelength, hit.time, position, direction, polarization);
             fPhotonHitsCollection->insert(newHit);
         }
     }
 
   private:
-    PhotonHitsCollection *fPhotonHitsCollection{nullptr};
-    G4int fHCID;
+    PhotonHitsCollection* fPhotonHitsCollection{nullptr};
+    G4int                 fHCID;
 };
 
 struct DetectorConstruction : G4VUserDetectorConstruction
 {
-    DetectorConstruction(std::filesystem::path gdml_file) : gdml_file_(gdml_file)
+    DetectorConstruction(std::filesystem::path gdml_file) :
+        gdml_file_(gdml_file)
     {
     }
 
-    G4VPhysicalVolume *Construct() override
+    G4VPhysicalVolume* Construct() override
     {
         parser_.Read(gdml_file_.string(), false);
-        G4VPhysicalVolume *world = parser_.GetWorldVolume();
+        G4VPhysicalVolume* world = parser_.GetWorldVolume();
 
         G4CXOpticks::SetGeometry(world);
-        G4LogicalVolumeStore *lvStore = G4LogicalVolumeStore::GetInstance();
+        G4LogicalVolumeStore* lvStore = G4LogicalVolumeStore::GetInstance();
 
         static G4VisAttributes invisibleVisAttr(false);
 
@@ -244,9 +257,9 @@ struct DetectorConstruction : G4VUserDetectorConstruction
         if (lvStore && !lvStore->empty())
         {
             // Iterate over all logical volumes in the store
-            for (auto &logicalVolume : *lvStore)
+            for (auto& logicalVolume : *lvStore)
             {
-                G4VSolid *solid = logicalVolume->GetSolid();
+                G4VSolid* solid = logicalVolume->GetSolid();
 
                 // Check if the solid uses subtraction
                 if (IsSubtractionSolid(solid))
@@ -266,18 +279,18 @@ struct DetectorConstruction : G4VUserDetectorConstruction
     void ConstructSDandField() override
     {
         G4cout << "ConstructSDandField is called." << G4endl;
-        G4SDManager *SDman = G4SDManager::GetSDMpointer();
+        G4SDManager* SDman = G4SDManager::GetSDMpointer();
 
-        const G4GDMLAuxMapType *auxmap = parser_.GetAuxMap();
-        for (auto const &[logVol, listType] : *auxmap)
+        const G4GDMLAuxMapType* auxmap = parser_.GetAuxMap();
+        for (auto const& [logVol, listType] : *auxmap)
         {
-            for (auto const &auxtype : listType)
+            for (auto const& auxtype : listType)
             {
                 if (auxtype.type == "SensDet")
                 {
                     G4cout << "Attaching sensitive detector to logical volume: " << logVol->GetName() << G4endl;
-                    G4String name = logVol->GetName() + "_PhotonDetector";
-                    PhotonSD *aPhotonSD = new PhotonSD(name);
+                    G4String  name = logVol->GetName() + "_PhotonDetector";
+                    PhotonSD* aPhotonSD = new PhotonSD(name);
                     SDman->AddNewDetector(aPhotonSD);
                     logVol->SetSensitiveDetector(aPhotonSD);
                 }
@@ -287,26 +300,27 @@ struct DetectorConstruction : G4VUserDetectorConstruction
 
   private:
     std::filesystem::path gdml_file_;
-    G4GDMLParser parser_;
+    G4GDMLParser          parser_;
 };
 
 struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
-    SEvt *sev;
+    SEvt* sev;
 
-    PrimaryGenerator(SEvt *sev) : sev(sev)
+    PrimaryGenerator(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void GeneratePrimaries(G4Event *event) override
+    void GeneratePrimaries(G4Event* event) override
     {
         G4ThreeVector position_mm(0.0 * m, 0.0 * m, 0.0 * m);
-        G4double time_ns = 0;
+        G4double      time_ns = 0;
         G4ThreeVector direction(0, 0.2, 0.8);
-        G4double wavelength_nm = 0.1;
+        G4double      wavelength_nm = 0.1;
 
-        G4PrimaryVertex *vertex = new G4PrimaryVertex(position_mm, time_ns);
-        G4PrimaryParticle *particle = new G4PrimaryParticle(G4Electron::Definition());
+        G4PrimaryVertex*   vertex = new G4PrimaryVertex(position_mm, time_ns);
+        G4PrimaryParticle* particle = new G4PrimaryParticle(G4Electron::Definition());
         particle->SetKineticEnergy(5 * GeV);
         particle->SetMomentumDirection(direction);
         vertex->SetPrimary(particle);
@@ -316,25 +330,26 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
 struct EventAction : G4UserEventAction
 {
-    SEvt *sev;
+    SEvt* sev;
     G4int fTotalG4Hits{0};
 
-    EventAction(SEvt *sev) : sev(sev)
+    EventAction(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void BeginOfEventAction(const G4Event *event) override
+    void BeginOfEventAction(const G4Event* event) override
     {
     }
 
-    void EndOfEventAction(const G4Event *event) override
+    void EndOfEventAction(const G4Event* event) override
     {
-        G4HCofThisEvent *hce = event->GetHCofThisEvent();
+        G4HCofThisEvent* hce = event->GetHCofThisEvent();
         if (hce)
         {
             for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
             {
-                G4VHitsCollection *hc = hce->GetHC(i);
+                G4VHitsCollection* hc = hce->GetHC(i);
                 if (hc)
                 {
                     fTotalG4Hits += hc->GetSize();
@@ -351,21 +366,22 @@ struct EventAction : G4UserEventAction
 
 struct RunAction : G4UserRunAction
 {
-    EventAction *fEventAction;
+    EventAction* fEventAction;
 
-    RunAction(EventAction *eventAction) : fEventAction(eventAction)
+    RunAction(EventAction* eventAction) :
+        fEventAction(eventAction)
     {
     }
 
-    void BeginOfRunAction(const G4Run *run) override
+    void BeginOfRunAction(const G4Run* run) override
     {
     }
 
-    void EndOfRunAction(const G4Run *run) override
+    void EndOfRunAction(const G4Run* run) override
     {
         if (G4Threading::IsMasterThread())
         {
-            G4CXOpticks *gx = G4CXOpticks::Get();
+            G4CXOpticks* gx = G4CXOpticks::Get();
 
             auto start = std::chrono::high_resolution_clock::now();
             gx->simulate(0, false);
@@ -376,7 +392,7 @@ struct RunAction : G4UserRunAction
             std::cout << "Simulation time: " << elapsed.count() << " seconds" << std::endl;
 
             // unsigned int num_hits = SEvt::GetNumHit(EGPU);
-            SEvt *sev = SEvt::Get_EGPU();
+            SEvt*        sev = SEvt::Get_EGPU();
             unsigned int num_hits = sev->GetNumHit(0);
 
             std::cout << "Opticks: NumCollected:  " << sev->GetNumGenstepFromGenstep(0) << std::endl;
@@ -400,16 +416,16 @@ struct RunAction : G4UserRunAction
             if (getenv("OPTICKS_MC_TRUTH_BENCH"))
             {
                 volatile uint64_t sink = 0;
-                const NP *hit_np = sev->getHit();
-                const sphoton *hits = reinterpret_cast<const sphoton *>(hit_np->bytes());
-                const int M = int(sev->gs.size());
-                auto bt0 = std::chrono::high_resolution_clock::now();
+                const NP*         hit_np = sev->getHit();
+                const sphoton*    hits = reinterpret_cast<const sphoton*>(hit_np->bytes());
+                const int         M = int(sev->gs.size());
+                auto              bt0 = std::chrono::high_resolution_clock::now();
                 for (int idx = 0; idx < int(num_hits); idx++)
                 {
                     sink ^= hits[idx].index;
                 }
                 auto bt1 = std::chrono::high_resolution_clock::now();
-                int g = 0;
+                int  g = 0;
                 for (int idx = 0; idx < int(num_hits); idx++)
                 {
                     const int64_t pidx = hits[idx].index;
@@ -418,29 +434,29 @@ struct RunAction : G4UserRunAction
                     int tid = pidx < sev->gs[g].offset + sev->gs[g].photons ? int(sev->genstep[g].trackid()) : -1;
                     sink ^= hits[idx].index ^ unsigned(tid);
                 }
-                auto bt2 = std::chrono::high_resolution_clock::now();
+                auto                          bt2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> base_t = bt1 - bt0;
                 std::chrono::duration<double> mc_t = bt2 - bt1;
-                double base_ns = num_hits > 0 ? 1e9 * base_t.count() / num_hits : 0.0;
-                double mc_ns = num_hits > 0 ? 1e9 * mc_t.count() / num_hits : 0.0;
+                double                        base_ns = num_hits > 0 ? 1e9 * base_t.count() / num_hits : 0.0;
+                double                        mc_ns = num_hits > 0 ? 1e9 * mc_t.count() / num_hits : 0.0;
                 std::cout << "Bench baseline:  " << base_t.count() << " s  (" << base_ns << " ns/hit)" << std::endl;
                 std::cout << "Bench mctruth:   " << mc_t.count() << " s  (" << mc_ns << " ns/hit)" << std::endl;
                 std::cout << "Bench delta:     " << (mc_t.count() - base_t.count()) << " s  (" << (mc_ns - base_ns)
                           << " ns/hit)   [sink=" << sink << "]" << std::endl;
             }
 
-            auto hit_loop_start = std::chrono::high_resolution_clock::now();
-            const NP *hit_np_main = sev->getHit();
-            const sphoton *hits_main = reinterpret_cast<const sphoton *>(hit_np_main->bytes());
-            const int M_gs = int(sev->gs.size());
-            int g_cur = 0;
+            auto           hit_loop_start = std::chrono::high_resolution_clock::now();
+            const NP*      hit_np_main = sev->getHit();
+            const sphoton* hits_main = reinterpret_cast<const sphoton*>(hit_np_main->bytes());
+            const int      M_gs = int(sev->gs.size());
+            int            g_cur = 0;
             for (int idx = 0; idx < int(num_hits); idx++)
             {
-                const sphoton &hit = hits_main[idx];
-                G4ThreeVector position = G4ThreeVector(hit.pos.x, hit.pos.y, hit.pos.z);
-                G4ThreeVector direction = G4ThreeVector(hit.mom.x, hit.mom.y, hit.mom.z);
-                G4ThreeVector polarization = G4ThreeVector(hit.pol.x, hit.pol.y, hit.pol.z);
-                int theCreationProcessid;
+                const sphoton& hit = hits_main[idx];
+                G4ThreeVector  position = G4ThreeVector(hit.pos.x, hit.pos.y, hit.pos.z);
+                G4ThreeVector  direction = G4ThreeVector(hit.mom.x, hit.mom.y, hit.mom.z);
+                G4ThreeVector  polarization = G4ThreeVector(hit.pol.x, hit.pol.y, hit.pol.z);
+                int            theCreationProcessid;
                 if (OpticksPhoton::HasCerenkovFlag(hit.flagmask))
                 {
                     theCreationProcessid = 0;
@@ -472,7 +488,7 @@ struct RunAction : G4UserRunAction
                 }
                 outFile << std::endl;
             }
-            auto hit_loop_end = std::chrono::high_resolution_clock::now();
+            auto                          hit_loop_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> hit_loop_elapsed = hit_loop_end - hit_loop_start;
             std::cout << "Hit-write loop time: " << hit_loop_elapsed.count() << " seconds"
                       << " (emit_trackid=" << (emit_trackid ? "1" : "0") << ", num_hits=" << num_hits << ")"
@@ -485,19 +501,20 @@ struct RunAction : G4UserRunAction
 
 struct SteppingAction : G4UserSteppingAction
 {
-    SEvt *sev;
+    SEvt* sev;
 
-    SteppingAction(SEvt *sev) : sev(sev)
+    SteppingAction(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void UserSteppingAction(const G4Step *aStep)
+    void UserSteppingAction(const G4Step* aStep)
     {
-        G4Track *aTrack;
-        G4int fNumPhotons = 0;
+        G4Track* aTrack;
+        G4int    fNumPhotons = 0;
 
-        G4StepPoint *preStep = aStep->GetPostStepPoint();
-        G4VPhysicalVolume *volume = preStep->GetPhysicalVolume();
+        G4StepPoint*       preStep = aStep->GetPostStepPoint();
+        G4VPhysicalVolume* volume = preStep->GetPhysicalVolume();
 
         if (aStep->GetTrack()->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
         {
@@ -517,25 +534,25 @@ struct SteppingAction : G4UserSteppingAction
             }
         }
 
-        G4SteppingManager *fpSteppingManager =
+        G4SteppingManager* fpSteppingManager =
             G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
         G4StepStatus stepStatus = fpSteppingManager->GetfStepStatus();
 
         if (stepStatus != fAtRestDoItProc)
         {
-            G4ProcessVector *procPost = fpSteppingManager->GetfPostStepDoItVector();
-            size_t MAXofPostStepLoops = fpSteppingManager->GetMAXofPostStepLoops();
+            G4ProcessVector* procPost = fpSteppingManager->GetfPostStepDoItVector();
+            size_t           MAXofPostStepLoops = fpSteppingManager->GetMAXofPostStepLoops();
             for (size_t i3 = 0; i3 < MAXofPostStepLoops; i3++)
             {
                 if ((*procPost)[i3]->GetProcessName() == "Cerenkov")
                 {
                     aTrack = aStep->GetTrack();
-                    const G4DynamicParticle *aParticle = aTrack->GetDynamicParticle();
-                    G4double charge = aParticle->GetDefinition()->GetPDGCharge();
-                    const G4Material *aMaterial = aTrack->GetMaterial();
-                    G4MaterialPropertiesTable *MPT = aMaterial->GetMaterialPropertiesTable();
+                    const G4DynamicParticle*   aParticle = aTrack->GetDynamicParticle();
+                    G4double                   charge = aParticle->GetDefinition()->GetPDGCharge();
+                    const G4Material*          aMaterial = aTrack->GetMaterial();
+                    G4MaterialPropertiesTable* MPT = aMaterial->GetMaterialPropertiesTable();
 
-                    G4MaterialPropertyVector *Rindex = MPT->GetProperty(kRINDEX);
+                    G4MaterialPropertyVector* Rindex = MPT->GetProperty(kRINDEX);
                     if (!Rindex || Rindex->GetVectorLength() == 0)
                     {
                         G4cout << "WARNING: Material has no valid RINDEX data. Skipping Cerenkov calculation."
@@ -543,7 +560,7 @@ struct SteppingAction : G4UserSteppingAction
                         return;
                     }
 
-                    G4Cerenkov *proc = (G4Cerenkov *)(*procPost)[i3];
+                    G4Cerenkov* proc = (G4Cerenkov*)(*procPost)[i3];
                     fNumPhotons = proc->GetNumPhotons();
 
                     G4AutoLock lock(&genstep_mutex); // <-- Mutex is locked here
@@ -571,13 +588,13 @@ struct SteppingAction : G4UserSteppingAction
                 }
                 if ((*procPost)[i3]->GetProcessName() == "Scintillation")
                 {
-                    G4Scintillation *proc1 = (G4Scintillation *)(*procPost)[i3];
+                    G4Scintillation* proc1 = (G4Scintillation*)(*procPost)[i3];
                     fNumPhotons = proc1->GetNumPhotons();
                     if (fNumPhotons > 0)
                     {
                         aTrack = aStep->GetTrack();
-                        const G4Material *aMaterial = aTrack->GetMaterial();
-                        G4MaterialPropertiesTable *MPT = aMaterial->GetMaterialPropertiesTable();
+                        const G4Material*          aMaterial = aTrack->GetMaterial();
+                        G4MaterialPropertiesTable* MPT = aMaterial->GetMaterialPropertiesTable();
                         if (!MPT || !MPT->ConstPropertyExists(kSCINTILLATIONTIMECONSTANT1))
                         {
                             G4cout << "WARNING: Material has no valid SCINTILLATIONTIMECONSTANT1 data. Skipping "
@@ -598,46 +615,50 @@ struct SteppingAction : G4UserSteppingAction
 
 struct TrackingAction : G4UserTrackingAction
 {
-    const G4Track *transient_fSuspend_track = nullptr;
-    SEvt *sev;
+    const G4Track* transient_fSuspend_track = nullptr;
+    SEvt*          sev;
 
-    TrackingAction(SEvt *sev) : sev(sev)
+    TrackingAction(SEvt* sev) :
+        sev(sev)
     {
     }
 
-    void PreUserTrackingAction_Optical_FabricateLabel(const G4Track *track)
+    void PreUserTrackingAction_Optical_FabricateLabel(const G4Track* track)
     {
     }
 
-    void PreUserTrackingAction(const G4Track *track) override
+    void PreUserTrackingAction(const G4Track* track) override
     {
     }
 
-    void PostUserTrackingAction(const G4Track *track) override
+    void PostUserTrackingAction(const G4Track* track) override
     {
     }
 };
 
 struct G4App
 {
-    G4App(std::filesystem::path gdml_file)
-        : sev(SEvt::CreateOrReuse_EGPU()), det_cons_(new DetectorConstruction(gdml_file)),
-          prim_gen_(new PrimaryGenerator(sev)), event_act_(new EventAction(sev)), run_act_(new RunAction(event_act_)),
-          stepping_(new SteppingAction(sev)),
+    G4App(std::filesystem::path gdml_file) :
+        sev(SEvt::CreateOrReuse_EGPU()),
+        det_cons_(new DetectorConstruction(gdml_file)),
+        prim_gen_(new PrimaryGenerator(sev)),
+        event_act_(new EventAction(sev)),
+        run_act_(new RunAction(event_act_)),
+        stepping_(new SteppingAction(sev)),
 
-          tracking_(new TrackingAction(sev))
+        tracking_(new TrackingAction(sev))
     {
     }
 
     //~G4App(){ G4CXOpticks::Finalize();}
 
     // Create "global" event
-    SEvt *sev;
+    SEvt* sev;
 
-    G4VUserDetectorConstruction *det_cons_;
-    G4VUserPrimaryGeneratorAction *prim_gen_;
-    EventAction *event_act_;
-    RunAction *run_act_;
-    SteppingAction *stepping_;
-    TrackingAction *tracking_;
+    G4VUserDetectorConstruction*   det_cons_;
+    G4VUserPrimaryGeneratorAction* prim_gen_;
+    EventAction*                   event_act_;
+    RunAction*                     run_act_;
+    SteppingAction*                stepping_;
+    TrackingAction*                tracking_;
 };
