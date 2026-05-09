@@ -774,7 +774,7 @@ void SEventConfig::LIMIT_Check()
    //assert( _MaxBounce >= 0 && _MaxBounce <  LIMIT ) ;
    // MaxBounce should not in principal be limited
 
-   assert( _MaxRecord >= 0 ) ;  // RecordLimit relaxed to allow large record arrays for step analysis
+   assert(_MaxRecord >= 0); // RecordLimit relaxed to allow large record arrays for step analysis
    assert( _MaxRec    >= 0 && _MaxRec    <= RecordLimit() ) ;
    assert( _MaxPrd    >= 0 && _MaxPrd    <= RecordLimit() ) ;
 
