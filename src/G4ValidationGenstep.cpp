@@ -5,20 +5,20 @@
 #include "FTFP_BERT.hh"
 #include "G4OpticalPhysics.hh"
 #include "G4RunManager.hh"
-#include "G4VModularPhysicsList.hh"
 #include "G4UImanager.hh"
+#include "G4VModularPhysicsList.hh"
 
 #include "G4ValidationGenstep.h"
 
 using namespace std;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     argparse::ArgumentParser program("G4ValidationGenstep", "0.0.0");
 
     string gdml_file;
     double energy_MeV = 1.0;
-    int num_events = 1;
+    int    num_events = 1;
 
     program.add_argument("-g", "--gdml")
         .help("path to GDML file")
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     {
         program.parse_args(argc, argv);
     }
-    catch (const exception &err)
+    catch (const exception& err)
     {
         cerr << err.what() << endl;
         cerr << program;
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     G4ThreeVector pos(0, 0, 0);
     {
         string s = program.get<string>("--pos");
-        float x, y, z;
+        float  x, y, z;
         if (sscanf(s.c_str(), "%f,%f,%f", &x, &y, &z) == 3)
             pos = G4ThreeVector(x, y, z);
     }
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     G4ThreeVector dir(0, 0, 1);
     {
         string s = program.get<string>("--dir");
-        float x, y, z;
+        float  x, y, z;
         if (sscanf(s.c_str(), "%f,%f,%f", &x, &y, &z) == 3)
             dir = G4ThreeVector(x, y, z);
     }
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
     GenstepHitAccumulator accumulator;
 
-    G4VModularPhysicsList *physics = new FTFP_BERT;
+    G4VModularPhysicsList* physics = new FTFP_BERT;
     physics->RegisterPhysics(new G4OpticalPhysics);
 
     G4RunManager run_mgr;

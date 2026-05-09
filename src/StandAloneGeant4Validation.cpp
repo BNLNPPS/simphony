@@ -4,11 +4,11 @@
 #include <argparse/argparse.hpp>
 
 #include "FTFP_BERT.hh"
-#include "G4OpticalPhysics.hh"
 #include "G4MTRunManager.hh"
+#include "G4OpticalPhysics.hh"
 #include "G4RunManager.hh"
-#include "G4VModularPhysicsList.hh"
 #include "G4UImanager.hh"
+#include "G4VModularPhysicsList.hh"
 
 #include "G4OpticalParameters.hh"
 
@@ -17,12 +17,12 @@
 
 using namespace std;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     argparse::ArgumentParser program("StandAloneGeant4Validation", "0.0.0");
 
     string gdml_file, config_name;
-    int num_threads = 0;
+    int    num_threads = 0;
 
     program.add_argument("-g", "--gdml")
         .help("path to GDML file")
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     {
         program.parse_args(argc, argv);
     }
-    catch (const exception &err)
+    catch (const exception& err)
     {
         cerr << err.what() << endl;
         cerr << program;
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     bool aligned = program.get<bool>("--aligned");
 
     gphox::Config cfg(config_name);
-    int total_photons = cfg.torch.numphoton;
+    int           total_photons = cfg.torch.numphoton;
 
     // Aligned mode forces sequential (U4Random is single-threaded)
     if (aligned)
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     int num_events, photons_per_event;
     if (use_mt)
     {
-        num_events = num_threads * 4;  // 4 events per thread for load balancing
+        num_events = num_threads * 4; // 4 events per thread for load balancing
         photons_per_event = (total_photons + num_events - 1) / num_events;
         // Adjust num_events so we don't overshoot
         num_events = (total_photons + photons_per_event - 1) / photons_per_event;
@@ -109,13 +109,13 @@ int main(int argc, char **argv)
            << (use_mt ? ", " + to_string(num_threads) + " threads" : ", sequential")
            << G4endl;
 
-    HitAccumulator accumulator;
+    HitAccumulator        accumulator;
     PhotonFateAccumulator fate;
 
     if (aligned)
         fate.Resize(total_photons);
 
-    G4VModularPhysicsList *physics = new FTFP_BERT;
+    G4VModularPhysicsList* physics = new FTFP_BERT;
     if (aligned)
         physics->RegisterPhysics(new AlignedOpticalPhysics);
     else
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
     if (use_mt)
     {
-        auto *run_mgr = new G4MTRunManager;
+        auto* run_mgr = new G4MTRunManager;
         run_mgr->SetNumberOfThreads(num_threads);
         run_mgr->SetUserInitialization(physics);
         run_mgr->SetUserInitialization(new G4OnlyDetectorConstruction(gdml_file, &accumulator));
