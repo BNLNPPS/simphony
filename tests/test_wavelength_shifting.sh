@@ -4,14 +4,14 @@
 # ============================
 # End-to-end test: GPU vs G4 wavelength shifting physics
 #
-# Fires 10000 UV photons (350nm) from outside a WLS sphere into a scattering
-# medium. Compares GPU (opticks) and G4 hit wavelength distributions, WLS
-# conversion rate, and arrival time distributions using chi-squared test.
+# Emits UV photons (350nm) from inside a WLS sphere and compares
+# GPU (opticks) and G4 hit wavelength distributions, WLS conversion
+# rate, and arrival-time distributions using KS tests.
 #
-# Geometry: tests/geom/wls_scatter_viz.gdml
-#   - WLS sphere r=10mm (absorbs UV, re-emits visible)
-#   - Scattering medium (Rayleigh, 10mm mean free path)
-#   - Detector shell r=30mm (100% efficiency)
+# Geometry: tests/geom/wls_test.gdml (introduced in #269)
+#   - WLS sphere r=20mm (absorbs UV, re-emits visible)
+#   - Detector shell r=28-30mm (100% efficiency)
+#   - Air outside the sphere
 #
 # Usage:
 #   ./tests/test_wavelength_shifting.sh [seed]
@@ -24,9 +24,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SEED=${1:-42}
-NUMPHOTON=10000
-GEOM="$REPO_DIR/tests/geom/wls_scatter_viz.gdml"
-CONFIG="wls_scatter_viz"
+GEOM="$REPO_DIR/tests/geom/wls_test.gdml"
+CONFIG="wls_test"
 
 source /opt/eic-opticks/eic-opticks-env.sh 2>/dev/null || true
 export OPTICKS_MAX_BOUNCE=100
