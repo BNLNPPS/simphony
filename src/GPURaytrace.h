@@ -1,3 +1,4 @@
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -47,7 +48,9 @@
 namespace
 {
 G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
-}
+G4Mutex g4hits_mutex = G4MUTEX_INITIALIZER;
+std::vector<std::array<float, 16>> g4_accumulated_hits;
+} // namespace
 
 bool IsSubtractionSolid(G4VSolid *solid)
 {
@@ -331,7 +334,26 @@ struct EventAction : G4UserEventAction
             for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
             {
                 G4VHitsCollection *hc = hce->GetHC(i);
-                if (hc)
+                if (!hc)
+                    continue;
+
+                PhotonHitsCollection *phc = dynamic_cast<PhotonHitsCollection *>(hc);
+                if (phc)
+                {
+                    G4AutoLock lock(&g4hits_mutex);
+                    for (size_t j = 0; j < phc->entries(); j++)
+                    {
+                        PhotonHit *hit = (*phc)[j];
+                        float wl = 1239.84198f / static_cast<float>(hit->fenergy);
+                        g4_accumulated_hits.push_back(
+                            {float(hit->fposition.x()), float(hit->fposition.y()), float(hit->fposition.z()),
+                             float(hit->ftime), float(hit->fdirection.x()), float(hit->fdirection.y()),
+                             float(hit->fdirection.z()), 0.f, float(hit->fpolarization.x()),
+                             float(hit->fpolarization.y()), float(hit->fpolarization.z()), wl, 0.f, 0.f, 0.f, 0.f});
+                    }
+                    fTotalG4Hits += phc->entries();
+                }
+                else
                 {
                     fTotalG4Hits += hc->GetSize();
                 }
@@ -348,6 +370,7 @@ struct EventAction : G4UserEventAction
 struct RunAction : G4UserRunAction
 {
     EventAction *fEventAction;
+    bool fSavePhotonHistory{false};
 
     RunAction(EventAction *eventAction) : fEventAction(eventAction)
     {
@@ -379,44 +402,39 @@ struct RunAction : G4UserRunAction
             std::cout << "Opticks: NumCollected:  " << sev->GetNumPhotonCollected(0) << std::endl;
             std::cout << "Opticks: NumHits:  " << num_hits << std::endl;
             std::cout << "Geant4: NumHits:  " << fEventAction->GetTotalG4Hits() << std::endl;
-            std::ofstream outFile("opticks_hits_output.txt");
-            if (!outFile.is_open())
-            {
-                std::cerr << "Error opening output file!" << std::endl;
-                return;
-            }
 
-            for (int idx = 0; idx < int(num_hits); idx++)
+            if (fSavePhotonHistory)
             {
-                sphoton hit;
-                sev->getHit(hit, idx);
-                G4ThreeVector position = G4ThreeVector(hit.pos.x, hit.pos.y, hit.pos.z);
-                G4ThreeVector direction = G4ThreeVector(hit.mom.x, hit.mom.y, hit.mom.z);
-                G4ThreeVector polarization = G4ThreeVector(hit.pol.x, hit.pol.y, hit.pol.z);
-                int theCreationProcessid;
-                if (OpticksPhoton::HasCerenkovFlag(hit.flagmask))
-                {
-                    theCreationProcessid = 0;
-                }
-                else if (OpticksPhoton::HasScintillationFlag(hit.flagmask))
-                {
-                    theCreationProcessid = 1;
-                }
-                else
-                {
-                    theCreationProcessid = -1;
-                }
-                //    std::cout << "Adding hit from Opticks:" << hit.wavelength << " " << position << " " << direction
-                //    << "
-                //    "
-                //              << polarization << std::endl;
-                outFile << hit.time << " " << hit.wavelength << "  " << "(" << position.x() << ", " << position.y()
-                        << ", " << position.z() << ")  " << "(" << direction.x() << ", " << direction.y() << ", "
-                        << direction.z() << ")  " << "(" << polarization.x() << ", " << polarization.y() << ", "
-                        << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid << std::endl;
-            }
+                // Save full SEvt (photon, record, seq, hit) when DebugLite/DebugHeavy
+                sev->save();
+                std::cout << "SEvt::save() complete" << std::endl;
 
-            outFile.close();
+                // Save GPU hits as .npy (sphoton layout: N x 4 x 4 float32)
+                {
+                    NP *gpu_h = NP::Make<float>(num_hits, 4, 4);
+                    for (unsigned idx = 0; idx < num_hits; idx++)
+                    {
+                        sphoton hit;
+                        sev->getHit(hit, idx);
+                        memcpy(gpu_h->bytes() + idx * sizeof(sphoton), &hit, sizeof(sphoton));
+                    }
+                    gpu_h->save("gpu_hits.npy");
+                    std::cout << "Saved GPU hits: " << num_hits << " to gpu_hits.npy" << std::endl;
+                }
+
+                // Save G4 hits as .npy (same layout: N x 4 x 4 float32)
+                {
+                    G4AutoLock lock(&g4hits_mutex);
+                    size_t ng4 = g4_accumulated_hits.size();
+                    if (ng4 > 0)
+                    {
+                        NP *g4h = NP::Make<float>(ng4, 4, 4);
+                        memcpy(g4h->bytes(), g4_accumulated_hits.data(), ng4 * 16 * sizeof(float));
+                        g4h->save("g4_hits.npy");
+                        std::cout << "Saved G4 hits: " << ng4 << " to g4_hits.npy" << std::endl;
+                    }
+                }
+            }
         }
     }
 };

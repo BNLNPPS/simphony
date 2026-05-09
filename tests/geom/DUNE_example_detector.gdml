@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+  <define>
+    <matrix coldim="2" name="RINDEX0x6000000ed5f0" values="2.33932e-06 1.65 2.91728e-06 1.65 3.0996e-06 1.65 3.64659e-06 1.65 4.06506e-06 1.65 7.74901e-06 1.65 9.68627e-06 1.65 1.16966e-05 1.65"/>
+    <matrix coldim="2" name="GROUPVEL0x6000000ed6c0" values="2.33932e-06 181.692 2.6283e-06 181.692 3.00844e-06 181.692 3.3731e-06 181.692 3.85582e-06 181.692 5.90703e-06 181.692 8.71764e-06 181.692 1.16966e-05 181.692"/>
+    <matrix coldim="2" name="WLSCOMPONENT0x6000000ed860" values="2.33932e-06 0 2.91728e-06 0.0005 3.0996e-06 0.002 3.64659e-06 0.022 4.06506e-06 0.0005 7.74901e-06 0 9.68627e-06 0 1.16966e-05 0"/>
+    <matrix coldim="2" name="WLSABSLENGTH0x6000000ed790" values="2.33932e-06 10000 2.91728e-06 10000 3.0996e-06 10000 3.64659e-06 10000 4.06506e-06 0.187 7.74901e-06 0.0005 9.68627e-06 0.0005 1.16966e-05 0.0005"/>
+    <matrix coldim="1" name="WLSTIMECONSTANT0x6000010e1b20" values="1.136"/>
+    <matrix coldim="2" name="RINDEX0x6000000ed930" values="2.33932e-06 1.5 2.91728e-06 1.5 3.0996e-06 1.5 3.64659e-06 1.5 4.06506e-06 1.5 7.74901e-06 1.5 9.68627e-06 1.5 1.16966e-05 1.5"/>
+    <matrix coldim="2" name="GROUPVEL0x6000000eda00" values="2.33932e-06 199.862 2.6283e-06 199.862 3.00844e-06 199.862 3.3731e-06 199.862 3.85582e-06 199.862 5.90703e-06 199.862 8.71764e-06 199.862 1.16966e-05 199.862"/>
+    <matrix coldim="2" name="RINDEX0x6000000edad0" values="2.33932e-06 1.58 2.91728e-06 1.58 3.0996e-06 1.58 3.64659e-06 1.58 4.06506e-06 1.58 7.74901e-06 1.58 9.68627e-06 1.58 1.16966e-05 1.58"/>
+    <matrix coldim="2" name="GROUPVEL0x6000000edba0" values="2.33932e-06 189.742 2.6283e-06 189.742 3.00844e-06 189.742 3.3731e-06 189.742 3.85582e-06 189.742 5.90703e-06 189.742 8.71764e-06 189.742 1.16966e-05 189.742"/>
+    <matrix coldim="2" name="WLSCOMPONENT0x6000000edd40" values="2.33932e-06 0.0005 2.91728e-06 0.02 3.0996e-06 0 3.64659e-06 0 4.06506e-06 0 7.74901e-06 0 9.68627e-06 0 1.16966e-05 0"/>
+    <matrix coldim="2" name="WLSABSLENGTH0x6000000edc70" values="2.33932e-06 2000 2.91728e-06 2000 3.0996e-06 0.8 3.64659e-06 0.8 4.06506e-06 3 7.74901e-06 0.0001 9.68627e-06 0.0001 1.16966e-05 0.0001"/>
+    <matrix coldim="1" name="WLSTIMECONSTANT0x6000010e1c00" values="1.26"/>
+    <matrix coldim="2" name="RINDEX0x6000000ede10" values="2.33932e-06 1.23 2.91728e-06 1.23 3.0996e-06 1.23 3.64659e-06 1.23 4.06506e-06 1.235 7.74901e-06 1.315 9.68627e-06 1.45 1.16966e-05 5.45"/>
+    <matrix coldim="2" name="GROUPVEL0x6000000edee0" values="2.33932e-06 243.734 2.6283e-06 243.734 3.00844e-06 243.734 3.3731e-06 243.734 3.85582e-06 234.483 5.90703e-06 214.29 8.71764e-06 150.84 1.16966e-05 11.2451"/>
+    <matrix coldim="2" name="RAYLEIGH0x6000000ee220" values="2.33932e-06 900 2.91728e-06 900 3.0996e-06 900 3.64659e-06 900 4.06506e-06 900 7.74901e-06 900 9.68627e-06 900 1.16966e-05 900"/>
+    <matrix coldim="2" name="ABSLENGTH0x6000000ee150" values="2.33932e-06 10000 2.91728e-06 10000 3.0996e-06 10000 3.64659e-06 10000 4.06506e-06 10000 7.74901e-06 10000 9.68627e-06 10000 1.16966e-05 10000"/>
+    <matrix coldim="2" name="SCINTILLATIONCOMPONENT10x6000000edfb0" values="2.33932e-06 0 2.91728e-06 0 3.0996e-06 0 3.64659e-06 0 4.06506e-06 0 7.74901e-06 0.000238409 9.68627e-06 0.0398859 1.16966e-05 0.00422473"/>
+    <matrix coldim="2" name="SCINTILLATIONCOMPONENT20x6000000ee080" values="2.33932e-06 0 2.91728e-06 0 3.0996e-06 0 3.64659e-06 0 4.06506e-06 0 7.74901e-06 0.000238409 9.68627e-06 0.0398859 1.16966e-05 0.00422473"/>
+    <matrix coldim="1" name="SCINTILLATIONYIELD0x6000010e1c70" values="24000"/>
+    <matrix coldim="1" name="RESOLUTIONSCALE0x6000010e1c70" values="1"/>
+    <matrix coldim="1" name="SCINTILLATIONTIMECONSTANT10x6000010e1c70" values="7"/>
+    <matrix coldim="1" name="SCINTILLATIONTIMECONSTANT20x6000010e1c70" values="1400"/>
+    <matrix coldim="1" name="SCINTILLATIONYIELD10x6000010e1c70" values="0.75"/>
+    <matrix coldim="1" name="SCINTILLATIONYIELD20x6000010e1c70" values="0.25"/>
+    <matrix coldim="2" name="REFLECTIVITY0x6000000ee2f0" values="2.33932e-06 0.98 2.91728e-06 0.98 3.0996e-06 0.98 3.64659e-06 0.98 4.06506e-06 0.98 7.74901e-06 0.98 9.68627e-06 0.98 1.16966e-05 0.98"/>
+    <matrix coldim="2" name="EFFICIENCY_SIPM" values="2.33932e-06 1.0 2.91728e-06 1.0 3.0996e-06 1.0 3.64659e-06 1.0 4.06506e-06 1.0 7.74901e-06 1.0 9.68627e-06 1.0 1.16966e-05 1.0"/>
+  </define>
+
+  <materials>
+    <isotope N="12" Z="6" name="C120x600002ee5980">
+      <atom unit="g/mole" value="12"/>
+    </isotope>
+    <isotope N="13" Z="6" name="C130x600002ee59c0">
+      <atom unit="g/mole" value="13.0034"/>
+    </isotope>
+    <element name="C0x600000ce1080">
+      <fraction n="0.9893" ref="C120x600002ee5980"/>
+      <fraction n="0.0107" ref="C130x600002ee59c0"/>
+    </element>
+    <isotope N="1" Z="1" name="H10x600002ee5a40">
+      <atom unit="g/mole" value="1.00782503081372"/>
+    </isotope>
+    <isotope N="2" Z="1" name="H20x600002ee5a80">
+      <atom unit="g/mole" value="2.01410199966617"/>
+    </isotope>
+    <element name="H0x600000ce1130">
+      <fraction n="0.999885" ref="H10x600002ee5a40"/>
+      <fraction n="0.000115" ref="H20x600002ee5a80"/>
+    </element>
+    <material name="pTP0x121e06e10" state="solid">
+      <property name="RINDEX" ref="RINDEX0x6000000ed5f0"/>
+      <property name="GROUPVEL" ref="GROUPVEL0x6000000ed6c0"/>
+      <property name="WLSCOMPONENT" ref="WLSCOMPONENT0x6000000ed860"/>
+      <property name="WLSABSLENGTH" ref="WLSABSLENGTH0x6000000ed790"/>
+      <property name="WLSTIMECONSTANT" ref="WLSTIMECONSTANT0x6000010e1b20"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="68.6661371678143"/>
+      <D unit="g/cm3" value="1.23"/>
+      <fraction n="0.938728183298287" ref="C0x600000ce1080"/>
+      <fraction n="0.0612718167017128" ref="H0x600000ce1130"/>
+    </material>
+    <isotope N="16" Z="8" name="O160x600002ee5ac0">
+      <atom unit="g/mole" value="15.9949"/>
+    </isotope>
+    <isotope N="17" Z="8" name="O170x600002ee5b40">
+      <atom unit="g/mole" value="16.9991"/>
+    </isotope>
+    <isotope N="18" Z="8" name="O180x600002ee5b80">
+      <atom unit="g/mole" value="17.9992"/>
+    </isotope>
+    <element name="O0x600000ce11e0">
+      <fraction n="0.99757" ref="O160x600002ee5ac0"/>
+      <fraction n="0.00038" ref="O170x600002ee5b40"/>
+      <fraction n="0.00205" ref="O180x600002ee5b80"/>
+    </element>
+    <material name="acrylicMcMaster0x121e06f20" state="solid">
+      <property name="RINDEX" ref="RINDEX0x6000000ed930"/>
+      <property name="GROUPVEL" ref="GROUPVEL0x6000000eda00"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="68.6088807971964"/>
+      <D unit="g/cm3" value="1.19"/>
+      <fraction n="0.599841070879962" ref="C0x600000ce1080"/>
+      <fraction n="0.0805418407442842" ref="H0x600000ce1130"/>
+      <fraction n="0.319617088375753" ref="O0x600000ce11e0"/>
+    </material>
+    <material name="bluewlsacrylic0x121e075c0" state="solid">
+      <property name="RINDEX" ref="RINDEX0x6000000edad0"/>
+      <property name="GROUPVEL" ref="GROUPVEL0x6000000edba0"/>
+      <property name="WLSCOMPONENT" ref="WLSCOMPONENT0x6000000edd40"/>
+      <property name="WLSABSLENGTH" ref="WLSABSLENGTH0x6000000edc70"/>
+      <property name="WLSTIMECONSTANT" ref="WLSTIMECONSTANT0x6000010e1c00"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="64.6844741120544"/>
+      <D unit="g/cm3" value="1.023"/>
+      <fraction n="0.914708531800025" ref="C0x600000ce1080"/>
+      <fraction n="0.0852914681999746" ref="H0x600000ce1130"/>
+    </material>
+    <isotope N="36" Z="18" name="Ar360x600002ee5bc0">
+      <atom unit="g/mole" value="35.9675"/>
+    </isotope>
+    <isotope N="38" Z="18" name="Ar380x600002ee5c00">
+      <atom unit="g/mole" value="37.9627"/>
+    </isotope>
+    <isotope N="40" Z="18" name="Ar400x600002ee5b00">
+      <atom unit="g/mole" value="39.9624"/>
+    </isotope>
+    <element name="Ar0x600000ce1290">
+      <fraction n="0.003365" ref="Ar360x600002ee5bc0"/>
+      <fraction n="0.000632" ref="Ar380x600002ee5c00"/>
+      <fraction n="0.996003" ref="Ar400x600002ee5b00"/>
+    </element>
+    <material name="G4_lAr0x121e076d0" state="liquid">
+      <property name="RINDEX" ref="RINDEX0x6000000ede10"/>
+      <property name="GROUPVEL" ref="GROUPVEL0x6000000edee0"/>
+      <property name="RAYLEIGH" ref="RAYLEIGH0x6000000ee220"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH0x6000000ee150"/>
+      <property name="SCINTILLATIONCOMPONENT1" ref="SCINTILLATIONCOMPONENT10x6000000edfb0"/>
+      <property name="SCINTILLATIONCOMPONENT2" ref="SCINTILLATIONCOMPONENT20x6000000ee080"/>
+      <property name="SCINTILLATIONYIELD" ref="SCINTILLATIONYIELD0x6000010e1c70"/>
+      <property name="RESOLUTIONSCALE" ref="RESOLUTIONSCALE0x6000010e1c70"/>
+      <property name="SCINTILLATIONTIMECONSTANT1" ref="SCINTILLATIONTIMECONSTANT10x6000010e1c70"/>
+      <property name="SCINTILLATIONTIMECONSTANT2" ref="SCINTILLATIONTIMECONSTANT20x6000010e1c70"/>
+      <property name="SCINTILLATIONYIELD1" ref="SCINTILLATIONYIELD10x6000010e1c70"/>
+      <property name="SCINTILLATIONYIELD2" ref="SCINTILLATIONYIELD20x6000010e1c70"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="188"/>
+      <D unit="g/cm3" value="1.396"/>
+      <fraction n="1" ref="Ar0x600000ce1290"/>
+    </material>
+  </materials>
+
+  <solids>
+    <box lunit="mm" name="pTPlayer0x6000010e2920" x="500" y="500" z="0.002"/>
+    <box lunit="mm" name="pTPsubstrate0x6000010e2990" x="500" y="500" z="6"/>
+    <box lunit="mm" name="BlueWLSplate0x6000010e2a00" x="500" y="500" z="6"/>
+    <box lunit="mm" name="SiPMs0x6000010e2a70" x="6" y="1" z="6"/>
+    <box lunit="mm" name="ReflectiveFoilBackPlane0x6000010e2ae0" x="500" y="500" z="0.065"/>
+    <opticalsurface finish="3" model="1" name="Vikuiti0x6000010e1ce0" type="0" value="0">
+      <property name="REFLECTIVITY" ref="REFLECTIVITY0x6000000ee2f0"/>
+    </opticalsurface>
+    <opticalsurface finish="0" model="1" name="SiPMSurface" type="0" value="0">
+      <property name="EFFICIENCY" ref="EFFICIENCY_SIPM"/>
+    </opticalsurface>
+    <box lunit="mm" name="ReflectiveFoilEdgeTop0x6000010e2b50" x="500" y="0.065" z="6"/>
+    <box lunit="mm" name="ReflectiveFoilEdgeBot0x6000010e2bc0" x="500" y="0.065" z="6"/>
+    <box lunit="mm" name="ReflectiveFoilEdgeLeft0x6000010e2c30" x="0.065" y="500" z="6"/>
+    <box lunit="mm" name="ReflectiveFoilEdgeRight0x6000010e2ca0" x="0.065" y="500" z="6"/>
+    <box lunit="mm" name="solidWorld0x6000010e2300" x="1000" y="1000" z="1000"/>
+  </solids>
+
+  <structure>
+    <volume name="logicpTPlayer0x600000ae2300">
+      <materialref ref="pTP0x121e06e10"/>
+      <solidref ref="pTPlayer0x6000010e2920"/>
+    </volume>
+    <volume name="logicpTPsubstrate0x600000ae23a0">
+      <materialref ref="acrylicMcMaster0x121e06f20"/>
+      <solidref ref="pTPsubstrate0x6000010e2990"/>
+    </volume>
+    <volume name="logicBlueWLSplate0x600000ae2440">
+      <materialref ref="bluewlsacrylic0x121e075c0"/>
+      <solidref ref="BlueWLSplate0x6000010e2a00"/>
+    </volume>
+    <volume name="logicSiPMs0x600000ae24e0">
+      <materialref ref="G4_lAr0x121e076d0"/>
+      <solidref ref="SiPMs0x6000010e2a70"/>
+      <auxiliary auxtype="SensDet" auxvalue="PhotonDetector"/>
+    </volume>
+    <volume name="logicReflectiveFoilBackPlane0x600000ae2580">
+      <materialref ref="acrylicMcMaster0x121e06f20"/>
+      <solidref ref="ReflectiveFoilBackPlane0x6000010e2ae0"/>
+    </volume>
+    <volume name="logicReflectiveFoilEdgeTop0x600000ae2620">
+      <materialref ref="acrylicMcMaster0x121e06f20"/>
+      <solidref ref="ReflectiveFoilEdgeTop0x6000010e2b50"/>
+    </volume>
+    <volume name="logicReflectiveFoilEdgeBot0x600000ae26c0">
+      <materialref ref="acrylicMcMaster0x121e06f20"/>
+      <solidref ref="ReflectiveFoilEdgeBot0x6000010e2bc0"/>
+    </volume>
+    <volume name="logicReflectiveFoilEdgeLeft0x600000ae2760">
+      <materialref ref="acrylicMcMaster0x121e06f20"/>
+      <solidref ref="ReflectiveFoilEdgeLeft0x6000010e2c30"/>
+    </volume>
+    <volume name="logicReflectiveFoilEdgeRight0x600000ae2800">
+      <materialref ref="acrylicMcMaster0x121e06f20"/>
+      <solidref ref="ReflectiveFoilEdgeRight0x6000010e2ca0"/>
+    </volume>
+    <volume name="logicWorld0x600000ae1f40">
+      <materialref ref="G4_lAr0x121e076d0"/>
+      <solidref ref="solidWorld0x6000010e2300"/>
+      <physvol name="physpTPlayer0x6000018e2580">
+        <volumeref ref="logicpTPlayer0x600000ae2300"/>
+        <position name="physpTPlayer0x6000018e2580_pos" unit="mm" x="0" y="0" z="246.999"/>
+      </physvol>
+      <physvol name="physpTPsubstrate0x6000018e26c0">
+        <volumeref ref="logicpTPsubstrate0x600000ae23a0"/>
+        <position name="physpTPsubstrate0x6000018e26c0_pos" unit="mm" x="0" y="0" z="250"/>
+      </physvol>
+      <physvol name="physBlueWLSplate0x6000018e2800">
+        <volumeref ref="logicBlueWLSplate0x600000ae2440"/>
+        <position name="physBlueWLSplate0x6000018e2800_pos" unit="mm" x="0" y="0" z="258"/>
+      </physvol>
+      <physvol name="physSiPMs0x6000018e2940">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2940_pos" unit="mm" x="-241.935483870968" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="1" name="physSiPMs0x6000018e29e0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e29e0_pos" unit="mm" x="-225.806451612903" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="2" name="physSiPMs0x6000018e2a30">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2a30_pos" unit="mm" x="-209.677419354839" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="3" name="physSiPMs0x6000018e2a80">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2a80_pos" unit="mm" x="-193.548387096774" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="4" name="physSiPMs0x6000018e2ad0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2ad0_pos" unit="mm" x="-177.41935483871" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="5" name="physSiPMs0x6000018e2b20">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2b20_pos" unit="mm" x="-161.290322580645" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="6" name="physSiPMs0x6000018e2b70">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2b70_pos" unit="mm" x="-145.161290322581" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="7" name="physSiPMs0x6000018e2bc0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2bc0_pos" unit="mm" x="-129.032258064516" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="8" name="physSiPMs0x6000018e2c10">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2c10_pos" unit="mm" x="-112.903225806452" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="9" name="physSiPMs0x6000018e2c60">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2c60_pos" unit="mm" x="-96.7741935483871" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="10" name="physSiPMs0x6000018e2cb0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2cb0_pos" unit="mm" x="-80.6451612903226" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="11" name="physSiPMs0x6000018e2d00">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2d00_pos" unit="mm" x="-64.5161290322581" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="12" name="physSiPMs0x6000018e2d50">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2d50_pos" unit="mm" x="-48.3870967741935" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="13" name="physSiPMs0x6000018e2da0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2da0_pos" unit="mm" x="-32.258064516129" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="14" name="physSiPMs0x6000018e2df0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2df0_pos" unit="mm" x="-16.1290322580645" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="15" name="physSiPMs0x6000018e2e40">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2e40_pos" unit="mm" x="0" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="16" name="physSiPMs0x6000018e2e90">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2e90_pos" unit="mm" x="16.1290322580645" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="17" name="physSiPMs0x6000018e2ee0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2ee0_pos" unit="mm" x="32.258064516129" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="18" name="physSiPMs0x6000018e2f30">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2f30_pos" unit="mm" x="48.3870967741935" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="19" name="physSiPMs0x6000018e2f80">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2f80_pos" unit="mm" x="64.516129032258" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="20" name="physSiPMs0x6000018e2fd0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e2fd0_pos" unit="mm" x="80.6451612903226" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="21" name="physSiPMs0x6000018e3020">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e3020_pos" unit="mm" x="96.7741935483871" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="22" name="physSiPMs0x6000018e3070">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e3070_pos" unit="mm" x="112.903225806452" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="23" name="physSiPMs0x6000018e30c0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e30c0_pos" unit="mm" x="129.032258064516" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="24" name="physSiPMs0x6000018e3110">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e3110_pos" unit="mm" x="145.161290322581" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="25" name="physSiPMs0x6000018e3160">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e3160_pos" unit="mm" x="161.290322580645" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="26" name="physSiPMs0x6000018e31b0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e31b0_pos" unit="mm" x="177.41935483871" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="27" name="physSiPMs0x6000018e3200">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e3200_pos" unit="mm" x="193.548387096774" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="28" name="physSiPMs0x6000018e3250">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e3250_pos" unit="mm" x="209.677419354839" y="251" z="258"/>
+      </physvol>
+      <physvol copynumber="29" name="physSiPMs0x6000018e32a0">
+        <volumeref ref="logicSiPMs0x600000ae24e0"/>
+        <position name="physSiPMs0x6000018e32a0_pos" unit="mm" x="225.806451612903" y="251" z="258"/>
+      </physvol>
+      <physvol name="physReflectiveFoilBackPlane0x6000018e3390">
+        <volumeref ref="logicReflectiveFoilBackPlane0x600000ae2580"/>
+        <position name="physReflectiveFoilBackPlane0x6000018e3390_pos" unit="mm" x="0" y="0" z="261.033"/>
+      </physvol>
+      <physvol name="physReflectiveFoilEdgeTop0x6000018e36b0">
+        <volumeref ref="logicReflectiveFoilEdgeTop0x600000ae2620"/>
+        <position name="physReflectiveFoilEdgeTop0x6000018e36b0_pos" unit="mm" x="0" y="251.533" z="258"/>
+      </physvol>
+      <physvol name="physReflectiveFoilEdgeBot0x6000018e3750">
+        <volumeref ref="logicReflectiveFoilEdgeBot0x600000ae26c0"/>
+        <position name="physReflectiveFoilEdgeBot0x6000018e3750_pos" unit="mm" x="0" y="-250.033" z="258"/>
+      </physvol>
+      <physvol name="physReflectiveFoilEdgeLeft0x6000018e37f0">
+        <volumeref ref="logicReflectiveFoilEdgeLeft0x600000ae2760"/>
+        <position name="physReflectiveFoilEdgeLeft0x6000018e37f0_pos" unit="mm" x="250.033" y="0" z="258"/>
+      </physvol>
+      <physvol name="physReflectiveFoilEdgeRight0x6000018e3890">
+        <volumeref ref="logicReflectiveFoilEdgeRight0x600000ae2800"/>
+        <position name="physReflectiveFoilEdgeRight0x6000018e3890_pos" unit="mm" x="-250.033" y="0" z="258"/>
+      </physvol>
+    </volume>
+    <skinsurface name="skin0x600002e09bc0" surfaceproperty="Vikuiti0x6000010e1ce0">
+      <volumeref ref="logicReflectiveFoilBackPlane0x600000ae2580"/>
+    </skinsurface>
+    <skinsurface name="skinedgetop0x600002e09b80" surfaceproperty="Vikuiti0x6000010e1ce0">
+      <volumeref ref="logicReflectiveFoilEdgeTop0x600000ae2620"/>
+    </skinsurface>
+    <skinsurface name="skinedgebot0x600002e09c00" surfaceproperty="Vikuiti0x6000010e1ce0">
+      <volumeref ref="logicReflectiveFoilEdgeBot0x600000ae26c0"/>
+    </skinsurface>
+    <skinsurface name="skinedgeleft0x600002e09c40" surfaceproperty="Vikuiti0x6000010e1ce0">
+      <volumeref ref="logicReflectiveFoilEdgeLeft0x600000ae2760"/>
+    </skinsurface>
+    <skinsurface name="skinedgeright0x600002e09c80" surfaceproperty="Vikuiti0x6000010e1ce0">
+      <volumeref ref="logicReflectiveFoilEdgeRight0x600000ae2800"/>
+    </skinsurface>
+    <skinsurface name="skinSiPM" surfaceproperty="SiPMSurface">
+      <volumeref ref="logicSiPMs0x600000ae24e0"/>
+    </skinsurface>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="logicWorld0x600000ae1f40"/>
+  </setup>
+
+</gdml>

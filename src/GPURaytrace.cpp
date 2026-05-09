@@ -13,6 +13,7 @@
 #include "sysrap/OPTICKS_LOG.hh"
 
 #include "GPURaytrace.h"
+#include "config.h"
 
 #include "G4RunManager.hh"
 #include "G4RunManagerFactory.hh"
@@ -68,6 +69,11 @@ int main(int argc, char **argv)
         .nargs(1)
         .store_into(macro_name);
 
+    program.add_argument("-c", "--config")
+        .help("config file name (without .json extension)")
+        .default_value(string(""))
+        .nargs(1);
+
     program.add_argument("-i", "--interactive")
         .help("whether to open an interactive window with a viewer")
         .flag()
@@ -107,6 +113,14 @@ int main(int argc, char **argv)
     run_mgr->SetUserInitialization(physics);
 
     G4App *g4app = new G4App(gdml_file);
+
+    // Load config and apply savephotonhistory flag if provided
+    string config_name = program.get<string>("--config");
+    if (!config_name.empty())
+    {
+        gphox::Config cfg(config_name);
+        g4app->run_act_->fSavePhotonHistory = cfg.savephotonhistory;
+    }
 
     ActionInitialization *actionInit = new ActionInitialization(g4app);
     run_mgr->SetUserInitialization(actionInit);

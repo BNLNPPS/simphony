@@ -7,29 +7,29 @@
 #include "sysrap/srng.h"
 #include "sysrap/storch.h"
 
-namespace gphox {
-
+namespace gphox
+{
 
 /**
  * Provides access to all configuration types and data.
  */
 class Config
 {
- public:
+  public:
+    Config(std::string config_name = "dev");
 
-  Config(std::string config_name = "dev");
+    static std::string PtxPath(const std::string &ptx_name = "CSGOptiX7.ptx");
 
-  static std::string PtxPath(const std::string &ptx_name = "CSGOptiX7.ptx");
+    /// A unique name associated with this Config
+    std::string name;
 
-  /// A unique name associated with this Config
-  std::string name;
+    storch torch;
 
-  storch torch;
+    bool savephotonhistory{false};
 
- private:
-
-  std::string Locate(std::string filename) const;
-  void ReadConfig(std::string filepath);
+  private:
+    std::string Locate(std::string filename) const;
+    void ReadConfig(std::string filepath);
 };
 
-}
+} // namespace gphox
