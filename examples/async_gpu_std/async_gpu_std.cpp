@@ -30,8 +30,9 @@
 
 struct ActionInitialization : public G4VUserActionInitialization
 {
-    G4App *fG4App;
-    ActionInitialization(G4App *app) : fG4App(app)
+    G4App* fG4App;
+    ActionInitialization(G4App* app) :
+        fG4App(app)
     {
     }
 
@@ -50,7 +51,7 @@ struct ActionInitialization : public G4VUserActionInitialization
     }
 };
 
-static void usage(const char *prog)
+static void usage(const char* prog)
 {
     std::cerr << "Usage: " << prog
               << " [options]\n"
@@ -63,21 +64,21 @@ static void usage(const char *prog)
                  "  -h, --help           show this message\n";
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
     std::string gdml_file = "apex.gdml";
     std::string macro_name = "run.mac";
-    long seed = static_cast<long>(std::time(nullptr));
-    bool seed_set = false;
-    bool interactive = false;
-    bool sync_mode = false;
+    long        seed = static_cast<long>(std::time(nullptr));
+    bool        seed_set = false;
+    bool        interactive = false;
+    bool        sync_mode = false;
 
     for (int i = 1; i < argc; i++)
     {
         std::string a = argv[i];
-        auto next = [&](const char *flag) -> const char * {
+        auto        next = [&](const char* flag) -> const char* {
             if (i + 1 >= argc)
             {
                 std::cerr << flag << " requires an argument\n";
@@ -115,25 +116,26 @@ int main(int argc, char **argv)
     }
 
     CLHEP::HepRandom::setTheSeed(seed);
-    G4cout << "Random seed: " << seed << (seed_set ? " (user)" : " (time)") << G4endl;
+    G4cout << "Random seed: " << seed << (seed_set ? " (user)" : " (time)")
+           << G4endl;
 
     bool enable_async = !sync_mode;
     G4cout << "Mode: " << (enable_async ? "ASYNC (std)" : "SYNC") << G4endl;
 
-    G4VModularPhysicsList *physics = new FTFP_BERT;
+    G4VModularPhysicsList* physics = new FTFP_BERT;
     physics->RegisterPhysics(new G4OpticalPhysics);
 
-    auto *run_mgr = G4RunManagerFactory::CreateRunManager();
+    auto* run_mgr = G4RunManagerFactory::CreateRunManager();
     run_mgr->SetUserInitialization(physics);
 
-    G4App *g4app = new G4App(gdml_file, enable_async);
+    G4App* g4app = new G4App(gdml_file, enable_async);
 
-    auto *actionInit = new ActionInitialization(g4app);
+    auto* actionInit = new ActionInitialization(g4app);
     run_mgr->SetUserInitialization(actionInit);
     run_mgr->SetUserInitialization(g4app->det_cons_);
 
-    G4UIExecutive *uix = nullptr;
-    G4VisManager *vis = nullptr;
+    G4UIExecutive* uix = nullptr;
+    G4VisManager*  vis = nullptr;
     if (interactive)
     {
         uix = new G4UIExecutive(argc, argv);
@@ -141,7 +143,7 @@ int main(int argc, char **argv)
         vis->Initialize();
     }
 
-    G4UImanager *ui = G4UImanager::GetUIpointer();
+    G4UImanager* ui = G4UImanager::GetUIpointer();
     ui->ApplyCommand("/control/execute " + macro_name);
 
     if (interactive)
