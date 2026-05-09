@@ -531,7 +531,7 @@ struct SteppingAction : G4UserSteppingAction
                         G4double tc[3] = {0, 0, 0};
                         G4double yield[3] = {0, 0, 0};
                         G4double yieldSum = 0;
-                        G4int nComp = 0;
+                        G4int    nComp = 0;
 
                         for (G4int c = 0; c < 3; c++)
                         {
@@ -545,8 +545,17 @@ struct SteppingAction : G4UserSteppingAction
                             }
                         }
 
+                        if (yieldSum <= 0.0)
+                        {
+                            G4cout << "WARNING: scintillation yields sum to <= 0 for material '"
+                                   << aMaterial->GetName() << "'; falling back to single component." << G4endl;
+                            yield[0] = 1.0;
+                            yieldSum = 1.0;
+                            nComp = 1;
+                        }
+
                         G4AutoLock lock(&genstep_mutex);
-                        G4int nRemaining = fNumPhotons;
+                        G4int      nRemaining = fNumPhotons;
                         for (G4int c = 0; c < nComp; c++)
                         {
                             G4int nPhotComp;
