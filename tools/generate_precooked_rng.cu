@@ -2,8 +2,34 @@
 generate_precooked_rng.cu
 ==========================
 
-Generates precooked curand Philox sequences for U4Random aligned mode.
-Each photon gets its own random stream matching the GPU simulation.
+Generates precooked curand Philox sample arrays for U4Random aligned mode.
+Each photon gets its own pre-evaluated random-number stream matching what
+the GPU simulation would draw at the same step.
+
+Relation to QCurandStateMonolithicTest
+---------------------------------------
+This tool is NOT a replacement for QCurandStateMonolithicTest — they
+produce different artifacts for different consumers:
+
+    QCurandStateMonolithicTest (qudarap/tests/)
+        - Output: curand internal STATE structs (Philox4_32_10_t)
+                  ~/.opticks/rngcache/RNG/QCurandState_<N>_0_0.bin
+        - Consumer: GPU simulation initialisation. The kernel picks up a
+                    state and starts drawing from it.
+        - Purpose: pre-seeded RNG state for reproducible GPU runs.
+
+    generate_precooked_rng (this tool)
+        - Output: pre-evaluated random SAMPLES (float32 NumPy array)
+                  ~/.opticks/precooked/QSimTest/rng_sequence/.../
+                      rng_sequence_f_ni<NI>_nj<NJ>_nk<NK>_ioffset000000.npy
+        - Consumer: U4Random in --aligned mode (CPU-side G4). G4 reads
+                    sample i from the array on its i-th draw, byte-for-byte
+                    matching whatever the GPU kernel would have drawn at
+                    that step.
+        - Purpose: photon-by-photon GPU<->G4 alignment.
+
+States vs samples; GPU init vs G4 alignment. Both are needed for the
+full validation workflow.
 
 Build:
     nvcc -o generate_precooked_rng tools/generate_precooked_rng.cu \
