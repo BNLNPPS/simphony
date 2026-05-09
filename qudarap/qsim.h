@@ -784,13 +784,17 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     {
         // WLS ABSORPTION: photon absorbed by wavelength shifting material
         //
-        // Subprecision floor: when wls_absorption_distance is below float32
-        // precision at world coords, p.pos += dist*mom rounds to no-op and the
-        // photon stays on the boundary, causing BVH ambiguity on the next trace.
-        // Force minimum step of 4 ulps along the entering direction.
+        // Subprecision floor + half-thickness ceiling: when wls_absorption_distance
+        // is below float32 precision at world coords, p.pos += dist*mom rounds to
+        // no-op and the photon stays on the entry boundary, causing BVH ambiguity
+        // on the next trace. Force minimum step of 4 ulps along the entering
+        // direction; cap at half of distance_to_boundary so the floor cannot push
+        // the photon onto (or past) the exit boundary, which would re-create the
+        // same ambiguity at the far face.
         const float pos_max = fmaxf(fmaxf(fabsf(p.pos.x), fabsf(p.pos.y)), fabsf(p.pos.z));
         const float min_step = pos_max * 4.7683716e-7f; // 4 * 2^-23
-        const float eff_wls_distance = fmaxf(wls_absorption_distance, min_step);
+        const float max_step = distance_to_boundary * 0.5f;
+        const float eff_wls_distance = fminf(fmaxf(wls_absorption_distance, min_step), max_step);
         p.time += eff_wls_distance / group_velocity;
         p.pos += eff_wls_distance * (p.mom);
 
