@@ -258,7 +258,6 @@ loglevel_verbose()
     export QBase=INFO
     export SSim=INFO
     export SBT=INFO
-    export IAS_Builder=INFO
     #export QEvt=INFO
     export CSGOptiX=INFO
     export G4CXOpticks=INFO

@@ -688,13 +688,13 @@ optixGetInstanceIndex (aka iindex)
 
 optixGetInstanceId (aka identity)
     user supplied instanceId,
-    see IAS_Builder::Build, sysrap/sqat4.h sqat4::get_IAS_OptixInstance_instanceId
+    see SBT::collectInstances, sysrap/sqat4.h sqat4::get_IAS_OptixInstance_instanceId
     from July 2023: carries sensor_identifier+1 as needed for QPMT
 
 optixGetPrimitiveIndex (aka prim_idx)
     (not currently propagated)
     local index of AABB within the GAS,
-    see GAS_Builder::MakeCustomPrimitivesBI_11N  (1+index-of-CSGPrim within CSGSolid/GAS).
+    see SBT::createGAS / SOPTIX_BuildInput_CPA  (1+index-of-CSGPrim within CSGSolid/GAS).
     Note that instanced solids adds little to the number of AABB,
     most come from unfortunate repeated usage of prims in the non-instanced global
     GAS with repeatIdx 0 (JUNO up to ~4000)
