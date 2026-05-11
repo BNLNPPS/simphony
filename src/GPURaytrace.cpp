@@ -75,6 +75,10 @@ int main(int argc, char **argv)
 
     program.add_argument("-s", "--seed").help("fixed random seed (default: time-based)").scan<'i', long>();
 
+    program.add_argument("--skip-gpu")
+        .help("skip GPU photon propagation (for measuring G4-only photon time)")
+        .flag();
+
     try
     {
         program.parse_args(argc, argv);
@@ -107,6 +111,13 @@ int main(int argc, char **argv)
     run_mgr->SetUserInitialization(physics);
 
     G4App *g4app = new G4App(gdml_file);
+
+    if (program.get<bool>("--skip-gpu"))
+    {
+        g4app->run_act_->fSkipGPU = true;
+        g4app->stepping_->fSkipGenstep = true;
+        G4cout << "Skip-GPU mode: GPU propagation and genstep collection skipped" << G4endl;
+    }
 
     ActionInitialization *actionInit = new ActionInitialization(g4app);
     run_mgr->SetUserInitialization(actionInit);

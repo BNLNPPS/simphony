@@ -345,13 +345,21 @@ struct EventAction : G4UserEventAction
     }
 };
 
+struct SteppingAction; // forward declaration
+struct TrackingAction; // forward declaration
+
 struct RunAction : G4UserRunAction
 {
     EventAction *fEventAction;
+    SteppingAction *fStepping{nullptr};
+    TrackingAction *fTracking{nullptr};
+    bool fSkipGPU{false};
 
     RunAction(EventAction *eventAction) : fEventAction(eventAction)
     {
     }
+
+    void PrintTimingReport(); // defined after TrackingAction
 
     void BeginOfRunAction(const G4Run *run) override
     {
@@ -363,13 +371,19 @@ struct RunAction : G4UserRunAction
         {
             G4CXOpticks *gx = G4CXOpticks::Get();
 
-            auto start = std::chrono::high_resolution_clock::now();
-            gx->simulate(0, false);
-            cudaDeviceSynchronize();
-            auto end = std::chrono::high_resolution_clock::now();
-            // Compute duration
-            std::chrono::duration<double> elapsed = end - start;
-            std::cout << "Simulation time: " << elapsed.count() << " seconds" << std::endl;
+            if (!fSkipGPU)
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                gx->simulate(0, false);
+                cudaDeviceSynchronize();
+                auto end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> elapsed = end - start;
+                std::cout << "Simulation time: " << elapsed.count() << " seconds" << std::endl;
+            }
+            else
+            {
+                std::cout << "Simulation time: 0 seconds (GPU skipped)" << std::endl;
+            }
 
             // unsigned int num_hits = SEvt::GetNumHit(EGPU);
             SEvt *sev = SEvt::Get_EGPU();
@@ -425,6 +439,8 @@ struct RunAction : G4UserRunAction
             }
 
             outFile.close();
+
+            PrintTimingReport();
         }
     }
 };
@@ -432,6 +448,21 @@ struct RunAction : G4UserRunAction
 struct SteppingAction : G4UserSteppingAction
 {
     SEvt *sev;
+
+    // Per-process step timing (accumulated nanoseconds, thread-safe)
+    std::atomic<long long> fTimeTransport{0};
+    std::atomic<long long> fTimeOpWLS{0};
+    std::atomic<long long> fTimeOpRayleigh{0};
+    std::atomic<long long> fTimeOpAbsorption{0};
+    std::atomic<int> fCountTransport{0};
+    std::atomic<int> fCountOpWLS{0};
+    std::atomic<int> fCountOpRayleigh{0};
+    std::atomic<int> fCountOpAbsorption{0};
+    std::atomic<int> fOpticalSteps{0};
+    bool fSkipGenstep{false}; // skip genstep collection when --skip-gpu
+
+    static thread_local std::chrono::steady_clock::time_point fLastStepTime;
+    static thread_local bool fLastStepValid;
 
     SteppingAction(SEvt *sev) : sev(sev)
     {
@@ -447,6 +478,24 @@ struct SteppingAction : G4UserSteppingAction
 
         if (aStep->GetTrack()->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
         {
+            fOpticalSteps++;
+
+            // Measure time per step, classified by defining process
+            auto now = std::chrono::steady_clock::now();
+            if (fLastStepValid)
+            {
+                long long dt = std::chrono::duration_cast<std::chrono::nanoseconds>(now - fLastStepTime).count();
+                const G4VProcess *defProc = aStep->GetPostStepPoint()->GetProcessDefinedStep();
+                G4String pname = defProc ? defProc->GetProcessName() : "Unknown";
+
+                if (pname == "Transportation") { fTimeTransport += dt; fCountTransport++; }
+                else if (pname == "OpWLS")     { fTimeOpWLS += dt; fCountOpWLS++; }
+                else if (pname == "OpRayleigh"){ fTimeOpRayleigh += dt; fCountOpRayleigh++; }
+                else if (pname == "OpAbsorption"){ fTimeOpAbsorption += dt; fCountOpAbsorption++; }
+            }
+            fLastStepTime = now;
+            fLastStepValid = true;
+
             // Kill if step count exceeds 10000 to avoid reflection forever
             if (aStep->GetTrack()->GetCurrentStepNumber() > 10000)
             {
@@ -462,6 +511,8 @@ struct SteppingAction : G4UserSteppingAction
                 aTrack->SetTrackStatus(fStopAndKill);
             }
         }
+
+        if (fSkipGenstep) return; // skip genstep collection for timing-only runs
 
         G4SteppingManager *fpSteppingManager =
             G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
@@ -542,27 +593,152 @@ struct SteppingAction : G4UserSteppingAction
     }
 };
 
+// Thread-local step timer storage
+thread_local std::chrono::steady_clock::time_point SteppingAction::fLastStepTime;
+thread_local bool SteppingAction::fLastStepValid = false;
+
 struct TrackingAction : G4UserTrackingAction
 {
     const G4Track *transient_fSuspend_track = nullptr;
     SEvt *sev;
 
-    TrackingAction(SEvt *sev) : sev(sev)
-    {
-    }
+    // Per-photon timing and step counting
+    std::atomic<long long> fTotalPhotonTime{0};
+    std::atomic<int> fPhotonCount{0};
+    std::atomic<long long> fMinPhotonTime{999999999999LL};
+    std::atomic<long long> fMaxPhotonTime{0};
+    std::atomic<int> fTimeBucket0{0}; // <1us
+    std::atomic<int> fTimeBucket1{0}; // 1-10us
+    std::atomic<int> fTimeBucket2{0}; // 10-100us
+    std::atomic<int> fTimeBucket3{0}; // 100us-1ms
+    std::atomic<int> fTimeBucket4{0}; // 1-10ms
+    std::atomic<int> fTimeBucket5{0}; // >10ms
+    std::mutex fTimesMutex;
+    std::vector<long long> fAllTimes;
+    std::vector<int> fAllSteps;
 
-    void PreUserTrackingAction_Optical_FabricateLabel(const G4Track *track)
+    static thread_local std::chrono::steady_clock::time_point fTrackStart;
+    static thread_local bool fTrackIsOptical;
+
+    TrackingAction(SEvt *sev) : sev(sev)
     {
     }
 
     void PreUserTrackingAction(const G4Track *track) override
     {
+        SteppingAction::fLastStepValid = false;
+        fTrackIsOptical = (track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition());
+        if (fTrackIsOptical)
+            fTrackStart = std::chrono::steady_clock::now();
     }
 
     void PostUserTrackingAction(const G4Track *track) override
     {
+        if (fTrackIsOptical)
+        {
+            auto end = std::chrono::steady_clock::now();
+            long long dt = std::chrono::duration_cast<std::chrono::nanoseconds>(end - fTrackStart).count();
+            fTotalPhotonTime += dt;
+            fPhotonCount++;
+
+            long long cur = fMinPhotonTime.load();
+            while (dt < cur && !fMinPhotonTime.compare_exchange_weak(cur, dt)) {}
+            cur = fMaxPhotonTime.load();
+            while (dt > cur && !fMaxPhotonTime.compare_exchange_weak(cur, dt)) {}
+
+            if (dt < 1000)           fTimeBucket0++;
+            else if (dt < 10000)     fTimeBucket1++;
+            else if (dt < 100000)    fTimeBucket2++;
+            else if (dt < 1000000)   fTimeBucket3++;
+            else if (dt < 10000000)  fTimeBucket4++;
+            else                     fTimeBucket5++;
+
+            int nsteps = track->GetCurrentStepNumber();
+            { std::lock_guard<std::mutex> lock(fTimesMutex); fAllTimes.push_back(dt); fAllSteps.push_back(nsteps); }
+        }
+    }
+
+    void PrintPhotonTiming()
+    {
+        int n = fPhotonCount.load();
+        if (n == 0) return;
+
+        std::sort(fAllTimes.begin(), fAllTimes.end());
+        std::sort(fAllSteps.begin(), fAllSteps.end());
+        size_t sz = fAllTimes.size();
+        size_t ssz = fAllSteps.size();
+
+        double avg_us = fTotalPhotonTime.load() / 1000.0 / n;
+        double median_us = sz > 0 ? fAllTimes[sz / 2] / 1000.0 : 0;
+        double min_us = fMinPhotonTime.load() / 1000.0;
+        double max_us = fMaxPhotonTime.load() / 1000.0;
+        double total_s = fTotalPhotonTime.load() / 1e9;
+        double p10_us = sz > 0 ? fAllTimes[sz / 10] / 1000.0 : 0;
+        double p90_us = sz > 0 ? fAllTimes[sz * 9 / 10] / 1000.0 : 0;
+        double p99_us = sz > 0 ? fAllTimes[sz * 99 / 100] / 1000.0 : 0;
+
+        std::cout << "Geant4: PhotonTiming: " << n << " photons, "
+                  << "avg=" << std::fixed << std::setprecision(1) << avg_us << " us, "
+                  << "median=" << median_us << " us, "
+                  << "min=" << min_us << " us, "
+                  << "max=" << max_us << " us, "
+                  << "total=" << std::setprecision(2) << total_s << " s" << std::endl;
+        std::cout << "Geant4: PhotonPercentiles: "
+                  << "p10=" << std::setprecision(1) << p10_us << " us, "
+                  << "p50=" << median_us << " us, "
+                  << "p90=" << p90_us << " us, "
+                  << "p99=" << p99_us << " us" << std::endl;
+        std::cout << "Geant4: PhotonTimeHist: "
+                  << "<1us=" << fTimeBucket0.load() << "  1-10us=" << fTimeBucket1.load()
+                  << "  10-100us=" << fTimeBucket2.load() << "  0.1-1ms=" << fTimeBucket3.load()
+                  << "  1-10ms=" << fTimeBucket4.load() << "  >10ms=" << fTimeBucket5.load() << std::endl;
+
+        if (ssz > 0)
+        {
+            long long step_sum = 0;
+            for (int s : fAllSteps) step_sum += s;
+            std::cout << "Geant4: PhotonSteps: " << ssz << " photons, "
+                      << "avg=" << std::setprecision(1) << (double)step_sum / ssz << ", "
+                      << "median=" << fAllSteps[ssz / 2] << ", "
+                      << "min=" << fAllSteps.front() << ", "
+                      << "max=" << fAllSteps.back() << ", "
+                      << "total=" << step_sum << std::endl;
+            std::cout << "Geant4: StepPercentiles: "
+                      << "p10=" << fAllSteps[ssz / 10]
+                      << ", p50=" << fAllSteps[ssz / 2]
+                      << ", p90=" << fAllSteps[ssz * 9 / 10]
+                      << ", p99=" << fAllSteps[ssz * 99 / 100] << std::endl;
+        }
     }
 };
+
+// Thread-local tracking timer storage
+thread_local std::chrono::steady_clock::time_point TrackingAction::fTrackStart;
+thread_local bool TrackingAction::fTrackIsOptical = false;
+
+// Deferred: needs SteppingAction and TrackingAction to be complete
+inline void RunAction::PrintTimingReport()
+{
+    if (fStepping)
+    {
+        auto printStep = [](const char *name, long long total_ns, int count) {
+            if (count > 0)
+                std::cout << "Geant4: StepTime " << std::setw(15) << name
+                          << ":  count=" << std::setw(10) << count
+                          << "  avg=" << std::fixed << std::setprecision(2) << std::setw(8)
+                          << total_ns / 1000.0 / count << " us"
+                          << "  total=" << std::setprecision(3) << std::setw(8)
+                          << total_ns / 1e9 << " s" << std::endl;
+        };
+        std::cout << "Geant4: OpticalSteps:  " << fStepping->fOpticalSteps.load() << std::endl;
+        printStep("Transportation", fStepping->fTimeTransport.load(), fStepping->fCountTransport.load());
+        printStep("OpWLS", fStepping->fTimeOpWLS.load(), fStepping->fCountOpWLS.load());
+        printStep("OpRayleigh", fStepping->fTimeOpRayleigh.load(), fStepping->fCountOpRayleigh.load());
+        printStep("OpAbsorption", fStepping->fTimeOpAbsorption.load(), fStepping->fCountOpAbsorption.load());
+    }
+    if (fTracking)
+        fTracking->PrintPhotonTiming();
+}
 
 struct G4App
 {
@@ -573,6 +749,8 @@ struct G4App
 
           tracking_(new TrackingAction(sev))
     {
+        run_act_->fStepping = stepping_;
+        run_act_->fTracking = tracking_;
     }
 
     //~G4App(){ G4CXOpticks::Finalize();}
