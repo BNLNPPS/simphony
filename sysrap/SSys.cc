@@ -767,6 +767,8 @@ so that will often be the HOME directory, eg /home/blyth
 
 int SSys::RunPythonCode(const char* code)
 {
+    if(code == nullptr) return 101 ;
+
     const char* python_executable = SSys::ResolvePython() ; 
     LOG(info) 
          << " code [" << code  << "]"
@@ -776,7 +778,7 @@ int SSys::RunPythonCode(const char* code)
     const char* arg1 = "-c" ; 
     const std::string arg2 = std::string("'") + code + "'" ;  
 
-    int RC = code == NULL ? 101 : SSys::exec(python_executable,arg1, arg2.c_str()) ;
+    int RC = SSys::exec(python_executable,arg1, arg2.c_str()) ;
     LOG(info) << " RC " << RC ; 
     return RC ; 
 }

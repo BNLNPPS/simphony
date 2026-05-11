@@ -36,6 +36,8 @@
 #include <unistd.h>    // for chdir
 
 
+#include <iomanip>
+
 #include "SPath.hh"
 #include "SOpticksResource.hh"
 #include "SLOG.hh"
