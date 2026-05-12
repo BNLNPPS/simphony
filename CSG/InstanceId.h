@@ -9,19 +9,15 @@ makes make bit packing inside the InstanceId not very useful
 
 TODO: confirm and remove 
 
-
 ::
 
     epsilon:opticks blyth$ opticks-f InstanceId.h 
-    ./CSGOptiX/SBT.cc:      unsigned instance_id = optixGetInstanceId() ;        // see IAS_Builder::Build and InstanceId.h 
-    ./CSGOptiX/InstanceId.h:    unsigned instance_id = optixGetInstanceId() ;  // see IAS_Builder::Build and InstanceId.h 
-    ./CSGOptiX/CSGOptiX7.cu:    unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see IAS_Builder::Build and InstanceId.h 
-    ./CSGOptiX/IAS_Builder.cc://#include "InstanceId.h"
-    ./u4/U4Step.h:    409     unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see IAS_Builder::Build and InstanceId.h 
+    ./CSGOptiX/SBT.cc:      unsigned instance_id = optixGetInstanceId() ;        // see SBT::collectInstances and InstanceId.h
+    ./CSGOptiX/InstanceId.h:    unsigned instance_id = optixGetInstanceId() ;  // see SBT::collectInstances and InstanceId.h
+    ./CSGOptiX/CSGOptiX7.cu:    unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see SBT::collectInstances and InstanceId.h
+    ./u4/U4Step.h:    409     unsigned instance_id = optixGetInstanceId() ;  // user supplied instanceId, see SBT::collectInstances and InstanceId.h
     epsilon:opticks blyth$ 
     epsilon:opticks blyth$ 
-
-
 
 Beware the OptiX limits::
 
@@ -70,6 +66,3 @@ inline void InstanceId::Decode(unsigned& ins_idx, unsigned& gas_idx,  const unsi
     ins_idx = (( (ins_mask << gas_bits ) & identity ) >> gas_bits ) - 1u ; 
     gas_idx = ((  gas_mask & identity ) >>  0 ) - 1u ;  
 }
-
-
-
