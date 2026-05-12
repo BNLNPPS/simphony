@@ -157,7 +157,7 @@ u:identity
         (( prim_idx & 0xffff ) << 16 ) | ( instance_id & 0xffff )
 
         prim_idx:optixGetPrimitiveIndex
-            see cx:GAS_Builder::MakeCustomPrimitivesBI_11N
+            see cx:SBT::createGAS / sy:SOPTIX_BuildInput_CPA
             (1+index-of-CSGPrim within CSGSolid/GAS)
 
         instance_id:optixGetInstanceId
@@ -168,7 +168,7 @@ u:identity
                 Out[1]: 65535
 
             * sy:sqat4::get_IAS_OptixInstance_instanceId
-            * cx:IAS_Builder::CollectInstances
+            * cx:SBT::collectInstances
 
 
 
@@ -1065,7 +1065,6 @@ inline std::string quad2::desc() const
 
 
 #endif
-
 
 
 

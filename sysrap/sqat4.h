@@ -107,7 +107,7 @@ struct qat4
     qat4::copy_columns_3x3
     -----------------------
 
-    Canonical usage from CSGOptiX/IAS_Builder::Build
+    Canonical usage from CSGOptiX/SBT::collectInstances
     Note that the 4th column is not read, so there
     is no need to clear any 4th ".w" column identity info.
 
@@ -713,4 +713,3 @@ QAT4_FUNCTION void qat4::dump(const std::vector<qat4>& qv)
 }
 
 #endif
-

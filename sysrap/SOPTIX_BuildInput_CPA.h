@@ -18,12 +18,17 @@ creation.
 
 struct SOPTIX_BuildInput_CPA : public SOPTIX_BuildInput
 {
-    static constexpr const char* NAME = "BuildInputCustomPrimitiveArray" ; 
+    static constexpr const char* NAME = "BuildInputCustomPrimitiveArray";
+
     CUdeviceptr d_aabb ;    
     CUdeviceptr d_sbt_index ;
-    unsigned*   flags ; 
+    unsigned*   flags;
 
-    SOPTIX_BuildInput_CPA( const SCSGPrimSpec& ps ); 
+    SOPTIX_BuildInput_CPA(const SCSGPrimSpec& ps);
+    ~SOPTIX_BuildInput_CPA() override
+    {
+        delete[] flags;
+    }
 };
 
  
