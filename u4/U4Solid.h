@@ -552,14 +552,6 @@ inline sn* U4Solid::init_Sphere_(char layer)
 
     bool z_slice = startThetaAngle > 0. || deltaThetaAngle < CLHEP::pi ;
 
-    double startPhi = sphere->GetStartPhiAngle()/CLHEP::radian ;
-    double deltaPhi = sphere->GetDeltaPhiAngle()/CLHEP::radian ;
-    bool has_deltaPhi = startPhi != 0. || deltaPhi != 2.*CLHEP::pi  ;
-
-    bool has_deltaPhi_expect = has_deltaPhi == false ;
-    assert( has_deltaPhi_expect );
-    if(!has_deltaPhi_expect) std::raise(SIGINT);
-
     return z_slice ? sn::ZSphere( radius, zmin, zmax ) : sn::Sphere(radius ) ;
 }
 
