@@ -14,6 +14,7 @@
 #include "sysrap/OPTICKS_LOG.hh"
 
 #include "GPUPhotonFileSource.h"
+#include "config.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ int main(int argc, char **argv)
 
     argparse::ArgumentParser program("GPUPhotonFileSource", "0.0.0");
 
-    string gdml_file, macro_name, photon_file;
+    string gdml_file, config_name, macro_name, photon_file;
     bool interactive;
 
     program.add_argument("-g", "--gdml")
@@ -31,6 +32,12 @@ int main(int argc, char **argv)
         .default_value(string("geom.gdml"))
         .nargs(1)
         .store_into(gdml_file);
+
+    program.add_argument("-c", "--config")
+        .help("the name of a config file")
+        .default_value(string("dev"))
+        .nargs(1)
+        .store_into(config_name);
 
     program.add_argument("-p", "--photons")
         .help("path to input photon text file (one photon per line: pos_x pos_y pos_z time mom_x mom_y mom_z pol_x "
@@ -74,6 +81,8 @@ int main(int argc, char **argv)
     }
     CLHEP::HepRandom::setTheSeed(seed);
     G4cout << "Random seed set to: " << seed << G4endl;
+
+    gphox::Config{config_name};
 
     // Configure Geant4
     // The physics list must be instantiated before other user actions
