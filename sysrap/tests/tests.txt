@@ -13,7 +13,6 @@
 #NP_delete_test.sh
 #NPFold_clear_test.sh
 #NPFold_test.sh
-#OpticksPhotonSTANDALONETest.sh
 #OpticksPhotonTest.sh
 #preprocessor_test.sh
 #RINDEX.sh

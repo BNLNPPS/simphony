@@ -2,9 +2,6 @@
 /**
 OpticksPhoton.hh
 =================
-
-The STANDALONE subset of methods can be used header only.
-
 **/
 
 #include <cassert>
@@ -17,13 +14,8 @@ The STANDALONE subset of methods can be used header only.
 #include "plog/Severity.h"
 
 #include "OpticksPhoton.h"
-
-#ifdef STANDALONE
-struct OpticksPhoton
-#else
 #include "SYSRAP_API_EXPORT.hh"
 struct SYSRAP_API OpticksPhoton
-#endif
 {
     static const plog::Severity LEVEL ;
     static constexpr const char* ZERO_ = ".";
@@ -91,8 +83,6 @@ struct SYSRAP_API OpticksPhoton
 
     static std::string FlagMaskLabel(const unsigned mskhis, bool abbrev=true);
 
-#ifdef STANDALONE
-#else
     static const char* flag2color ;
 
     static unsigned EnumFlag(unsigned bitpos);
@@ -107,10 +97,7 @@ struct SYSRAP_API OpticksPhoton
     static unsigned PointVal1( const unsigned long long& seqval , unsigned bitpos );
     static unsigned PointFlag( const unsigned long long& seqhis , unsigned bitpos );
     static const char* PointAbbrev( const unsigned long long& seqhis , unsigned bitpos );
-#endif
 };
-
-
 
 inline bool OpticksPhoton::IsTerminalFlag(const unsigned flag) // static : AB SA SD MI
 {
