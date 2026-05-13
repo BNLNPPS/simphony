@@ -67,7 +67,7 @@ echo "=== Test 1: Cerenkov only (opticks_raindrop.gdml) ==="
 set_expected_hits cerenkov
 
 echo "Running GPURaytrace with seed $SEED ..."
-OUTPUT=$(USER=fakeuser GEOM=fakegeom GPURaytrace \
+OUTPUT=$(GPURaytrace \
     -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
     -m "$OPTICKS_HOME/tests/run.mac" \
     -s "$SEED" 2>&1)
@@ -87,7 +87,7 @@ echo "=== Test 2: Cerenkov + Scintillation (opticks_raindrop_with_scintillation.
 set_expected_hits cerenkov_scintillation
 
 echo "Running GPURaytrace with seed $SEED ..."
-OUTPUT=$(USER=fakeuser GEOM=fakegeom GPURaytrace \
+OUTPUT=$(GPURaytrace \
     -g "$OPTICKS_HOME/tests/geom/opticks_raindrop_with_scintillation.gdml" \
     -m "$OPTICKS_HOME/tests/run.mac" \
     -s "$SEED" 2>&1)

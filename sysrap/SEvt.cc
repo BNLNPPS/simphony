@@ -4224,13 +4224,13 @@ bool SEvt::hasInstance() const
     return instance != MISSING_INSTANCE ;
 }
 
-
 /**
 SEvt::DefaultBase
 -------------------
 
 If argument is defined it is used, otherwise::
 
+   Config-applied SEventConfig::OutFold() when explicitly overridden, otherwise
    $TMP/GEOM/$GEOM/$ExecutableName
 
 Note that when Opticks is used from python the OPTICKS_SCRIPT
@@ -4242,11 +4242,27 @@ ExecutableName of "python3.11" or whatever.
 const char* SEvt::DefaultBase(const char* base_) // static
 {
     const char* base = nullptr ;
+    const char* outfold = SEventConfig::OutFold();
+
+    bool use_outfold =
+        base_ == nullptr &&
+        outfold != nullptr &&
+        strcmp(outfold, SEventConfig::_OutFoldDefault) != 0;
+
     int64_t mode_save = SEventConfig::ModeSave();
-    if( mode_save == 0 )
+    if (base_ != nullptr)
+    {
+        base = base_;
+    }
+    else if (use_outfold)
+    {
+        // Honor explicit OutFold overrides from config/env for SEvt event folders.
+        base = outfold;
+    }
+    else if (mode_save == 0)
     {
         // controlled dir approach : good for campaigns
-        base = base_ ? base_ : spath::DefaultOutputDir() ;
+        base = spath::DefaultOutputDir();
     }
     else if( mode_save == 1 )
     {
@@ -4462,8 +4478,8 @@ or the directory argument provided.
 
 The FALLBACK_DIR which is used for the SEvt::DefaultDir is obtained from SEventConfig::OutFold
 which is normally "$DefaultOutputDir" $TMP/GEOM/$GEOM/ExecutableName
-This can be overriden using SEventConfig::SetOutFold or by setting the
-envvar OPTICKS_OUT_FOLD.
+This can be overridden using SEventConfig::SetOutFold or by setting the
+envvar OPTICKS_OUT_FOLD, which are now honored directly by SEvt::DefaultBase.
 
 It is normally much easier to use the default of "$DefaultOutputDir" as this
 takes care of lots of the bookkeeping automatically.
