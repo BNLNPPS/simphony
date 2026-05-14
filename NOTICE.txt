@@ -6,7 +6,7 @@ This product includes software originally developed as part of the Opticks proje
 http://simoncblyth.bitbucket.io/opticks/
 
 This software is licensed under the Apache License, Version 2.0.
-See LICENSE for details.
+See LICENSE.txt for details.
 
 Historical authorship and modification history are preserved in the Git history.
 Applicable upstream copyright and license notices are preserved in the source files.
