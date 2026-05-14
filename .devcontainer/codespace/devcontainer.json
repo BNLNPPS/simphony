@@ -1,6 +1,6 @@
 {
-  "name": "eic-opticks (codespace)",
-  "image": "ghcr.io/bnlnpps/eic-opticks:base",
+  "name": "simphony (codespace)",
+  "image": "ghcr.io/bnlnpps/simphony:base",
   "customizations": {
     "vscode": {
       "extensions": [
