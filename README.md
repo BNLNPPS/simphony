@@ -44,46 +44,46 @@ environment, ensure that your system has the following tools installed:
 ## Build
 
 ```shell
-git clone https://github.com/BNLNPPS/eic-opticks.git
-cmake -S eic-opticks -B build
+git clone https://github.com/BNLNPPS/simphony.git
+cmake -S simphony -B build
 cmake --build build
 ```
 
 ## Docker
 
-Build latest `eic-opticks` image by hand:
+Build latest `simphony` image by hand:
 
 ```shell
-docker build -t ghcr.io/bnlnpps/eic-opticks:latest https://github.com/BNLNPPS/eic-opticks.git
+docker build -t ghcr.io/bnlnpps/simphony:latest https://github.com/BNLNPPS/simphony.git
 ```
 
 Build and run for development:
 
 ```shell
-docker build -t ghcr.io/bnlnpps/eic-opticks:develop --target=develop .
+docker build -t ghcr.io/bnlnpps/simphony:develop --target=develop .
 ```
 
 Example commands for interactive and non-interactive tests:
 
 ```shell
-docker run --rm -it -v $HOME/.Xauthority:/root/.Xauthority -e DISPLAY=$DISPLAY --net=host ghcr.io/bnlnpps/eic-opticks:develop
+docker run --rm -it -v $HOME/.Xauthority:/root/.Xauthority -e DISPLAY=$DISPLAY --net=host ghcr.io/bnlnpps/simphony:develop
 
-docker run --rm -it -v $HOME:/esi -v $HOME/eic-opticks:/workspaces/eic-opticks -e DISPLAY=$DISPLAY -e HOME=/esi --net=host ghcr.io/bnlnpps/eic-opticks:develop
+docker run --rm -it -v $HOME:/esi -v $HOME/simphony:/workspaces/simphony -e DISPLAY=$DISPLAY -e HOME=/esi --net=host ghcr.io/bnlnpps/simphony:develop
 
-docker run ghcr.io/bnlnpps/eic-opticks bash -c 'simg4ox -g tests/geom/sphere_leak.gdml -m tests/run.mac -c sphere_leak'
+docker run ghcr.io/bnlnpps/simphony bash -c 'simg4ox -g tests/geom/sphere_leak.gdml -m tests/run.mac -c sphere_leak'
 ```
 
 
 ## Singularity
 
 ```shell
-singularity run --nv -B eic-opticks-prefix/:/opt/eic-opticks -B eic-opticks:/workspaces/eic-opticks docker://ghcr.io/bnlnpps/eic-opticks:develop
+singularity run --nv -B simphony-prefix/:/opt/simphony -B simphony:/workspaces/simphony docker://ghcr.io/bnlnpps/simphony:develop
 ```
 
 
 ## Running a test job at NERSC (Perlmutter)
 
-To submit a test run of `eic-opticks` on Perlmutter, use the following example. Make sure to update
+To submit a test run of `simphony` on Perlmutter, use the following example. Make sure to update
 any placeholder values as needed.
 
 ```
@@ -97,15 +97,15 @@ sbatch scripts/submit.sh
 #SBATCH -C gpu                  # constraint: use GPU partition
 #SBATCH -G 1                    # request 1 GPU
 #SBATCH -q regular              # queue
-#SBATCH -J eic-opticks          # job name
+#SBATCH -J simphony             # job name
 #SBATCH --mail-user=<USER_EMAIL>
 #SBATCH --mail-type=ALL
 #SBATCH -A m4402                # allocation account
 #SBATCH -t 00:05:00             # time limit (hh:mm:ss)
 
 # Path to your image on Perlmutter
-IMAGE="docker:bnlnpps/eic-opticks:develop"
-CMD='cd /src/eic-opticks && simg4ox -g $OPTICKS_HOME/tests/geom/sphere_leak.gdml -m $OPTICKS_HOME/tests/run.mac -c sphere_leak'
+IMAGE="docker:bnlnpps/simphony:develop"
+CMD='cd /src/simphony && simg4ox -g $OPTICKS_HOME/tests/geom/sphere_leak.gdml -m $OPTICKS_HOME/tests/run.mac -c sphere_leak'
 
 # Launch the container using Shifter
 srun -n 1 -c 8 --cpu_bind=cores -G 1 --gpu-bind=single:1 shifter --image=$IMAGE /bin/bash -l -c "$CMD"
@@ -122,7 +122,7 @@ In Geant4, optical surface properties such as **finish**, **model**, and **type*
 
 These enums allow users to configure how optical photons interact with surfaces, controlling behaviors like reflection,
 transmission, and absorption based on physical models and surface qualities. The string values corresponding to these
-enums (e.g. `"ground"`, `"glisur"`, `"dielectric_dielectric"`) can also be used directly in **GDML** files when defining
+enums (e.g. "ground", "glisur", "dielectric_dielectric") can also be used directly in **GDML** files when defining
 `<opticalsurface>` elements for geometry. Geant4 will parse these attributes and apply the corresponding surface
 behavior.
 
@@ -146,7 +146,7 @@ Process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/
 
 ## Examples
 
-EIC-Opticks provides several examples demonstrating GPU-accelerated optical photon simulation:
+Simphony provides several examples demonstrating GPU-accelerated optical photon simulation:
 
 | Example | Physics | Geometry | Use Case |
 |---------|---------|----------|----------|
@@ -171,7 +171,7 @@ Geometry: opticks_raindrop.gdml
 ```
 
 When charged particles traverse the water volume above the Cerenkov threshold, optical photons
-are generated and traced on the GPU. This is a minimal example for validating the eic-opticks pipeline.
+are generated and traced on the GPU. This is a minimal example for validating the Simphony pipeline.
 
 ```bash
 # Run with raindrop geometry (Cerenkov only)
@@ -213,12 +213,12 @@ grep -c "CreationProcessID=1" opticks_hits_output.txt  # Scintillation
 ### Example 3: GPUPhotonSource (G4 + GPU Validation)
 
 `GPUPhotonSource` generates optical photons from a configurable torch source and runs
-both Geant4 and eic-opticks GPU simulation in parallel on the same input photons. This
+both Geant4 and Simphony GPU simulation in parallel on the same input photons. This
 enables direct comparison of hit counts and positions between the two engines.
 
 Both engines detect photons using the same mechanism: border surface physics. On the G4
 side the `SteppingAction` records a hit when `G4OpBoundaryProcess` reports Detection at
-the optical surface, matching how eic-opticks detects photons on the GPU.
+the optical surface, matching how Simphony detects photons on the GPU.
 
 | Argument | Description | Default |
 |----------|-------------|---------|
@@ -233,7 +233,7 @@ GPUPhotonSource -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 42
 ```
 
 **Output:**
-- `opticks_hits_output.txt` — eic-opticks GPU hits, one line per hit
+- `opticks_hits_output.txt` — Simphony GPU hits, one line per hit
 - `g4_hits_output.txt` — Geant4 hits in the same format
 
 Hit format (both files): `time wavelength (pos_x, pos_y, pos_z) (mom_x, mom_y, mom_z) (pol_x, pol_y, pol_z)`
@@ -243,7 +243,7 @@ Hit format (both files): `time wavelength (pos_x, pos_y, pos_z) (mom_x, mom_y, m
 ### Example 4: GPUPhotonSourceMinimal (GPU-Only)
 
 `GPUPhotonSourceMinimal` is a stripped-down version of `GPUPhotonSource` that runs
-**only** eic-opticks GPU simulation. All G4 optical photon tracking infrastructure
+**only** Simphony GPU simulation. All G4 optical photon tracking infrastructure
 (sensitive detectors, stepping actions, tracking actions) is removed. Geant4 is used
 solely for geometry loading and hosting the event loop.
 
@@ -268,7 +268,7 @@ GPUPhotonSourceMinimal -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 
 ### Example 5: GPUPhotonFileSource (File Input, GPU-Only)
 
 `GPUPhotonFileSource` reads optical photons from a plain text file and runs
-GPU-only simulation via eic-opticks. Each line in the input file defines one
+GPU-only simulation via Simphony. Each line in the input file defines one
 photon with 11 space-separated values:
 
 ```
@@ -371,11 +371,11 @@ JSON config file (default `config/dev.json`). Key fields:
 | Torch photon generation | ✗ | ✗ | ✓ | ✓ | ✗ |
 | Photon input from text file | ✗ | ✗ | ✗ | ✗ | ✓ |
 | G4 optical photon tracking | ✓ | ✓ | ✓ | ✗ | ✗ |
-| GPU simulation (eic-opticks) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| GPU simulation (Simphony) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Multi-threaded | ✓ | ✓ | ✗ | ✗ | ✗ |
 
 `GPUCerenkov` and `GPURaytrace` collect gensteps from charged particle interactions and
-pass them to eic-opticks for GPU photon generation and tracing. `GPUPhotonSource` and
+pass them to Simphony for GPU photon generation and tracing. `GPUPhotonSource` and
 `GPUPhotonSourceMinimal` instead generate photons directly from a torch configuration.
 `GPUPhotonSource` runs both G4 and GPU tracking for validation, while
 `GPUPhotonSourceMinimal` skips G4 tracking entirely for a lean simplistic code so showcase what is needed for GPU only.
@@ -383,9 +383,9 @@ pass them to eic-opticks for GPU photon generation and tracing. `GPUPhotonSource
 distributions without code changes.
 
 
-### GDML Scintillation Properties for Geant4 11.x + eic-opticks
+### GDML Scintillation Properties for Geant4 11.x + Simphony
 
-For scintillation to work with both Geant4 11.x and eic-opticks GPU simulation, the GDML
+For scintillation to work with both Geant4 11.x and Simphony GPU simulation, the GDML
 must define properties using the correct syntax:
 
 1. **Const properties** (yield, time constants) must use `coldim="1"` matrices:
@@ -396,7 +396,7 @@ must define properties using the correct syntax:
 </define>
 ```
 
-2. **Both old and new style property names** are required for eic-opticks compatibility:
+2. **Both old and new style property names** are required for Simphony compatibility:
 ```xml
 <material name="Crystal">
     <!-- New Geant4 11.x names -->
@@ -431,7 +431,7 @@ and the **number of G4 threads**. For example:
 ```
 
 Here setStackPhotons defines **whether G4 will propagate optical photons or
-not**. In production eic-opticks (GPU) takes care of the optical photon propagation.
+not**. In production Simphony (GPU) takes care of the optical photon propagation.
 Additionally the user has to define the **starting position**, **momentum** etc
 of the primary particles define in the **GeneratePrimaries** function in
 ```src/GPUCerenkov.h```. The hits of the optical photons are returned in the
@@ -439,15 +439,15 @@ of the primary particles define in the **GeneratePrimaries** function in
 GPU RAM the execution of a GPU call should be moved to **EndOfEventAction**
 together with retriving the hits.
 
-### Loading in geometry into EIC-Opticks
+### Loading in geometry into Simphony
 
-EIC-Opticks can import geometries with GDML format automatically. There are
+Simphony can import geometries with GDML format automatically. There are
 about 10 primitives supported now, eg. G4Box. G4Trd or G4Trap are not supported
 yet, we are working on them. ```GPUCerenkov``` takes GDML files through
 arguments, eg. ```GPUCerenkov -g mygdml.gdml```.
 
 The GDML must define all optical properties of surfaces of materials including:
-- Efficiency (used by EIC-Opticks to specify detection efficiency and assign
+- Efficiency (used by Simphony to specify detection efficiency and assign
   sensitive surfaces)
 - Refractive index
 - Group velocity
@@ -457,21 +457,21 @@ The GDML must define all optical properties of surfaces of materials including:
 
 ## Performance studies
 
-In order to quantify the speed-up achieved by EIC-Opticks compared to G4 we
+In order to quantify the speed-up achieved by Simphony compared to G4 we
 provide a python code that runs the same G4 simulation with and without tracking
 optical photons in G4. The difference of the runs will yield the time required
 to simulate photons. Meanwhile the same photons are simulated on GPU with
-EIC-Opticks and the simulation time is saved.
+Simphony and the simulation time is saved.
 
 ```
 mkdir -p /tmp/out/dev
 mkdir -p /tmp/out/rel
 
-docker build -t eic-opticks:perf-dev --target=develop
-docker run --rm -t -v /tmp/out:/tmp/out eic-opticks:perf-dev run-performance -o /tmp/out/dev
+docker build -t simphony:perf-dev --target=develop
+docker run --rm -t -v /tmp/out:/tmp/out simphony:perf-dev run-performance -o /tmp/out/dev
 
-docker build -t eic-opticks:perf-rel --target=release
-docker run --rm -t -v /tmp/out:/tmp/out eic-opticks:perf-rel run-performance -o /tmp/out/rel
+docker build -t simphony:perf-rel --target=release
+docker run --rm -t -v /tmp/out:/tmp/out simphony:perf-rel run-performance -o /tmp/out/rel
 ```
 
 ### Debug Analysis with `optiphy/ana/photon_history_summary.py`

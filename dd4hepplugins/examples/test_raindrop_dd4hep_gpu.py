@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Test eic-opticks DD4hep plugins with the raindrop geometry.
+Test simphony DD4hep plugins with the raindrop geometry.
 
 Geometry: Vacuum world > Lead(220mm) > Air(200mm) > Water(100mm)
   - Water has RINDEX=1.333 and scintillation properties
   - Air has RINDEX=1.0
   - One border surface between water drop and air medium
-  - Very short volume names (Ct, Md, Dr) -- avoids eic-opticks buffer overflow
+  - Very short volume names (Ct, Md, Dr) -- avoids simphony buffer overflow
 
-This uses the same geometry as eic-opticks's own raindrop test,
+This uses the same geometry as simphony's own raindrop test,
 but expressed as DD4hep compact XML instead of GDML.
 
 Approach: standard G4OpticalPhysics (G4Cerenkov + G4Scintillation) runs on CPU.
@@ -16,7 +16,7 @@ OpticsSteppingAction intercepts the processes and collects gensteps.
 OpticsEvent triggers GPU simulation and injects hits into DD4hep collections.
 
 Prerequisites:
-  - Spack environment activated (ROOT, DD4hep, eic-opticks on PYTHONPATH/LD_LIBRARY_PATH)
+  - Spack environment activated (ROOT, DD4hep, simphony on PYTHONPATH/LD_LIBRARY_PATH)
   - DD4hepINSTALL set (for elements.xml lookup)
   - libddeicopticks.so and libRaindropGeo.so on DD4HEP_LIBRARY_PATH
 """
@@ -75,7 +75,7 @@ def run():
     ph.addPhysicsConstructor(str('G4OpticalPhysics'))
     kernel.physicsList().adopt(ph)
 
-    # --- eic-opticks GPU plugins ---
+    # --- simphony GPU plugins ---
 
     # SteppingAction: intercepts G4Cerenkov/G4Scintillation and collects gensteps
     stepping = DDG4.SteppingAction(kernel, 'OpticsSteppingAction/OpticsStep1')

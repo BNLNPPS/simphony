@@ -11,7 +11,7 @@ namespace ddeicopticks
  * DDG4 stepping action that intercepts standard Geant4 Cerenkov and
  * Scintillation processes and collects gensteps for GPU simulation.
  *
- * This follows the same approach as eic-opticks GPUCerenkov example:
+ * This follows the same approach as simphony GPUCerenkov example:
  * use standard G4Cerenkov / G4Scintillation, then read back the photon
  * count via GetNumPhotons() and pack gensteps for the GPU.
  */

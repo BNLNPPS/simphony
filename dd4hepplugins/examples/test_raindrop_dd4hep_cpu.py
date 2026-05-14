@@ -2,7 +2,7 @@
 """
 CPU-only raindrop optical photon test via DD4hep.
 
-Uses standard G4OpticalPhysics (no eic-opticks GPU plugins).
+Uses standard G4OpticalPhysics (no simphony GPU plugins).
 Optical photons are tracked on CPU by Geant4 and collected as
 Geant4Tracker::Hit via the sensitive detector.
 

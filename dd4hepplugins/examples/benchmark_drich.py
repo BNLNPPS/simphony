@@ -6,14 +6,14 @@ Runs three configurations with the full dRICH geometry (100 pi+ at 10 GeV):
 
   cpu      -- Optical photons generated AND tracked on CPU by Geant4
   baseline -- Optical photons generated but NOT tracked (SetStackPhotons=false)
-  gpu      -- Optical photons simulated on GPU via eic-opticks
+  gpu      -- Optical photons simulated on GPU via simphony
 
 Speedup = CPU_optical_time / GPU_simulate_time
   where CPU_optical_time = T(cpu) - T(baseline)
   and   GPU_simulate_time = wall time of G4CXOpticks::simulate()
 
 Prerequisites:
-  - Spack environment activated with DD4hep, Geant4, eic-opticks
+  - Spack environment activated with DD4hep, Geant4, simphony
   - `spack load epic` (sets DETECTOR_PATH to EPIC geometry)
   - DD4HEP_LIBRARY_PATH includes /opt/local/lib (eic-opticks plugins)
 
@@ -253,7 +253,7 @@ def run_all(num_events, photon_threshold=0, multiplicity=100, geometry="1sector"
         label = {
             "baseline": "baseline (no photon tracking)",
             "cpu": "cpu (photons tracked on CPU)",
-            "gpu": "gpu (photons on GPU via eic-opticks)",
+            "gpu": "gpu (photons on GPU via simphony)",
         }[mode]
         extra = f", threshold={pt}" if pt > 0 else ""
         print(f"\n{'='*60}")

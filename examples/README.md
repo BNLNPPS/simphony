@@ -1,4 +1,4 @@
-Assuming eic-opticks is properly installed on the system, compile and run this
+Assuming Simphony is properly installed on the system, compile and run this
 example by simply doing from this directory:
 
 ```bash
