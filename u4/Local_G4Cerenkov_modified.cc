@@ -369,9 +369,9 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
       maxSin2,
       MeanNumberOfPhotons1,
       MeanNumberOfPhotons2
-  );     
+  );
 
-  U4::GenPhotonAncestor(&aTrack);  
+  U4::GenPhotonAncestor(&aTrack);
 
   for (G4int i = 0; i < fNumPhotons; i++) {
       // Determine photon energy

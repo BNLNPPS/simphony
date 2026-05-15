@@ -614,7 +614,7 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
         G4int NumPhoton =  NumVec[scnt] ; 
 
         if(flagReemission) assert( NumPhoton == 0 || NumPhoton == 1);   // expecting only 0 or 1 remission photons
-        bool is_opticks_genstep = NumPhoton > 0 && !flagReemission ; 
+        bool is_opticks_genstep = NumPhoton > 0 && !flagReemission;
 
 #ifdef WITH_G4OPTICKS
         CGenstep gs ; 
