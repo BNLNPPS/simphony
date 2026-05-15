@@ -37,22 +37,22 @@ npy/NNodeUncoincide npy/NNodeNudger
 
 #include "G4VSolid.hh"
 
-#include "G4Orb.hh"
-#include "G4Sphere.hh"
-#include "G4Ellipsoid.hh"
 #include "G4Box.hh"
-#include "G4Tubs.hh"
-#include "G4CutTubs.hh"
-#include "G4Polycone.hh"
 #include "G4Cons.hh"
+#include "G4CutTubs.hh"
+#include "G4Ellipsoid.hh"
 #include "G4Hype.hh"
+#include "G4IntersectionSolid.hh"
 #include "G4MultiUnion.hh"
+#include "G4Orb.hh"
+#include "G4Polycone.hh"
+#include "G4Sphere.hh"
+#include "G4SubtractionSolid.hh"
 #include "G4Torus.hh"
 #include "G4Trap.hh"
 #include "G4Trd.hh"
+#include "G4Tubs.hh"
 #include "G4UnionSolid.hh"
-#include "G4IntersectionSolid.hh"
-#include "G4SubtractionSolid.hh"
 
 #include "G4BooleanSolid.hh"
 #include "G4RotationMatrix.hh"
@@ -101,8 +101,8 @@ struct U4Solid
     static constexpr const char* G4SubtractionSolid_  = "Sub" ;
     static constexpr const char* G4DisplacedSolid_    = "Dis" ;
     static constexpr const char* G4CutTubs_           = "TuC" ;
-    static constexpr const char* G4Trap_              = "Tra" ;
-    static constexpr const char* G4Trd_               = "Trd" ;
+    static constexpr const char* G4Trap_ = "Tra";
+    static constexpr const char* G4Trd_ = "Trd";
 
     static constexpr const char* _U4Solid__IsFlaggedLVID = "U4Solid__IsFlaggedLVID" ;
     static const int   IsFlaggedLVID_ ;
@@ -302,8 +302,10 @@ inline int U4Solid::Type(const char* name)   // static
     if( strcmp(name, "G4IntersectionSolid") == 0 ) type = _G4IntersectionSolid ;
     if( strcmp(name, "G4DisplacedSolid") == 0 )    type = _G4DisplacedSolid ;
     if( strcmp(name, "G4CutTubs") == 0 )           type = _G4CutTubs ;
-    if( strcmp(name, "G4Trap") == 0 )              type = _G4Trap ;
-    if( strcmp(name, "G4Trd") == 0 )               type = _G4Trd ;
+    if (strcmp(name, "G4Trap") == 0)
+        type = _G4Trap;
+    if (strcmp(name, "G4Trd") == 0)
+        type = _G4Trd;
     return type ;
 }
 
@@ -327,9 +329,13 @@ inline const char* U4Solid::Tag(int type)   // static
         case _G4IntersectionSolid: tag = G4IntersectionSolid_ ; break ;
         case _G4DisplacedSolid:    tag = G4DisplacedSolid_    ; break ;
         case _G4CutTubs:           tag = G4CutTubs_           ; break ;
-        case _G4Trap:              tag = G4Trap_              ; break ;
-        case _G4Trd:               tag = G4Trd_               ; break ;
-    }
+        case _G4Trap:
+            tag = G4Trap_;
+            break;
+        case _G4Trd:
+            tag = G4Trd_;
+            break;
+        }
     return tag ;
 }
 
@@ -426,9 +432,13 @@ inline void U4Solid::init_Constituents()
         case _G4SubtractionSolid  : init_SubtractionSolid()      ; break ;
         case _G4DisplacedSolid    : init_DisplacedSolid()        ; break ;
         case _G4CutTubs           : init_CutTubs()               ; break ;
-        case _G4Trap              : init_Trap()                  ; break ;
-        case _G4Trd               : init_Trd()                   ; break ;
-    }
+        case _G4Trap:
+            init_Trap();
+            break;
+        case _G4Trd:
+            init_Trd();
+            break;
+        }
 
     if(!root) std::cerr << "U4Solid::init_Constituents UNHANDLED SOLID TYPE " << type << "\n" << desc() << "\n" ;
     assert( root);
@@ -804,73 +814,102 @@ inline void U4Solid::init_Box()
     root = sn::Box3(fx, fy, fz) ;
 }
 
-
 inline void U4Solid::init_Trap()
 {
     const G4Trap* trap = dynamic_cast<const G4Trap*>(solid);
     assert(trap);
 
     // G4Trap parameters (all lengths are half-lengths)
-    double dz     = trap->GetZHalfLength()/CLHEP::mm ;
-    double theta  = trap->GetSymAxis().theta() ;  // radians
-    double phi    = trap->GetSymAxis().phi() ;    // radians
-    double dy1    = trap->GetYHalfLength1()/CLHEP::mm ;
-    double dx1    = trap->GetXHalfLength1()/CLHEP::mm ;  // x at -y side, -z face
-    double dx2    = trap->GetXHalfLength2()/CLHEP::mm ;  // x at +y side, -z face
-    double alpha1 = trap->GetTanAlpha1() ;  // tan(alpha1), not the angle
-    double dy2    = trap->GetYHalfLength2()/CLHEP::mm ;
-    double dx3    = trap->GetXHalfLength3()/CLHEP::mm ;  // x at -y side, +z face
-    double dx4    = trap->GetXHalfLength4()/CLHEP::mm ;  // x at +y side, +z face
-    double alpha2 = trap->GetTanAlpha2() ;  // tan(alpha2)
+    double dz = trap->GetZHalfLength() / CLHEP::mm;
+    double theta = trap->GetSymAxis().theta(); // radians
+    double phi = trap->GetSymAxis().phi();     // radians
+    double dy1 = trap->GetYHalfLength1() / CLHEP::mm;
+    double dx1 = trap->GetXHalfLength1() / CLHEP::mm; // x at -y side, -z face
+    double dx2 = trap->GetXHalfLength2() / CLHEP::mm; // x at +y side, -z face
+    double alpha1 = trap->GetTanAlpha1();             // tan(alpha1), not the angle
+    double dy2 = trap->GetYHalfLength2() / CLHEP::mm;
+    double dx3 = trap->GetXHalfLength3() / CLHEP::mm; // x at -y side, +z face
+    double dx4 = trap->GetXHalfLength4() / CLHEP::mm; // x at +y side, +z face
+    double alpha2 = trap->GetTanAlpha2();             // tan(alpha2)
 
     // Face center offsets from theta/phi
-    double cx_bot = -dz * tan(theta) * cos(phi) ;  // x offset at z=-dz
-    double cy_bot = -dz * tan(theta) * sin(phi) ;  // y offset at z=-dz
-    double cx_top =  dz * tan(theta) * cos(phi) ;  // x offset at z=+dz
-    double cy_top =  dz * tan(theta) * sin(phi) ;  // y offset at z=+dz
+    double cx_bot = -dz * tan(theta) * cos(phi); // x offset at z=-dz
+    double cy_bot = -dz * tan(theta) * sin(phi); // y offset at z=-dz
+    double cx_top = dz * tan(theta) * cos(phi);  // x offset at z=+dz
+    double cy_top = dz * tan(theta) * sin(phi);  // y offset at z=+dz
 
     // 8 vertices (G4Trap convention, CCW when viewed from outside)
-    double v[8][3] ;
+    double v[8][3];
     // Bottom face (z = -dz) : x-center shifts by y*tan(alpha)
-    v[0][0] = cx_bot - dx1 - dy1*alpha1 ; v[0][1] = cy_bot - dy1 ; v[0][2] = -dz ;
-    v[1][0] = cx_bot + dx1 - dy1*alpha1 ; v[1][1] = cy_bot - dy1 ; v[1][2] = -dz ;
-    v[2][0] = cx_bot - dx2 + dy1*alpha1 ; v[2][1] = cy_bot + dy1 ; v[2][2] = -dz ;
-    v[3][0] = cx_bot + dx2 + dy1*alpha1 ; v[3][1] = cy_bot + dy1 ; v[3][2] = -dz ;
+    v[0][0] = cx_bot - dx1 - dy1 * alpha1;
+    v[0][1] = cy_bot - dy1;
+    v[0][2] = -dz;
+    v[1][0] = cx_bot + dx1 - dy1 * alpha1;
+    v[1][1] = cy_bot - dy1;
+    v[1][2] = -dz;
+    v[2][0] = cx_bot - dx2 + dy1 * alpha1;
+    v[2][1] = cy_bot + dy1;
+    v[2][2] = -dz;
+    v[3][0] = cx_bot + dx2 + dy1 * alpha1;
+    v[3][1] = cy_bot + dy1;
+    v[3][2] = -dz;
     // Top face (z = +dz)
-    v[4][0] = cx_top - dx3 - dy2*alpha2 ; v[4][1] = cy_top - dy2 ; v[4][2] = +dz ;
-    v[5][0] = cx_top + dx3 - dy2*alpha2 ; v[5][1] = cy_top - dy2 ; v[5][2] = +dz ;
-    v[6][0] = cx_top - dx4 + dy2*alpha2 ; v[6][1] = cy_top + dy2 ; v[6][2] = +dz ;
-    v[7][0] = cx_top + dx4 + dy2*alpha2 ; v[7][1] = cy_top + dy2 ; v[7][2] = +dz ;
+    v[4][0] = cx_top - dx3 - dy2 * alpha2;
+    v[4][1] = cy_top - dy2;
+    v[4][2] = +dz;
+    v[5][0] = cx_top + dx3 - dy2 * alpha2;
+    v[5][1] = cy_top - dy2;
+    v[5][2] = +dz;
+    v[6][0] = cx_top - dx4 + dy2 * alpha2;
+    v[6][1] = cy_top + dy2;
+    v[6][2] = +dz;
+    v[7][0] = cx_top + dx4 + dy2 * alpha2;
+    v[7][1] = cy_top + dy2;
+    v[7][2] = +dz;
 
-    _setRoot_FromVertices(v) ;
+    _setRoot_FromVertices(v);
 }
-
 
 inline void U4Solid::init_Trd()
 {
     const G4Trd* trd = dynamic_cast<const G4Trd*>(solid);
     assert(trd);
 
-    double dx1 = trd->GetXHalfLength1()/CLHEP::mm ;  // x at -z face
-    double dx2 = trd->GetXHalfLength2()/CLHEP::mm ;  // x at +z face
-    double dy1 = trd->GetYHalfLength1()/CLHEP::mm ;
-    double dy2 = trd->GetYHalfLength2()/CLHEP::mm ;
-    double dz  = trd->GetZHalfLength()/CLHEP::mm ;
+    double dx1 = trd->GetXHalfLength1() / CLHEP::mm; // x at -z face
+    double dx2 = trd->GetXHalfLength2() / CLHEP::mm; // x at +z face
+    double dy1 = trd->GetYHalfLength1() / CLHEP::mm;
+    double dy2 = trd->GetYHalfLength2() / CLHEP::mm;
+    double dz = trd->GetZHalfLength() / CLHEP::mm;
 
     // 8 vertices using same {x-sign, y-sign, z-sign} bit convention as init_Trap
-    double v[8][3] ;
-    v[0][0] = -dx1 ; v[0][1] = -dy1 ; v[0][2] = -dz ;
-    v[1][0] = +dx1 ; v[1][1] = -dy1 ; v[1][2] = -dz ;
-    v[2][0] = -dx1 ; v[2][1] = +dy1 ; v[2][2] = -dz ;
-    v[3][0] = +dx1 ; v[3][1] = +dy1 ; v[3][2] = -dz ;
-    v[4][0] = -dx2 ; v[4][1] = -dy2 ; v[4][2] = +dz ;
-    v[5][0] = +dx2 ; v[5][1] = -dy2 ; v[5][2] = +dz ;
-    v[6][0] = -dx2 ; v[6][1] = +dy2 ; v[6][2] = +dz ;
-    v[7][0] = +dx2 ; v[7][1] = +dy2 ; v[7][2] = +dz ;
+    double v[8][3];
+    v[0][0] = -dx1;
+    v[0][1] = -dy1;
+    v[0][2] = -dz;
+    v[1][0] = +dx1;
+    v[1][1] = -dy1;
+    v[1][2] = -dz;
+    v[2][0] = -dx1;
+    v[2][1] = +dy1;
+    v[2][2] = -dz;
+    v[3][0] = +dx1;
+    v[3][1] = +dy1;
+    v[3][2] = -dz;
+    v[4][0] = -dx2;
+    v[4][1] = -dy2;
+    v[4][2] = +dz;
+    v[5][0] = +dx2;
+    v[5][1] = -dy2;
+    v[5][2] = +dz;
+    v[6][0] = -dx2;
+    v[6][1] = +dy2;
+    v[6][2] = +dz;
+    v[7][0] = +dx2;
+    v[7][1] = +dy2;
+    v[7][2] = +dz;
 
-    _setRoot_FromVertices(v) ;
+    _setRoot_FromVertices(v);
 }
-
 
 // Compute 6 outward face planes + AABB from 8 vertices, install as CSG_CONVEXPOLYHEDRON root.
 // Vertex index convention: bit0=x-sign, bit1=y-sign, bit2=z-sign (0=-, 1=+).
@@ -881,46 +920,48 @@ inline void U4Solid::init_Trd()
 inline void U4Solid::_setRoot_FromVertices(const double v[8][3])
 {
     static const int faces[6][3] = {
-        {3,7,5}, {0,4,6}, {2,6,7}, {1,5,4}, {5,7,6}, {3,1,0}
-    };
+        {3, 7, 5}, {0, 4, 6}, {2, 6, 7}, {1, 5, 4}, {5, 7, 6}, {3, 1, 0}};
 
-    double planes[24] ;
-    double bbmin[3] = { 1e30,  1e30,  1e30 } ;
-    double bbmax[3] = {-1e30, -1e30, -1e30 } ;
+    double planes[24];
+    double bbmin[3] = {1e30, 1e30, 1e30};
+    double bbmax[3] = {-1e30, -1e30, -1e30};
 
-    for(int i = 0 ; i < 8 ; i++)
-        for(int j = 0 ; j < 3 ; j++)
+    for (int i = 0; i < 8; i++)
+        for (int j = 0; j < 3; j++)
         {
-            if(v[i][j] < bbmin[j]) bbmin[j] = v[i][j] ;
-            if(v[i][j] > bbmax[j]) bbmax[j] = v[i][j] ;
+            if (v[i][j] < bbmin[j])
+                bbmin[j] = v[i][j];
+            if (v[i][j] > bbmax[j])
+                bbmax[j] = v[i][j];
         }
 
-    for(int f = 0 ; f < 6 ; f++)
+    for (int f = 0; f < 6; f++)
     {
-        const double* A = v[faces[f][0]] ;
-        const double* B = v[faces[f][1]] ;
-        const double* C = v[faces[f][2]] ;
-        double ba[3] = { B[0]-A[0], B[1]-A[1], B[2]-A[2] } ;
-        double ca[3] = { C[0]-A[0], C[1]-A[1], C[2]-A[2] } ;
-        double nx = ba[1]*ca[2] - ba[2]*ca[1] ;
-        double ny = ba[2]*ca[0] - ba[0]*ca[2] ;
-        double nz = ba[0]*ca[1] - ba[1]*ca[0] ;
-        double nn = sqrt(nx*nx + ny*ny + nz*nz) ;
-        assert(nn > 0.) ;
-        nx /= nn ; ny /= nn ; nz /= nn ;
-        double d = nx*A[0] + ny*A[1] + nz*A[2] ;
+        const double* A = v[faces[f][0]];
+        const double* B = v[faces[f][1]];
+        const double* C = v[faces[f][2]];
+        double        ba[3] = {B[0] - A[0], B[1] - A[1], B[2] - A[2]};
+        double        ca[3] = {C[0] - A[0], C[1] - A[1], C[2] - A[2]};
+        double        nx = ba[1] * ca[2] - ba[2] * ca[1];
+        double        ny = ba[2] * ca[0] - ba[0] * ca[2];
+        double        nz = ba[0] * ca[1] - ba[1] * ca[0];
+        double        nn = sqrt(nx * nx + ny * ny + nz * nz);
+        assert(nn > 0.);
+        nx /= nn;
+        ny /= nn;
+        nz /= nn;
+        double d = nx * A[0] + ny * A[1] + nz * A[2];
 
-        planes[f*4+0] = nx ;
-        planes[f*4+1] = ny ;
-        planes[f*4+2] = nz ;
-        planes[f*4+3] = d ;
+        planes[f * 4 + 0] = nx;
+        planes[f * 4 + 1] = ny;
+        planes[f * 4 + 2] = nz;
+        planes[f * 4 + 3] = d;
     }
 
     root = sn::ConvexPolyhedron(planes, 6,
-        bbmin[0], bbmin[1], bbmin[2],
-        bbmax[0], bbmax[1], bbmax[2]) ;
+                                bbmin[0], bbmin[1], bbmin[2],
+                                bbmax[0], bbmax[1], bbmax[2]);
 }
-
 
 inline void U4Solid::init_Tubs()
 {
