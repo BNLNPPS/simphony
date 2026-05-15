@@ -492,13 +492,6 @@ set(HEADERS
     SSimtrace.h
 )
 
-# using absolute ANADIR avoids build environment requiring it in PATH 
-get_filename_component(ANADIR ../ana ABSOLUTE)
-get_filename_component(BINDIR ../bin ABSOLUTE)
-
-message(STATUS "CMAKE_CURRENT_SOURCE_DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "ANADIR : ${ANADIR}")
-
 set(WITH_SIMG YES)
 if(WITH_SIMG)
     list(APPEND HEADERS   stb_image.h  stb_image_write.h)   
