@@ -153,29 +153,41 @@ test_trd_iso () {
 }
 
 # (2) Full-physics test: 5 GeV electrons in synthetic-scintillator Quartz
-#     trap with dispersive Sellmeier index + finite ABSLENGTH=100m. Folds
-#     Cherenkov + Scintillation + dispersion + absorption + slanted walls
-#     + multi-bounce together. Single-thread G4 for deterministic file
-#     output; ~3 min wall time.
-test_scintillation () {
+#     solid with finite ABSLENGTH=100m. Folds Cerenkov + Scintillation +
+#     absorption + slanted walls + multi-bounce. Run on BOTH trap and trd
+#     so each solid sees the full physics chain. Single-thread G4 for
+#     deterministic file output; ~3 min wall time per solid.
+test_scintillation_trap () {
     echo
-    echo "----- Test: Scintillation+Cherenkov from 5 x 5 GeV electrons -----"
-    local outd="${OUT_DIR}/scintillation"
+    echo "----- Test: Scintillation+Cherenkov on trap, 5 x 5 GeV electrons -----"
+    local outd="${OUT_DIR}/scintillation_trap"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
     "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${GEOM_DIR}/test_trap_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
-    python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation" 10 50
+    python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation trap" 10 50
+}
+
+test_scintillation_trd () {
+    echo
+    echo "----- Test: Scintillation+Cherenkov on trd, 5 x 5 GeV electrons -----"
+    local outd="${OUT_DIR}/scintillation_trd"
+    mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
+    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${GEOM_DIR}/test_trd_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
+    python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation trd" 10 50
 }
 
 # ------------------------------------------------------------------
 # dispatch
 # ------------------------------------------------------------------
 case "${1:-all}" in
-    trap|iso_trap)    test_trap_iso ;;
-    trd|iso_trd)      test_trd_iso ;;
-    scintillation|sc) test_scintillation ;;
+    trap|iso_trap)              test_trap_iso ;;
+    trd|iso_trd)                test_trd_iso ;;
+    scintillation|sc)           test_scintillation_trap; test_scintillation_trd ;;
+    scintillation_trap|sc_trap) test_scintillation_trap ;;
+    scintillation_trd|sc_trd)   test_scintillation_trd ;;
     all|*)
         test_trap_iso
         test_trd_iso
-        test_scintillation
+        test_scintillation_trap
+        test_scintillation_trd
         ;;
 esac
