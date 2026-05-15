@@ -70,7 +70,7 @@ OptixPipelineCompileOptions PIP::CreatePipelineOptions(unsigned numPayloadValues
     pipeline_compile_options.numAttributeValues    = numAttributeValues ;
     pipeline_compile_options.exceptionFlags        = OPT::ExceptionFlags( CreatePipelineOptions_exceptionFlags )  ;
     pipeline_compile_options.pipelineLaunchParamsVariableName = "params";
-    pipeline_compile_options.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_CUSTOM ;  
+    pipeline_compile_options.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_CUSTOM | OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE;
 
     return pipeline_compile_options ;  
 }
@@ -410,40 +410,62 @@ PIP::createHitgroupPG
 
 void PIP::createHitgroupPG()
 {
-    OptixProgramGroupDesc desc = {};
-    desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+    size_t   sizeof_log = 0;
+    char     log[2048];
+    unsigned num_program_groups = 1;
 
-    desc.hitgroup.moduleIS            = module ;
-    desc.hitgroup.entryFunctionNameIS =  IS ;
+    // analytic (custom primitive) hitgroup: custom IS + CH
+    OptixProgramGroupDesc desc_ana = {};
+    desc_ana.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+    desc_ana.hitgroup.moduleIS = module;
+    desc_ana.hitgroup.entryFunctionNameIS = IS;
+    desc_ana.hitgroup.moduleCH = module;
+    desc_ana.hitgroup.entryFunctionNameCH = CH;
+    desc_ana.hitgroup.moduleAH = nullptr;
+    desc_ana.hitgroup.entryFunctionNameAH = nullptr;
 
-    desc.hitgroup.moduleCH            = module  ; 
-    desc.hitgroup.entryFunctionNameCH = CH ;
+    OPTIX_CHECK_LOG(optixProgramGroupCreate(
+        Ctx::context,
+        &desc_ana,
+        num_program_groups,
+        &program_group_options,
+        log,
+        &sizeof_log,
+        &hitgroup_pg));
 
-    desc.hitgroup.moduleAH            = nullptr ;
-    desc.hitgroup.entryFunctionNameAH = nullptr ; 
+    if (sizeof_log > 0)
+        std::cout << log << std::endl;
+    assert(sizeof_log == 0);
 
-    size_t sizeof_log = 0 ; 
-    char log[2048]; 
-    unsigned num_program_groups = 1 ; 
+    // triangle hitgroup: builtin IS (must be null) + CH
+    sizeof_log = 0;
+    OptixProgramGroupDesc desc_tri = {};
+    desc_tri.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+    desc_tri.hitgroup.moduleIS = nullptr;
+    desc_tri.hitgroup.entryFunctionNameIS = nullptr;
+    desc_tri.hitgroup.moduleCH = module;
+    desc_tri.hitgroup.entryFunctionNameCH = CH;
+    desc_tri.hitgroup.moduleAH = nullptr;
+    desc_tri.hitgroup.entryFunctionNameAH = nullptr;
 
+    OPTIX_CHECK_LOG(optixProgramGroupCreate(
+        Ctx::context,
+        &desc_tri,
+        num_program_groups,
+        &program_group_options,
+        log,
+        &sizeof_log,
+        &hitgroup_pg_tri));
 
-    OPTIX_CHECK_LOG( optixProgramGroupCreate(
-                Ctx::context,
-                &desc,
-                num_program_groups,
-                &program_group_options,
-                log,
-                &sizeof_log,
-                &hitgroup_pg
-                ) );
-
-    if(sizeof_log > 0) std::cout << log << std::endl ; 
-    assert( sizeof_log == 0); 
+    if (sizeof_log > 0)
+        std::cout << log << std::endl;
+    assert(sizeof_log == 0);
 }
 
 void PIP::destroyHitgroupPG()
 {
     OPTIX_CHECK( optixProgramGroupDestroy( hitgroup_pg ) );
+    OPTIX_CHECK(optixProgramGroupDestroy(hitgroup_pg_tri));
 }
 
 
@@ -482,7 +504,7 @@ std::string PIP::Desc_PipelineLinkOptions(const OptixPipelineLinkOptions& pipeli
 
 void PIP::linkPipeline(unsigned max_trace_depth)
 {
-    OptixProgramGroup program_groups[] = { raygen_pg, miss_pg, hitgroup_pg };
+    OptixProgramGroup program_groups[] = {raygen_pg, miss_pg, hitgroup_pg, hitgroup_pg_tri};
 
     OptixPipelineLinkOptions pipeline_link_options = {};
     pipeline_link_options.maxTraceDepth          = max_trace_depth ;
@@ -550,13 +572,15 @@ void PIP::configureStack()
     OptixStackSizes stackSizes = {};
 
 #if OPTIX_VERSION <= 70600
-    OPTIX_CHECK( optixUtilAccumulateStackSizes( raygen_pg,   &stackSizes ) ); 
-    OPTIX_CHECK( optixUtilAccumulateStackSizes( miss_pg,     &stackSizes ) ); 
-    OPTIX_CHECK( optixUtilAccumulateStackSizes( hitgroup_pg, &stackSizes ) ); 
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(raygen_pg, &stackSizes));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(miss_pg, &stackSizes));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(hitgroup_pg, &stackSizes));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(hitgroup_pg_tri, &stackSizes));
 #else
-    OPTIX_CHECK( optixUtilAccumulateStackSizes( raygen_pg,   &stackSizes, pipeline ) ); 
-    OPTIX_CHECK( optixUtilAccumulateStackSizes( miss_pg,     &stackSizes, pipeline ) ); 
-    OPTIX_CHECK( optixUtilAccumulateStackSizes( hitgroup_pg, &stackSizes, pipeline ) ); 
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(raygen_pg, &stackSizes, pipeline));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(miss_pg, &stackSizes, pipeline));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(hitgroup_pg, &stackSizes, pipeline));
+    OPTIX_CHECK(optixUtilAccumulateStackSizes(hitgroup_pg_tri, &stackSizes, pipeline));
 #endif
 
 
