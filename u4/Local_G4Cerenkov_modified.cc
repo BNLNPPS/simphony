@@ -75,11 +75,6 @@
 
 #include "Local_G4Cerenkov_modified.hh"
 
-#ifdef INSTRUMENTED
-#include "OpticksDebug.hh"
-#include "OpticksRandom.hh"
-#endif
-
 #ifdef STANDALONE
 #include "SLOG.hh"
 #include "U4.hh"
@@ -112,9 +107,6 @@ Local_G4Cerenkov_modified::Local_G4Cerenkov_modified(const G4String& processName
              fMaxBetaChange(0.0),
              fMaxPhotons(0),
              fStackingFlag(true),
-#ifdef INSTRUMENTED
-             override_fNumPhotons(0),
-#endif
              fNumPhotons(0)
 {
   SetProcessSubType(fCerenkov);
@@ -243,13 +235,6 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 
   fNumPhotons = (G4int) G4Poisson(MeanNumberOfPhotons);
 
-#ifdef INSTRUMENTED
-   if( override_fNumPhotons > 0 )
-   { 
-       fNumPhotons = override_fNumPhotons ; 
-   }
-#endif
-
 
   // calculate the fNumPhotons1 and fNumPhotons2 {
 
@@ -315,19 +300,6 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 
   fNumPhotons1 = MeanNumberOfPhotons1;
   fNumPhotons2 = MeanNumberOfPhotons2;
-
-
-#ifdef INSTRUMENTED
-  par->append( BetaInverse, "BetaInverse" );  
-  par->append( beta       , "beta" );  
-  par->append( Pmin       , "Pmin" );  
-  par->append( Pmax       , "Pmax" );  
-
-  par->append( nMax       , "nMax" );  
-  par->append( maxCos     , "maxCos" );  
-  par->append( maxSin2    , "maxSin2" );  
-  par->append( fNumPhotons, "fNumPhotons" );  
-#endif
 
 
 
@@ -411,36 +383,9 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
       G4double sin2Theta(0.);
 #endif
 
-#ifdef INSTRUMENTED
-      unsigned head_count = 0 ; 
-      unsigned tail_count = 0 ; 
-      unsigned continue_count = 0 ; 
-      unsigned condition_count = 0 ;
-      int seqidx = -1 ;  
-      if(rnd)
-      {
-          rnd->setSequenceIndex(i); 
-          seqidx = rnd->getSequenceIndex(); 
-
-          if(i < 10) std::cout 
-              << " i " << std::setw(6) << i 
-              << " seqidx " << std::setw(7) << seqidx
-              << " Pmin/eV " << std::fixed << std::setw(10) << std::setprecision(5) << Pmin/eV
-              << " Pmax/eV " << std::fixed << std::setw(10) << std::setprecision(5) << Pmax/eV
-              << " dp/eV " << std::fixed << std::setw(10) << std::setprecision(5) << dp/eV
-              << " maxSin2 "  << std::fixed << std::setw(10) << std::setprecision(5) << maxSin2
-              << std::endl 
-              ;
-
-      }
-#endif
-
       // sample an energy
 
       do {
-#ifdef INSTRUMENTED
-         head_count += 1 ; 
-#endif
          rand0 = G4UniformRand();  
          sampledEnergy = Pmin + rand0 * dp; 
          sampledRI = Rindex->Value(sampledEnergy);
@@ -450,16 +395,9 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 #else
          // check if n(E) > 1/beta
          if (sampledRI < BetaInverse) {
-#ifdef INSTRUMENTED
-             continue_count += 1 ; 
-#endif
              continue;
          }
 
-#endif
-
-#ifdef INSTRUMENTED
-         tail_count += 1 ; 
 #endif
  
 
@@ -483,46 +421,7 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 #endif
 
         // Loop checking, 07-Aug-2015, Vladimir Ivanchenko
-#ifdef INSTRUMENTED
-
-         if( i < 10 ) std::cout 
-             << " tc " << std::setw(6) << tail_count 
-             << " u0 " << std::fixed << std::setw(10) << std::setprecision(5) << rand0 
-             << " eV " << std::fixed << std::setw(10) << std::setprecision(5) << sampledEnergy/eV
-             << " ri " << std::fixed << std::setw(10) << std::setprecision(5) << sampledRI
-             << " ct " << std::fixed << std::setw(10) << std::setprecision(5) << cosTheta
-             << " s2 " << std::fixed << std::setw(10) << std::setprecision(5) << sin2Theta
-             << " rand1*maxSin2 " << std::fixed << std::setw(10) << std::setprecision(5) << rand1*maxSin2
-             << " rand1*maxSin2 - sin2Theta " <<  std::fixed << std::setw(10) << std::setprecision(5) << rand1*maxSin2 - sin2Theta
-             << " loop " << ( rand1*maxSin2 > sin2Theta ? "Y" : "N" )
-             << std::endl 
-             ; 
-
-
-      } while ( looping_condition(condition_count) && rand1*maxSin2 > sin2Theta  );
-#else
       } while (rand1*maxSin2 > sin2Theta);
-#endif
-
-#ifdef INSTRUMENTED
-        G4double sampledEnergy_eV = sampledEnergy/eV ; 
-        G4double sampledWavelength_nm = h_Planck*c_light/sampledEnergy/nm ;
-
-        gen->append( sampledEnergy_eV ,       "sampledEnergy" ); 
-        gen->append( sampledWavelength_nm ,    "sampledWavelength" ); 
-        gen->append( sampledRI ,               "sampledRI" ); 
-        gen->append( cosTheta ,                "cosTheta" ); 
-
-        gen->append( sin2Theta ,               "sin2Theta" ); 
-        gen->append( head_count ,     tail_count,       "head_tail" ); 
-        gen->append( continue_count , condition_count,  "continue_condition" ); 
-        gen->append( BetaInverse , "BetaInverse" ); 
- 
-        if(rnd)
-        {
-           rnd->setSequenceIndex(-1); 
-        }
-#endif
  
 
 
@@ -628,17 +527,6 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 
     return pParticleChange;
 }
-
-
-#ifdef INSTRUMENTED
-bool Local_G4Cerenkov_modified::looping_condition(unsigned& count)
-{   
-    count += 1 ;
-    return true ;
-}   
-
-
-#endif
 
 
 // BuildThePhysicsTable for the Cerenkov process
