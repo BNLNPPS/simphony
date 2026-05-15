@@ -47,6 +47,7 @@
 namespace
 {
 G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
+G4Mutex g4_hits_file_mutex = G4MUTEX_INITIALIZER;
 }
 
 bool IsSubtractionSolid(G4VSolid *solid)
@@ -328,10 +329,13 @@ struct EventAction : G4UserEventAction
         G4HCofThisEvent *hce = event->GetHCofThisEvent();
         if (hce)
         {
+            G4AutoLock lock(&g4_hits_file_mutex);
+
+            static bool first_event = true;
             std::ofstream g4OutFile;
-            int eventID = event->GetEventID();
             g4OutFile.open("g4_hits_output.txt",
-                           eventID == 0 ? std::ios::out : std::ios::app);
+                           first_event ? std::ios::out : std::ios::app);
+            first_event = false;
 
             for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
             {
