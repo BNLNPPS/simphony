@@ -198,7 +198,7 @@ test_single_photon () {
 
 test_cherenkov () {
     echo
-    echo "----- Test: Cherenkov from 10 x 5 GeV electrons (single-thread G4) -----"
+    echo "----- Test: Cherenkov from 10 x 5 GeV electrons -----"
     run_cherenkov_or_scint cherenkov "${GEOM_DIR}/test_trap_dispersive.gdml" "${G4_MACRO_10EVT}"
     python3 "${COMPARE_PY}" "${OUT_DIR}/cherenkov/g4_hits_output.txt" "${OUT_DIR}/cherenkov/opticks_hits_output.txt" "cherenkov" 5 8
 }
