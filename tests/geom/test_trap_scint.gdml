@@ -12,7 +12,7 @@
          constants accessed via GetConstProperty. -->
     <matrix coldim="2" name="SCINT_SPECTRUM"
             values="2.480e-06 0.05 2.755e-06 0.50 2.952e-06 1.00 3.100e-06 0.80 3.542e-06 0.20"/>
-    <matrix coldim="1" name="SCINT_YIELD" values="100.0"/>
+    <matrix coldim="1" name="SCINT_YIELD" values="10.0"/>
     <matrix coldim="1" name="RESOLUTION_SCALE" values="1.0"/>
     <matrix coldim="1" name="FAST_TIME_CONST" values="2.0"/>
     <matrix coldim="1" name="YIELD_RATIO" values="1.0"/>
