@@ -331,7 +331,7 @@ struct EventAction : G4UserEventAction
         {
             G4AutoLock lock(&g4_hits_file_mutex);
 
-            static bool first_event = true;
+            static bool   first_event = true;
             std::ofstream g4OutFile;
             g4OutFile.open("g4_hits_output.txt",
                            first_event ? std::ios::out : std::ios::app);
@@ -344,12 +344,12 @@ struct EventAction : G4UserEventAction
                 {
                     fTotalG4Hits += hc->GetSize();
                 }
-                PhotonHitsCollection *phc = dynamic_cast<PhotonHitsCollection *>(hc);
+                PhotonHitsCollection* phc = dynamic_cast<PhotonHitsCollection*>(hc);
                 if (phc && g4OutFile.is_open())
                 {
                     for (size_t j = 0; j < phc->entries(); j++)
                     {
-                        const PhotonHit *p = (*phc)[j];
+                        const PhotonHit* p = (*phc)[j];
                         g4OutFile << p->ftime << " "
                                   << 1239.84 / p->fenergy << "  "
                                   << "(" << p->fposition.x() << ", " << p->fposition.y() << ", " << p->fposition.z() << ")  "
@@ -359,7 +359,8 @@ struct EventAction : G4UserEventAction
                     }
                 }
             }
-            if (g4OutFile.is_open()) g4OutFile.close();
+            if (g4OutFile.is_open())
+                g4OutFile.close();
         }
     }
 

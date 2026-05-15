@@ -156,7 +156,7 @@ struct SYSRAP_API sn
     s_tv* xform ;
     s_pa* param ;
     s_bb* aabb  ;
-    std::vector<double>* planes ;  // auxiliary plane data for CSG_CONVEXPOLYHEDRON (4 doubles per plane: nx,ny,nz,d)
+    std::vector<double>* planes;    // auxiliary plane data for CSG_CONVEXPOLYHEDRON (4 doubles per plane: nx,ny,nz,d)
     sn*   parent ;   // NOT owned by this sn
 
 #ifdef WITH_CHILD
@@ -472,7 +472,7 @@ struct SYSRAP_API sn
     static sn* Box3(double fullside);
     static sn* Box3(double fx, double fy, double fz );
     static sn* ConvexPolyhedron(const double* pl, unsigned num_planes, double bbmin_x, double bbmin_y, double bbmin_z, double bbmax_x, double bbmax_y, double bbmax_z);
-    const std::vector<double>* getPlanes() const ;
+    const std::vector<double>* getPlanes() const;
     static sn* Torus(double rmin, double rmax, double rtor, double startPhi_deg, double deltaPhi_deg );
 
     static constexpr const char* sn__PhiCut_PACMAN_ALLOWED = "sn__PhiCut_PACMAN_ALLOWED" ;
@@ -1115,8 +1115,7 @@ as other ctor/dtor can change the pool while this holds on to the old stale pid
 
 **/
 
-inline sn::sn(int typecode_, sn* left_, sn* right_)
-    :
+inline sn::sn(int typecode_, sn* left_, sn* right_) :
     typecode(typecode_),
     complement(0),
     lvid(-1),
@@ -1177,7 +1176,7 @@ inline sn::~sn()
     delete xform ;
     delete param ;
     delete aabb  ;
-    delete planes ;
+    delete planes;
     // parent is not deleted : as it is regarded as weakly linked (ie not owned by this node)
 
 
@@ -3263,21 +3262,21 @@ inline sn* sn::Box3(double fx, double fy, double fz )  // static
     return nd ;
 }
 
-
 inline sn* sn::ConvexPolyhedron(const double* pl, unsigned num_planes,
-    double bbmin_x, double bbmin_y, double bbmin_z,
-    double bbmax_x, double bbmax_y, double bbmax_z)  // static
+                                double bbmin_x, double bbmin_y, double bbmin_z,
+                                double bbmax_x, double bbmax_y, double bbmax_z) // static
 {
-    sn* nd = Create(CSG_CONVEXPOLYHEDRON) ;
-    nd->planes = new std::vector<double>(pl, pl + num_planes*4) ;
-    nd->setPA( 0., 0., 0., 0., 0., 0. );
-    nd->setBB( bbmin_x, bbmin_y, bbmin_z, bbmax_x, bbmax_y, bbmax_z );
-    return nd ;
+    sn* nd = Create(CSG_CONVEXPOLYHEDRON);
+    nd->planes = new std::vector<double>(pl, pl + num_planes * 4);
+    nd->setPA(0., 0., 0., 0., 0., 0.);
+    nd->setBB(bbmin_x, bbmin_y, bbmin_z, bbmax_x, bbmax_y, bbmax_z);
+    return nd;
 }
 
-inline const std::vector<double>* sn::getPlanes() const { return planes ; }
-
-
+inline const std::vector<double>* sn::getPlanes() const
+{
+    return planes;
+}
 
 /**
 sn::Torus
@@ -5522,7 +5521,7 @@ inline void sn::setAABB_LeafFrame()
         setBB( pmin.x, pmin.y, -rmax, pmax.x, pmax.y, +rmax );
 
     }
-    else if( typecode == CSG_CONVEXPOLYHEDRON )
+    else if (typecode == CSG_CONVEXPOLYHEDRON)
     {
         // AABB already set by ConvexPolyhedron factory; keep it
     }
