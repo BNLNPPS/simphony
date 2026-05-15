@@ -1,0 +1,6 @@
+# 5-event single-thread macro for slower physics (scintillation).
+/run/verbose 1
+/run/numberOfThreads 1
+/process/optical/boundary/setInvokeSD true
+/run/initialize
+/run/beamOn 5
