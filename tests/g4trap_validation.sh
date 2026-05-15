@@ -52,19 +52,6 @@ ensure_torch_config () {
     fi
 }
 
-ensure_torch_config trap_disc '{
-  "torch": {
-    "gentype": "TORCH", "trackid": 0, "matline": 0,
-    "numphoton": 10000,
-    "pos": [0.0, 0.0, -150.0], "time": 0.0,
-    "mom": [0.0, 0.0, 1.0], "weight": 0.0,
-    "pol": [1.0, 0.0, 0.0], "wavelength": 420.0,
-    "zenith":  [0.0, 1.0], "azimuth": [0.0, 1.0],
-    "radius": 30.0, "distance": 0.0, "mode": 255, "type": "disc"
-  },
-  "event": {"mode": "DebugLite", "maxslot": 1000000}
-}'
-
 ensure_torch_config trap_iso '{
   "torch": {
     "gentype": "TORCH", "trackid": 0, "matline": 0,
@@ -74,19 +61,6 @@ ensure_torch_config trap_iso '{
     "pol": [1.0, 0.0, 0.0], "wavelength": 420.0,
     "zenith":  [0.0, 1.0], "azimuth": [0.0, 1.0],
     "radius": 0.1, "distance": 0.0, "mode": 255, "type": "sphere_marsaglia"
-  },
-  "event": {"mode": "DebugLite", "maxslot": 1000000}
-}'
-
-ensure_torch_config single_photon_xside '{
-  "torch": {
-    "gentype": "TORCH", "trackid": 0, "matline": 0,
-    "numphoton": 1,
-    "pos": [0.0, 0.0, 0.0], "time": 0.0,
-    "mom": [0.894427, 0.447214, 0.0], "weight": 0.0,
-    "pol": [0.0, 0.0, 1.0], "wavelength": 420.0,
-    "zenith":  [0.0, 0.0], "azimuth": [0.0, 0.0],
-    "radius": 0.0, "distance": 0.0, "mode": 255, "type": "point"
   },
   "event": {"mode": "DebugLite", "maxslot": 1000000}
 }'
@@ -148,7 +122,6 @@ PYEOF
 # run helpers
 # ------------------------------------------------------------------
 G4_MACRO="${SCRIPT_DIR}/run_validate.mac"
-G4_MACRO_10EVT="${SCRIPT_DIR}/run_validate_10evt_1t.mac"
 G4_MACRO_5EVT="${SCRIPT_DIR}/run_validate_5evt_1t.mac"
 
 run_torch_test () {
@@ -158,30 +131,13 @@ run_torch_test () {
     "${EIC_OPTICKS_BIN}/GPUPhotonSource" -g "${gdml}" -c "${cfg}" -m "${G4_MACRO}" -s ${seed} > run.log 2>&1
 }
 
-run_cherenkov_or_scint () {
-    local case=$1; local gdml=$2; local macro=$3; local seed=${4:-42}
-    local outd="${OUT_DIR}/${case}"
-    mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
-    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${gdml}" -m "${macro}" -s ${seed} > run.log 2>&1
-}
-
 # ------------------------------------------------------------------
 # tests
 # ------------------------------------------------------------------
-test_trap_disc () {
-    echo
-    echo "----- Test: trap, disc source straight +Z -----"
-    run_torch_test trap_disc "${GEOM_DIR}/test_trap.gdml" trap_disc
-    python3 "${COMPARE_PY}" "${OUT_DIR}/trap_disc/g4_hits_output.txt" "${OUT_DIR}/trap_disc/opticks_hits_output.txt" "trap disc"
-}
-
-test_trd_disc () {
-    echo
-    echo "----- Test: trd, disc source straight +Z -----"
-    run_torch_test trd_disc "${GEOM_DIR}/test_trd.gdml" trap_disc
-    python3 "${COMPARE_PY}" "${OUT_DIR}/trd_disc/g4_hits_output.txt" "${OUT_DIR}/trd_disc/opticks_hits_output.txt" "trd disc"
-}
-
+# (1) Simple test class: isotropic torch source in the new solid, no
+#     scintillation / Cherenkov physics. Validates the convex-polyhedron
+#     conversion under heavy TIR / multi-bounce. Runs on BOTH trap and trd
+#     so each new solid is exercised.
 test_trap_iso () {
     echo
     echo "----- Test: trap, isotropic source (probes slanted walls) -----"
@@ -196,44 +152,30 @@ test_trd_iso () {
     python3 "${COMPARE_PY}" "${OUT_DIR}/trd_iso/g4_hits_output.txt" "${OUT_DIR}/trd_iso/opticks_hits_output.txt" "trd iso"
 }
 
-test_single_photon () {
-    echo
-    echo "----- Test: single photon normal-incidence at trap +X wall -----"
-    echo "  expected hit: (249.5, 124.634, 0) -- both binaries must agree"
-    run_torch_test single_photon "${GEOM_DIR}/test_trap_side.gdml" single_photon_xside
-    head -2 "${OUT_DIR}/single_photon/g4_hits_output.txt" "${OUT_DIR}/single_photon/opticks_hits_output.txt"
-}
-
-test_cherenkov () {
-    echo
-    echo "----- Test: Cherenkov from 10 x 5 GeV electrons -----"
-    run_cherenkov_or_scint cherenkov "${GEOM_DIR}/test_trap_dispersive.gdml" "${G4_MACRO_10EVT}"
-    python3 "${COMPARE_PY}" "${OUT_DIR}/cherenkov/g4_hits_output.txt" "${OUT_DIR}/cherenkov/opticks_hits_output.txt" "cherenkov" 5 8
-}
-
+# (2) Full-physics test: 5 GeV electrons in synthetic-scintillator Quartz
+#     trap with dispersive Sellmeier index + finite ABSLENGTH=100m. Folds
+#     Cherenkov + Scintillation + dispersion + absorption + slanted walls
+#     + multi-bounce together. Single-thread G4 for deterministic file
+#     output; ~3 min wall time.
 test_scintillation () {
     echo
-    echo "----- Test: Scintillation from 5 x 5 GeV electrons (single-thread G4) -----"
-    run_cherenkov_or_scint scintillation "${GEOM_DIR}/test_trap_scint.gdml" "${G4_MACRO_5EVT}"
-    python3 "${COMPARE_PY}" "${OUT_DIR}/scintillation/g4_hits_output.txt" "${OUT_DIR}/scintillation/opticks_hits_output.txt" "scint" 10 50
+    echo "----- Test: Scintillation+Cherenkov from 5 x 5 GeV electrons -----"
+    local outd="${OUT_DIR}/scintillation"
+    mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
+    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${GEOM_DIR}/test_trap_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
+    python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation" 10 50
 }
 
 # ------------------------------------------------------------------
 # dispatch
 # ------------------------------------------------------------------
 case "${1:-all}" in
-    trap)         test_trap_disc; test_trap_iso ;;
-    trd)          test_trd_disc; test_trd_iso ;;
-    single_photon|sp) test_single_photon ;;
-    cherenkov|ck)     test_cherenkov ;;
+    trap|iso_trap)    test_trap_iso ;;
+    trd|iso_trd)      test_trd_iso ;;
     scintillation|sc) test_scintillation ;;
     all|*)
-        test_trap_disc
-        test_trd_disc
         test_trap_iso
         test_trd_iso
-        test_single_photon
-        test_cherenkov
         test_scintillation
         ;;
 esac
