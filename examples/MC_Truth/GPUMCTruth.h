@@ -604,6 +604,7 @@ struct SteppingAction : G4UserSteppingAction
                         }
                         G4double SCINTILLATIONTIMECONSTANT1 = MPT->GetConstProperty(kSCINTILLATIONTIMECONSTANT1);
 
+                        G4AutoLock lock(&genstep_mutex);
                         U4::CollectGenstep_DsG4Scintillation_r4695(aTrack, aStep, fNumPhotons, 1,
                                                                    SCINTILLATIONTIMECONSTANT1);
                     }
