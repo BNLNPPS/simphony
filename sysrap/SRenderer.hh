@@ -34,7 +34,7 @@ Duties of the *snap* method
 -----------------------------
 
 1. download the frame buffer into CPU side pixels buffer
-2. save pixels buffer to to file at the path provided
+2. save pixels buffer to file at the path provided
 
 **/
 
