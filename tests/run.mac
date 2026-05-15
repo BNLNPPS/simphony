@@ -1,6 +1,8 @@
 # Can be run in batch, without graphic
 # or interactively: Idle> /control/execute run1.mac
 #
+/process/optical/scintillation/setStackPhotons false
+/process/optical/cerenkov/setStackPhotons false
 /run/verbose 1
 /run/initialize
 /run/beamOn 1
