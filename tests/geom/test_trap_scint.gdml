@@ -5,7 +5,10 @@
   <define>
     <matrix coldim="2" name="RINDEX_Vacuum" values="1.55e-06 1.0 6.2e-06 1.0 1.033e-05 1.0 1.55e-05 1.0"/>
     <matrix coldim="2" name="RINDEX_Quartz" values="1.55e-06 1.46 6.2e-06 1.46 1.033e-05 1.46 1.55e-05 1.46"/>
-    <matrix coldim="2" name="ABSLENGTH_Quartz" values="1.55e-06 1000000 6.2e-06 1000000 1.033e-05 1000000 1.55e-05 1000000"/>
+    <!-- ABSLENGTH = 100 m (100000 mm) so absorption is the natural cut-off
+         and the bounce/looper-kill mismatch between G4 and Opticks does
+         not dominate the time tail. -->
+    <matrix coldim="2" name="ABSLENGTH_Quartz" values="1.55e-06 100000 6.2e-06 100000 1.033e-05 100000 1.55e-05 100000"/>
 
     <!-- Scintillation: peak at 420 nm (E=2.952 eV). Yield 1000 photons/MeV,
          fast time constant 2 ns. coldim=1 is the GDML convention for scalar

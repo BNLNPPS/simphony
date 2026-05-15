@@ -27,9 +27,17 @@ GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
 
 export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-1}
-export OPTICKS_PROPAGATE_EPSILON=0.0001
-export OPTICKS_PROPAGATE_EPSILON0=0.0001
-export OPTICKS_MAX_BOUNCE=${OPTICKS_MAX_BOUNCE:-100}
+# eps=0.001 mm (= 1 µm) was the sweet spot in an eps-scan over 1e-5..5e-2.
+# Smaller values cause photons to get stuck at boundaries (float32 ulp issues);
+# larger values cause leakage. eps=0.001 matched G4 best across hit count
+# (within 0.14%) and all spatial+temporal chi^2 (all < 5.5).
+export OPTICKS_PROPAGATE_EPSILON=${OPTICKS_PROPAGATE_EPSILON:-0.001}
+export OPTICKS_PROPAGATE_EPSILON0=${OPTICKS_PROPAGATE_EPSILON0:-0.001}
+# MAX_BOUNCE=10000 keeps the long late-tail in Opticks. G4's effective
+# cap is much lower (~50-100 from G4Transportation looper-kill) — for a
+# pure G4-count match in lossless media use MAX_BOUNCE=100, but the
+# right physics setting is 10000 with realistic ABSLENGTH (< ~100 m).
+export OPTICKS_MAX_BOUNCE=${OPTICKS_MAX_BOUNCE:-10000}
 
 mkdir -p "${OUT_DIR}"
 
