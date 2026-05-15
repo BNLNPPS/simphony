@@ -49,6 +49,7 @@ npy/NNodeUncoincide npy/NNodeNudger
 #include "G4MultiUnion.hh"
 #include "G4Torus.hh"
 #include "G4Trap.hh"
+#include "G4Trd.hh"
 #include "G4UnionSolid.hh"
 #include "G4IntersectionSolid.hh"
 #include "G4SubtractionSolid.hh"
@@ -79,7 +80,8 @@ enum {
     _G4SubtractionSolid,
     _G4DisplacedSolid,
     _G4CutTubs,
-    _G4Trap
+    _G4Trap,
+    _G4Trd
  };
 
 struct U4Solid
@@ -100,6 +102,7 @@ struct U4Solid
     static constexpr const char* G4DisplacedSolid_    = "Dis" ;
     static constexpr const char* G4CutTubs_           = "TuC" ;
     static constexpr const char* G4Trap_              = "Tra" ;
+    static constexpr const char* G4Trd_               = "Trd" ;
 
     static constexpr const char* _U4Solid__IsFlaggedLVID = "U4Solid__IsFlaggedLVID" ;
     static const int   IsFlaggedLVID_ ;
@@ -148,6 +151,8 @@ private:
     void init_SubtractionSolid();
     void init_CutTubs();
     void init_Trap();
+    void init_Trd();
+    void _setRoot_FromVertices(const double v[8][3]);
 
     sn* init_Sphere_(char layer);
     sn* init_Cons_(char layer);
@@ -298,6 +303,7 @@ inline int U4Solid::Type(const char* name)   // static
     if( strcmp(name, "G4DisplacedSolid") == 0 )    type = _G4DisplacedSolid ;
     if( strcmp(name, "G4CutTubs") == 0 )           type = _G4CutTubs ;
     if( strcmp(name, "G4Trap") == 0 )              type = _G4Trap ;
+    if( strcmp(name, "G4Trd") == 0 )               type = _G4Trd ;
     return type ;
 }
 
@@ -322,6 +328,7 @@ inline const char* U4Solid::Tag(int type)   // static
         case _G4DisplacedSolid:    tag = G4DisplacedSolid_    ; break ;
         case _G4CutTubs:           tag = G4CutTubs_           ; break ;
         case _G4Trap:              tag = G4Trap_              ; break ;
+        case _G4Trd:               tag = G4Trd_               ; break ;
     }
     return tag ;
 }
@@ -420,6 +427,7 @@ inline void U4Solid::init_Constituents()
         case _G4DisplacedSolid    : init_DisplacedSolid()        ; break ;
         case _G4CutTubs           : init_CutTubs()               ; break ;
         case _G4Trap              : init_Trap()                  ; break ;
+        case _G4Trd               : init_Trd()                   ; break ;
     }
 
     if(!root) std::cerr << "U4Solid::init_Constituents UNHANDLED SOLID TYPE " << type << "\n" << desc() << "\n" ;
@@ -834,17 +842,49 @@ inline void U4Solid::init_Trap()
     v[6][0] = cx_top - dx4 + dy2*alpha2 ; v[6][1] = cy_top + dy2 ; v[6][2] = +dz ;
     v[7][0] = cx_top + dx4 + dy2*alpha2 ; v[7][1] = cy_top + dy2 ; v[7][2] = +dz ;
 
-    // Compute 6 face planes from vertex triples (outward normals, CCW winding)
-    // Same face ordering as legacy Python (analytic/prism.py):
-    //   +X: v[3],v[7],v[5]   -X: v[0],v[4],v[6]
-    //   +Y: v[2],v[6],v[7]   -Y: v[1],v[5],v[4]
-    //   +Z: v[5],v[7],v[6]   -Z: v[3],v[1],v[0]
+    _setRoot_FromVertices(v) ;
+}
 
-    struct { int a, b, c; } faces[6] = {
+
+inline void U4Solid::init_Trd()
+{
+    const G4Trd* trd = dynamic_cast<const G4Trd*>(solid);
+    assert(trd);
+
+    double dx1 = trd->GetXHalfLength1()/CLHEP::mm ;  // x at -z face
+    double dx2 = trd->GetXHalfLength2()/CLHEP::mm ;  // x at +z face
+    double dy1 = trd->GetYHalfLength1()/CLHEP::mm ;
+    double dy2 = trd->GetYHalfLength2()/CLHEP::mm ;
+    double dz  = trd->GetZHalfLength()/CLHEP::mm ;
+
+    // 8 vertices using same {x-sign, y-sign, z-sign} bit convention as init_Trap
+    double v[8][3] ;
+    v[0][0] = -dx1 ; v[0][1] = -dy1 ; v[0][2] = -dz ;
+    v[1][0] = +dx1 ; v[1][1] = -dy1 ; v[1][2] = -dz ;
+    v[2][0] = -dx1 ; v[2][1] = +dy1 ; v[2][2] = -dz ;
+    v[3][0] = +dx1 ; v[3][1] = +dy1 ; v[3][2] = -dz ;
+    v[4][0] = -dx2 ; v[4][1] = -dy2 ; v[4][2] = +dz ;
+    v[5][0] = +dx2 ; v[5][1] = -dy2 ; v[5][2] = +dz ;
+    v[6][0] = -dx2 ; v[6][1] = +dy2 ; v[6][2] = +dz ;
+    v[7][0] = +dx2 ; v[7][1] = +dy2 ; v[7][2] = +dz ;
+
+    _setRoot_FromVertices(v) ;
+}
+
+
+// Compute 6 outward face planes + AABB from 8 vertices, install as CSG_CONVEXPOLYHEDRON root.
+// Vertex index convention: bit0=x-sign, bit1=y-sign, bit2=z-sign (0=-, 1=+).
+// Face triples are CCW from outside, so BA x CA gives outward normal.
+//   +X: v[3],v[7],v[5]   -X: v[0],v[4],v[6]
+//   +Y: v[2],v[6],v[7]   -Y: v[1],v[5],v[4]
+//   +Z: v[5],v[7],v[6]   -Z: v[3],v[1],v[0]
+inline void U4Solid::_setRoot_FromVertices(const double v[8][3])
+{
+    static const int faces[6][3] = {
         {3,7,5}, {0,4,6}, {2,6,7}, {1,5,4}, {5,7,6}, {3,1,0}
     };
 
-    double planes[24] ;  // 6 planes * 4 doubles (nx,ny,nz,d)
+    double planes[24] ;
     double bbmin[3] = { 1e30,  1e30,  1e30 } ;
     double bbmax[3] = {-1e30, -1e30, -1e30 } ;
 
@@ -857,13 +897,11 @@ inline void U4Solid::init_Trap()
 
     for(int f = 0 ; f < 6 ; f++)
     {
-        double* A = v[faces[f].a] ;
-        double* B = v[faces[f].b] ;
-        double* C = v[faces[f].c] ;
-        // BA = B - A, CA = C - A
+        const double* A = v[faces[f][0]] ;
+        const double* B = v[faces[f][1]] ;
+        const double* C = v[faces[f][2]] ;
         double ba[3] = { B[0]-A[0], B[1]-A[1], B[2]-A[2] } ;
         double ca[3] = { C[0]-A[0], C[1]-A[1], C[2]-A[2] } ;
-        // n = BA x CA
         double nx = ba[1]*ca[2] - ba[2]*ca[1] ;
         double ny = ba[2]*ca[0] - ba[0]*ca[2] ;
         double nz = ba[0]*ca[1] - ba[1]*ca[0] ;
