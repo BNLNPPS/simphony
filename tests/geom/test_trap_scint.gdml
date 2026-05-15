@@ -65,7 +65,7 @@
 
   <solids>
     <box name="WorldSolid" x="2000" y="2000" z="2000" lunit="mm"/>
-    <trap name="TrapSolid" z="400" theta="0" phi="0"
+    <trap name="TrapSolid" z="400" theta="10" phi="30"
           y1="300" x1="200" x2="60" alpha1="-15"
           y2="300" x3="200" x4="60" alpha2="-15"
           aunit="deg" lunit="mm"/>
