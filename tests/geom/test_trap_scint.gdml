@@ -16,6 +16,7 @@
     <matrix coldim="1" name="RESOLUTION_SCALE" values="1.0"/>
     <matrix coldim="1" name="FAST_TIME_CONST" values="2.0"/>
     <matrix coldim="1" name="YIELD_RATIO" values="1.0"/>
+    <matrix coldim="2" name="REEMISSION_PROB" values="1.55e-06 0.0 1.55e-05 0.0"/>
 
     <matrix coldim="2" name="REFLECTIVITY_Det" values="1.55e-06 0 6.2e-06 0 1.033e-05 0 1.55e-05 0"/>
     <matrix coldim="2" name="EFFICIENCY_Det" values="1.55e-06 1 6.2e-06 1 1.033e-05 1 1.55e-05 1"/>
@@ -37,12 +38,25 @@
       <fraction n="0.5326" ref="Oxygen"/>
       <property name="RINDEX" ref="RINDEX_Quartz"/>
       <property name="ABSLENGTH" ref="ABSLENGTH_Quartz"/>
-      <!-- Synthetic scintillation properties (Quartz isn't really a scintillator) -->
+      <!-- Synthetic scintillation properties (Quartz isn't really a scintillator).
+           Both new (G4 11.x) and old (G4 10.x / Opticks U4Scint) names are
+           required: G4 reads the new ones to fire G4Scintillation; U4Scint
+           reads the old ones (FASTCOMPONENT, SLOWCOMPONENT, REEMISSIONPROB)
+           to initialize the GPU wavelength ICDF. Missing either set leaves
+           one side without a working scintillation path. -->
+      <!-- Geant4 11.x scintillation property names -->
       <property name="SCINTILLATIONYIELD" ref="SCINT_YIELD"/>
       <property name="RESOLUTIONSCALE" ref="RESOLUTION_SCALE"/>
       <property name="SCINTILLATIONCOMPONENT1" ref="SCINT_SPECTRUM"/>
       <property name="SCINTILLATIONTIMECONSTANT1" ref="FAST_TIME_CONST"/>
       <property name="SCINTILLATIONYIELD1" ref="YIELD_RATIO"/>
+      <!-- Geant4 10.x / Opticks U4Scint property names (point to same matrices) -->
+      <property name="FASTCOMPONENT" ref="SCINT_SPECTRUM"/>
+      <property name="SLOWCOMPONENT" ref="SCINT_SPECTRUM"/>
+      <property name="FASTTIMECONSTANT" ref="FAST_TIME_CONST"/>
+      <property name="SLOWTIMECONSTANT" ref="FAST_TIME_CONST"/>
+      <property name="YIELDRATIO" ref="YIELD_RATIO"/>
+      <property name="REEMISSIONPROB" ref="REEMISSION_PROB"/>
     </material>
   </materials>
 
