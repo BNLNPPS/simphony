@@ -24,8 +24,6 @@ set(SOURCES
     SProf.cc
     SMeta.cc
 
-
-    SStr.cc
     SPath.cc
     SSeq.cc
     STranche.cc
@@ -147,7 +145,6 @@ set(HEADERS
     SSys.hh
 
     sstr.h
-    SStr.hh
 
     schrono.h
     stimer.h

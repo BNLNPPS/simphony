@@ -19,7 +19,6 @@
 
 #include "smeta.h"
 #include "SSim.hh"
-#include "SStr.hh"
 
 // TODO: migrate to spath.h
 #include "SPath.hh"
@@ -1152,7 +1151,7 @@ void CSGFoundry::findSolidIdx(std::vector<unsigned>& solid_idx, const char* labe
     std::vector<unsigned>& ss = solid_idx ;
 
     std::vector<std::string> elem ;
-    SStr::Split(label, ',', elem );
+    sstr::Split(label, ',', elem );
 
     for(unsigned i=0 ; i < elem.size() ; i++)
     {
@@ -1161,7 +1160,7 @@ void CSGFoundry::findSolidIdx(std::vector<unsigned>& solid_idx, const char* labe
         {
             const CSGSolid& so = solid[j];
 
-            bool match = SStr::SimpleMatch(so.label, ele.c_str()) ;
+            bool match = sstr::SimpleMatch(so.label, ele.c_str()) ;
             unsigned count = std::count(ss.begin(), ss.end(), j );  // count if j is already collected
             if(match && count == 0) ss.push_back(j) ;
         }
@@ -1318,14 +1317,18 @@ std::string CSGFoundry::detailPrim(unsigned primIdx) const
     float4 ce = pr->ce();
 
     std::stringstream ss ;
+    auto label_value = [](const char* label, int value)
+    {
+        return sstr::Format_("%s:%d", label, value);
+    };
     ss
-        << std::setw(10) << SStr::Format(" pri:%d", primIdx )
-        << std::setw(10) << SStr::Format(" lpr:%d", pr_primIdx )
-        << std::setw(8)  << SStr::Format(" gas:%d", gasIdx )
-        << std::setw(8)  << SStr::Format(" msh:%d", meshIdx)
-        << std::setw(8)  << SStr::Format(" bnd:%d", boundary)
-        << std::setw(8)  << SStr::Format(" nno:%d", numNode )
-        << std::setw(10)  << SStr::Format(" nod:%d", nodeOffset )
+        << std::setw(10) << label_value("pri", primIdx)
+        << std::setw(10) << label_value("lpr", pr_primIdx)
+        << std::setw(8)  << label_value("gas", gasIdx)
+        << std::setw(8)  << label_value("msh", meshIdx)
+        << std::setw(8)  << label_value("bnd", boundary)
+        << std::setw(8)  << label_value("nno", numNode)
+        << std::setw(10) << label_value("nod", nodeOffset)
         << " ce "
         << "(" << std::setw(10) << std::fixed << std::setprecision(2) << ce.x
         << "," << std::setw(10) << std::fixed << std::setprecision(2) << ce.y
@@ -4030,7 +4033,6 @@ void CSGFoundry::kludgeScalePrimBBox( unsigned solidIdx, float dscale )
         pr->scaleAABB_(scale);
     }
 }
-
 
 
 

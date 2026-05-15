@@ -30,7 +30,7 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include "SEventConfig.hh"
 #include "SGeoConfig.hh"
 #include "SSim.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SEvt.hh"
 #include "SMeta.hh"
 #include "SPath.hh"
@@ -1370,7 +1370,7 @@ void CSGOptiX::snap(const char* path_, const char* bottom_line, const char* top_
     LOG(LEVEL) << " path " << path ;
 
     const char* top_extra = pip->desc();
-    const char* topline = SStr::Concat(top_line, top_extra);
+    const std::string topline = sstr::Concat_(top_line, top_extra);
 
     LOG(LEVEL) << " path_ [" << path_ << "]" ;
     LOG(LEVEL) << " topline " << topline  ;
@@ -1387,14 +1387,14 @@ void CSGOptiX::snap(const char* path_, const char* bottom_line, const char* top_
     LOG(LEVEL) << "] frame.download " ;
 
     LOG(LEVEL) << "[ frame.annotate " ;
-    framebuf->annotate( bottom_line, topline, line_height );
+    framebuf->annotate( bottom_line, topline.c_str(), line_height );
     LOG(LEVEL) << "] frame.annotate " ;
 
     LOG(LEVEL) << "[ frame.snap " ;
     framebuf->snap( path  );
     LOG(LEVEL) << "] frame.snap " ;
 
-    if(!flight || SStr::Contains(path,"00000"))
+    if(!flight || sstr::Contains(path,"00000"))
     {
         saveMeta(path);
     }
@@ -1416,7 +1416,7 @@ int CSGOptiX::render_flightpath() // for making mp4 movies
 
 void CSGOptiX::saveMeta(const char* jpg_path) const
 {
-    const char* json_path = SStr::ReplaceEnd(jpg_path, ".jpg", ".json");
+    const std::string json_path = sstr::ReplaceEnd_(jpg_path, ".jpg", ".json");
     LOG(LEVEL) << "[ json_path " << json_path  ;
 
     nlohmann::json& js = meta->js ;
@@ -1442,7 +1442,7 @@ void CSGOptiX::saveMeta(const char* jpg_path) const
         js["av"] = av ;
     }
 
-    meta->save(json_path);
+    meta->save(json_path.c_str());
     LOG(LEVEL) << "] json_path " << json_path  ;
 }
 

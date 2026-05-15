@@ -42,7 +42,6 @@ if [ "${arg/build}" != "$arg" ]; then
          ../OpticksPhoton.cc \
          ../SBit.cc \
          ../SAr.cc \
-         ../SStr.cc \
          ../SSys.cc \
          ../SGenstep.cc \
          ../SLOG.cc \
@@ -73,4 +72,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi
 
 exit 0 
-

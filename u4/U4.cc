@@ -18,7 +18,6 @@
 #include "OpticksGenstep.h"
 
 #include "SPath.hh"
-#include "SStr.hh"
 #include "NP.hh"
 #include "SLOG.hh"
 #include "sscint.h"
@@ -427,4 +426,3 @@ void U4::GenPhotonSecondaries( const G4Track* , const G4VParticleChange* )
 {
     // do nothing
 }
-

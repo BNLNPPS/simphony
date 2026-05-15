@@ -15,7 +15,7 @@ For lower level tests see::
 
 #include "OPTICKS_LOG.hh"
 #include "SSys.hh"
-#include "SStr.hh"
+#include "sstr.h"
 #include "SPath.hh"
 #include "NP.hh"
 
@@ -27,6 +27,16 @@ For lower level tests see::
 #include "csg_intersect_leaf.h"
 #include "csg_intersect_node.h"
 #include "csg_intersect_tree.h"
+
+namespace
+{
+    std::vector<int>* ParseIntList(const char* spec, char delim)
+    {
+        auto* values = new std::vector<int>();
+        if(spec) sstr::split<int>(*values, spec, delim);
+        return values;
+    }
+}
 
 struct Scan 
 {
@@ -59,8 +69,8 @@ Scan::Scan()
     shifted(true),
     modes_(SSys::getenvvar("MODES", "0,1,2,3")),
     axes_(SSys::getenvvar("AXES", "0,2,1")),  // X,Z,Y  3rd gets set to zero 
-    modes(SStr::ISplit(modes_, ',')),
-    axes(SStr::ISplit(axes_, ',')),
+    modes(ParseIntList(modes_, ',')),
+    axes(ParseIntList(axes_, ',')),
     simtrace(NP::Make<float>(modes->size(),num,4,4)),
     qq((quad4*)simtrace->values<float>()),
     fold(SPath::Resolve("$TMP/CSGNodeScanTest", geom, DIRPATH )) 

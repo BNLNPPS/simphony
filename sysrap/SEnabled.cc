@@ -1,5 +1,5 @@
 #include <vector>
-#include "SStr.hh"
+#include "sstr.h"
 #include "SEnabled.hh"
 
 template<unsigned N>
@@ -9,7 +9,7 @@ SEnabled<N>::SEnabled(const char* spec)
 {
     char delim = ',' ; 
     std::vector<int> ivec ; 
-    SStr::ISplit( spec, ivec, delim );  
+    sstr::split<int>( ivec, spec, delim );  
 
     for(unsigned i=0 ; i < ivec.size() ; i++)
     {
@@ -39,5 +39,4 @@ template struct SEnabled<128>;
 template struct SEnabled<256>;
 template struct SEnabled<512>;
 template struct SEnabled<1024>;
-
 

@@ -36,13 +36,33 @@
 #include <unistd.h>    // for chdir
 
 
-#include "SStr.hh"
+#include <iomanip>
+
 #include "SPath.hh"
 #include "SOpticksResource.hh"
 #include "SLOG.hh"
 
 
 const plog::Severity SPath::LEVEL = SLOG::EnvLevel("SPath", "DEBUG"); 
+
+namespace
+{
+    std::string FormatResolveIndex(int idx, bool prefix, int wid=3)
+    {
+        std::stringstream ss ;
+        if(prefix) ss << ( idx == 0 ? 'z' : ( idx < 0 ? 'n' : 'p' ) );
+        ss << std::setfill('0') << std::setw(wid) << std::abs(idx) ;
+        return ss.str();
+    }
+
+    template<typename T>
+    std::string FormatFixedReal(const T value, int w, int p, char fill='0')
+    {
+        std::stringstream ss ;
+        ss << std::fixed << std::setfill(fill) << std::setw(w) << std::setprecision(p) << value ;
+        return ss.str();
+    }
+}
 
 
 const char* SPath::Stem( const char* name ) // static
@@ -325,17 +345,20 @@ const char* SPath::Resolve(const char* dir, const char* reldir, const char* rel2
 const char* SPath::Resolve(const char* dir, int idx, int create_dirs)
 {
     bool prefix = true ; 
-    return SPath::Resolve(dir, SStr::FormatIndex(idx, prefix), create_dirs); 
+    const std::string name = FormatResolveIndex(idx, prefix);
+    return SPath::Resolve(dir, name.c_str(), create_dirs); 
 }
 const char* SPath::Resolve(const char* dir, const char* name, int idx, int create_dirs)
 {
     bool prefix = true ; 
-    return SPath::Resolve(dir, name, SStr::FormatIndex(idx, prefix), create_dirs); 
+    const std::string leaf = FormatResolveIndex(idx, prefix);
+    return SPath::Resolve(dir, name, leaf.c_str(), create_dirs); 
 }
 const char* SPath::Resolve(const char* dir, const char* reldir, const char* name, int idx, int create_dirs)
 {
     bool prefix = true ; 
-    return SPath::Resolve(dir, reldir, name, SStr::FormatIndex(idx, prefix), create_dirs); 
+    const std::string leaf = FormatResolveIndex(idx, prefix);
+    return SPath::Resolve(dir, reldir, name, leaf.c_str(), create_dirs); 
 }
 
 
@@ -509,9 +532,9 @@ int SPath::mtime(const char* path)
 template<typename T>
 const char* SPath::MakePath( const char* prefix, const char* reldir, const T real, const char* name)  // static
 {
-    const char* sreal = SStr::FormatReal<T>(real, 6, 4, '0');
+    const std::string sreal = FormatFixedReal(real, 6, 4, '0');
     int create_dirs = 2 ;  // 2:dirpath
-    const char* fold = SPath::Resolve(prefix, reldir, sreal, create_dirs ); 
+    const char* fold = SPath::Resolve(prefix, reldir, sreal.c_str(), create_dirs ); 
     const char* path = SPath::Resolve(fold, name, 0 ) ;  // 0:create_dirs nop
     return path ; 
 } 
@@ -543,13 +566,15 @@ std::string SPath::MakeName( const char* stem, int index, const char* ext )
     std::string name ; 
     if( index > -1 )
     {
+        std::stringstream ss ;
+        ss << std::setfill('0') << std::setw(5) << index ;
         if( stem && ext )
         {
-            name = SStr::Format("%s%0.5d%s", stem, index, ext ) ; 
+            name = std::string(stem) + ss.str() + ext ; 
         }
         else if( stem == nullptr && ext )
         {
-            name = SStr::Format("%0.5d%s", index, ext ) ; 
+            name = ss.str() + ext ; 
         }
     }
     else
@@ -670,5 +695,4 @@ const char* SPath::Join( Args ... args )
 template const char* SPath::Join( const char*, const char* ); 
 template const char* SPath::Join( const char*, const char*, const char* ); 
 template const char* SPath::Join( const char*, const char*, const char*, const char* ); 
-
 
