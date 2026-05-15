@@ -328,6 +328,11 @@ struct EventAction : G4UserEventAction
         G4HCofThisEvent *hce = event->GetHCofThisEvent();
         if (hce)
         {
+            std::ofstream g4OutFile;
+            int eventID = event->GetEventID();
+            g4OutFile.open("g4_hits_output.txt",
+                           eventID == 0 ? std::ios::out : std::ios::app);
+
             for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
             {
                 G4VHitsCollection *hc = hce->GetHC(i);
@@ -335,7 +340,22 @@ struct EventAction : G4UserEventAction
                 {
                     fTotalG4Hits += hc->GetSize();
                 }
+                PhotonHitsCollection *phc = dynamic_cast<PhotonHitsCollection *>(hc);
+                if (phc && g4OutFile.is_open())
+                {
+                    for (size_t j = 0; j < phc->entries(); j++)
+                    {
+                        const PhotonHit *p = (*phc)[j];
+                        g4OutFile << p->ftime << " "
+                                  << 1239.84 / p->fenergy << "  "
+                                  << "(" << p->fposition.x() << ", " << p->fposition.y() << ", " << p->fposition.z() << ")  "
+                                  << "(" << p->fdirection.x() << ", " << p->fdirection.y() << ", " << p->fdirection.z() << ")  "
+                                  << "(" << p->fpolarization.x() << ", " << p->fpolarization.y() << ", " << p->fpolarization.z() << ")"
+                                  << std::endl;
+                    }
+                }
             }
+            if (g4OutFile.is_open()) g4OutFile.close();
         }
     }
 
