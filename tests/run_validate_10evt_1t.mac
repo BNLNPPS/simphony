@@ -1,0 +1,7 @@
+# Single-thread validation macro: avoids race in the GPURaytrace G4 hit writer
+# (the writer is not MT-safe and otherwise loses ~12% of hits to the race).
+/run/verbose 1
+/run/numberOfThreads 1
+/process/optical/boundary/setInvokeSD true
+/run/initialize
+/run/beamOn 10

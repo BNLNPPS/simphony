@@ -1,0 +1,5 @@
+# Validation macro for multi-event Cherenkov tests.
+/run/verbose 1
+/process/optical/boundary/setInvokeSD true
+/run/initialize
+/run/beamOn 10
