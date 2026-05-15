@@ -21,7 +21,7 @@
 set -e
 
 EIC_OPTICKS_BIN=${EIC_OPTICKS_BIN:-/opt/eic-opticks/bin}
-EIC_OPTICKS_CFG=${EIC_OPTICKS_CFG:-/opt/eic-opticks/share/eic-opticks/config}
+EIC_OPTICKS_CFG=${EIC_OPTICKS_CFG:-/opt/eic-opticks/share/simphony/config}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
