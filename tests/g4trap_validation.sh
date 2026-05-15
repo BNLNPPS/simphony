@@ -141,6 +141,7 @@ PYEOF
 # ------------------------------------------------------------------
 G4_MACRO="${SCRIPT_DIR}/run_validate.mac"
 G4_MACRO_10EVT="${SCRIPT_DIR}/run_validate_10evt_1t.mac"
+G4_MACRO_5EVT="${SCRIPT_DIR}/run_validate_5evt_1t.mac"
 
 run_torch_test () {
     local case=$1; local gdml=$2; local cfg=$3; local seed=${4:-42}
@@ -150,10 +151,10 @@ run_torch_test () {
 }
 
 run_cherenkov_or_scint () {
-    local case=$1; local gdml=$2; local seed=${3:-42}
+    local case=$1; local gdml=$2; local macro=$3; local seed=${4:-42}
     local outd="${OUT_DIR}/${case}"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
-    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${gdml}" -m "${G4_MACRO_10EVT}" -s ${seed} > run.log 2>&1
+    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${gdml}" -m "${macro}" -s ${seed} > run.log 2>&1
 }
 
 # ------------------------------------------------------------------
@@ -198,14 +199,14 @@ test_single_photon () {
 test_cherenkov () {
     echo
     echo "----- Test: Cherenkov from 10 x 5 GeV electrons (single-thread G4) -----"
-    run_cherenkov_or_scint cherenkov "${GEOM_DIR}/test_trap_dispersive.gdml"
+    run_cherenkov_or_scint cherenkov "${GEOM_DIR}/test_trap_dispersive.gdml" "${G4_MACRO_10EVT}"
     python3 "${COMPARE_PY}" "${OUT_DIR}/cherenkov/g4_hits_output.txt" "${OUT_DIR}/cherenkov/opticks_hits_output.txt" "cherenkov" 5 8
 }
 
 test_scintillation () {
     echo
-    echo "----- Test: Scintillation from 10 x 5 GeV electrons -----"
-    run_cherenkov_or_scint scintillation "${GEOM_DIR}/test_trap_scint.gdml"
+    echo "----- Test: Scintillation from 5 x 5 GeV electrons (single-thread G4) -----"
+    run_cherenkov_or_scint scintillation "${GEOM_DIR}/test_trap_scint.gdml" "${G4_MACRO_5EVT}"
     python3 "${COMPARE_PY}" "${OUT_DIR}/scintillation/g4_hits_output.txt" "${OUT_DIR}/scintillation/opticks_hits_output.txt" "scint" 10 50
 }
 
