@@ -5,7 +5,7 @@
   <define>
     <matrix coldim="2" name="RINDEX_Vacuum" values="1.55e-06 1.0 6.2e-06 1.0 1.033e-05 1.0 1.55e-05 1.0"/>
     <matrix coldim="2" name="RINDEX_Quartz" values="1.55e-06 1.46 6.2e-06 1.46 1.033e-05 1.46 1.55e-05 1.46"/>
-    <matrix coldim="2" name="ABSLENGTH_Quartz" values="1.55e-06 1000000 6.2e-06 1000000 1.033e-05 1000000 1.55e-05 1000000"/>
+    <matrix coldim="2" name="ABSLENGTH_Quartz" values="1.55e-06 100000 6.2e-06 100000 1.033e-05 100000 1.55e-05 100000"/>
     <matrix coldim="2" name="REFLECTIVITY_Det" values="1.55e-06 0 6.2e-06 0 1.033e-05 0 1.55e-05 0"/>
     <matrix coldim="2" name="EFFICIENCY_Det" values="1.55e-06 1 6.2e-06 1 1.033e-05 1 1.55e-05 1"/>
   </define>
