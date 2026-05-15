@@ -97,16 +97,7 @@ fi
 export A_FOLD     # A_FOLD is needed for loading "$A_FOLD/sframe.npy" 
 export A_CFBASE   # A_CFBASE needed for loading  "$A_CFBASE/CSGFoundry/SSim"
 
-export ShimG4OpAbsorption_FLOAT=1 
-export ShimG4OpRayleigh_FLOAT=1 
-
-# cf U4Physics::Desc
-physdesc=""
-[ -n "$ShimG4OpAbsorption_FLOAT" ] && physdesc="${physdesc}ShimG4OpAbsorption_FLOAT" 
-[ -z "$ShimG4OpAbsorption_FLOAT" ] && physdesc="${physdesc}ShimG4OpAbsorption_ORIGINAL" 
-physdesc="${physdesc}_"
-[ -n "$ShimG4OpRayleigh_FLOAT" ]   && physdesc="${physdesc}ShimG4OpRayleigh_FLOAT"
-[ -z "$ShimG4OpRayleigh_FLOAT" ]   && physdesc="${physdesc}ShimG4OpRayleigh_ORIGINAL"
+physdesc="G4OpAbsorption_G4OpRayleigh"
 
 #sel=PIDX_0_
 sel=ALL
