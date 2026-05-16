@@ -111,6 +111,7 @@ Config::Config(std::string config_name) :
     name{config_name},
     event_mode{EventMode::Minimal},
     maxslot{0},
+    max_bounce{static_cast<int>(SEventConfig::MaxBounce())},
     output_dir{std::filesystem::current_path()},
     torch{}
 {
@@ -222,6 +223,8 @@ void Config::ReadConfig(std::string filepath)
 
         event_mode = ReadEventMode(event_);
         maxslot = event_["maxslot"].get<int>();
+        if (event_.contains("max_bounce"))
+            max_bounce = event_["max_bounce"].get<int>();
         output_dir = ReadOutputDir(event_);
     }
     catch (nlohmann::json::exception& e)
@@ -241,6 +244,7 @@ void Config::Apply() const
 
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetMaxSlot(maxslot);
+    SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetOutFold(output_dir_str.c_str());
 }
 

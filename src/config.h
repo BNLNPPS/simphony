@@ -45,6 +45,9 @@ class Config
     /// Maximum event slots applied to SEventConfig.
     int maxslot;
 
+    /// Maximum photon bounce count.
+    int max_bounce;
+
     /// Base directory for event output folders.
     std::filesystem::path output_dir;
 
