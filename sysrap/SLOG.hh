@@ -23,10 +23,11 @@
 SLOG.hh
 ==========
 
-See SLOG.rst for notes. 
+Shared Opticks logging infrastructure built on plog.
+Use OPTICKS_LOG.hh from executable entry points to initialize the
+main logger and package-specific loggers.
 
 **/
-
 
 #include <cstddef>
 #include <string>
@@ -129,4 +130,3 @@ struct SYSRAP_API SLOG
 #endif
 
 #define sLOG(severity, delta)     LOG_(SLOG_DEFAULT_INSTANCE_ID, SLOG::Delta(severity,delta))
-

@@ -132,8 +132,6 @@ target_compile_definitions( ${name} PUBLIC OPTICKS_U4 ) # THIS MUST BE PUBLIC FO
 target_compile_definitions( ${name} PUBLIC GLM_ENABLE_EXPERIMENTAL )
 
 target_compile_definitions( ${name} PRIVATE G4USE_STD11 )
-target_compile_definitions( ${name} PRIVATE STANDALONE )
-
 
 if(PMTSim_standalone_FOUND)
     target_link_libraries( ${name} PUBLIC Opticks::PMTSim_standalone )

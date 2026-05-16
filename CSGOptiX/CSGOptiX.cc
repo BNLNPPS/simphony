@@ -1190,21 +1190,13 @@ std::string CSGOptiX::AnnotationTime( double dt, const char* extra )  // static
     std::string str = ss.str();
     return str ;
 }
-std::string CSGOptiX::Annotation( double dt, const char* bot_line, const char* extra )  // static
-{
-    std::stringstream ss ;
-    ss << AnnotationTime(dt, extra) ;
-    if(bot_line) ss << std::setw(30) << " " << bot_line ;
-    std::string str = ss.str();
-    return str ;
-}
 
 const char* CSGOptiX::getDefaultSnapPath() const
 {
     assert( foundry );
     const char* cfbase = foundry->getOriginCFBase();
     assert( cfbase );
-    const char* path = SPath::Resolve(cfbase, "CSGOptiX/snap.jpg" , FILEPATH );
+    const char* path = SPath::Resolve(cfbase, "CSGOptiX/snap.npy", FILEPATH);
     return path ;
 }
 
@@ -1305,11 +1297,11 @@ void CSGOptiX::render_save_(const char* stem_, bool inverted)
     const char* stem = stem_ ? stem_ : getRenderStemDefault() ;  // without ext
 
     bool unique = true ;
-    const char* outpath = SEventConfig::OutPath(stem, -1, ".jpg", unique );
+    const char* outpath = SEventConfig::OutPath(stem, -1, ".npy", unique);
 
     LOG(LEVEL)
-          << SEventConfig::DescOutPath(stem, -1, ".jpg", unique );
-          ;
+        << SEventConfig::DescOutPath(stem, -1, ".npy", unique);
+    ;
 
     std::string u_outdir ;
     std::string u_stem ;
@@ -1320,37 +1312,25 @@ void CSGOptiX::render_save_(const char* stem_, bool inverted)
 
     sglm->addlog("CSGOptiX::render_snap", u_stem.c_str() );
 
-
-    const char* topline = ssys::getenvvar("TOPLINE", sproc::ExecutableName() );
     std::string _extra = SEventConfig::GetGPUMeta();  // scontext::brief giving GPU name
     const char* extra = strdup(_extra.c_str()) ;
-
-    const char* botline_ = ssys::getenvvar("BOTLINE", nullptr );
-    std::string bottom_line = CSGOptiX::Annotation(kernel_dt, botline_, extra );
-    const char* botline = bottom_line.c_str() ;
-
 
     LOG(LEVEL)
           << " stem " << stem
           << " outpath " << outpath
           << " outdir " << ( outdir ? outdir : "-" )
           << " kernel_dt " << kernel_dt
-          << " topline [" <<  topline << "]"
-          << " botline [" <<  botline << "]"
           ;
 
     LOG(info) << outpath  << " : " << AnnotationTime(kernel_dt, extra)  ;
 
-    unsigned line_height = 24 ;
-    snap(outpath, botline, topline, line_height, inverted  );
-
+    snap(outpath, inverted);
 
     sglm->save( u_outdir.c_str(), u_stem.c_str() );
 }
 
-
 /**
-CSGOptiX::snap : Download frame pixels and write to file as jpg.
+CSGOptiX::snap : Download frame pixels and write to file as NPY.
 ------------------------------------------------------------------
 
 WIP: contrast this with SGLFW::snap_local and consider if more consolidation is possible
@@ -1364,16 +1344,11 @@ CSGOptiX::snap
 
 **/
 
-void CSGOptiX::snap(const char* path_, const char* bottom_line, const char* top_line, unsigned line_height, bool inverted )
+void CSGOptiX::snap(const char* path_, bool inverted)
 {
     const char* path = path_ ? SPath::Resolve(path_, FILEPATH ) : getDefaultSnapPath() ;
     LOG(LEVEL) << " path " << path ;
-
-    const char* top_extra = pip->desc();
-    const char* topline = SStr::Concat(top_line, top_extra);
-
     LOG(LEVEL) << " path_ [" << path_ << "]" ;
-    LOG(LEVEL) << " topline " << topline  ;
 
     LOG(LEVEL) << "[ frame.download " ;
     if( inverted == false )
@@ -1385,10 +1360,6 @@ void CSGOptiX::snap(const char* path_, const char* bottom_line, const char* top_
         framebuf->download_inverted();
     }
     LOG(LEVEL) << "] frame.download " ;
-
-    LOG(LEVEL) << "[ frame.annotate " ;
-    framebuf->annotate( bottom_line, topline, line_height );
-    LOG(LEVEL) << "] frame.annotate " ;
 
     LOG(LEVEL) << "[ frame.snap " ;
     framebuf->snap( path  );
@@ -1414,13 +1385,14 @@ int CSGOptiX::render_flightpath() // for making mp4 movies
     return 1 ;
 }
 
-void CSGOptiX::saveMeta(const char* jpg_path) const
+void CSGOptiX::saveMeta(const char* path) const
 {
-    const char* json_path = SStr::ReplaceEnd(jpg_path, ".jpg", ".json");
+    const char* json_path = SStr::ReplaceEnd(path, ".npy", ".json");
     LOG(LEVEL) << "[ json_path " << json_path  ;
 
     nlohmann::json& js = meta->js ;
-    js["jpg"] = jpg_path ;
+    js["path"] = path;
+    js["npy"] = path;
     js["emm"] = SGeoConfig::EnabledMergedMesh() ;
 
     if(foundry->hasMeta())

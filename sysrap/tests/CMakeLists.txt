@@ -145,18 +145,8 @@ set(BASH_RUN_TEST_SOURCES
 
     SSceneLoadTest.cc
 )
-
 if(NLJSON_FOUND)
    list(APPEND TEST_SOURCES SMetaTest.cc)
-endif()
-
-
-if(WITH_SIMG)
-   list(APPEND TEST_SOURCES SIMGTest.cc)
-endif()
-
-if(WITH_STTF)
-   list(APPEND TEST_SOURCES STTFTest.cc)
 endif()
 
 

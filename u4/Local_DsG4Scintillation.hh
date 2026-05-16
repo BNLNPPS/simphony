@@ -90,11 +90,6 @@
 #include "G4PhysicsOrderedFreeVector.hh"
 #include "G4UImessenger.hh"
 
-#ifdef STANDALONE
-#else
-#include "DsPhysConsOptical.h"
-#endif
-
 class G4UIcommand;
 class G4UIdirectory;
 

@@ -7,22 +7,13 @@
 
 #include "SFrameConfig.hh"
 #include "SComp.h"
-#include "SStr.hh"
 #include "SPath.hh"
 #include "SLOG.hh"
 #include "NP.hh"
 #include "Frame.h"
 
-#define SIMG_IMPLEMENTATION 1 
-#include "SIMG.h"
-
 
 const plog::Severity Frame::LEVEL = SLOG::EnvLevel("Frame", "DEBUG" ); 
-
-unsigned Frame::getNumPixels() const 
-{
-    return num_pixels ; 
-}
 
 /**
 Frame::Frame
@@ -58,8 +49,6 @@ Frame::Frame(int width_, int height_, int depth_, uchar4* d_pixel_, float4* d_is
     height(height_),
     depth(depth_),
     channels(4),
-    jpg_quality(SStr::GetEValue<int>("QUALITY", 50)),
-    img(new SIMG(width, height, channels,  nullptr )),
     num_pixels(width*height),  
     d_pixel(d_pixel_ == nullptr     ? DeviceAlloc<uchar4>(num_pixels, mask & SCOMP_PIXEL   ) : d_pixel_  ),
     d_isect(d_isect_ == nullptr     ? DeviceAlloc<float4>(num_pixels, mask & SCOMP_ISECT   ) : d_isect_  ),
@@ -107,10 +96,8 @@ void Frame::download_(bool flip_vertical)
     if(d_fphoton) QU::Download<quad4>(photon, d_fphoton, num_pixels ); 
 #endif
 
-    if(d_pixel) 
-    {
-        img->setData( getPixelData(), flip_vertical ); 
-    }
+    if (d_pixel && flip_vertical)
+        flipPixelVertical();
 }
 
 void Frame::download()
@@ -122,46 +109,24 @@ void Frame::download_inverted()
     download_(false); 
 }
 
-
-
-unsigned char* Frame::getPixelData() const {     return d_pixel ? (unsigned char*)pixel.data() : nullptr ; }
 float*         Frame::getIntersectData() const { return d_isect ? (float*)isect.data()         : nullptr ; }
 #ifdef WITH_FRAME_PHOTON
 float*         Frame::getFPhotonData() const {   return d_fphoton ? (float*)fphoton.data()     : nullptr ; }
 #endif
 
-void Frame::annotate( const char* bottom_line, const char* top_line, int line_height )
+void Frame::flipPixelVertical()
 {
-    img->annotate( bottom_line, top_line, line_height ); 
+    for (int y = 0; y < height / 2; y++)
+        for (int x = 0; x < width; x++)
+        {
+            std::swap(pixel[y * width + x], pixel[(height - 1 - y) * width + x]);
+        }
 }
 
-void Frame::write(const char* outdir_, int quality) const 
+void Frame::writePixels(const char* path) const
 {
-    const char* outdir = SPath::Resolve(outdir_, DIRPATH); 
-    writePNG(outdir, "f_pixels.png");  
-    writeJPG(outdir, "f_pixels.jpg", quality);  
-    writeIsect(outdir, "f_isect.npy" ); // formerly posi.npy
-#ifdef WITH_FRAME_PHOTON
-    writeFPhoton(outdir, "f_photon.npy" ); 
-#endif
-}
-
-void Frame::writePNG(const char* dir, const char* name) const 
-{
-    img->writePNG(dir, name); 
-}
-void Frame::writePNG(const char* path) const 
-{
-    img->writePNG(path); 
-}
-
-void Frame::writeJPG(const char* dir, const char* name, int quality) const 
-{
-    img->writeJPG(dir, name, quality > 0 ? quality : jpg_quality ); 
-}
-void Frame::writeJPG(const char* path, int quality) const 
-{
-    img->writeJPG(path, quality > 0 ? quality : jpg_quality ); 
+    if (d_pixel)
+        NP::Write(path, (unsigned char*)pixel.data(), height, width, channels);
 }
 
 
@@ -181,12 +146,11 @@ void Frame::writeFPhoton( const char* dir, const char* name) const
 
 void Frame::snap( const char* path )
 {
-    LOG(LEVEL) << "[" ; 
+    LOG(LEVEL) << "[";
 
-    LOG(LEVEL) << "[ writeJPG " ; 
-    writeJPG( path ); 
-    LOG(LEVEL) << "] writeJPG " ; 
-
+    LOG(LEVEL) << "[ writePixels ";
+    writePixels(path);
+    LOG(LEVEL) << "] writePixels ";
 
     LOG(LEVEL) << "[ writeIntersectData " ; 
     const char* fold = SPath::Dirname(path); 

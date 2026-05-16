@@ -13,7 +13,6 @@
 #NP_delete_test.sh
 #NPFold_clear_test.sh
 #NPFold_test.sh
-#OpticksPhotonSTANDALONETest.sh
 #OpticksPhotonTest.sh
 #preprocessor_test.sh
 #RINDEX.sh
@@ -95,8 +94,6 @@ scerenkov_test.sh
 #SGLM_test.sh
 #sidxname_test.sh
 #signbitTest.sh
-#SIMGStandaloneTest.sh
-#SIMGTest.sh
 #SLabel_test.sh
 #SLaunchSequence_test.sh
 #sleak.sh
@@ -174,7 +171,6 @@ storch_test.sh
 #stree_sur_test.sh
 #stree_test.sh
 #strid_test.sh
-#STTFTest.sh
 #stv_test.sh
 #SUniformRand_test.sh
 #SUTest.sh
