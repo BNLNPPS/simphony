@@ -17,13 +17,8 @@ This is intended solely for use from U4AppTest
 class Local_G4Cerenkov_modified ; 
 class Local_DsG4Scintillation ; 
 
-#ifdef DEBUG_TAG
-class ShimG4OpAbsorption ;
-class ShimG4OpRayleigh ;
-#else
 class G4OpAbsorption ;
 class G4OpRayleigh ;
-#endif
 
 class G4VProcess ; 
 class G4ProcessManager ; 
@@ -40,13 +35,8 @@ struct U4_API U4Physics : public G4VUserPhysicsList
     Local_G4Cerenkov_modified*  fCerenkov ; 
     Local_DsG4Scintillation*    fScintillation ; 
 
-#ifdef DEBUG_TAG
-    ShimG4OpAbsorption*   fAbsorption ;
-    ShimG4OpRayleigh*     fRayleigh ;
-#else
     G4OpAbsorption*       fAbsorption ;
     G4OpRayleigh*         fRayleigh ;
-#endif
 
     G4VProcess*          fBoundary ; 
     G4FastSimulationManagerProcess*   fFastSim ;  
@@ -80,5 +70,3 @@ struct U4_API U4Physics : public G4VUserPhysicsList
     int OpBoundaryProcess_LASTPOST = 0 ; 
     int FastSim_ENABLE = 0 ; 
 };
-
-
