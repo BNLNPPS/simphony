@@ -25,7 +25,6 @@ SBit
 **/
 
 #include "SYSRAP_API_EXPORT.hh"
-#include "SYSRAP_HEAD.hh"
 #include <string>
 
 struct SYSRAP_API SBit 
@@ -59,7 +58,3 @@ struct SYSRAP_API SBit
     static constexpr const char* ALL = "~0" ; 
     static unsigned long long FromEString(const char* ekey, const char* fallback=ALL ); 
 }; 
-
-#include "SYSRAP_TAIL.hh"
-
-

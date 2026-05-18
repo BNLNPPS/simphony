@@ -1,7 +1,7 @@
 #pragma once
 /**
-scerenkov.h : replace (but stay similar to) : npy/NStep.hpp optixrap/cu/cerenkovstep.h
-========================================================================================
+scerenkov.h : Cerenkov genstep helpers
+======================================
 
 * FOLLOWING PATTERN OF storch.h
 
@@ -207,4 +207,3 @@ inline bool scerenkov::IsGenstepArray( const NP* a )
 
 
 #endif
-

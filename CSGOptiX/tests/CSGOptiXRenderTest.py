@@ -6,7 +6,7 @@ CSGOptiXRenderTest.py
 Selects slice rectangles from isect arrays::
 
     epsilon:CSGOptiX blyth$ i tests/CSGOptiXRenderTest.py 
-       a :   (1080, 1920, 4, 4) : /tmp/blyth/opticks/GeoChain_Darwin/GeneralSphereDEV/CSGOptiXRenderTest/cvd0/50001/ALL/top_i0_/cxr_geochain_GeneralSphereDEV_ALL_isect.npy 
+       a :   (1080, 1920, 4, 4) : /tmp/blyth/opticks/GeoChain/GeneralSphereDEV/CSGOptiXRenderTest/cvd0/50001/ALL/top_i0_/cxr_geochain_GeneralSphereDEV_ALL_isect.npy 
        b :         (3, 3, 4, 4) :  select the central portion of the image array  
 
 
@@ -14,7 +14,7 @@ Note that the first dimension is the smaller vertical 1080 one (in landscape asp
 Selecting vertical strip 3 pixels wide and 21 pixels high in the middle of the frame::
 
     epsilon:CSGOptiX blyth$ DYDX=10,1 i tests/CSGOptiXRenderTest.py 
-       a :   (1080, 1920, 4, 4) : /tmp/blyth/opticks/GeoChain_Darwin/GeneralSphereDEV/CSGOptiXRenderTest/cvd0/50001/ALL/top_i0_/cxr_geochain_GeneralSphereDEV_ALL_isect.npy 
+       a :   (1080, 1920, 4, 4) : /tmp/blyth/opticks/GeoChain/GeneralSphereDEV/CSGOptiXRenderTest/cvd0/50001/ALL/top_i0_/cxr_geochain_GeneralSphereDEV_ALL_isect.npy 
        b :        (21, 3, 4, 4) :  select the central portion of the image array  
 
 
@@ -26,15 +26,14 @@ Selecting 3x3 square in middle, happens to make an "H"::
 """
 
 import numpy as np
-import platform
+import os
 import matplotlib.pyplot as plt                   
 from opticks.ana.eget import efloat_, efloatlist_, eint_, eintlist_
 
 def isectpath():
-    geochain_suffix = "_Darwin" if platform.system() == "Darwin" else ""  
     geom = os.environ.get("GEOM", "GeneralSphereDEV")
     cvdver = os.environ.get("CVDVER", "cvd0/50001" ) 
-    fmt = "/tmp/$USER/opticks/GeoChain%(geochain_suffix)s/%(geom)s/CSGOptiXRenderTest/%(cvdver)s/ALL/top_i0_/cxr_geochain_%(geom)s_ALL_isect.npy" % locals() 
+    fmt = "/tmp/$USER/opticks/GeoChain/%(geom)s/CSGOptiXRenderTest/%(cvdver)s/ALL/top_i0_/cxr_geochain_%(geom)s_ALL_isect.npy" % locals() 
     path = os.path.expandvars(fmt)
     return path 
 
@@ -81,5 +80,4 @@ if __name__ == '__main__':
     axs[0].imshow( a_result ) 
     axs[1].imshow( b_result )
     fig.show()
-
 

@@ -103,21 +103,17 @@ struct QUDARAP_API QPMT
     int  get_lpmtidx_from_lpmtid(  int* lpmtidx, const int* lpmtid , int num ) const ;
     int  get_spmtidx_from_spmtid(  int* spmtidx, const int* spmtid , int num ) const ;
 
-    static NP* MakeArray_pmtcat(int etype, unsigned num_domain );
-    static NP* MakeArray_pmtid( int etype, unsigned num_domain, unsigned num_pmtid );
+    static NP *MakeArray_pmtcat(int etype, unsigned num_domain);
+    static NP *MakeArray_pmtid(int etype, unsigned num_domain, unsigned num_pmtid);
 
     // .cc
-    void pmtcat_check_domain_lookup_shape( int etype, const NP* domain, const NP* lookup) const ;
+    void pmtcat_check_domain_lookup_shape(int etype, const NP *domain, const NP *lookup) const;
 
-    static const T* Upload(const NP* arr, const char* label);
-    static T* Alloc(NP* out, const char* label);
+    static const T *Upload(const NP *arr, const char *label);
+    static T *Alloc(NP *out, const char *label);
 
-    NP*  pmtcat_scan(     int etype, const NP* domain) const ;
-    NP*  mct_lpmtid_scan(  int etype, const NP* domain, const NP* lpmtid) const ;
-
-    NP*  spmtid_scan(int etype, const NP* spmtid ) const ;
-
-
+    NP *pmtcat_scan(int etype, const NP *domain) const;
+    NP *spmtid_scan(int etype, const NP *spmtid) const;
 };
 
 
@@ -335,16 +331,7 @@ inline NP* QPMT<T>::MakeArray_pmtid(int etype, unsigned num_domain, unsigned num
     NP* lookup = nullptr ;
     switch(etype)
     {
-       case qpmt_SPEC:    lookup = NP::Make<T>( ni, nj, 4, 4  )       ; break ;
-       case qpmt_SPEC_ce: lookup = NP::Make<T>( ni, nj, 4, 4  )       ; break ;
-       case qpmt_ART:     lookup = NP::Make<T>( ni, nj, 4, 4  )       ; break ;
-       case qpmt_COMP:    lookup = NP::Make<T>( ni, nj, 1, 4, 4, 2 )  ; break ;
-       case qpmt_LL:      lookup = NP::Make<T>( ni, nj, 4, 4, 4, 2 )  ; break ;
-       case qpmt_ARTE:    lookup = NP::Make<T>( ni, nj, 4  )          ; break ;
-       case qpmt_ATQC:    lookup = NP::Make<T>( ni, nj, 4  )          ; break ;
        case qpmt_S_QESCALE:  lookup = NP::Make<T>( num_pmtid )        ; break ;
     }
     return lookup ;
 }
-
-

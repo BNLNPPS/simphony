@@ -215,6 +215,8 @@ SEvt::SEvt()
     fold(nullptr),
     extrafold(new NPFold),
     cf(nullptr),
+    sim(nullptr),
+    tree(nullptr),
     hostside_running_resize_done(false),
     gather_done(false),
     is_loaded(false),
@@ -1881,8 +1883,7 @@ Lifecycle::
                A:SEvt::clear
                QEvt::setGenstep(NP*)
 
-            SCSGOptiX::simulate_launch
-
+            CSGOptiX::simulate_launch
             EGPU.:SEvt::endOfEvent
 
 
@@ -2473,16 +2474,15 @@ sgs SEvt::addGenstep(const quad6& q_)
     if(matline_ >= G4_INDEX_OFFSET  )
     {
         unsigned mtindex = matline_ - G4_INDEX_OFFSET ;
-        int matline = cf ? cf->lookup_mtline(mtindex) : 0 ;
-        // cf(SGeo) used for lookup
-        // BUT: that just uses SSim::lookup_mtline
-        // so SEvt should hold sim(SSim) ?
+        // Both setGeo and setSim populate tree, so this keeps matline lookup
+        // on one shared path instead of splitting on WITH_OLD_FRAME.
+        int matline = tree ? tree->lookup_mtline(mtindex) : 0;
 
         bool bad_ck = is_cerenkov_gs && matline == -1 ;
 
         LOG_IF(info, bad_ck )
             << " is_cerenkov_gs " << ( is_cerenkov_gs ? "YES" : "NO " )
-            << " cf " << ( cf ? "YES" : "NO " )
+            << " tree " << (tree ? "YES" : "NO ")
             << " bad_ck "
             << " matline_ " << matline_
             << " matline " << matline
@@ -2491,7 +2491,7 @@ sgs SEvt::addGenstep(const quad6& q_)
             << " G4_INDEX_OFFSET " << G4_INDEX_OFFSET
             << " desc_mt "
             << std::endl
-            << ( cf ? cf->desc_mt() : "no-cf" )
+            << (tree ? tree->desc_mt() : "no-tree")
             << std::endl
             ;
 
@@ -2904,7 +2904,7 @@ void SEvt::beginPhoton(const spho& label)
 
     ctx.idx = idx ;
     ctx.evt = evt ;
-    ctx.prd = &current_prd ;   // current_prd is populated by InstrumentedG4OpBoundaryProcess::PostStepDoIt
+    ctx.prd = &current_prd; // current_prd is populated by the boundary process stepping hook
 
     ctx.p.index = idx ;
     ctx.p.set_flag(genflag);
@@ -4224,13 +4224,13 @@ bool SEvt::hasInstance() const
     return instance != MISSING_INSTANCE ;
 }
 
-
 /**
 SEvt::DefaultBase
 -------------------
 
 If argument is defined it is used, otherwise::
 
+   Config-applied SEventConfig::OutFold() when explicitly overridden, otherwise
    $TMP/GEOM/$GEOM/$ExecutableName
 
 Note that when Opticks is used from python the OPTICKS_SCRIPT
@@ -4242,11 +4242,27 @@ ExecutableName of "python3.11" or whatever.
 const char* SEvt::DefaultBase(const char* base_) // static
 {
     const char* base = nullptr ;
+    const char* outfold = SEventConfig::OutFold();
+
+    bool use_outfold =
+        base_ == nullptr &&
+        outfold != nullptr &&
+        strcmp(outfold, SEventConfig::_OutFoldDefault) != 0;
+
     int64_t mode_save = SEventConfig::ModeSave();
-    if( mode_save == 0 )
+    if (base_ != nullptr)
+    {
+        base = base_;
+    }
+    else if (use_outfold)
+    {
+        // Honor explicit OutFold overrides from config/env for SEvt event folders.
+        base = outfold;
+    }
+    else if (mode_save == 0)
     {
         // controlled dir approach : good for campaigns
-        base = base_ ? base_ : spath::DefaultOutputDir() ;
+        base = spath::DefaultOutputDir();
     }
     else if( mode_save == 1 )
     {
@@ -4462,8 +4478,8 @@ or the directory argument provided.
 
 The FALLBACK_DIR which is used for the SEvt::DefaultDir is obtained from SEventConfig::OutFold
 which is normally "$DefaultOutputDir" $TMP/GEOM/$GEOM/ExecutableName
-This can be overriden using SEventConfig::SetOutFold or by setting the
-envvar OPTICKS_OUT_FOLD.
+This can be overridden using SEventConfig::SetOutFold or by setting the
+envvar OPTICKS_OUT_FOLD, which are now honored directly by SEvt::DefaultBase.
 
 It is normally much easier to use the default of "$DefaultOutputDir" as this
 takes care of lots of the bookkeeping automatically.
@@ -4995,6 +5011,46 @@ void SEvt::getHit(sphoton& p, unsigned idx) const
 }
 
 /**
+SEvt::getHitGenstepIndex
+--------------------------
+Maps a hit index to its originating genstep index via binary search on the
+gs[] offset table. Works in both GPU and CPU paths since gs is populated by
+addGenstep() during Geant4 stepping. Returns -1 if not found.
+**/
+int SEvt::getHitGenstepIndex(unsigned hit_idx) const
+{
+    sphoton ph;
+    getHit(ph, hit_idx);
+    return getHitGenstepIndexFromPhotonIndex(ph.index);
+}
+
+/**
+SEvt::getHitGenstepIndexFromPhotonIndex
+-----------------------------------------
+Overload that skips the getHit() call when the caller already holds the
+photon index (sphoton::index). Pure binary search on the gs[] offset
+table. Returns -1 if not found.
+**/
+int SEvt::getHitGenstepIndexFromPhotonIndex(unsigned pidx) const
+{
+    int lo = 0;
+    int hi = int(gs.size()) - 1;
+    while (lo <= hi)
+    {
+        int     mid = (lo + hi) / 2;
+        int64_t off = gs[mid].offset;
+        int64_t end = off + gs[mid].photons;
+        if (int64_t(pidx) < off)
+            hi = mid - 1;
+        else if (int64_t(pidx) >= end)
+            lo = mid + 1;
+        else
+            return mid;
+    }
+    return -1;
+}
+
+/**
 SEvt::getLocalPhoton
 --------------------
 
@@ -5500,9 +5556,3 @@ NP* SEvt::CountNibbles_Table( const NP* seqnib ) // static
     }
     return seqnib_table ;
 }
-
-
-
-
-
-

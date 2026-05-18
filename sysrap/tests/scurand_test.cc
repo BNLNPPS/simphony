@@ -7,13 +7,12 @@
 #include <cstdio>
 
 #include "srngcpu.h"
-using RNG = srngcpu ; 
 
 #include "scurand.h"
 
 int main()
 {
-    RNG rng ;   
+    srngcpu rng;
 
     for(int i=0 ; i < 20 ; i++)
     {

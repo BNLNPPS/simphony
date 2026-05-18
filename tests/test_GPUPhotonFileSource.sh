@@ -31,7 +31,7 @@ cat > "$PHOTON_FILE" <<'EOF'
 EOF
 
 echo "Running GPUPhotonFileSource with seed $SEED ..."
-OUTPUT=$(USER=fakeuser GEOM=fakegeom GPUPhotonFileSource \
+OUTPUT=$(GPUPhotonFileSource \
     -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
     -p "$PHOTON_FILE" \
     -m "$OPTICKS_HOME/tests/run.mac" \
@@ -99,7 +99,7 @@ cat > "$PHOTON_FILE" <<'EOF'
 EOF
 
 echo "Running GPUPhotonFileSource ..."
-OUTPUT=$(USER=fakeuser GEOM=fakegeom GPUPhotonFileSource \
+OUTPUT=$(GPUPhotonFileSource \
     -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
     -p "$PHOTON_FILE" \
     -m "$OPTICKS_HOME/tests/run.mac" \

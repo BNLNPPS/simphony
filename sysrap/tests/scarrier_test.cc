@@ -11,7 +11,6 @@ Standalone compile and run with::
 #include <vector>
 
 #include "srngcpu.h"
-using RNG = srngcpu ; 
 
 #include "scuda.h"
 #include "squad.h"
@@ -28,7 +27,7 @@ NP* make_carrier_photon( const NP* gs, const NP* se )
     const quad6* gg = (quad6*)gs->bytes() ;  
     const int*   seed = (int*)se->bytes() ;  
 
-    RNG rng ; 
+    srngcpu rng;
 
     int tot_photon = se->shape[0] ; 
     NP* ph = NP::Make<float>( tot_photon, 4, 4); 
@@ -65,4 +64,3 @@ int main(int argc, char** argv)
     test_generate(); 
     return 0 ; 
 }
-

@@ -23,13 +23,7 @@ TODO : implement sanity check for use after loading::
 #include "plog/Severity.h"
 #include "curand_kernel.h"   
 #include "qrng.h"
-
-//#define OLD_MONOLITHIC_CURANDSTATE 1
-
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-#else
 #include "SCurandState.h"
-#endif
 
 
 
@@ -43,19 +37,8 @@ struct QUDARAP_API QRng
     static const QRng* Get(); 
     static std::string Desc();
 
-    static const char* Load_FAIL_NOTES ; 
-
-
-
-#ifdef OLD_MONOLITHIC_CURANDSTATE
-    static constexpr const char* IMPL = "OLD_MONOLITHIC_CURANDSTATE" ; 
-    static XORWOW* LoadAndUpload(ULL& rngmax, const char* path); 
-    static XORWOW* Load(ULL& rngmax, const char* path); 
-    static XORWOW* UploadAndFree(RNG* h_states, ULL num_states ); 
-#else
     static constexpr const char* IMPL = "CHUNKED_CURANDSTATE" ; 
     static XORWOW* LoadAndUpload(ULL rngmax, const SCurandState& cs); 
-#endif
     static void Save( XORWOW* states, unsigned num_states, const char* path ); 
 
 
@@ -69,10 +52,7 @@ struct QUDARAP_API QRng
     qrng<RNG>*     qr ;  
     qrng<RNG>*     d_qr ;  
     ULL            rngmax ;
-
-#ifndef OLD_MONOLITHIC_CURANDSTATE
     SCurandState   cs ; 
-#endif
 
 
     QRng(unsigned skipahead_event_offset=1) ;  
@@ -93,4 +73,3 @@ struct QUDARAP_API QRng
     dim3 threadsPerBlock ; 
 
 };
-

@@ -143,160 +143,6 @@ Process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/
 </gdml>
 ```
 
-
-## Examples
-
-EIC-Opticks provides several examples demonstrating GPU-accelerated optical photon simulation:
-
-| Example | Physics | Geometry | Use Case |
-|---------|---------|----------|----------|
-| `GPUCerenkov` | Cerenkov only | Simple nested boxes (raindrop) | Basic Cerenkov testing |
-| `GPURaytrace` | Cerenkov + Scintillation | 8x8 CsI crystal + SiPM array | Realistic detector simulation |
-| `GPUPhotonSource` | Optical photons (torch) | Any GDML | G4 + GPU side-by-side validation |
-| `GPUPhotonSourceMinimal` | Optical photons (torch) | Any GDML | GPU-only test |
-| `GPUPhotonFileSource` | Optical photons (text file) | Any GDML | GPU-only, user-defined photons from file |
-
-### Example 1: GPUCerenkov (Cerenkov Only)
-
-The `GPUCerenkov` example uses the **opticks_raindrop** geometry - a simple nested box configuration
-designed for testing Cerenkov photon production and GPU raytracing:
-
-```
-Geometry: opticks_raindrop.gdml
-├── VACUUM world (240×240×240 mm)
-│   └── Lead box (220×220×220 mm)
-│       └── Air box (200×200×200 mm)
-│           └── Water box (100×100×100 mm) ← Cerenkov medium
-```
-
-When charged particles traverse the water volume above the Cerenkov threshold, optical photons
-are generated and traced on the GPU. This is a minimal example for validating the eic-opticks pipeline.
-
-```bash
-# Run with raindrop geometry (Cerenkov only)
-GPUCerenkov -g tests/geom/opticks_raindrop.gdml -m run.mac
-```
-
-**Source files:** `src/GPUCerenkov.cpp`, `src/GPUCerenkov.h`
-
-### Example 2: GPURaytrace (Cerenkov + Scintillation)
-
-The `GPURaytrace` example demonstrates a realistic detector configuration with both Cerenkov
-and scintillation physics using the **8x8 SiPM array** geometry (not validated yet):
-
-```
-Geometry: 8x8SiPM_w_CSI_optial_grease.gdml
-├── Air world (100×100×100 mm)
-│   ├── 64 CsI crystal pixels (2×2×8 mm each) ← Scintillation + Cerenkov
-│   ├── Optical grease layer (17.4×17.4×0.1 mm)
-│   ├── Entrance window (17.4×17.4×0.1 mm)
-│   └── 64 SiPM active areas (2×2×0.2 mm each) ← Photon detectors
-```
-
-This geometry models a pixelated scintillator calorimeter with:
-- **CsI(Tl) crystals**: Produce both Cerenkov and scintillation photons
-- **Optical coupling**: Grease and window layers for photon transmission
-- **SiPM readout**: 8×8 array of silicon photomultipliers with dead space modeling
-
-```bash
-# Run with 8x8 SiPM array geometry (Cerenkov + Scintillation)
-GPURaytrace -g tests/geom/8x8SiPM_w_CSI_optial_grease.gdml -m tests/run.mac
-
-# Check output for Cerenkov (ID=0) and scintillation (ID=1) photons
-grep -c "CreationProcessID=0" opticks_hits_output.txt  # Cerenkov
-grep -c "CreationProcessID=1" opticks_hits_output.txt  # Scintillation
-```
-
-**Source files:** `src/GPURaytrace.cpp`, `src/GPURaytrace.h`
-
-### Example 3: GPUPhotonSource (G4 + GPU Validation)
-
-`GPUPhotonSource` generates optical photons from a configurable torch source and runs
-both Geant4 and eic-opticks GPU simulation in parallel on the same input photons. This
-enables direct comparison of hit counts and positions between the two engines.
-
-Both engines detect photons using the same mechanism: border surface physics. On the G4
-side the `SteppingAction` records a hit when `G4OpBoundaryProcess` reports Detection at
-the optical surface, matching how eic-opticks detects photons on the GPU.
-
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `-g, --gdml` | Path to GDML file | `geom.gdml` |
-| `-c, --config` | Config file name (without `.json`) | `dev` |
-| `-m, --macro` | Path to G4 macro | `run.mac` |
-| `-i, --interactive` | Open interactive viewer | off |
-| `-s, --seed` | Fixed random seed | time-based |
-
-```bash
-GPUPhotonSource -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 42
-```
-
-**Output:**
-- `opticks_hits_output.txt` — eic-opticks GPU hits, one line per hit
-- `g4_hits_output.txt` — Geant4 hits in the same format
-
-Hit format (both files): `time wavelength (pos_x, pos_y, pos_z) (mom_x, mom_y, mom_z) (pol_x, pol_y, pol_z)`
-
-**Source files:** `src/GPUPhotonSource.cpp`, `src/GPUPhotonSource.h`
-
-### Example 4: GPUPhotonSourceMinimal (GPU-Only)
-
-`GPUPhotonSourceMinimal` is a stripped-down version of `GPUPhotonSource` that runs
-**only** eic-opticks GPU simulation. All G4 optical photon tracking infrastructure
-(sensitive detectors, stepping actions, tracking actions) is removed. Geant4 is used
-solely for geometry loading and hosting the event loop.
-
-Use this when you only need GPU results and want faster execution.
-
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `-g, --gdml` | Path to GDML file | `geom.gdml` |
-| `-c, --config` | Config file name (without `.json`) | `dev` |
-| `-m, --macro` | Path to G4 macro | `run.mac` |
-| `-i, --interactive` | Open interactive viewer | off |
-| `-s, --seed` | Fixed random seed | time-based |
-
-```bash
-GPUPhotonSourceMinimal -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 42
-```
-
-**Output:** `opticks_hits_output.txt` — one hit per line
-
-**Source files:** `src/GPUPhotonSourceMinimal.cpp`, `src/GPUPhotonSourceMinimal.h`
-
-### Example 5: GPUPhotonFileSource (File Input, GPU-Only)
-
-`GPUPhotonFileSource` reads optical photons from a plain text file and runs
-GPU-only simulation via eic-opticks. Each line in the input file defines one
-photon with 11 space-separated values:
-
-```
-# pos_x pos_y pos_z time mom_x mom_y mom_z pol_x pol_y pol_z wavelength
--10.0 -30.0 -90.0  0.0  0.0 0.287348 0.957826  1.0 0.0 0.0  420.0
--10.0 -30.0 -90.0  0.0  0.0 0.287348 0.957826  1.0 0.0 0.0  450.0
-```
-
-- Positions are in mm, time in ns, wavelength in nm
-- Momentum direction should be normalized
-- Polarization should be transverse to momentum and normalized
-- Lines starting with `#` are comments and blank lines are skipped
-
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `-g, --gdml` | Path to GDML file | `geom.gdml` |
-| `-p, --photons` | Path to input photon text file | (required) |
-| `-m, --macro` | Path to G4 macro | `run.mac` |
-| `-i, --interactive` | Open interactive viewer | off |
-| `-s, --seed` | Fixed random seed | time-based |
-
-```bash
-GPUPhotonFileSource -g tests/geom/opticks_raindrop.gdml -p my_photons.txt -m run.mac
-```
-
-**Output:** `opticks_hits_output.txt` — one hit per line
-
-**Source files:** `src/GPUPhotonFileSource.cpp`, `src/GPUPhotonFileSource.h`
-
 ### Torch configuration
 
 `GPUPhotonSource` and `GPUPhotonSourceMinimal` read photon source parameters from a
@@ -317,6 +163,7 @@ JSON config file (default `config/dev.json`). Key fields:
 |---------|-------------|-------------|-----------------|----------------------|---------------------|
 | Cerenkov genstep collection | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Scintillation genstep collection | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Wavelength shifting (WLS) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Torch photon generation | ✗ | ✗ | ✓ | ✓ | ✗ |
 | Photon input from text file | ✗ | ✗ | ✗ | ✗ | ✓ |
 | G4 optical photon tracking | ✓ | ✓ | ✓ | ✗ | ✗ |
@@ -576,7 +423,7 @@ This gives a compact chronological per-step history in 16 bytes per photon.
 #### Hit determination and MaxBounce
 
 A photon is a "hit" when `(flagmask & hitmask) == hitmask`. The default
-hitmask is `SD` (SURFACE_DETECT = 0x40), but with CustomART PMTs it may be
+hitmask is `SD` (SURFACE_DETECT = 0x40), but for PMT efficiency tagging it may be
 `EC` (EFFICIENCY_COLLECT = 0x2000). The script reads the actual hitmask from
 `NPFold_meta.txt` in the event folder.
 
@@ -605,6 +452,6 @@ Flags are a power-of-two enum where each GPU physics process gets one bit:
 | BOUNDARY_REFLECT | 0x0400 | BR | Fresnel reflection at boundary |
 | BOUNDARY_TRANSMIT | 0x0800 | BT | Transmitted through boundary |
 | NAN_ABORT | 0x1000 | NA | Aborted due to NaN (geometry error) |
-| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by CustomART PMT efficiency |
-| EFFICIENCY_CULL | 0x4000 | EL | Culled by CustomART PMT efficiency |
+| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by PMT efficiency |
+| EFFICIENCY_CULL | 0x4000 | EL | Culled by PMT efficiency |
 | MISS | 0x8000 | MI | Missed all geometry |

@@ -111,7 +111,7 @@ if __name__ == '__main__':
     assert( a.LAYOUT == b.LAYOUT )
     LAYOUT = a.LAYOUT
 
-    HEADLINE = "./U4SimulateTest.sh cf ## PMT Geometry : A(N=0) Unnatural+FastSim, B(N=1) Natural+CustomBoundary  "
+    HEADLINE = "./U4SimulateTest.sh cf ## PMT Geometry : A(N=0) Unnatural+FastSim, B(N=1) Natural geometry  "
     print("\n%s" % HEADLINE)
     print("GEOM/GEOMList/IMPL/LAYOUT/CHECK : %s/%s/%s/%s/%s " % (GEOM, GEOMList, IMPL, LAYOUT, CHECK) )
 
@@ -123,5 +123,4 @@ if __name__ == '__main__':
 
     #qcf0 = QCFZero(qcf)
     #print(qcf0)
-
 

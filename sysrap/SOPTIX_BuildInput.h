@@ -5,7 +5,8 @@ struct SOPTIX_BuildInput
     const char* name = nullptr ; 
     OptixBuildInput buildInput = {} ;
 
-    SOPTIX_BuildInput(const char* name); 
+    SOPTIX_BuildInput(const char* name);
+    virtual ~SOPTIX_BuildInput() = default;
     std::string desc() const ; 
 
     bool is_BuildInputTriangleArray() const ; 

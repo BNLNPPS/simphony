@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 
     LOG(info) << std::endl << SCurandStateMonolithic::Desc() ; 
 
-#elif defined(RNG_PHILOX) || defined(RNG_PHILITEOX)
+#elif defined(RNG_PHILOX)
     LOG(info) 
         << argv[0] 
         << " NOT RELEVANT FOR srng<RNG>::NAME [" << srng<RNG>::NAME << "]" 

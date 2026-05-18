@@ -289,7 +289,7 @@ SCSGPrimSpec::primitiveIndexOffset
     Primitive index bias, applied in optixGetPrimitiveIndex() so the primIdx
     obtained in closesthit__ch__ is absolute to the entire geometry
     instead of the default of being local to the compound solid.
-    (see GAS_Builder::MakeCustomPrimitivesBI_11N)
+    (used by the SBT custom-primitive build-input path)
 
     This primIdx obtained for each intersect is combined with the
     optixGetInstanceId() to give the intersect identity.
@@ -334,5 +334,3 @@ SCSGPrimSpec CSGPrim::MakeSpec( const CSGPrim* prim0,  unsigned primIdx, unsigne
 }
 
 #endif
-
-

@@ -111,12 +111,6 @@ What you need to do to get logging to work for a package
 #ifdef OPTICKS_THRAP
 #include "THRAP_LOG.hh"
 #endif
-#ifdef OPTICKS_OXRAP
-#include "OXRAP_LOG.hh"
-#endif
-#ifdef OPTICKS_OKOP
-#include "OKOP_LOG.hh"
-#endif
 #ifdef OPTICKS_OGLRAP
 #include "OGLRAP_LOG.hh"
 #endif
@@ -131,9 +125,6 @@ What you need to do to get logging to work for a package
 #endif
 #ifdef OPTICKS_CFG4
 #include "CFG4_LOG.hh"
-#endif
-#ifdef OPTICKS_OKG4
-#include "OKG4_LOG.hh"
 #endif
 #ifdef OPTICKS_G4OK
 #include "G4OK_LOG.hh"
@@ -217,12 +208,6 @@ class SYSRAP_API OPTICKS_LOG_ {
 #ifdef OPTICKS_THRAP
     THRAP_LOG::Initialize(instance->prefixlevel_parse( max_level, "THRAP"), app1, NULL );
 #endif
-#ifdef OPTICKS_OXRAP
-    OXRAP_LOG::Initialize(instance->prefixlevel_parse( max_level, "OXRAP"), app1, NULL );
-#endif
-#ifdef OPTICKS_OKOP
-    OKOP_LOG::Initialize(instance->prefixlevel_parse( max_level, "OKOP"), app1, NULL );
-#endif
 #ifdef OPTICKS_OGLRAP
     OGLRAP_LOG::Initialize(instance->prefixlevel_parse( max_level, "OGLRAP"), app1, NULL );
 #endif
@@ -237,9 +222,6 @@ class SYSRAP_API OPTICKS_LOG_ {
 #endif
 #ifdef OPTICKS_CFG4
     CFG4_LOG::Initialize(instance->prefixlevel_parse( max_level, "CFG4"), app1, NULL );
-#endif
-#ifdef OPTICKS_OKG4
-    OKG4_LOG::Initialize(instance->prefixlevel_parse( max_level, "OKG4"), app1, NULL );
 #endif
 #ifdef OPTICKS_G4OK
     G4OK_LOG::Initialize(instance->prefixlevel_parse( max_level, "G4OK"), app1, NULL );
@@ -348,18 +330,6 @@ class SYSRAP_API OPTICKS_LOG_ {
 #else
     printf("%s\n", "!OPTICKS_THRAP" ); 
 #endif
-#ifdef OPTICKS_OXRAP
-    printf("%s\n", "OPTICKS_OXRAP" ); 
-    OXRAP_LOG::Check("OXRAP");
-#else
-    printf("%s\n", "!OPTICKS_OXRAP" ); 
-#endif
-#ifdef OPTICKS_OKOP
-    printf("%s\n", "OPTICKS_OKOP" ); 
-    OKOP_LOG::Check("OKOP");
-#else
-    printf("%s\n", "!OPTICKS_OKOP" ); 
-#endif
 #ifdef OPTICKS_OGLRAP
     printf("%s\n", "OPTICKS_OGLRAP" ); 
     OGLRAP_LOG::Check("OGLRAP");
@@ -389,12 +359,6 @@ class SYSRAP_API OPTICKS_LOG_ {
     CFG4_LOG::Check("CFG4");
 #else
     printf("%s\n", "!OPTICKS_CFG4" ); 
-#endif
-#ifdef OPTICKS_OKG4
-    printf("%s\n", "OPTICKS_OKG4" ); 
-    OKG4_LOG::Check("OKG4");
-#else
-    printf("%s\n", "!OPTICKS_OKG4" ); 
 #endif
 #ifdef OPTICKS_G4OK
     printf("%s\n", "OPTICKS_G4OK" ); 
@@ -475,10 +439,5 @@ SLOG_COLOR(argc, argv)
 OPTICKS_LOG_::Initialize(SLOG::instance, plog::get(), NULL )
 
 
-
-
-
-
 **/
-
 

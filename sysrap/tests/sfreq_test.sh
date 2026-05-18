@@ -21,10 +21,8 @@ if [ "${arg/run}" != "$arg" ]; then
 fi 
 
 if [ "${arg/dbg}" != "$arg" ]; then 
-    case $(uname) in
-       Darwin) lldb__ /tmp/$name/$name ;;
-       Linux)  gdb__ /tmp/$name/$name ;;
-    esac
+       gdb__ /tmp/$name/$name
+
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 3 
 fi 
 

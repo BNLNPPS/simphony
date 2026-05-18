@@ -18,7 +18,6 @@ Build and run::
 **/
 
 #include "srngcpu.h"
-using RNG = srngcpu ; 
 
 #include "sphoton.h"
 #include "sstate.h"
@@ -36,7 +35,7 @@ const char* FOLD = getenv("FOLD") ;
 
 int main(int argc, char** argv)
 {
-    RNG rng ;   
+    srngcpu rng;
 
     float3 nrm = make_float3(0.f, 0.f, 1.f ); // surface normal in +z direction 
 

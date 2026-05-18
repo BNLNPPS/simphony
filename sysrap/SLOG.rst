@@ -101,8 +101,7 @@ From SYSRAP_LOG.cc::
 
 The somewhat bizarre usage implementation based on preprocessor
 macros allows the static logger symbols to be planted within 
-each of the shared objects in a manner that works on Mac, Linux 
-and Windows.  
+each of the shared objects in a manner that works across the supported Linux build.  
 
 The structure was based on the Chained example from my fork of the upstream plog
 
@@ -162,8 +161,6 @@ The tags for each project are listed below.
               oglrap                         OGLRAP 
              cudarap                        CUDARAP 
            thrustrap                          THRAP 
-            optixrap                          OXRAP 
-           opticksop                           OKOP 
            opticksgl                           OKGL 
                   ok                             OK 
                 cfg4                           CFG4 
@@ -233,6 +230,4 @@ Can do that by changing the typedef in SLOG_INIT.hh::
      35 
 
 Unfortunately that forces full recompile of everything 
-
-
 

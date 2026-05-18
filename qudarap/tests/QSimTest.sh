@@ -87,9 +87,6 @@ mkdir -p $FOLD
 
 
 defarg=run_ana
-if [ "$(uname)" == "Darwin" ]; then
-   defarg="run_ana"
-fi
 
 if [ -n "$BP" ]; then
    defarg="dbg"

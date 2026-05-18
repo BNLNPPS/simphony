@@ -7,9 +7,13 @@ struct SOPTIX_BuildInput_IA : public SOPTIX_BuildInput
     static constexpr const char* NAME = "BuildInputInstanceArray" ; 
 
     std::vector<OptixInstance> instances ;
-    CUdeviceptr instances_buffer ; 
+    CUdeviceptr                instances_buffer;
 
-    SOPTIX_BuildInput_IA(std::vector<OptixInstance>& _instances ); 
+    SOPTIX_BuildInput_IA(std::vector<OptixInstance>& _instances);
+    ~SOPTIX_BuildInput_IA() override
+    {
+        CUDA_CHECK(cudaFree(reinterpret_cast<void*>(instances_buffer)));
+    }
 };
 
 

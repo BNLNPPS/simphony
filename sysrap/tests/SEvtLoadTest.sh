@@ -23,7 +23,7 @@ logging()
 
 ## these configure the directory from which to load
 export GEOM=hamaLogicalPMT 
-export SOpticksResource_ExecutableName=U4PMTFastSimTest 
+export SOpticksResource_ExecutableName=U4SimulateTest
 
 ## both these are needed to induce SEvt::Load rather than SEvt::Create
 export OPTICKS_RUNNING_MODE=SRM_G4STATE_RERUN
@@ -31,6 +31,4 @@ export OPTICKS_G4STATE_RERUN=726     ## value must be > -1 and less than the num
 
 
 SEvtLoadTest 
-
-
 

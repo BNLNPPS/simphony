@@ -1,7 +1,7 @@
 #!/bin/bash -l 
 usage(){ cat << EOU
-U4SimulateTest.sh  (formerly U4PMTFastSimTest.sh)
-===================================================
+U4SimulateTest.sh
+===================
 
 Covering the PMT*POM quadrants (POM:PMT Optical Model)::
 
@@ -144,7 +144,6 @@ loglevel(){
    export junoPMTOpticalModelSimple=INFO
    #export SEvt=INFO     ## thus is exceedingly verbose
    export SEventConfig=INFO
-   export InstrumentedG4OpBoundaryProcess=INFO
    export ShimG4OpAbsorption=INFO
    export ShimG4OpRayleigh=INFO
 }
@@ -156,12 +155,10 @@ if [ "$running_mode" == "SRM_G4STATE_RERUN" ]; then
 else
    #echo $BASH_SOURCE : switch on some logging anyhow : THIS WILL BE VERBOSE
    #export junoPMTOpticalModel=INFO
-   #export CustomG4OpBoundaryProcess=INFO
 
    export U4Physics=INFO
    export U4Recorder=INFO
    #export SEvt=INFO
-   export C4OpBoundaryProcess__PIDX_ENABLED=1
 fi 
 
 
@@ -240,19 +237,16 @@ fi
 
 if [ "$arg" == "dbg" ]; then
    bp=MixMaxRng::flat
-   #bp="$bp CustomG4OpBoundaryProcess::DielectricMetal"
-   #bp="$bp CustomG4OpBoundaryProcess::ChooseReflection" 
-   #bp="$bp CustomG4OpBoundaryProcess::DoAbsorption" 
-   #bp="$bp CustomG4OpBoundaryProcess::DoReflection"
+   #bp="$bp G4OpBoundaryProcess::DielectricMetal"
+   #bp="$bp G4OpBoundaryProcess::ChooseReflection"
+   #bp="$bp G4OpBoundaryProcess::DoAbsorption"
+   #bp="$bp G4OpBoundaryProcess::DoReflection"
    #export BP=${BP:-$bp}
 fi 
 
 if [ "${arg/dbg}" != "$arg" ]; then
     [ -f "$log" ] && rm $log 
-    case $(uname) in 
-        Darwin) lldb__ $bin ;;
-        Linux)   gdb__ $bin ;;
-    esac
+    gdb__ $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 2
 fi 
 
@@ -327,4 +321,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
 fi 
 
 exit 0 
-

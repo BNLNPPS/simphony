@@ -30,9 +30,6 @@ Users::
     ./u4/U4Recorder.cc
          vital part of U4Recorder::PreUserTrackingAction_Optical PostUserTrackingAction_Optical
 
-    ./u4/InstrumentedG4OpBoundaryProcess.cc
-         not fully impl, seems informational only
-
     ./u4/U4.cc
          setting photon labels at generation
 
@@ -168,4 +165,3 @@ inline void STrackInfo::Set(G4Track* track, const spho& _label )  // static
         *label = _label ;
     }
 }
-

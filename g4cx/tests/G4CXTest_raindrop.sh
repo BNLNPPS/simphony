@@ -151,7 +151,7 @@ export OPTICKS_EVENT_MODE=${OPTICKS_EVENT_MODE:-$mode} # configure what to gathe
 export TMP=${TMP:-/tmp/$USER/opticks}
 evtfold=$TMP/GEOM/$GEOM
 
-ctx=$(TEST=ContextString sbuild_test)   ## eg Debug_Philox
+ctx=${OPTICKS_EVENT_CONTEXT:-Debug_Philox}
 export OPTICKS_EVENT_NAME=${ctx}
 reldir=ALL${VERSION}_${OPTICKS_EVENT_NAME}
 
@@ -271,7 +271,4 @@ if [ "${arg/cf2}" != "$arg" ]; then
     [ $? -ne 0 ] && echo $BASH_SOURCE : cf2 error && exit 5
 fi
 
-
-
 exit 0
-

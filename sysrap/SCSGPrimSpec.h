@@ -11,16 +11,16 @@
 SCSGPrimSpec :
 =========================================================================
 
-This was migrated down from CSG/CSGPrimSpec.h 
+This was migrated down from CSG/CSGPrimSpec.h
 
-* *SCSGPrimSpec* provides the specification to access the AABB and sbtIndexOffset of all CSGPrim of a CSGSolid.  
+* *SCSGPrimSpec* provides the specification to access the AABB and sbtIndexOffset of all CSGPrim of a CSGSolid.
 * The specification includes pointers, counts and stride.
 * Instances are created for a solidIdx by CSGFoundry::getPrimSpec using CSGPrim::MakeSpec
-* Crucially *SCSGPrimSpec* is used to pass the AABB for a solid to CSGOptix/GAS_Builder.
+* Crucially *SCSGPrimSpec* is used to pass the AABB for a solid into the SBT custom-primitive build-input path.
 
-Previously assumed that the *sbtIndexOffset* indices were global 
-to the entire geometry, but the 2nd-GAS-last-prim-only bug indicates 
-that the indices need to be local to each GAS, counting 
+Previously assumed that the *sbtIndexOffset* indices were global
+to the entire geometry, but the 2nd-GAS-last-prim-only bug indicates
+that the indices need to be local to each GAS, counting
 from 0 to numPrim-1 for that GAS.
 
 **/
@@ -35,7 +35,7 @@ struct SCSGPrimSpec
     unsigned        num_prim ; 
     unsigned        stride_in_bytes ; 
     bool            device ; 
-    unsigned        primitiveIndexOffset ;   // offsets optixGetPrimitiveIndex() see GAS_Builder::MakeCustomPrimitivesBI_11N
+    unsigned        primitiveIndexOffset; // offsets optixGetPrimitiveIndex() for the custom-primitive build input
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
@@ -196,4 +196,3 @@ inline void SCSGPrimSpec::downloadDump(const char* msg) const
 
 
 #endif
-

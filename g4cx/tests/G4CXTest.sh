@@ -163,8 +163,6 @@ logging(){
    #export SEvt=INFO
 
    export U4Recorder__PIDX_ENABLED=1
-   export C4OpBoundaryProcess__PIDX_ENABLED=1
-
 }
 logging
 
@@ -231,4 +229,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
 fi
 
 exit 0
-

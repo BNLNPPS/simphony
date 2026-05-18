@@ -18,7 +18,7 @@ if [ "${arg/run}" != "$arg" ]; then
 fi 
 
 if [ "${arg/dbg}" != "$arg" ]; then 
-   lldb__ /tmp/$name/$name
+   gdb__ /tmp/$name/$name
    [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 3 
 fi 
 

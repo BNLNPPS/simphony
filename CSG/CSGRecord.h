@@ -103,11 +103,6 @@ Attempting to read the CSGRecord
   using exactly the same node visits : as the iterative algorithm is supposed to mimic 
   what recursion would have done 
 
-  * optixrap/cu/csg_intersect_boolean.h:unsupported_recursive_csg_r
-
-
-
-
                                in                                                         
                               1                                                           
                                  0.00                                                     
@@ -207,4 +202,3 @@ epsilon:CSG blyth$
 
 
 **/
-

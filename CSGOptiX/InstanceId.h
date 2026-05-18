@@ -5,7 +5,7 @@ InstanceId_NOT_IN_USE
 
 Initially planned to bitpack inside InstanceId but turns out to not be very useful::
 
-    unsigned instance_id = optixGetInstanceId() ;  // see IAS_Builder::Build and InstanceId.h 
+    unsigned instance_id = optixGetInstanceId() ;  // populated from SBT::collectInstances, see InstanceId.h
 
 Due to the OptiX 7 limits and the flat nature of ins_idx in single IAS approach::
 
@@ -83,6 +83,3 @@ inline void InstanceId_NOT_IN_USE::Decode(unsigned& ins_idx, unsigned& gas_idx, 
     ins_idx = (( (ins_mask << gas_bits ) & identity ) >> gas_bits ) - 1u ; 
     gas_idx = ((  gas_mask & identity ) >>  0 ) - 1u ;  
 }
-
-
-

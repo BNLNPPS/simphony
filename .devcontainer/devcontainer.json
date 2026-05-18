@@ -1,5 +1,5 @@
 {
-  "name": "eic-opticks",
+  "name": "simphony",
   "build": {
     "dockerfile": "../Dockerfile",
     "context": "..",
@@ -9,8 +9,13 @@
     //  "CUDA_VERSION": "12.5.1"
     //},
     "cacheFrom": [
-      "ghcr.io/bnlnpps/eic-opticks:base"
+      "ghcr.io/bnlnpps/simphony:base"
     ]
+  },
+  "features": {
+    "./features/llvm": {
+      "version": "23"
+    }
   },
   "remoteEnv": {
     "CODEX_HOME": "${containerWorkspaceFolder}/.codex"

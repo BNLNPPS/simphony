@@ -18,10 +18,8 @@ if [ "${arg/run}" != "$arg" ]; then
 fi 
 
 if [ "${arg/dbg}" != "$arg" ]; then 
-    case $(uname) in
-      Darwin) lldb__ /tmp/$name/$name ;;
-      Linux)  gdb /tmp/$name/$name ;;
-    esac
+      gdb /tmp/$name/$name
+
     [ $? -ne 0 ] && echo $msg dbg error && exit 3
 fi 
 

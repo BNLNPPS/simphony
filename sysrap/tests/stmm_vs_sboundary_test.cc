@@ -51,7 +51,6 @@ boundary.
 **/
 
 #include "srngcpu.h"
-using RNG = srngcpu ; 
 
 #include "sphoton.h"
 #include "sstate.h"
@@ -282,7 +281,7 @@ sboundary.h::
 
 int main(int argc, char** argv)
 {
-    RNG rng ; 
+    srngcpu rng;
     rng.set_fake(0.);     // 0.:force transmit 1.:force reflect 
 
     float3 mom = normalize(make_float3(1.f, 0.f, -1.f)) ; 

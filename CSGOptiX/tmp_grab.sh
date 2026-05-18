@@ -48,8 +48,8 @@ grab_typ(){
         ls -1rt $typfind
         local last=$(ls -1rt $typfind  | tail -1 )
         echo $msg typ $typ last $last
-        if [ "$(uname)" == "Darwin" ]; then
-            open $last 
+        if command -v xdg-open >/dev/null 2>&1 ; then
+            xdg-open "$last" >/dev/null 2>&1 &
         fi
     else
         echo $msg failed to find $typ
@@ -104,5 +104,4 @@ case $arg in
    mp4) grab_typ mp4 ;; 
    all) grab_all     ;;
 esac
-
 

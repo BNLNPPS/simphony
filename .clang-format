@@ -1,0 +1,12 @@
+BasedOnStyle: Microsoft
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionDeclarations: false
+AllowShortLoopsOnASingleLine: true
+BreakConstructorInitializers: AfterColon
+BreakTemplateDeclarations: MultiLine
+ColumnLimit: 0
+PackConstructorInitializers: Never
+PointerAlignment: Left

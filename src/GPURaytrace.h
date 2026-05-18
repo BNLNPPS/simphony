@@ -386,6 +386,7 @@ struct RunAction : G4UserRunAction
                 return;
             }
 
+            const bool emit_trackid = getenv("OPTICKS_MC_TRUTH") != nullptr;
             for (int idx = 0; idx < int(num_hits); idx++)
             {
                 sphoton hit;
@@ -413,7 +414,14 @@ struct RunAction : G4UserRunAction
                 outFile << hit.time << " " << hit.wavelength << "  " << "(" << position.x() << ", " << position.y()
                         << ", " << position.z() << ")  " << "(" << direction.x() << ", " << direction.y() << ", "
                         << direction.z() << ")  " << "(" << polarization.x() << ", " << polarization.y() << ", "
-                        << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid << std::endl;
+                        << polarization.z() << ")  " << "CreationProcessID=" << theCreationProcessid;
+                if (emit_trackid)
+                {
+                    int gsidx = sev->getHitGenstepIndex(idx);
+                    int trackID = gsidx >= 0 ? int(sev->genstep[gsidx].trackid()) : -1;
+                    outFile << " TrackID=" << trackID;
+                }
+                outFile << std::endl;
             }
 
             outFile.close();
@@ -523,10 +531,51 @@ struct SteppingAction : G4UserSteppingAction
                                    << G4endl;
                             return;
                         }
-                        G4double SCINTILLATIONTIMECONSTANT1 = MPT->GetConstProperty(kSCINTILLATIONTIMECONSTANT1);
+                        // G4 11.x supports up to 3 scintillation components
+                        const G4int tcKeys[3] = {kSCINTILLATIONTIMECONSTANT1, kSCINTILLATIONTIMECONSTANT2,
+                                                 kSCINTILLATIONTIMECONSTANT3};
+                        const G4int yieldKeys[3] = {kSCINTILLATIONYIELD1, kSCINTILLATIONYIELD2, kSCINTILLATIONYIELD3};
 
-                        U4::CollectGenstep_DsG4Scintillation_r4695(aTrack, aStep, fNumPhotons, 1,
-                                                                   SCINTILLATIONTIMECONSTANT1);
+                        G4double tc[3] = {0, 0, 0};
+                        G4double yield[3] = {0, 0, 0};
+                        G4double yieldSum = 0;
+                        G4int    nComp = 0;
+
+                        for (G4int c = 0; c < 3; c++)
+                        {
+                            if (MPT->ConstPropertyExists(tcKeys[c]))
+                            {
+                                tc[c] = MPT->GetConstProperty(tcKeys[c]);
+                                yield[c] = MPT->ConstPropertyExists(yieldKeys[c]) ? MPT->GetConstProperty(yieldKeys[c])
+                                                                                  : (c == 0 ? 1.0 : 0.0);
+                                yieldSum += yield[c];
+                                nComp = c + 1;
+                            }
+                        }
+
+                        if (yieldSum <= 0.0)
+                        {
+                            G4cout << "WARNING: scintillation yields sum to <= 0 for material '"
+                                   << aMaterial->GetName() << "'; falling back to single component." << G4endl;
+                            yield[0] = 1.0;
+                            yieldSum = 1.0;
+                            nComp = 1;
+                        }
+
+                        G4AutoLock lock(&genstep_mutex);
+                        G4int      nRemaining = fNumPhotons;
+                        for (G4int c = 0; c < nComp; c++)
+                        {
+                            G4int nPhotComp;
+                            if (c == nComp - 1)
+                                nPhotComp = nRemaining; // last component gets remainder
+                            else
+                                nPhotComp = static_cast<G4int>(fNumPhotons * yield[c] / yieldSum);
+                            nRemaining -= nPhotComp;
+
+                            if (nPhotComp > 0)
+                                U4::CollectGenstep_DsG4Scintillation_r4695(aTrack, aStep, nPhotComp, c + 1, tc[c]);
+                        }
                     }
                 }
             }

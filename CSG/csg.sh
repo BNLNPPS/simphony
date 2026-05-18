@@ -69,11 +69,7 @@ if [ "${arg/run}" != "$arg" ]; then
 
     if [ -n "$DEBUG" ]; then 
         echo $msg running binary $bin under debugger
-        if [ "$(uname)" == "Darwin" ]; then
-            lldb__ $bin
-        else
-            gdb $bin
-        fi 
+        gdb $bin
         [ $? -ne 0 ] && echo $msg error while running binary $bin under debugger  && exit 1
     else
         echo $msg running binary $bin
@@ -98,4 +94,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi
 
 echo 0 
-

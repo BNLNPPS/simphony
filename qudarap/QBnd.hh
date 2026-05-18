@@ -4,7 +4,7 @@
 QBnd
 =====
 
-CUDA-centric equivalent for optixrap/OBndLib 
+CUDA-centric boundary library.
 
 Lots of former bnd array and metadata related methods from QBnd 
 were relocated down to SBnd as they were unrelated to CUDA, and 
@@ -78,5 +78,4 @@ struct QUDARAP_API QBnd
     static std::string Dump(   quad* lookup, int num_lookup, int edgeitems=10 );
 
 };
-
 

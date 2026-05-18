@@ -15,7 +15,7 @@ See notes/issues/cxsim-shakedown.rst
 
     ./cxs_debug.sh pvcap # local pyvista screen captures
 
-    ./cxs_debug.sh # Darwin default is ana  
+    ./cxs_debug.sh # default invocation
 
     PUB=repeated_step_point ./cxs_debug.sh pvpub
 

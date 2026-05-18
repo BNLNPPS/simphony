@@ -19,6 +19,7 @@
     <matrix coldim="1" name="FAST_TIME_CONST" values="6.0"/>
     <matrix coldim="1" name="SLOW_TIME_CONST" values="35.0"/>
     <matrix coldim="1" name="YIELD_RATIO" values="0.8"/>
+    <matrix coldim="1" name="YIELD_RATIO_SLOW" values="0.2"/>
     <matrix coldim="2" name="REEMISSION_PROB" values="1.0*eV 0.0 4.0*eV 0.0"/>
   </define>
 
@@ -58,6 +59,7 @@
       <property name="SCINTILLATIONTIMECONSTANT1" ref="FAST_TIME_CONST"/>
       <property name="SCINTILLATIONTIMECONSTANT2" ref="SLOW_TIME_CONST"/>
       <property name="SCINTILLATIONYIELD1" ref="YIELD_RATIO"/>
+      <property name="SCINTILLATIONYIELD2" ref="YIELD_RATIO_SLOW"/>
       <!-- Old Geant4 10.x / Opticks property names -->
       <property name="FASTCOMPONENT" ref="SCINT_SPECTRUM"/>
       <property name="SLOWCOMPONENT" ref="SCINT_SPECTRUM"/>

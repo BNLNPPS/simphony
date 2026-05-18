@@ -1,0 +1,16 @@
+# run.mac — Geant4 macro for the async_gpu_std example.
+#
+# setStackPhotons false on both Cerenkov and Scintillation tells G4 not to
+# track the optical photons itself — they only flow through Opticks (which
+# is the entire point of this example).  Without this, G4 propagates each
+# optical photon on the CPU and per-event time is two orders of magnitude
+# higher.
+#
+# beamOn 100 produces ~24 M optical photons through the apex geometry,
+# enough work to make GPU vs CPU timing measurable.
+
+/run/verbose 1
+/run/initialize
+/process/optical/scintillation/setStackPhotons false
+/process/optical/cerenkov/setStackPhotons false
+/run/beamOn 100

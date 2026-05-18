@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 /*
 
 simon:sysrap blyth$ uname -a
-Darwin simon.phys.ntu.edu.tw 13.3.0 Darwin Kernel Version 13.3.0: Tue Jun  3 21:27:35 PDT 2014; root:xnu-2422.110.17~1/RELEASE_X86_64 x86_64
+Linux localhost 6.8.0 #1 SMP x86_64 GNU/Linux
 simon:sysrap blyth$ hash_define_without_value 
 2017-12-01 11:11:17.313 INFO  [777934] [main@13] G4DAE_EXTRAS_NO_VALUE
 2017-12-01 11:11:17.313 INFO  [777934] [main@19] G4DAE_EXTRAS_WITH_ONE
@@ -74,6 +74,5 @@ simon:sysrap blyth$
 
 
 */
-
 
 

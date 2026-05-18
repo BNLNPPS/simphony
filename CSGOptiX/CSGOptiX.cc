@@ -2,30 +2,7 @@
 CSGOptiX.cc
 ============
 
-* NOTE : < 7 BRANCH NO LONGER VIABLE BUT ITS EXPEDIENT TO KEEP
-  IT FOR LAPTOP COMPILATION
-
-This code contains two branches for old (OptiX < 7) and new (OptiX 7+) API
-
-Branched aspects:
-
-1. CSGOptiX7.cu vs CSGOptiX6.cu
-2. Ctx/SBT/PIP  vs Six
-3. new workflow uses uploaded params extensively from CUDA device code,
-   old workflow with *Six* uses hostside params to populate the optix context
-   which then gets used on device
-
-   CSGOptiX::prepareParam (called just before launch)
-
-   * new workflow: uploads param
-   * old workflow: Six::updateContext passes hostside param into optix context variables
-
-   Six MATCHING NEEDS DUPLICATION FROM Params INTO CONTEXT VARIABLES AND BUFFERS
-
-HMM: looking like getting qudarap/qsim.h to work with OptiX < 7 is more effort than it is worth
-
-* would have to shadow it into context variables
-* CUDA textures would not work without optix textureSamplers
+OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 
 **/
 
@@ -34,10 +11,7 @@ HMM: looking like getting qudarap/qsim.h to work with OptiX < 7 is more effort t
 #include <chrono>
 
 #include <optix.h>
-#if OPTIX_VERSION < 70000
-#else
 #include <optix_stubs.h>
-#endif
 
 #include <cuda_runtime.h>
 #include <glm/glm.hpp>
@@ -83,15 +57,11 @@ HMM: looking like getting qudarap/qsim.h to work with OptiX < 7 is more effort t
 #include "Params.h"
 #include "config.h"
 
-#if OPTIX_VERSION < 70000
-#include "Six.h"
-#else
 #include "Ctx.h"
 #include "CUDA_CHECK.h"
 #include "OPTIX_CHECK.h"
 #include "PIP.h"
 #include "SBT.h"
-#endif
 
 #include "CSGOptiX.h"
 
@@ -105,13 +75,7 @@ CSGOptiX* CSGOptiX::Get()
 
 int CSGOptiX::Version()
 {
-    int vers = 0 ;
-#if OPTIX_VERSION < 70000
-    vers = 6 ;
-#else
-    vers = 7 ;
-#endif
-    return vers ;
+    return _OPTIX_VERSION() / 10000;
 }
 
 
@@ -207,11 +171,6 @@ const char* CSGOptiX::Desc()
     std::stringstream ss ;
     ss << "CSGOptiX::Desc"
        << " Version " << Version()
-#ifdef WITH_CUSTOM4
-       << " WITH_CUSTOM4 "
-#else
-       << " NOT:WITH_CUSTOM4 "
-#endif
        ;
     std::string str = ss.str();
     return strdup(str.c_str());
@@ -222,10 +181,7 @@ const char* CSGOptiX::desc() const
 {
     std::stringstream ss ;
     ss << Desc() ;
-#if OPTIX_VERSION < 70000
-#else
     ss << pip->desc() ;
-#endif
     std::string s = ss.str();
     return strdup(s.c_str());
 }
@@ -318,14 +274,6 @@ void CSGOptiX::InitMeta()
 
     std::string switches = QSim::Switches() ;
     SEvt::SetRunMetaString("QSim__Switches", switches.c_str() );
-
-#ifdef WITH_CUSTOM4
-    std::string c4 = "TBD" ; //C4Version::Version(); // octal version number bug in Custom4 v0.1.8 : so skip the version metadata
-    SEvt::SetRunMetaString("C4Version", c4.c_str());
-#else
-    SEvt::SetRunMetaString("C4Version", "NOT-WITH_CUSTOM4" );
-#endif
-
 }
 
 
@@ -783,7 +731,7 @@ CSGOptiX::simulate
 
 NB the distinction between this and simulate_launch, this
 uses QSim::simulate to do genstep setup prior to calling
-CSGOptiX::simulate_launch via the SCSGOptiX.h protocol
+CSGOptiX::simulate_launch through the SSimulator launcher interface.
 
 The QSim::simulate argument reset:true is used in order
 to invoke SEvt::endOfEvent after the save, this is because
@@ -833,7 +781,7 @@ CSGOptiX::simtrace
 
 NB the distinction between this and simtrace_launch, this
 uses QSim::simtrace to do genstep setup prior to calling
-CSGOptiX::simtrace_launch via the SCSGOptiX.h protocol
+CSGOptiX::simtrace_launch through the SSimulator launcher interface.
 
 Simtrace effectively always has reset:true because it
 always uses SEvt saving, unlike "simulate" which needs
@@ -1070,12 +1018,8 @@ void CSGOptiX::prepareParamSimulate()
 CSGOptiX::prepareParam and upload
 -------------------------------------
 
-This is invoked by CSGOptiX::launch just before the OptiX launch,
-depending on raygenmode the simulate/render param are prepared and uploaded.
-
-Q: can Six use the same uploaded params ?
-A: not from device code it seems : only by using the hostside params to
-   populate the pre-7 optix::context
+This is invoked by CSGOptiX::launch just before the OptiX launch.
+Depending on raygenmode the simulate/render params are prepared and uploaded.
 
 **/
 
@@ -1100,7 +1044,7 @@ void CSGOptiX::prepareParam()
 CSGOptiX::launch
 -------------------
 
-For what happens next, see CSGOptiX7.cu::__raygen__rg OR CSGOptiX6.cu::raygen
+For what happens next, see CSGOptiX7.cu::__raygen__rg.
 Depending on params.raygenmode the "render" or "simulate" method is called.
 
 Formerly followed an OptiX 7 SDK example, creating a stream for the launch::
@@ -1206,7 +1150,7 @@ CSGOptiX::render_launch CSGOptiX::simtrace_launch CSGOptiX::simulate_launch
 All the launch set (double)dt
 
 CAUTION : *simulate_launch* and *simtrace_launch*
-MUST BE invoked from QSim::simulate and QSim::simtrace using the SCSGOptiX.h protocol.
+MUST BE invoked from QSim::simulate and QSim::simtrace.
 This is because genstep preparations are needed prior to launch.
 
 These three methods currently all call *CSGOptiX::launch*
@@ -1425,11 +1369,7 @@ void CSGOptiX::snap(const char* path_, const char* bottom_line, const char* top_
     const char* path = path_ ? SPath::Resolve(path_, FILEPATH ) : getDefaultSnapPath() ;
     LOG(LEVEL) << " path " << path ;
 
-#if OPTIX_VERSION < 70000
-    const char* top_extra = nullptr ;
-#else
     const char* top_extra = pip->desc();
-#endif
     const char* topline = SStr::Concat(top_line, top_extra);
 
     LOG(LEVEL) << " path_ [" << path_ << "]" ;
@@ -1463,11 +1403,7 @@ void CSGOptiX::snap(const char* path_, const char* bottom_line, const char* top_
 #ifdef WITH_FRAME_PHOTON
 void CSGOptiX::writeFramePhoton(const char* dir, const char* name)
 {
-#if OPTIX_VERSION < 70000
-    assert(0 && "not implemented pre-7");
-#else
     framebuf->writePhoton(dir, name);
-#endif
 }
 #endif
 
@@ -1514,11 +1450,8 @@ void CSGOptiX::saveMeta(const char* jpg_path) const
 
 void CSGOptiX::write_Ctx_log(const char* dir) const
 {
-#if OPTIX_VERSION < 70000
-#else
     std::string ctxlog = Ctx::GetLOG() ;
     spath::Write(ctxlog.c_str() , dir, CTX_LOGNAME  );
-#endif
 }
 
 

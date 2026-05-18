@@ -27,7 +27,7 @@ arg=${1:-$defarg}
 cuda_prefix=/usr/local/cuda
 CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 
-OPT="-use_fast_math -DRNG_PHILITEOX"
+OPT="-use_fast_math"
 
 M=1000000
 ni=$(( 10*M ))
@@ -75,4 +75,3 @@ fi
 
 
 exit 0 
-

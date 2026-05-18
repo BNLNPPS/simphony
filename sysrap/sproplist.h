@@ -29,16 +29,16 @@ not to define ABSLENGTH and RAYLEIGH properties.
 
 struct sproplist
 {
-    static constexpr const char* MATERIAL = R"(
+    static constexpr const char *MATERIAL = R"(
     0 0 RINDEX          1
     0 1 ABSLENGTH       1e12
     0 2 RAYLEIGH        1e12
     0 3 REEMISSIONPROB  0.
     1 0 GROUPVEL        299.792458
     1 1 SPARE11         0.
-    1 2 SPARE12         0.
+    1 2 WLSABSLENGTH    1e12
     1 3 SPARE13         0.
-    )" ;
+    )";
     // default GROUPVEL set to c_light_mm_per_ns, see U4PhysicalConstants.h 
 
     static constexpr const char* SURFACE = R"(

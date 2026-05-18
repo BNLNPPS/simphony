@@ -134,11 +134,7 @@ cd $(dirname $(realpath $BASH_SOURCE))
 
 msg="=== $BASH_SOURCE :"
 
-case $(uname) in
-  Linux)  defarg="run"  ;;
-  Darwin) defarg="ana"  ;;
-esac
-
+defarg="run"
 arg=${1:-$defarg}
 
 case $arg in
@@ -262,7 +258,6 @@ loglevel_verbose()
     export QBase=INFO
     export SSim=INFO
     export SBT=INFO
-    export IAS_Builder=INFO
     #export QEvt=INFO
     export CSGOptiX=INFO
     export G4CXOpticks=INFO
@@ -380,4 +375,3 @@ if [ "$arg" == "pvcap" -o "$arg" == "pvpub" -o "$arg" == "mpcap" -o "$arg" == "m
 fi
 
 exit 0
-

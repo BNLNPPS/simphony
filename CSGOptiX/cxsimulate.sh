@@ -2,11 +2,7 @@
 source $PWD/../bin/GEOM.sh trim   ## sets GEOM envvar based on GEOM.txt file 
 
 msg="=== $BASH_SOURCE :"
-
-case $(uname) in 
-   Linux)  argdef=run  ;;
-   Darwin) argdef=ana  ;;
-esac
+argdef=run
 arg=${1:-$argdef}
 
 usage(){ cat << EOU
@@ -67,10 +63,6 @@ if [ "${arg/run}" != "$arg" -o "${arg/dbg}" != "$arg" ]; then
 fi 
 
 if [ "${arg/ana}" != "$arg" ]; then 
-
-    if [ "$(uname)" == "Darwin" ]; then
-        opticks-switch-key remote   ## cx;cf_grab.sh to update local copy of the remote CSGFoundry for analysis consistency  
-    fi 
     export FOLD=$CFBASE_LOCAL/CSGOptiXSimulateTest
     ${IPYTHON:-ipython} --pdb -i tests/CSGOptiXSimulateTest.py  
 fi 

@@ -41,7 +41,7 @@ echo "=== Test: GPUPhotonSource with 8x8SiPM_w_CSI_optial_grease.gdml ==="
 echo "Config: 1000 photons inside crystal at (-8.7, -8.7, 4.0)mm, 420nm, disc r=0.5mm"
 echo "Running GPUPhotonSource with seed $SEED ..."
 
-OUTPUT=$(USER=fakeuser GEOM=fakegeom GPUPhotonSource \
+OUTPUT=$(GPUPhotonSource \
     -g "$OPTICKS_HOME/tests/geom/8x8SiPM_w_CSI_optial_grease.gdml" \
     -c 8x8SiPM_crystal \
     -m "$OPTICKS_HOME/tests/run.mac" \

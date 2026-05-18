@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="">
+
+  <define>
+    <!-- Air refractive index (constant ~1.0) -->
+    <matrix coldim="2" name="RINDEX_AIR" values="1.55e-06 1.0 1.55e-05 1.0"/>
+    <matrix coldim="2" name="ABSLENGTH_AIR" values="1.55e-06 1.0e6 1.55e-05 1.0e6"/>
+
+    <!-- WLS material refractive index -->
+    <matrix coldim="2" name="RINDEX_WLS" values="1.55e-06 1.59 1.55e-05 1.59"/>
+
+    <!-- WLS regular absorption: transparent (WLS absorption does the work) -->
+    <matrix coldim="2" name="ABSLENGTH_WLS" values="1.55e-06 1.0e6 1.55e-05 1.0e6"/>
+
+    <!--
+      WLS absorption length (mm): absorbs UV strongly, transparent to visible.
+      Energy(MeV)   ~Wavelength    WLSABSLENGTH(mm)
+      1.77e-6       700nm          10000
+      2.07e-6       600nm          10000
+      2.48e-6       500nm          10000
+      2.76e-6       450nm          100
+      3.10e-6       400nm          1.0
+      3.54e-6       350nm          0.1
+      4.13e-6       300nm          0.01
+    -->
+    <matrix coldim="2" name="WLSABSLENGTH_WLS" values="1.77e-06 10000.0 2.07e-06 10000.0 2.48e-06 10000.0 2.76e-06 100.0 3.10e-06 1.0 3.54e-06 0.1 4.13e-06 0.01"/>
+
+    <!--
+      WLS emission spectrum: peaked in blue-green (around 450-500 nm).
+      Energy(MeV)   ~Wavelength   Intensity
+      1.77e-6       700nm         0.00
+      2.07e-6       600nm         0.02
+      2.25e-6       551nm         0.10
+      2.48e-6       500nm         0.50
+      2.58e-6       481nm         1.00 (peak)
+      2.70e-6       459nm         0.80
+      2.76e-6       449nm         0.50
+      2.88e-6       430nm         0.10
+      3.10e-6       400nm         0.00
+    -->
+    <matrix coldim="2" name="WLSCOMPONENT_WLS" values="1.77e-06 0.00 2.07e-06 0.02 2.25e-06 0.10 2.48e-06 0.50 2.58e-06 1.00 2.70e-06 0.80 2.76e-06 0.50 2.88e-06 0.10 3.10e-06 0.00"/>
+
+    <!-- WLS time constant: 0.5 ns -->
+    <matrix coldim="1" name="WLSTIMECONSTANT_WLS" values="0.5"/>
+
+    <!-- Detector shell refractive index (glass) -->
+    <matrix coldim="2" name="RINDEX_GLASS" values="1.55e-06 1.50 1.55e-05 1.50"/>
+
+    <!-- Detector efficiency: 100% -->
+    <matrix coldim="2" name="EFFICIENCYDET" values="1.55e-06 1.0 1.55e-05 1.0"/>
+  </define>
+
+  <materials>
+    <element name="N" formula="N" Z="7">
+      <atom value="14.007" unit="g/mole"/>
+    </element>
+    <element name="O" formula="O" Z="8">
+      <atom value="15.999" unit="g/mole"/>
+    </element>
+    <element name="C" formula="C" Z="6">
+      <atom value="12.011" unit="g/mole"/>
+    </element>
+    <element name="H" formula="H" Z="1">
+      <atom value="1.008" unit="g/mole"/>
+    </element>
+
+    <material name="Air" state="gas">
+      <D value="0.00120479" unit="g/cm3"/>
+      <fraction n="0.7" ref="N"/>
+      <fraction n="0.3" ref="O"/>
+      <property name="RINDEX" ref="RINDEX_AIR"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_AIR"/>
+    </material>
+
+    <material name="WLSMaterial" state="solid">
+      <D value="1.05" unit="g/cm3"/>
+      <fraction n="0.915" ref="C"/>
+      <fraction n="0.085" ref="H"/>
+      <property name="RINDEX" ref="RINDEX_WLS"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_WLS"/>
+      <property name="WLSABSLENGTH" ref="WLSABSLENGTH_WLS"/>
+      <property name="WLSCOMPONENT" ref="WLSCOMPONENT_WLS"/>
+      <property name="WLSTIMECONSTANT" ref="WLSTIMECONSTANT_WLS"/>
+    </material>
+
+    <material name="GlassMaterial" state="solid">
+      <D value="2.5" unit="g/cm3"/>
+      <fraction n="1.0" ref="O"/>
+      <property name="RINDEX" ref="RINDEX_GLASS"/>
+    </material>
+  </materials>
+
+  <solids>
+    <sphere name="WorldSphere" rmin="0" rmax="200" deltaphi="6.28318530718" deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+    <sphere name="WLSSphere" rmin="0" rmax="20" deltaphi="6.28318530718" deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+    <sphere name="DetectorOuter" rmin="0" rmax="30" deltaphi="6.28318530718" deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+    <sphere name="DetectorInner" rmin="0" rmax="28" deltaphi="6.28318530718" deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+    <subtraction name="DetectorShell">
+      <first ref="DetectorOuter"/>
+      <second ref="DetectorInner"/>
+    </subtraction>
+
+    <opticalsurface name="DetSurface" type="0" model="1" finish="0" value="0">
+      <property name="EFFICIENCY" ref="EFFICIENCYDET"/>
+    </opticalsurface>
+  </solids>
+
+  <structure>
+    <volume name="WLS_logical">
+      <materialref ref="WLSMaterial"/>
+      <solidref ref="WLSSphere"/>
+    </volume>
+
+    <volume name="Detector_logical">
+      <materialref ref="GlassMaterial"/>
+      <solidref ref="DetectorShell"/>
+      <auxiliary auxtype="SensDet" auxvalue="PhotonDetector"/>
+    </volume>
+
+    <volume name="World_logical">
+      <materialref ref="Air"/>
+      <solidref ref="WorldSphere"/>
+
+      <physvol name="WLS_phys">
+        <volumeref ref="WLS_logical"/>
+        <position name="WLSpos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+
+      <physvol name="Detector_phys">
+        <volumeref ref="Detector_logical"/>
+        <position name="Detpos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+
+    <skinsurface name="DetSkinSurface" surfaceproperty="DetSurface">
+      <volumeref ref="Detector_logical"/>
+    </skinsurface>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="World_logical"/>
+  </setup>
+</gdml>

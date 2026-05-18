@@ -15,44 +15,13 @@ A: By calculating the s and p coeffs and then only applying them to the actual p
    * PERHAPS CAN FACTORIZE sboundary.h ANALOGOUSLY ?
 
 
-From u4/CustomBoundary.h:doIt::
-
-    267     const G4ThreeVector& surface_normal = theRecoveredNormal ;
-    268     const G4ThreeVector& direction      = OldMomentum ;
-    269     const G4ThreeVector& polarization   = OldPolarization ;
-    ...
-    271     G4double minus_cos_theta = direction*surface_normal ;
-    272     G4double orientation = minus_cos_theta < 0. ? 1. : -1.  ;
-    273     G4ThreeVector oriented_normal = orientation*surface_normal ;
-    ...
-    315     const double _si = stack.ll[0].st.real() ;
-    ...
-    327     // E_s2 : S-vs-P power fraction : signs make no difference as squared
-    328     double E_s2 = _si > 0. ? (polarization*direction.cross(oriented_normal))/_si : 0. ;
-  
-    ///
-    ///                                                                              ^^^  trans_length
-    ///                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        trans
-    ///                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ A_trans
-    ///                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E1_perp
-    ///
-
-    329     E_s2 *= E_s2;
-
-    ////    ^^^^^   E1_perp*E1_perp
-
-    ...
-    340     double fT_s = stack.art.T_s ;
-    341     double fT_p = stack.art.T_p ;
-    342     double fR_s = stack.art.R_s ;
-    343     double fR_p = stack.art.R_p ;
-    344     double one = 1.0 ;
-    345     double T = fT_s*E_s2 + fT_p*(one-E_s2);  // THIS MATCHES TransCoeff from sboundary.h 
-    346     double R = fR_s*E_s2 + fR_p*(one-E_s2);
-    347     double A = one - (T+R);
+The expressions below mirror the standard boundary polarization bookkeeping:
+build the transverse basis, project the incoming polarization into S/P
+components, then combine the Fresnel transmission/reflection coefficients.
 
 **/
 
+#include "srng_traits.h"
 
 struct sboundary
 {
@@ -99,11 +68,11 @@ struct sboundary
     float3 A_parallel ; 
     float3 alt_pol ;  // check an alternative polarization expression  
 
-    sboundary(RNG& rng, sctx& ctx );  
+    template <typename Rng> sboundary(Rng &rng, sctx &ctx);
 };
 
-inline sboundary::sboundary( RNG& rng, sctx& ctx ) 
-    :
+template <typename Rng>
+inline sboundary::sboundary(Rng &rng, sctx &ctx) :
     p(ctx.p),
     s(ctx.s),
     n1(s.material1.x),
@@ -135,7 +104,7 @@ inline sboundary::sboundary( RNG& rng, sctx& ctx )
     TT(normalize(E2_t)), 
     TransCoeff(tir || n1c1 == 0.f ? 0.f : n2c2*dot(E2_t,E2_t)/n1c1),
     ReflectCoeff(1.f - TransCoeff),
-    u_reflect(curand_uniform(&rng)),
+    u_reflect(srng_uniform(rng)),
     reflect(u_reflect > TransCoeff), 
     flag(reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT),
     Coeff(reflect ? ReflectCoeff : TransCoeff),
@@ -251,4 +220,3 @@ inline std::ostream& operator<<(std::ostream& os, const sboundary& b)
        ;
     return os; 
 }   
-

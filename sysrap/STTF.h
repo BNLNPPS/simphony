@@ -55,8 +55,6 @@ struct STTF
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
-#elif defined(_MSC_VER)
-
 #endif
 
 
@@ -71,8 +69,6 @@ struct STTF
 #elif defined(__GNUC__) || defined(__GNUG__)
 
 #pragma GCC diagnostic pop
-
-#elif defined(_MSC_VER)
 #endif
 
 
@@ -295,6 +291,5 @@ inline int STTF::annotate( unsigned char* bitmap, int channels, int width, int h
     rc = render_text(       bitmap+offset_txt, channels, width, line_height, text  ) ;
     return rc ; 
 }
-
 
 

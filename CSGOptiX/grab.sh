@@ -113,8 +113,8 @@ open_last(){
     local typ=${1:-jpg}
     local last=$(find_last $typ)
     echo $msg typ $typ last $last
-    if [ "$(uname)" == "Darwin" ]; then
-        open $last 
+    if command -v xdg-open >/dev/null 2>&1 ; then
+        xdg-open "$last" >/dev/null 2>&1 &
     fi 
 
     if [ -n "$PUB" ]; then
@@ -205,4 +205,3 @@ elif [ "$arg" == "all" ]; then
    fi 
 
 fi 
-

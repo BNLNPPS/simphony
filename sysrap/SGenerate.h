@@ -31,7 +31,6 @@ struct SGenerate
 #include "sphoton.h"
 
 #include "srngcpu.h"
-using RNG = srngcpu ;
 
 #include "storch.h"
 #include "scarrier.h"
@@ -79,7 +78,7 @@ inline NP* SGenerate::GeneratePhotons(const NP* gs_ )
     sphoton* pp = (sphoton*)ph->bytes() ;
 
     unsigned rng_seed = 1u ;
-    RNG rng ;
+    srngcpu rng;
     rng.seed = rng_seed ;
 
     for(int i=0 ; i < tot_photon ; i++ )
@@ -102,5 +101,4 @@ inline NP* SGenerate::GeneratePhotons(const NP* gs_ )
     delete se ;
     return ph ;
 }
-
 

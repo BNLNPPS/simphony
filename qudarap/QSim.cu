@@ -81,6 +81,14 @@ __global__ void _QSim_scint_wavelength(qsim* sim, float* wavelength, unsigned nu
     unsigned id = blockIdx.x*blockDim.x + threadIdx.x;
     if (id >= num_wavelength) return;
 
+    if (sim->scint == nullptr)
+    {
+        if (id == 0)
+            printf("//_QSim_scint_wavelength missing scint, returning zeros \n");
+        wavelength[id] = 0.f;
+        return;
+    }
+
     RNG rng ;
     sim->rng->init(rng, 0, id ) ;
 
@@ -161,7 +169,14 @@ __global__ void _QSim_dbg_gs_generate(qsim* sim, qdebug* dbg, sphoton* photon, u
     else if( type == SCINT_GENERATE )
     {
         const quad6& gs = (const quad6&)dbg->scint_gs ;
-        sim->scint->generate(p, rng, gs, idx, gsid );
+        if (sim->scint != nullptr)
+        {
+            sim->scint->generate(p, rng, gs, idx, gsid );
+        }
+        else if (idx == 0)
+        {
+            printf("//_QSim_dbg_gs_generate missing scint, leaving photon zeroed \n");
+        }
     }
     photon[idx] = p ;
 }

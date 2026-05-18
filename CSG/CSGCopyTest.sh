@@ -7,6 +7,5 @@ export CSGCopy=INFO
 #export DUMP_NPS=7
 #export DUMP_RIDX=6 
 
-lldb__ CSGCopyTest $* 
-
+gdb__ CSGCopyTest $* 
 

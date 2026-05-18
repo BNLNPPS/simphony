@@ -29,10 +29,7 @@ export GSPATH=$GSFOLD/genstep.npy
 
 vars="BASH_SOURCE defarg arg name script GEOM CTX TEST RELDIR GSFOLD GSPATH MODE"
 
-case $(uname) in
-  Darwin) mode=3 ;;
-  Linux)  mode=0 ;;
-esac
+mode=0
 export MODE=${MODE:-$mode}
 export NOGRID=1
 

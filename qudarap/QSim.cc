@@ -17,7 +17,6 @@
 #include "SEvent.hh"
 #include "SEventConfig.hh"
 
-//#include "SCSGOptiX.h"
 #include "SSimulator.h"
 
 #include "SGenstep.h"
@@ -32,19 +31,19 @@
 #include "qdebug.h"
 
 #include "QBase.hh"
-#include "QEvt.hh"
-#include "QRng.hh"
-#include "QTex.hh"
-#include "QScint.hh"
-#include "QCerenkov.hh"
 #include "QBnd.hh"
-#include "QProp.hh"
-#include "QMultiFilm.hh"
-#include "QEvt.hh"
-#include "QOptical.hh"
-#include "QSimLaunch.hh"
+#include "QCerenkov.hh"
 #include "QDebug.hh"
+#include "QEvt.hh"
+#include "QMultiFilm.hh"
+#include "QOptical.hh"
 #include "QPMT.hh"
+#include "QProp.hh"
+#include "QRng.hh"
+#include "QScint.hh"
+#include "QSimLaunch.hh"
+#include "QTex.hh"
+#include "QWls.hh"
 
 #include "QSim.hh"
 
@@ -167,11 +166,10 @@ void QSim::UploadComponents( const SSim* ssim  )
         LOG(LEVEL) << "  propcom null, snam::PROPCOM " <<  snam::PROPCOM ;
     }
 
-
     const NP* icdf = ssim->get(snam::ICDF);
-    if( icdf == nullptr )
+    if (icdf == nullptr)
     {
-        LOG(error) << " icdf null, snam::ICDF " << snam::ICDF ;
+        LOG(LEVEL) << " no scintillation ICDF, skip QScint upload. snam::ICDF: " << snam::ICDF;
     }
     else
     {
@@ -180,6 +178,26 @@ void QSim::UploadComponents( const SSim* ssim  )
         LOG(LEVEL) << scint->desc();
     }
 
+    const NP *wls_icdf = ssim->get(snam::WLS_ICDF);
+    const NP *wls_mat_map = ssim->get(snam::WLS_MAT_MAP);
+    if (wls_icdf == nullptr || wls_mat_map == nullptr)
+    {
+        LOG(LEVEL) << " wls_icdf or wls_mat_map null — no WLS materials in geometry ";
+    }
+    else
+    {
+        const NP *wls_tc = ssim->get(snam::WLS_TIME_CONSTANTS);
+        if (wls_tc)
+        {
+            unsigned hd_factor = 20u;
+            QWls *qwls_ = new QWls(wls_icdf, wls_mat_map, wls_tc, hd_factor);
+            LOG(LEVEL) << qwls_->desc();
+        }
+        else
+        {
+            LOG(error) << " wls_icdf and wls_mat_map present but wls_time_constants missing ";
+        }
+    }
 
     // TODO: make this more like the others : acting on the available inputs rather than the mode
     bool is_simtrace = SEventConfig::IsRGModeSimtrace() ;
@@ -260,13 +278,13 @@ singleton components.
 
 **/
 
-QSim::QSim()
-    :
+QSim::QSim() :
     base(QBase::Get()),
     qev(new QEvt),
     sev(qev->sev),
     rng(QRng::Get()),
     scint(QScint::Get()),
+    qwls(QWls::Get()),
     cerenkov(QCerenkov::Get()),
     bnd(QBnd::Get()),
     debug_(QDebug::Get()),
@@ -316,6 +334,7 @@ void QSim::init()
     sim->multifilm = multifilm ? multifilm->d_multifilm : nullptr ;
     sim->cerenkov = cerenkov ? cerenkov->d_cerenkov : nullptr ;
     sim->scint = scint ? scint->d_scint : nullptr ;
+    sim->wls = qwls ? qwls->d_wls : nullptr;
     sim->pmt = pmt ? pmt->d_pmt : nullptr ;
 
 
@@ -324,21 +343,23 @@ void QSim::init()
     bool MISSING_PMT = REQUIRE_PMT == true && has_PMT == false ;
 
     LOG(LEVEL)
-        << " MISSING_PMT " << ( MISSING_PMT ? "YES" : "NO " )
-        << " has_PMT " << ( has_PMT ? "YES" : "NO " )
-        << " QSim::pmt " << ( pmt ? "YES" : "NO " )
-        << " QSim::pmt->d_pmt " << ( sim->pmt ? "YES" : "NO " )
-        << " [" << _QSim__REQUIRE_PMT << "] " << ( REQUIRE_PMT ? "YES" : "NO " )
-        ;
+        << " MISSING_PMT " << (MISSING_PMT ? "YES" : "NO ")
+        << " has_PMT " << (has_PMT ? "YES" : "NO ")
+        << " QSim::pmt " << (pmt ? "YES" : "NO ")
+        << " QSim::pmt->d_pmt " << (sim->pmt ? "YES" : "NO ")
+        << " QSim::scint " << (scint ? "YES" : "NO ")
+        << " QSim::scint->d_scint " << (sim->scint ? "YES" : "NO ")
+        << " [" << _QSim__REQUIRE_PMT << "] " << (REQUIRE_PMT ? "YES" : "NO ");
 
-    LOG_IF(fatal, MISSING_PMT )
+    LOG_IF(fatal, MISSING_PMT)
         << " MISSING_PMT ABORT "
-        << " MISSING_PMT " << ( MISSING_PMT ? "YES" : "NO " )
-        << " has_PMT " << ( has_PMT ? "YES" : "NO " )
-        << " QSim::pmt " << ( pmt ? "YES" : "NO " )
-        << " QSim::pmt->d_pmt " << ( sim->pmt ? "YES" : "NO " )
-        << " [" << _QSim__REQUIRE_PMT << "] " << ( REQUIRE_PMT ? "YES" : "NO " )
-        ;
+        << " MISSING_PMT " << (MISSING_PMT ? "YES" : "NO ")
+        << " has_PMT " << (has_PMT ? "YES" : "NO ")
+        << " QSim::pmt " << (pmt ? "YES" : "NO ")
+        << " QSim::pmt->d_pmt " << (sim->pmt ? "YES" : "NO ")
+        << " QSim::scint " << (scint ? "YES" : "NO ")
+        << " QSim::scint->d_scint " << (sim->scint ? "YES" : "NO ")
+        << " [" << _QSim__REQUIRE_PMT << "] " << (REQUIRE_PMT ? "YES" : "NO ");
 
     assert(MISSING_PMT == false) ;
     if(MISSING_PMT)  std::raise(SIGINT);
@@ -350,11 +371,31 @@ void QSim::init()
     LOG(LEVEL) << descComponents() ;
 }
 
+bool QSim::hasScint() const
+{
+    return sim != nullptr && scint != nullptr && sim->scint != nullptr;
+}
+
+void QSim::requireScint(const char *caller) const
+{
+    bool missing_scint = hasScint() == false;
+
+    LOG_IF(fatal, missing_scint)
+        << caller << " requires scintillation data, but QSim was initialized without QScint"
+        << " scint " << (scint ? "YES" : "NO ") << " sim " << (sim ? "YES" : "NO ")
+        << " sim->scint " << (sim && sim->scint ? "YES" : "NO ") << " snam::ICDF "
+        << snam::ICDF;
+
+    assert(missing_scint == false);
+    if (missing_scint)
+        std::raise(SIGINT);
+}
+
 /**
 QSim::setLauncher
 ------------------
 
-Formerly used SCSGOptiX
+Stores the launcher used for sim and simtrace callbacks.
 
 **/
 void QSim::setLauncher(SSimulator* cx_ )
@@ -898,6 +939,7 @@ qsim* QSim::getDevicePtr() const
 
 char QSim::getScintTexFilterMode() const
 {
+    requireScint("QSim::getScintTexFilterMode");
     return scint->tex->getFilterMode() ;
 }
 
@@ -941,25 +983,24 @@ std::string QSim::descComponents() const
 {
     std::stringstream ss ;
     ss << std::endl
-       << "QSim::descComponents"
-       << std::endl
-       << " (QBase)base             " << ( base      ? "YES" : "NO " )  << std::endl
-       << " (QEvt)qev           " << ( qev     ? "YES" : "NO " )  << std::endl
-       << " (SEvt)sev               " << ( sev       ? "YES" : "NO " )  << std::endl
-       << " (QRng)rng               " << ( rng       ? "YES" : "NO " )  << std::endl
-       << " (QScint)scint           " << ( scint     ? "YES" : "NO " )  << std::endl
-       << " (QCerenkov)cerenkov     " << ( cerenkov  ? "YES" : "NO " )  << std::endl
-       << " (QBnd)bnd               " << ( bnd       ? "YES" : "NO " )  << std::endl
-       << " (QOptical)optical       " << ( optical   ? "YES" : "NO " )  << std::endl
-       << " (QDebug)debug_          " << ( debug_    ? "YES" : "NO " )  << std::endl
-       << " (QProp)prop             " << ( prop      ? "YES" : "NO " )  << std::endl
-       << " (QPMT)pmt               " << ( pmt       ? "YES" : "NO " )  << std::endl
-       << " (QMultiFilm)multifilm   " << ( multifilm ? "YES" : "NO " )  << std::endl
-       << " (qsim)sim               " << ( sim       ? "YES" : "NO " )  << std::endl
-       << " (qsim)d_sim             " << ( d_sim     ? "YES" : "NO " )  << std::endl
-       << " (qdebug)dbg             " << ( dbg       ? "YES" : "NO " )  << std::endl
-       << " (qdebug)d_dbg           " << ( d_dbg     ? "YES" : "NO " )  << std::endl
-       ;
+       << "QSim::descComponents" << std::endl
+       << " (QBase)base             " << (base ? "YES" : "NO ") << std::endl
+       << " (QEvt)qev           " << (qev ? "YES" : "NO ") << std::endl
+       << " (SEvt)sev               " << (sev ? "YES" : "NO ") << std::endl
+       << " (QRng)rng               " << (rng ? "YES" : "NO ") << std::endl
+       << " (QScint)scint           " << (scint ? "YES" : "NO ") << std::endl
+       << " (QCerenkov)cerenkov     " << (cerenkov ? "YES" : "NO ") << std::endl
+       << " (QBnd)bnd               " << (bnd ? "YES" : "NO ") << std::endl
+       << " (QOptical)optical       " << (optical ? "YES" : "NO ") << std::endl
+       << " (QDebug)debug_          " << (debug_ ? "YES" : "NO ") << std::endl
+       << " (QProp)prop             " << (prop ? "YES" : "NO ") << std::endl
+       << " (QPMT)pmt               " << (pmt ? "YES" : "NO ") << std::endl
+       << " (QMultiFilm)multifilm   " << (multifilm ? "YES" : "NO ") << std::endl
+       << " (qsim)sim               " << (sim ? "YES" : "NO ") << std::endl
+       << " (qsim)hasScint          " << (hasScint() ? "YES" : "NO ") << std::endl
+       << " (qsim)d_sim             " << (d_sim ? "YES" : "NO ") << std::endl
+       << " (qdebug)dbg             " << (dbg ? "YES" : "NO ") << std::endl
+       << " (qdebug)d_dbg           " << (d_dbg ? "YES" : "NO ") << std::endl;
     std::string s = ss.str();
     return s ;
 }
@@ -1171,6 +1212,7 @@ extern void QSim_scint_wavelength(   dim3 numBlocks, dim3 threadsPerBlock, qsim*
 
 NP* QSim::scint_wavelength(unsigned num_wavelength, unsigned& hd_factor )
 {
+    requireScint("QSim::scint_wavelength");
 
     bool qsim_disable_hd = ssys::getenvbool("QSIM_DISABLE_HD");
     hd_factor = qsim_disable_hd ? 0u : scint->tex->getHDFactor() ;
@@ -1239,6 +1281,8 @@ extern void QSim_dbg_gs_generate(dim3 numBlocks, dim3 threadsPerBlock, qsim* sim
 NP* QSim::dbg_gs_generate(unsigned num_photon, unsigned type )
 {
     assert( type == SCINT_GENERATE || type == CERENKOV_GENERATE );
+    if (type == SCINT_GENERATE)
+        requireScint("QSim::dbg_gs_generate");
 
     configureLaunch( num_photon, 1 );
     sphoton* d_photon = QU::device_alloc<sphoton>(num_photon, "QSim::dbg_gs_generate:num_photon") ;
@@ -2000,12 +2044,6 @@ std::string QSim::Desc(char delim)  // static
        << "NOT-WITH_CHILD"
 #endif
        << delim
-#ifdef WITH_CUSTOM4
-       << "WITH_CUSTOM4"
-#else
-       << "NOT-WITH_CUSTOM4"
-#endif
-       << delim
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else
@@ -2036,12 +2074,6 @@ std::string QSim::Desc(char delim)  // static
        << "NOT-RNG_PHILOX"
 #endif
        << delim
-#ifdef RNG_PHILITEOX
-       << "RNG_PHILITEOX"
-#else
-       << "NOT-RNG_PHILITEOX"
-#endif
-       << delim
        ;
     std::string str = ss.str() ;
     return str ;
@@ -2053,5 +2085,3 @@ std::string QSim::Switches()  // static
 {
     return Desc(',');
 }
-
-

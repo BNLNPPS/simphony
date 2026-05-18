@@ -50,24 +50,13 @@ export CVDLabel="CVD${CUDA_VISIBLE_DEVICES}"
 
 case $(uname) in 
    Linux)  argdef=run  ;;
-   Darwin) argdef=ana  ;;
 esac
 
 msg="=== $BASH_SOURCE :"
 arg=${1:-$argdef}
 bin=CXRaindropTest
 
-if [ "$(uname)" == "Darwin" ]; then 
-    if [ "$arg" == "dru" -o "$arg" == "dan" ]; then  
-        echo $msg dru or dan mode is local Darwin running and analysis 
-        export CFBASE_LOCAL=/tmp/$USER/opticks/GeoChain_Darwin/$GEOM
-    else
-        echo $msg run or ana mode handles Linux generated results grabbed from remote 
-        export CFBASE_LOCAL=/tmp/$USER/opticks/GeoChain/$GEOM
-    fi 
-else
-    export CFBASE_LOCAL=/tmp/$USER/opticks/GeoChain/$GEOM
-fi 
+export CFBASE_LOCAL=/tmp/$USER/opticks/GeoChain/$GEOM
 
 export FOLD=$CFBASE_LOCAL   ## grab fails when add the bin dir here 
 
@@ -108,10 +97,7 @@ if [ "${arg/run}" != "$arg" -o "${arg/dru}" != "$arg" -o "$arg" == "dbg" ]; then
     ##export CSGMaker_makeBoxedSphere_FACTOR=10
 
     if [ -n "$DEBUG" -o "$arg" == "dbg" ]; then 
-        case $(uname) in
-           Darwin) lldb__  $bin  ;;
-           Linux)  gdb $bin ;;
-        esac 
+        gdb $bin
     else
         $bin
     fi 

@@ -122,7 +122,6 @@ loglevels()
     export QBase=INFO
     export SSim=INFO
     export SBT=INFO
-    export IAS_Builder=INFO
     #export QEvt=INFO
     export CSGOptiX=INFO
     export G4CXOpticks=INFO
@@ -147,10 +146,7 @@ if [ "run" == "$arg" ]; then
 fi
 
 if [ "dbg" == "$arg" ]; then
-    case $(uname) in
-        Linux) gdb_ $bin -ex r  ;;
-        Darwin) lldb__ $bin ;;
-    esac
+    gdb_ $bin -ex r
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg $bin error && exit 2
 fi
 
@@ -184,4 +180,3 @@ if [ "ab" == "$arg" ]; then
 fi
 
 exit 0
-

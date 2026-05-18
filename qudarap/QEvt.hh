@@ -31,7 +31,7 @@ Canonical *event* instanciated within QSim::QSim
 Unlike typical CPU side event classes with many instances the QEvt/sevent is rather "static"
 and singular with long lived buffers of defined maximum capacity that get reused for each launch.
 
-* Note that CUDA has no realloc the old OContext::resizeBuffer is an OptiX < 7 extension.
+* Note that CUDA has no realloc for these device buffers.
   Hence decided to define maximum buffer sizes as calculated from max number of photons for each launch
   and arrange that lanches to never exceed those maximums
 
@@ -229,5 +229,3 @@ public:
     void checkEvt() ;  // GPU side
 
 };
-
-

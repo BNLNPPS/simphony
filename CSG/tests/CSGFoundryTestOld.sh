@@ -38,10 +38,8 @@ gcc -g \
 [ $? -ne 0 ] && echo compile error && exit 1
 echo compile done 
 
-case $(uname) in
-  Darwin) var=DYLD_LIBRARY_PATH dbg=lldb_  ;;
-  Linux)  var=LD_LIBRARY_PATH   dbg=gdb    ;;
-esac
+var=LD_LIBRARY_PATH
+dbg=gdb
 #dbg=""
 echo var $var dbg $dbg
 
@@ -54,4 +52,3 @@ eval $cmd
 
 
 exit 0 
-

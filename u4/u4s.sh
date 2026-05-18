@@ -35,10 +35,7 @@ EOU
 }
 msg="=== $BASH_SOURCE :"
 
-case $(uname) in 
-   Linux) defarg="run" ;;
-   Darwin) defarg="ana" ;; 
-esac
+defarg="run"
 arg=${1:-$defarg}
 
 case $arg in 
@@ -183,10 +180,7 @@ fi
 
 if [ "${arg/dbg}" != "${arg}" ]; then 
     cd $logdir 
-    case $(uname) in 
-       Linux)  gdb_ $bin;;
-       Darwin) lldb__ $bin ;;
-    esac
+    gdb_ $bin
     [ $? -ne 0 ] && echo $msg dbg error && exit 2 
     echo $msg logdir $logdir
 fi 
@@ -226,6 +220,3 @@ if [ "${arg}" == "ab" ]; then
     source $u4sdir/../bin/AB_FOLD.sh 
     ${IPYTHON:-ipython} --pdb -i $u4sdir/tests/${bin}_ab.py $*  
 fi 
-
-
-

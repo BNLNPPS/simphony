@@ -105,8 +105,8 @@ inline G4OpticalSurface* U4Surface::MakeOpticalSurface( const char* name_ )
 U4Surface::MakeBorderSurface
 --------------------------------------
 
-From InstrumentedG4OpBoundaryProcess I think it needs a RINDEX property even though that is not 
-going to be used for anything.  Also it needs REFLECTIVITY of zero. 
+The optical boundary process expects a RINDEX property even though that is not
+going to be used for anything. Also it needs REFLECTIVITY of zero.
 
 Getting G4OpBoundaryProcess to always give boundary status Detection for a surface requires:
 
@@ -441,6 +441,5 @@ inline G4LogicalSurface* U4Surface::Find( const G4VPhysicalVolume* thePrePV, con
     }    
     return Surface ; 
 }
-
 
 

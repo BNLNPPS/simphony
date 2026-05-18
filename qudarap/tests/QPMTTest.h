@@ -40,9 +40,6 @@ struct QPMTTest
     NP*         theta_radians_domain ;   // from 0. to pi/2
     NP*         costh_domain ;           // from 0. to 1.  (reverse:true)
 
-    int         num_mct ;            // input from NUM_MCT envvar or default
-    NP*         mct_domain ;         // from NP::MinusCosThetaLinearAngle
-
     // small PMT info
     static NP* GetSPMTID(const char* spec);
     //static constexpr const char* SPMTID_SPEC = "20000,30000,40000,45599" ; // 45599 + 1 - 20000 = 25600
@@ -97,8 +94,6 @@ inline QPMTTest<T>::QPMTTest(const NPFold* jpmt  )
     energy_eV_domain(NP::Linspace<T>(1.55,15.50,1550-155+1)),
     theta_radians_domain(NP::ThetaRadians<T>(91,0.5)),
     costh_domain(NP::Cos(theta_radians_domain)),
-    num_mct(ssys::getenvint("NUM_MCT",900)),   // 181
-    mct_domain(NP::MakeWithType<T>(NP::MinusCosThetaLinearAngle<double>(num_mct))),
     spmtid_spec(ssys::getenvvar("SPMTID_SPEC", SPMTID_SPEC)),
     spmtid(GetSPMTID(spmtid_spec)),            // create array from string
     num_spmtid(spmtid->shape[0]),
@@ -136,7 +131,6 @@ inline NPFold* QPMTTest<T>::make_qscan() const
     qscan->add("energy_eV_domain", energy_eV_domain ) ;
     qscan->add("theta_radians_domain", theta_radians_domain ) ;
     qscan->add("costh_domain", costh_domain ) ;
-    qscan->add("mct_domain", mct_domain ) ;
 
     qscan->add("lpmtid",  lpmtid ) ;
     qscan->add("lpmtidx", lpmtidx ) ;
@@ -153,16 +147,6 @@ inline NPFold* QPMTTest<T>::make_qscan() const
     qscan->add("pmtcat_cetheta",   qpmt->pmtcat_scan(qpmt_CETHETA,   theta_radians_domain) ) ;
     qscan->add("pmtcat_cecosth",   qpmt->pmtcat_scan(qpmt_CECOSTH,   costh_domain ) ) ;
 
-    qscan->add("spec",    qpmt->mct_lpmtid_scan(qpmt_SPEC,    mct_domain, lpmtid) ) ;
-    qscan->add("spec_ce", qpmt->mct_lpmtid_scan(qpmt_SPEC_ce, mct_domain, lpmtid) ) ;
-
-    qscan->add("art" ,    qpmt->mct_lpmtid_scan(qpmt_ART , mct_domain, lpmtid) ) ;
-    qscan->add("arte",    qpmt->mct_lpmtid_scan(qpmt_ARTE, mct_domain, lpmtid) ) ;
-    qscan->add("atqc",    qpmt->mct_lpmtid_scan(qpmt_ATQC, mct_domain, lpmtid) ) ;
-    qscan->add("comp",    qpmt->mct_lpmtid_scan(qpmt_COMP, mct_domain, lpmtid) ) ;
-    qscan->add("ll",      qpmt->mct_lpmtid_scan(qpmt_LL  , mct_domain, lpmtid) ) ;
-
-
     qscan->add("s_qescale",   qpmt->spmtid_scan(qpmt_S_QESCALE, spmtid ) ) ;
 
 
@@ -178,5 +162,4 @@ inline NPFold* QPMTTest<T>::serialize(const char* scan_name_) const
     f->add_subfold(scan_name, make_qscan() );
     return f ;
 }
-
 

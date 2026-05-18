@@ -107,10 +107,6 @@ struct QSim_MockTest
     void setup_prd(    quad2& prd ); 
     void setup_photon( sphoton& p );
 
-#ifdef WITH_CUSTOM4
-    int propagate_at_surface_CustomART_manual();   
-#endif
-
     int fill_state(); 
     int propagate_at_boundary();
     int propagate();
@@ -371,61 +367,6 @@ inline void QSim_MockTest::setup_photon( sphoton& p)
     p.wavelength = 440.f ; 
 }
 
-
-#ifdef WITH_CUSTOM4
-
-/**
-QSim_MockTest::propagate_at_surface_CustomART_manual
------------------------------------------------------
-
-Lower level version with manual sstate filling  
-
-**/
-
-inline int QSim_MockTest::propagate_at_surface_CustomART_manual()
-{
-    quad2 prd ; 
-    setup_prd(prd) ; 
-
-    sctx ctx ; 
-    ctx.prd = &prd ; 
-
-    sphoton& p = ctx.p ; 
-    setup_photon(p); 
-
-    // lpmtcat doesnt matter as Pyrex and Vacuum are same for all of them 
-    float n0 = sim->pmt->get_lpmtcat_rindex_wl( 0, 0, 0, p.wavelength ); 
-    float n3 = sim->pmt->get_lpmtcat_rindex_wl( 0, 3, 0, p.wavelength ); 
-
-    std::cout 
-        << "QSim_MockTest::propagate_at_surface_CustomART_manual "
-        << " boundary " << boundary
-        << " prd.q1.u.w " << prd.q1.u.w
-        << " prd.q0.f:nrm " << prd.q0.f 
-        << " p.mom " << p.mom 
-        << " n0 " << std::fixed << std::setw(10) << std::setprecision(4) << n0 
-        << " n3 " << std::fixed << std::setw(10) << std::setprecision(4) << n3 
-        << std::endl 
-        ;
-
-    ctx.s.material1.x = n0 ;  // Pyrex RINDEX
-    ctx.s.material2.x = n3 ;  // Vacuum RINDEX 
-
-    unsigned flag = 0 ;  
-    int ctrl = sim->propagate_at_surface_CustomART(flag, rng, ctx) ; 
- 
-    std::cout 
-        << "QSim_MockTest::propagate_at_surface_CustomART_manual "
-        << " flag " << flag << " : " << OpticksPhoton::Flag(flag) 
-        << " ctrl " << ctrl << " : " << sflow::desc(ctrl)  
-        << std::endl 
-        ;
-    return 0 ; 
-}
-#endif 
-
-
-
 inline int QSim_MockTest::fill_state()
 {
     std::cout 
@@ -580,16 +521,6 @@ inline int QSim_MockTest::main()
     bool ALL = strcmp(TEST, "ALL") == 0 ; 
     int rc = 0 ; 
 
-    if(ALL||0==strcmp(TEST, "propagate_at_surface_CustomART_manual"))
-    {
-#ifdef WITH_CUSTOM4
-       rc += propagate_at_surface_CustomART_manual() ; 
-#else
-       std::cout << "NOT-WITH_CUSTOM4 " << std::endl ; 
-       rc += 1 ;  
-#endif
-    }
-
     if(ALL||0==strcmp(TEST,"propagate_at_boundary_manual")) rc += propagate_at_boundary_manual() ; 
     if(ALL||0==strcmp(TEST,"fill_state"))                   rc += fill_state() ; 
     if(ALL||0==strcmp(TEST,"propagate_at_boundary"))        rc += propagate_at_boundary() ; 
@@ -608,4 +539,3 @@ int main(int argc, char** argv)
     std::cout << t.desc() ; 
     return t.main() ; 
 }
-

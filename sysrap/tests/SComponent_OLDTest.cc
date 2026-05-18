@@ -1,4 +1,4 @@
-// name=SComponent_OLDTest ; gcc $name.cc -g -std=c++11 -lstdc++ -I.. -o /tmp/$name && lldb__ /tmp/$name
+// name=SComponent_OLDTest ; gcc $name.cc -g -std=c++11 -lstdc++ -I.. -o /tmp/$name && gdb__ /tmp/$name
 
 #include <vector>
 #include <iostream>
@@ -26,4 +26,3 @@ int main(int argc, char** argv)
     }
     return 0 ; 
 }
-

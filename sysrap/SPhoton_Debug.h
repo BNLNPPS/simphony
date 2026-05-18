@@ -23,7 +23,7 @@ Doing all the direct access to the SPhoton_Debug::record from
 only one compilation unit avoids complications of symbol access and 
 allows SPhoton_Debug.h to stay headeronly which allows to void 
 SysRap needing to depend on Geant4.  
-Then from the main, eg u4/tests/U4PMTFastSimTest.cc invoke the Save::
+Then from the main, eg u4/tests/U4SimulateTest.cc invoke the Save::
 
      76     evt->save();
      77     const char* savedir = evt->getSaveDir();
@@ -125,5 +125,4 @@ inline void SPhoton_Debug<N>::add()
 { 
     record.push_back(*this);  
 }
-
 

@@ -20,18 +20,4 @@
 
 #pragma once
 
-#if defined (_WIN32) 
-
-   #if defined(SysRap_EXPORTS)
-       #define  G4CX_API __declspec(dllexport)
-   #else
-       #define  G4CX_API __declspec(dllimport)
-   #endif
-
-#else
-
-   #define G4CX_API  __attribute__ ((visibility ("default")))
-
-#endif
-
-
+#define G4CX_API __attribute__((visibility("default")))

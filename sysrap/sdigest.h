@@ -16,22 +16,8 @@ Example from /usr/include/openssl/opensslv.h::
 #include <array>
 #include <sstream>
 
-#if defined __APPLE__
-
-#   define COMMON_DIGEST_FOR_OPENSSL
-#   include <CommonCrypto/CommonDigest.h>
-#   define SHA1 CC_SHA1
-
-#elif defined _MSC_VER
-
-#   include "md5.hh"
-
-#elif __linux
-
-#   include <openssl/md5.h>
-#   include <openssl/opensslv.h>
-
-#endif
+#include <openssl/md5.h>
+#include <openssl/opensslv.h>
 
 struct NP ;
 
@@ -352,4 +338,3 @@ inline void sdigest::FinalizeRaw_(unsigned char* digest_16, MD5_CTX& c ) // stat
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-

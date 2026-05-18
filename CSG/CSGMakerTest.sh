@@ -36,10 +36,7 @@ if [ "$arg" == "run" ]; then
 fi 
 
 if [ "$arg" == "dbg" ]; then 
-    case $(uname) in 
-      Darwin) lldb__ $bin ;;
-      Linux)  gdb__ $bin ;; 
-    esac
+    gdb__ $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE dbg error && exit 2 
 fi 
 

@@ -31,7 +31,7 @@
 #include <cstdio>
 #include <errno.h>
 
-// Linux specific, but works on Darwin via some compat presumably  
+// Linux-specific implementation.
 #include <sys/stat.h>
 #include <unistd.h>    // for chdir
 
@@ -670,6 +670,5 @@ const char* SPath::Join( Args ... args )
 template const char* SPath::Join( const char*, const char* ); 
 template const char* SPath::Join( const char*, const char*, const char* ); 
 template const char* SPath::Join( const char*, const char*, const char*, const char* ); 
-
 
 

@@ -1,5 +1,7 @@
+import argparse
 import numpy as np
 
+from pathlib import Path
 from optiphy.geant4_version import detect_geant4_version, geant4_series
 
 
@@ -13,11 +15,20 @@ def expected_diff_for_version(version):
     return EXPECTED_DIFF[geant4_series(version)]
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--base",
+    default="./",
+    help="directory containing the ALL... event folders",
+)
+args = parser.parse_args()
+
+base = Path(args.base)
 geant4_version = detect_geant4_version()
 expected_diff = expected_diff_for_version(geant4_version)
 
-a = np.load("/tmp/fakeuser/opticks/GEOM/fakegeom/simg4ox/ALL0_no_opticks_event_name/A000/record.npy")
-b = np.load("/tmp/fakeuser/opticks/GEOM/fakegeom/simg4ox/ALL0_no_opticks_event_name/B000/f000/record.npy")
+a = np.load(base / "ALL0_no_opticks_event_name/A000/record.npy")
+b = np.load(base / "ALL0_no_opticks_event_name/B000/f000/record.npy")
 
 print(a.shape)
 print(b.shape)

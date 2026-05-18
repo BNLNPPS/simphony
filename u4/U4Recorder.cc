@@ -30,9 +30,6 @@ Boundary class changes need to match in all the below::
 #include "ssolid.h"
 #include "SEvt.hh"
 #include "SLOG.hh"
-#include "SOpBoundaryProcess.hh"
-#include "CustomStatus.h"
-
 #include "G4LogicalBorderSurface.hh"
 #include "G4Event.hh"
 
@@ -46,7 +43,7 @@ Boundary class changes need to match in all the below::
 #include "U4Random.hh"
 
 #include "U4UniformRand.h"
-NP* U4UniformRand::UU = nullptr ; // HMM: misplaced n InstrumentedG4OpBoundaryProcess
+NP *U4UniformRand::UU = nullptr;
 // UU gets set by U4Recorder::saveOrLoadStates when doing single photon reruns
 
 #include "U4Fake.h"
@@ -67,17 +64,6 @@ NP* U4UniformRand::UU = nullptr ; // HMM: misplaced n InstrumentedG4OpBoundaryPr
 
 
 #include "G4OpBoundaryProcess.hh"
-#ifdef WITH_CUSTOM4
-#include "C4OpBoundaryProcess.hh"
-#include "C4CustomART.h"
-#include "C4CustomART_Debug.h"
-#include "C4TrackInfo.h"
-#include "C4Pho.h"
-//#include "C4Version.h"
-#elif PMTSIM_STANDALONE
-#include "CustomART.h"
-#include "CustomART_Debug.h"
-#endif
 
 
 const plog::Severity U4Recorder::LEVEL = SLOG::EnvLevel("U4Recorder", "DEBUG");
@@ -144,11 +130,6 @@ std::string U4Recorder::Switches()  // static
 {
     std::stringstream ss ;
     ss << "U4Recorder::Switches" << std::endl ;
-#ifdef WITH_CUSTOM4
-    ss << "WITH_CUSTOM4" << std::endl ;
-#else
-    ss << "NOT:WITH_CUSTOM4" << std::endl ;
-#endif
 #ifdef WITH_PMTSIM
     ss << "WITH_PMTSIM" << std::endl ;
 #else
@@ -164,12 +145,6 @@ std::string U4Recorder::Switches()  // static
     ss << "PRODUCTION" << std::endl ;
 #else
     ss << "NOT:PRODUCTION" << std::endl ;
-#endif
-
-#ifdef WITH_INSTRUMENTED_DEBUG
-    ss << "WITH_INSTRUMENTED_DEBUG" << std::endl ;
-#else
-    ss << "NOT:WITH_INSTRUMENTED_DEBUG" << std::endl ;
 #endif
 
     std::string str = ss.str();
@@ -268,13 +243,6 @@ void U4Recorder::init()
 void U4Recorder::init_SEvt()
 {
     smeta::Collect(sev->meta, "U4Recorder::init_SEvt" );
-
-#ifdef WITH_CUSTOM4
-    // Custom4 0.1.8 has octal bug in C4Version.h SO skip the version metadata
-    NP::SetMeta<std::string>(sev->meta, "C4Version", "TBD" ) ; // C4Version::Version() );
-#else
-    NP::SetMeta<std::string>(sev->meta, "C4Version", "NOT-WITH_CUSTOM4" );
-#endif
 
     NP::SetMeta<int>(sev->meta, _UseGivenVelocity_KLUDGE,  UseGivenVelocity_KLUDGE );
     NP::SetMeta<int>(sev->meta, "G4VERSION_NUMBER", G4VERSION_NUMBER );
@@ -423,16 +391,7 @@ void U4Recorder::PostUserTrackingAction_(const G4Track* track, int* label){ LOG(
 void U4Recorder::UserSteppingAction(const G4Step* step)
 {
     if(!U4Track::IsOptical(step->GetTrack())) return ;
-
-#if defined(WITH_CUSTOM4)
-     UserSteppingAction_Optical<C4OpBoundaryProcess>(step);
-#elif defined(WITH_PMTSIM)
-     UserSteppingAction_Optical<CustomG4OpBoundaryProcess>(step);
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-     UserSteppingAction_Optical<InstrumentedG4OpBoundaryProcess>(step);
-#else
-     UserSteppingAction_Optical<G4OpBoundaryProcess>(step);
-#endif
+    UserSteppingAction_Optical<G4OpBoundaryProcess>(step);
 }
 
 
@@ -570,37 +529,18 @@ not torch ones so needs some experimentation to see what approach to take.
 
 void U4Recorder::PreUserTrackingAction_Optical_GetLabel( spho& ulabel, const G4Track* track )
 {
-#ifdef WITH_CUSTOM4_OLD
-    C4Pho* label = C4TrackInfo<C4Pho>::GetRef(track);
-#elif WITH_CUSTOM4
-    C4Pho* label = C4TrackInfo::GetRef(track);
-#else
     spho* label = STrackInfo::GetRef(track);
-#endif
 
     if( label == nullptr ) // happens with torch gensteps and input photons
     {
         PreUserTrackingAction_Optical_FabricateLabel(track) ;
-#ifdef WITH_CUSTOM4_OLD
-        label = C4TrackInfo<C4Pho>::GetRef(track);
-#elif WITH_CUSTOM4
-        label = C4TrackInfo::GetRef(track);
-#else
         label = STrackInfo::GetRef(track);
-#endif
     }
     assert( label && label->isDefined() );
-
-#ifdef WITH_CUSTOM4
-    assert( C4Pho::N == spho::N );
-#endif
     std::array<int,spho::N> a_label ;
     label->serialize(a_label) ;
 
     ulabel.load(a_label);
-
-    // serialize/load provides firebreak between C4Pho and spho
-    // so the SEvt doesnt need to depend on CUSTOM4
 }
 
 void U4Recorder::PreUserTrackingAction_Optical_FabricateLabel( const G4Track* track )
@@ -613,19 +553,9 @@ void U4Recorder::PreUserTrackingAction_Optical_FabricateLabel( const G4Track* tr
         U4Track::SetId(_track, rerun_id) ;
     }
 
-#ifdef WITH_CUSTOM4
     U4Track::SetFabricatedLabel(track);
-#else
-    U4Track::SetFabricatedLabel(track);
-#endif
 
-#ifdef WITH_CUSTOM4_OLD
-    C4Pho* label = C4TrackInfo<C4Pho>::GetRef(track);
-#elif WITH_CUSTOM4
-    C4Pho* label = C4TrackInfo::GetRef(track);
-#else
     spho* label = STrackInfo::GetRef(track);
-#endif
     assert(label) ;
 
     LOG(LEVEL)
@@ -661,18 +591,8 @@ this does not handle the case of the track not being labelled.
 
 void U4Recorder::GetLabel( spho& ulabel, const G4Track* track )
 {
-#ifdef WITH_CUSTOM4_OLD
-    C4Pho* label = C4TrackInfo<C4Pho>::GetRef(track);
-#elif WITH_CUSTOM4
-    C4Pho* label = C4TrackInfo::GetRef(track);
-#else
     spho* label = STrackInfo::GetRef(track);
-#endif
     assert( label && label->isDefined() && "all photons are expected to be labelled" );
-
-#ifdef WITH_CUSTOM4
-    assert( C4Pho::N == spho::N );
-#endif
     std::array<int,spho::N> a_label ;
     label->serialize(a_label) ;
 
@@ -925,12 +845,6 @@ will fulfil *single_bit*.
 HMM: but if subsequent step points failed to set a non-zero flag could get that repeated
 
 * YEP: this is happening when first post is on a fake
-
-**bop info is mostly missing**
-
-*bop* was formerly only available WITH_PMTFASTSIM whilst using InstrumentedG4OpBoundaryProcess
-as that ISA SOpBoundaryProcess giving access via SOpBoundaryProcess::INSTANCE
-have now generalize that to work with CustomG4OpBoundaryProcess
 
 **Track Labelling**
 
@@ -1373,102 +1287,10 @@ void U4Recorder::CollectBoundaryAux(quad4* )  // static
 U4Recorder::CollectBoundaryAux
 --------------------------------
 
-CAN THIS BE MOVED ELSEWHERE TO SIMPLIFY DEPS ?
-
-Maybe move into one of::
-
-    CustomG4OpBoundaryProcess
-    CustomART
-    CustomART_Debug
+Boundary aux collection is currently only specialized for the
+instrumented boundary-process path.
 
 **/
-
-#if defined(WITH_CUSTOM4)
-template<>
-void U4Recorder::CollectBoundaryAux<C4OpBoundaryProcess>(quad4* current_aux)
-{
-    C4OpBoundaryProcess* bop = U4OpBoundaryProcess::Get<C4OpBoundaryProcess>() ;
-    assert(bop) ;
-    assert(current_aux);
-
-    char customStatus = bop ? bop->m_custom_status : 'B' ;
-    C4CustomART* cart   = bop ? bop->m_custom_art : nullptr ;
-    const double* recoveredNormal =  bop ? (const double*)&(bop->theRecoveredNormal) : nullptr ;
-
-#ifdef C4_DEBUG
-    C4CustomART_Debug* cdbg = cart ? &(cart->dbg) : nullptr ;
-#else
-    C4CustomART_Debug* cdbg = nullptr ;
-#endif
-
-    LOG(LEVEL)
-        << " bop " << ( bop ? "Y" : "N" )
-        << " cart " << ( cart ? "Y" : "N" )
-        << " cdbg " << ( cdbg ? "Y" : "N" )
-        << " current_aux " << ( current_aux ? "Y" : "N" )
-        << " bop.m_custom_status " << customStatus
-        << " CustomStatus::Name " << CustomStatus::Name(customStatus)
-        ;
-
-    if(cdbg && customStatus == 'Y') current_aux->load( cdbg->data(), C4CustomART_Debug::N ) ;
-    current_aux->set_v(3, recoveredNormal, 3);   // nullptr are just ignored
-    current_aux->q3.i.w = int(customStatus) ;    // moved from q1 to q3
-}
-
-#elif defined(WITH_PMTSIM) || defined(WITH_CUSTOM_BOUNDARY)
-
-// THIS CODE IS TO BE DELETED ONCE THE ABOVE IS WORKING
-
-template<>
-void U4Recorder::CollectBoundaryAux<CustomG4OpBoundaryProcess>(quad4* current_aux)
-{
-    CustomG4OpBoundaryProcess* bop = U4OpBoundaryProcess::Get<CustomG4OpBoundaryProcess>() ;
-    assert(bop) ;
-
-    char customStatus = bop ? bop->m_custom_status : 'B' ;
-    CustomART* cart   = bop ? bop->m_custom_art : nullptr ;
-    const double* recoveredNormal =  bop ? (const double*)&(bop->theRecoveredNormal) : nullptr ;
-    CustomART_Debug* cdbg = cart ? &(cart->dbg) : nullptr ;
-
-    LOG(LEVEL)
-        << " bop " << ( bop ? "Y" : "N" )
-        << " cart " << ( cart ? "Y" : "N" )
-        << " cdbg " << ( cdbg ? "Y" : "N" )
-        << " current_aux " << ( current_aux ? "Y" : "N" )
-        << " bop.m_custom_status " << customStatus
-        << " CustomStatus::Name " << CustomStatus::Name(customStatus)
-        ;
-
-    assert( current_aux );
-    if(cdbg && customStatus == 'Y')
-    {
-        // much of the contents of CustomART,CustomART_Debug
-        // only meaningful after doIt call : hence require customStatus 'Y'
-
-        current_aux->q0.f.x = cdbg->A ;
-        current_aux->q0.f.y = cdbg->R ;
-        current_aux->q0.f.z = cdbg->T ;
-        current_aux->q0.f.w = cdbg->_qe ;
-
-        current_aux->q1.f.x = cdbg->An ;
-        current_aux->q1.f.y = cdbg->Rn ;
-        current_aux->q1.f.z = cdbg->Tn ;
-        current_aux->q1.f.w = cdbg->escape_fac ;  // HMM: this stomps on  ascii status integer
-
-        current_aux->q2.f.x = cdbg->minus_cos_theta ;
-        current_aux->q2.f.y = cdbg->wavelength_nm  ;
-        current_aux->q2.f.z = cdbg->pmtid ;       // HMM: q2.i.z maybe set to fakemask below
-        current_aux->q2.f.w = -1. ;               // HMM: q2.i.w gets set to step spec index
-    }
-
-    current_aux->set_v(3, recoveredNormal, 3);   // nullptr are just ignored
-    current_aux->q3.i.w = int(customStatus) ;    // moved from q1 to q3
-}
-#endif
-
-
-
-
 
 /**
 U4Recorder::ClassifyFake
@@ -1690,18 +1512,5 @@ void U4Recorder::Check_TrackStatus_Flag(G4TrackStatus tstat, unsigned flag, cons
 
 
 
-#if defined(WITH_CUSTOM4)
-#include "C4OpBoundaryProcess.hh"
-template void U4Recorder::UserSteppingAction_Optical<C4OpBoundaryProcess>(const G4Step*) ;
-#elif defined(WITH_PMTSIM)
-#include "CustomG4OpBoundaryProcess.hh"
-template void U4Recorder::UserSteppingAction_Optical<CustomG4OpBoundaryProcess>(const G4Step*) ;
-#elif defined(WITH_INSTRUMENTED_DEBUG)
-#include "InstrumentedG4OpBoundaryProcess.hh"
-template void U4Recorder::UserSteppingAction_Optical<InstrumentedG4OpBoundaryProcess>(const G4Step*) ;
-#else
 #include "G4OpBoundaryProcess.hh"
 template void U4Recorder::UserSteppingAction_Optical<G4OpBoundaryProcess>(const G4Step*) ;
-#endif
-
-

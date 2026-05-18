@@ -23,7 +23,6 @@ class QPMTTest(object):
         self.t = t
         self.init_energy_eV_domain()
         self.init_theta_radians_domain()
-        self.init_mct_domain()
         self.init_costh_domain()
         self.title_prefix = "%s : %s " % ( SCRIPT, t.base )
 
@@ -49,10 +48,6 @@ class QPMTTest(object):
         self.h0 = h0
         self.h1 = h1
         self.hse = hse
-
-    def init_mct_domain(self):
-        mct = self.t.qscan.mct_domain
-        self.mct = mct
 
     def init_costh_domain(self):
         c = self.t.qscan.costh_domain
@@ -292,131 +287,13 @@ class QPMTTest(object):
         fig.show()
 
 
-    def present_atqc(self):
-        """
-        In [4]: t.qscan.atqc.shape
-        Out[4]: (9, 900, 4)
-
-        In [5]: t.qscan.lpmtid
-        Out[5]: array([    0,    10,    55,    98,   100,   137,  1000, 10000, 17611], dtype=int32)
-
-        t.qscan.mct_domain.shape
-        Out[8]: (900,)
-
-        900 is scan over mct : minus_cos_theta of angle of incidence   (NOT landing position)
-
-        atqc[:,:,3]
-              behaves as expected, fixed across the scan at high values ~0.91 - 0.97 depending on pmtid
-
-        """
-        pass
-        t = self.t
-        mct = t.qscan.mct_domain
-        atqc = t.qscan.atqc
-
-
-
-    def present_art(self):
-        """
-        In [2]: t.qscan.art.shape
-        Out[2]: (9, 181, 4, 4)
-        """
-
-        t = self.t
-        lpmtid = t.qscan.lpmtid[PMTIDX]   # pick lpmtid by PMTIDX
-
-        all_art = t.qscan.art
-        if all_art is None:
-            print("present_art : ABORT t.qscan.art is None ")
-            return
-        pass
-        art = all_art[PMTIDX]
-        mct = t.qscan.mct_domain
-
-        consistent = len(art) == len(mct)
-
-        if not consistent:
-            log.error("present_lpmtid_ART : INCONSISTENT : art.shape %s mct.shape %s " %
-                     (str(art.shape), str(mct.shape)) )
-            return
-        pass
-        assert consistent
-
-        As   = art[...,0,0]
-        Ap   = art[...,0,1]
-        Aa   = art[...,0,2]
-        A_   = art[...,0,3]
-
-        Rs   = art[...,1,0]
-        Rp   = art[...,1,1]
-        Ra   = art[...,1,2]
-        R_   = art[...,1,3]
-
-        Ts   = art[...,2,0]
-        Tp   = art[...,2,1]
-        Ta   = art[...,2,2]
-        T_   = art[...,2,3]
-
-        SF    = art[...,3,0]
-        wl    = art[...,3,1]
-        ARTa  = art[...,3,2]
-        mct   = art[...,3,3]
-
-
-        opt = os.environ.get("OPT", "A_,R_,T_,As,Rs,Ts,Ap,Rp,Tp,Aa,Ra,Ta")
-        title = "%s : PMTIDX %d lpmtid %d OPT %s " % (t.base, PMTIDX, lpmtid, opt)
-        fig, ax = plt.subplots(1, figsize=SIZE/100.)
-        fig.suptitle(title)
-
-        if "As" in opt:ax.plot(  mct, As, label="As" )
-        if "Ap" in opt:ax.plot(  mct, Ap, label="Ap" )
-        if "Aa" in opt:ax.plot(  mct, Aa, label="Aa" )
-        if "A_" in opt:ax.plot(  mct, A_, label="A_" )
-
-        if "Rs" in opt:ax.plot(  mct, Rs, label="Rs" )
-        if "Rp" in opt:ax.plot(  mct, Rp, label="Rp" )
-        if "Ra" in opt:ax.plot(  mct, Ra, label="Ra" )
-        if "R_" in opt:ax.plot(  mct, R_, label="R_" )
-
-        if "Ts" in opt:ax.plot(  mct, Ts, label="Ts" )
-        if "Tp" in opt:ax.plot(  mct, Tp, label="Tp" )
-        if "Ta" in opt:ax.plot(  mct, Ta, label="Ta" )
-        if "T_" in opt:ax.plot(  mct, T_, label="T_" )
-
-        if "SF" in opt:ax.plot(  mct, SF, label="SF")
-        if "wl" in opt:ax.plot(  mct, wl, label="wl" )
-        if "ARTa" in opt:ax.plot(  mct, ARTa, label="ARTa" )
-        if "mct" in opt:ax.plot(  mct, mct, label="mct" )
-
-
-        ax.legend()
-        fig.show()
-
-
-
     def check_lpmtcat(self):
         t = self.t
         p = t.qpmt  # QPMT members
         s = t.qscan # QPMTTest scan results
 
         expect_lpmtcat = p.src_lcqs[s.lpmtidx,0]
-        lpmtcat = s.spec[:,:,0,3].astype(np.int32)
-        assert( np.all( lpmtcat[:,0] == expect_lpmtcat ) )
-
-        lpmtid = s.lpmtid
-
-        ## across the mct scan the identity values all the same, so use np.max
-        lpmtid_lpmtcat  = np.max(s.spec[:,:,0,3].astype(np.int32), axis=1)
-        lpmtid_qe_scale = np.max(s.spec[:,:,1,3], axis=1)
-        lpmtid_qe_shape = np.max(s.spec[:,:,2,3], axis=1)
-        lpmtid_qe       = np.max(s.spec[:,:,3,3], axis=1)
-        ## these were formerly lpmtid_stackspec now just spec
-
-        expr = "np.c_[lpmtid,lpmtid_lpmtcat,lpmtid_qe_scale,lpmtid_qe_shape,lpmtid_qe]"
-        lpmtid_tab = eval(expr)
-        print("lpmtid_tab:%s\n%s" % ( expr,  lpmtid_tab))
-        print(" note the qe_shape factor depends only on lpmtcat, the others have lpmtid dependency ")
-        print(" also note the qe_shape factor for lpmtcat 0:NNVT and 2:NNVT_HiQE are the same, diff from 1:HAMA  ")
+        assert np.all(s.lpmtcat == expect_lpmtcat)
 
 
 class SPMTID(object):
@@ -474,7 +351,6 @@ if __name__ == '__main__':
     #plot = "qeshape"
     #plot = "cetheta"
     #plot = "cecosth"
-    #plot = "art"
     plot = "s_qeshape"
 
     PLOT = os.environ.get("PLOT", plot )
@@ -488,11 +364,8 @@ if __name__ == '__main__':
         pt.present_cetheta()
     elif PLOT == "cecosth":
         pt.present_cecosth()
-    elif PLOT == "art":
-        pt.present_art()
     else:
         print("PLOT:%s not handled " % PLOT)
     pass
-
 
 

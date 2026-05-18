@@ -125,8 +125,8 @@ cfbase=$(SOpticksResourceTest --cfbase)
 
 #  moved this into SOpticksResource::CFBase by adding GEOM envvar sensitivity there 
 #
-#if [ "$(uname)" == "Darwin" ] ; then
-#   cfbase=$TMP/GeoChain_Darwin/$gcn 
+#if [ "$(uname)" == "Linux" ] ; then
+#   cfbase=$TMP/GeoChain/$gcn 
 #else
 #   cfbase=$TMP/GeoChain/$gcn 
 #fi 
@@ -323,11 +323,7 @@ elif [ "${arg/run}" != "$arg" ]; then
 
     if [ -n "$DEBUG" ]; then 
         echo $msg running binary $bin under debugger
-        if [ "$(uname)" == "Darwin" ]; then
-            lldb__ $bin
-        else
-            gdb $bin
-        fi 
+        gdb $bin
         [ $? -ne 0 ] && echo $msg error while running binary $bin under debugger  && exit 1
     else
         echo $msg running binary $bin

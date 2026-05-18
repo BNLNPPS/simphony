@@ -13,7 +13,7 @@ which have constexpr defaults.
 
 SPRD_BND
     boundary spec strings that that are converted into boundary_idx
-    The CustomART PMT geometry simplification caused name change::
+    Example PMT boundary naming::
 
         Pyrex/NNVTMCPPMT_PMT_20inch_photocathode_logsurf2/NNVTMCPPMT_PMT_20inch_photocathode_logsurf1/Vacuum
         Pyrex/NNVTMCPPMT_PMT_20inch_photocathode_mirror_logsurf/NNVTMCPPMT_PMT_20inch_photocathode_mirror_logsurf/Vacuum
@@ -251,5 +251,4 @@ inline NP* SPrd::fake_prd(int num_photon, int num_bounce) const
 
     return a_prd ;
 }
-
 

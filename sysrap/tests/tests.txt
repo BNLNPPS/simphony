@@ -1,5 +1,4 @@
 #cfcf.sh
-#curanddr_uniform_test.sh
 #curand_uniform_test.sh
 #dbg__.sh
 #dv.sh

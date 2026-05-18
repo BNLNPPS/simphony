@@ -122,7 +122,6 @@ fi
 if [ "${arg/build}" != "$arg" ]; then
 
     echo $BASH_SOURCE build
-    [ "$(uname)" == "Darwin" ] && echo $BASH_SOURCE : ERROR : THIS NEEDS OPTIX7+ SO LINUX ONLY && exit 1
 
     # -M lists paths of all included headers in Makefile dependency format
     # -M \

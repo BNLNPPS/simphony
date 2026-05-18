@@ -25,11 +25,9 @@ target_compile_definitions( ${TGT} PRIVATE MOCK_CURAND )
 target_link_libraries(${TGT} U4)
 
 set(TEST_SOURCES
-   U4Custom4Test.cc
    U4NistManagerTest.cc
    U4MaterialTest.cc
    U4MaterialPropertyVectorTest.cc
-   Deprecated_U4PhotonInfoTest.cc
    U4TrackInfoTest.cc 
    U4TrackTest.cc
    U4GDMLTest.cc
@@ -128,14 +126,9 @@ add_executable(${TGT} ${U4HitTest_SOURCES})
 target_link_libraries(${TGT} U4 CSG CUDA::cudart)
 
 message(STATUS "${CMAKE_CURRENT_LIST_FILE} : PMTSim_standalone_FOUND     : ${PMTSim_standalone_FOUND}")
-message(STATUS "${CMAKE_CURRENT_LIST_FILE} : Custom4_FOUND    : ${Custom4_FOUND}")
-
-
 set(PMTSim_TESTS
    U4SimulateTest.cc
    U4SimtraceTest.cc
-   U4PMTFastSimTest.cc
-   U4PMTAccessorTest.cc
 )
 
 if(PMTSim_standalone_FOUND)

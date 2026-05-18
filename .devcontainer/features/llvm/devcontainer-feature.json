@@ -1,0 +1,16 @@
+{
+  "name": "LLVM Toolchain",
+  "id": "llvm",
+  "version": "1.0.0",
+  "description": "Installs LLVM toolchain packages (clang-format, clangd, clang-tidy) from the official LLVM APT repository",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest",
+      "description": "LLVM version to install, e.g. 18, 20, 23, or latest."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}
