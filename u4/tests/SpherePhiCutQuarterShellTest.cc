@@ -176,43 +176,43 @@ int main(int argc, char** argv)
     LOG_IF(plog::fatal, world == nullptr)
         << "failed to load GDML path " << (testGeomFile ? testGeomFile : "-");
     if (world == nullptr)
-        return 1;
+        return EXIT_FAILURE;
 
     const G4VPhysicalVolume* quarter_shell_pv = U4Volume::FindPV(world, "QuarterShell_pv");
     LOG_IF(plog::fatal, quarter_shell_pv == nullptr)
         << "failed to find QuarterShell_pv in GDML path " << testGeomFile;
     if (quarter_shell_pv == nullptr)
-        return 1;
+        return EXIT_FAILURE;
 
     const G4LogicalVolume* quarter_shell_lv = quarter_shell_pv->GetLogicalVolume();
     LOG_IF(plog::fatal, quarter_shell_lv == nullptr)
         << "QuarterShell_pv lacks a logical volume";
     if (quarter_shell_lv == nullptr)
-        return 1;
+        return EXIT_FAILURE;
 
-    const G4VSolid*        quarter_shell_solid = quarter_shell_lv->GetSolid();
+    const G4VSolid* quarter_shell_solid = quarter_shell_lv->GetSolid();
     LOG_IF(plog::fatal, quarter_shell_solid == nullptr)
         << "QuarterShell_pv lacks a solid";
     if (quarter_shell_solid == nullptr)
-        return 1;
+        return EXIT_FAILURE;
 
     const G4IntersectionSolid* intersection = dynamic_cast<const G4IntersectionSolid*>(quarter_shell_solid);
     LOG_IF(plog::fatal, intersection != nullptr)
         << "test geometry unexpectedly uses a parent IntersectionSolid";
     if (intersection != nullptr)
-        return 1;
+        return EXIT_FAILURE;
 
     const G4SubtractionSolid* subtraction = dynamic_cast<const G4SubtractionSolid*>(quarter_shell_solid);
     LOG_IF(plog::fatal, subtraction == nullptr)
         << "test geometry expected a subtraction shell solid " << quarter_shell_solid->GetName();
     if (subtraction == nullptr)
-        return 1;
+        return EXIT_FAILURE;
 
     int partial_phi_spheres = CountPartialPhiSpheres(quarter_shell_solid);
     LOG_IF(plog::fatal, partial_phi_spheres == 0)
         << "test geometry expected partial-phi sphere primitives";
     if (partial_phi_spheres == 0)
-        return 1;
+        return EXIT_FAILURE;
 
     ConvertOutcome outcome = ConvertInChildProcess(quarter_shell_solid);
     switch (outcome)
@@ -221,13 +221,13 @@ int main(int argc, char** argv)
         std::cout
             << "partial-phi sphere conversion is rejected, matching current fail-fast behavior"
             << std::endl;
-        return 0;
+        return EXIT_SUCCESS;
 
     case CONVERT_ACCEPTED:
         std::cout
             << "partial-phi sphere conversion succeeded with a non-null CSG tree"
             << std::endl;
-        return 0;
+        return EXIT_SUCCESS;
 
     case CONVERT_ERROR:
         break;
@@ -238,5 +238,5 @@ int main(int argc, char** argv)
         << "successful conversion of the partial-phi spherical shell."
         << std::endl;
 
-    return 1;
+    return EXIT_FAILURE;
 }
