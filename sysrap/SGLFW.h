@@ -74,8 +74,9 @@ envvars
 #define GLEQ_IMPLEMENTATION
 #include "gleq.h"
 
-#include <glm/glm.hpp>
+#include "NP.hh"
 #include "NPU.hh"
+#include <glm/glm.hpp>
 
 #include "ssys.h"
 #include "spath.h"
@@ -99,12 +100,9 @@ envvars
 
 #include "SGLFW_Keys.h"
 
-#include "SIMG_Frame.h"
-
-
 struct SGLFW : public SCMD
 {
-    static constexpr const char* HELP =  R"LITERAL(
+    static constexpr const char* HELP = R"LITERAL(
 SGLFW.h
 ========
 
@@ -159,11 +157,11 @@ alt+H
    dumps this help string [--help]
 
 I
-   --snap-local : taking a screenshot
-J
-   --snap-local-inverted : taking a y-inverted screenshot
-K
-   save screen shot [--snap]
+   --snap-local : save the local frame buffer to `.npy`
+   J
+   --snap-local-inverted : save a y-inverted local frame buffer to `.npy`
+   K
+   save renderer output buffer [--snap]
 L
    toggle between world spin modes
 L(formerly)
@@ -256,7 +254,7 @@ selected by mouse drag direction, old Opticks oglrap may have this)
 TODO: automated view rotation around an axis, eg +Z
 
 
-)LITERAL" ;
+)LITERAL";
     static constexpr const char* TITLE = "SGLFW" ;
     static constexpr const char* _SLEEP_BREAK = "SGLFW__SLEEP_BREAK" ;
 
@@ -283,8 +281,8 @@ TODO: automated view rotation around an axis, eg +Z
     bool dump ;
     int  _width ;  // on retina 2x width
     int  _height ;
-    SIMG_Frame*  sif ;
-    SIMG_Frame*  sid ;
+    std::vector<unsigned char> snap_pixels;
+    std::vector<unsigned char> depth_pixels;
 
     // getStartPos
     double _start_x ;
@@ -331,7 +329,8 @@ TODO: automated view rotation around an axis, eg +Z
     void download_pixels();
     void download_depth();
     void init_img_frame();
-    void writeJPG(const char* path) const ;
+    void writeNPY(const char* path) const;
+    void flipVertical(std::vector<unsigned char>& px, int num_channels);
     void snap_local(bool yflip);
 
     void key_repeated(unsigned key);
@@ -739,15 +738,18 @@ https://www.khronos.org/opengl/wiki/GLAPI/glPixelStore
 
 inline void SGLFW::download_pixels()
 {
-    if(sif == nullptr) init_img_frame();
+    if (snap_pixels.empty())
+        init_img_frame();
 
-    assert( _width > 0 && _width == sif->width ) ;
-    assert( _height > 0 && _height == sif->height ) ;
+    assert(_width > 0);
+    assert(_height > 0);
+    assert(snap_pixels.size() == size_t(_width) * size_t(_height) * 4u);
 
     glPixelStorei(GL_PACK_ALIGNMENT,1);   // byte aligned output
-    glReadPixels(0,0,_width,_height,GL_RGBA, GL_UNSIGNED_BYTE, sif->pixels );
+    glReadPixels(0, 0, _width, _height, GL_RGBA, GL_UNSIGNED_BYTE, snap_pixels.data());
 
-    if(sid != nullptr) download_depth();
+    if (!depth_pixels.empty())
+        download_depth();
 }
 
 
@@ -765,11 +767,11 @@ on the type, eg by 255. for type of GL_UNSIGNED_BYTE
 
 inline void SGLFW::download_depth()
 {
-    assert(sid);
+    assert(!depth_pixels.empty());
     GLenum format = GL_DEPTH_COMPONENT ;
     GLenum type = GL_UNSIGNED_BYTE ;
     glPixelStorei(GL_PACK_ALIGNMENT,1);   // byte aligned output
-    glReadPixels(0,0,_width,_height, format, type, sid->pixels );
+    glReadPixels(0, 0, _width, _height, format, type, depth_pixels.data());
 }
 
 
@@ -787,34 +789,40 @@ inline void SGLFW::init_img_frame()
 {
     assert( _width > 0 );
     assert( _height > 0 );
-    int channels = 4 ;
-
-    sif = new SIMG_Frame(_width, _height, channels ) ;
+    snap_pixels.resize(size_t(_width) * size_t(_height) * 4u);
 
     bool DEPTH  = ssys::getenvbool("SGLFW__DEPTH");
     if(DEPTH)
     {
-        sid = new SIMG_Frame(_width, _height, 1 );
+        depth_pixels.resize(size_t(_width) * size_t(_height));
     }
 }
-inline void SGLFW::writeJPG(const char* path) const
+inline void SGLFW::writeNPY(const char* path) const
 {
-    std::cout << "SGLFW::writeJPG [" << ( path ? path : "-" ) << "]\n" ;
-    assert(sif);
-    sif->writeJPG(path);
-
-    if(sid)
+    std::cout << "SGLFW::writeNPY [" << (path ? path : "-") << "]\n";
+    if (!snap_pixels.empty())
+        NP::Write(path, snap_pixels.data(), _height, _width, 4);
+    if (!depth_pixels.empty())
     {
-        const char* dpath = sstr::ReplaceEnd( path, ".jpg", "_depth.jpg" );
-        std::cout << "SGLFW::writeJPG [" << ( dpath ? dpath : "-" ) << "]\n" ;
-        sid->writeJPG(dpath);
-
-        const char* npath = sstr::ReplaceEnd( path, ".jpg", "_depth.npy" );
-        std::cout << "SGLFW::writeNPY [" << ( npath ? npath : "-" ) << "]\n" ;
-        sid->writeNPY(npath);
+        const char* dpath = sstr::ReplaceEnd(path, ".npy", "_depth.npy");
+        std::cout << "SGLFW::writeNPY [" << (dpath ? dpath : "-") << "]\n";
+        NP::Write(dpath, depth_pixels.data(), _height, _width, 1);
     }
 }
 
+inline void SGLFW::flipVertical(std::vector<unsigned char>& px, int num_channels)
+{
+    if (px.empty())
+        return;
+    for (int y = 0; y < _height / 2; y++)
+        for (int x = 0; x < _width; x++)
+            for (int c = 0; c < num_channels; c++)
+            {
+                size_t a = (size_t(y) * size_t(_width) + size_t(x)) * size_t(num_channels) + size_t(c);
+                size_t b = (size_t(_height - 1 - y) * size_t(_width) + size_t(x)) * size_t(num_channels) + size_t(c);
+                std::swap(px[a], px[b]);
+            }
+}
 
 /**
 SGLFW::snap_local
@@ -840,18 +848,18 @@ inline void SGLFW::snap_local(bool yflip)
     download_pixels();
     if(yflip)
     {
-        sif->flipVertical();
-        if(sid) sid->flipVertical();
+        flipVertical(snap_pixels, 4);
+        flipVertical(depth_pixels, 1);
     }
 
     const char* stem = ssys::getenvvar("SGLFW__snap_local_STEM", nullptr );
     int index = 0 ;
-    const char* ext = ".jpg" ;
+    const char* ext = ".npy";
     bool unique = true ;
     const char* path = spath::DefaultOutputPath(stem, index, ext, unique);
     spath::MakeDirsForFile(path);
 
-    writeJPG(path);
+    writeNPY(path);
 }
 
 
@@ -879,7 +887,6 @@ inline void SGLFW::button_released(unsigned button, unsigned mods)
     std::cout << "SGLFW::button_released UNHANDLED " << button << " " << mods << "\n" ;
 }
 
-
 /**
 SGLFW::command
 ---------------
@@ -887,11 +894,11 @@ SGLFW::command
 +--------+-------------------------+------------------------+
 |  key   | command                 | note                   |
 +========+=========================+========================+
-|   I    | --snap-local            |                        |
+|   I    | --snap-local            | save local frame `.npy` |
 +--------+-------------------------+------------------------+
-|   J    | --snap-local-inverted   |                        |
+|   J    | --snap-local-inverted   | save inverted `.npy`    |
 +--------+-------------------------+------------------------+
-|   K    | --snap                  |                        |
+|   K    | --snap                  | save renderer `.npy`    |
 +--------+-------------------------+------------------------+
 |   L    | --snap-inverted         |                        |
 +--------+-------------------------+------------------------+
@@ -906,7 +913,6 @@ to see the "notification" and do the OptiX snap without
 needing any dependency.
 
 **/
-
 
 inline int SGLFW::command(const char* cmd)
 {
@@ -1223,12 +1229,11 @@ SGLFW::SGLFW
 
 **/
 
-inline SGLFW::SGLFW(SGLM& _gm )
-    :
+inline SGLFW::SGLFW(SGLM& _gm) :
     gm(_gm),
     level(ssys::getenvint("SGLFW_LEVEL", 0)),
-    sleep_break(ssys::getenvint(_SLEEP_BREAK,0)),
-    wanted_frame_idx(-2),  // -2:means the MOI frame
+    sleep_break(ssys::getenvint(_SLEEP_BREAK, 0)),
+    wanted_frame_idx(-2), // -2:means the MOI frame
     wanted_snap(0),
     width(gm.Width()),
     height(gm.Height()),
@@ -1236,20 +1241,20 @@ inline SGLFW::SGLFW(SGLM& _gm )
     title(TITLE),
     window(nullptr),
     count(0),
-    renderlooplimit(ssys::getenvint("SGLFW__renderlooplimit",1000000)),
+    renderlooplimit(ssys::getenvint("SGLFW__renderlooplimit", 1000000)),
     renderloop_tail_LEVEL(ssys::getenvint(SGLFW__renderloop_tail_LEVEL, 0)),
     exitloop(false),
     dump(false),
     _width(0),
     _height(0),
-    sif(nullptr),
-    sid(nullptr),
+    snap_pixels(),
+    depth_pixels(),
     _start_x(0.),
     _start_y(0.),
     cursor_moved_count(0),
-    start_ndc(0.f,0.f),
-    move_ndc(0.f,0.f),
-    drag(0.f,0.f,0.f,0.f)
+    start_ndc(0.f, 0.f),
+    move_ndc(0.f, 0.f),
+    drag(0.f, 0.f, 0.f, 0.f)
 {
     init();
 }
@@ -1372,4 +1377,3 @@ inline void SGLFW::setWindowTitle(const char* title)
 {
     glfwSetWindowTitle(window, title);
 }
-
