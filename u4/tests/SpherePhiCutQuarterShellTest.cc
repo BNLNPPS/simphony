@@ -44,6 +44,11 @@ enum ConvertOutcome
     CONVERT_ERROR
 };
 
+bool IsExpectedRejectSignal(int signal)
+{
+    return signal == SIGABRT || signal == SIGINT;
+}
+
 int CountPartialPhiSpheres(const G4VSolid* solid)
 {
     const G4Sphere* sphere = dynamic_cast<const G4Sphere*>(solid);
@@ -97,8 +102,15 @@ ConvertOutcome ConvertInChildProcess(const G4VSolid* solid)
 
     if (WIFSIGNALED(status))
     {
-        std::cout << "child rejected conversion with signal " << WTERMSIG(status) << std::endl;
-        return CONVERT_REJECTED;
+        int signal = WTERMSIG(status);
+        if (IsExpectedRejectSignal(signal))
+        {
+            std::cout << "child rejected conversion with expected signal " << signal << std::endl;
+            return CONVERT_REJECTED;
+        }
+
+        std::cerr << "child crashed with unexpected signal " << signal << std::endl;
+        return CONVERT_ERROR;
     }
 
     if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
