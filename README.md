@@ -81,6 +81,12 @@ singularity run --nv -B eic-opticks-prefix/:/opt/eic-opticks -B eic-opticks:/wor
 ```
 
 
+## Geometry Guidance
+
+For geometry intended for optical photon studies, see [docs/geometry-requirements.md](docs/geometry-requirements.md).
+It summarizes current requirements and best practices for analytic CSG, selective triangulation, hierarchy design, and validation.
+
+
 ## Running a test job at NERSC (Perlmutter)
 
 To submit a test run of `eic-opticks` on Perlmutter, use the following example. Make sure to update
