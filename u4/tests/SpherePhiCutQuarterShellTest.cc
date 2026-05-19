@@ -66,7 +66,11 @@ bool HasNonSpherePrimitive(const sn* nd)
         if (typecode == CSG_SPHERE || typecode == CSG_ZSPHERE)
             continue;
 
-        return true;
+        if (typecode == CSG_NOTSUPPORTED || typecode == CSG_UNDEFINED)
+            continue;
+
+        if (typecode == CSG_PHICUT || typecode == CSG_HALFSPACE)
+            return true;
     }
 
     return false;
