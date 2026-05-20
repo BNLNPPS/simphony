@@ -25,7 +25,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
 
-export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-1}
 # eps=0.001 mm (= 1 µm) was the sweet spot in an eps-scan over 1e-5..5e-2.
 # Smaller values cause photons to get stuck at boundaries (float32 ulp issues);
 # larger values cause leakage. eps=0.001 matched G4 best across hit count
