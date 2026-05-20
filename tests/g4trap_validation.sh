@@ -15,12 +15,12 @@
 #   ./tests/g4trap_validation.sh cherenkov                # Cherenkov from e-
 #   ./tests/g4trap_validation.sh scintillation            # Scint from e-
 #
-# Pre-requisites: build the branch in /opt/eic-opticks/build (or set
-# EIC_OPTICKS_BIN).
+# Pre-requisites: GPUPhotonSource and GPURaytrace on PATH (any standard
+# install of simphony puts them in OPTICKS_PREFIX/bin which is added to
+# PATH in the Dockerfile and devcontainer).
 
 set -e
 
-EIC_OPTICKS_BIN=${EIC_OPTICKS_BIN:-/opt/eic-opticks/bin}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
@@ -106,7 +106,7 @@ run_torch_test () {
     local case=$1; local gdml=$2; local cfg=$3; local seed=${4:-42}
     local outd="${OUT_DIR}/${case}"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
-    "${EIC_OPTICKS_BIN}/GPUPhotonSource" -g "${gdml}" -c "${cfg}" -m "${G4_MACRO}" -s ${seed} > run.log 2>&1
+    GPUPhotonSource -g "${gdml}" -c "${cfg}" -m "${G4_MACRO}" -s ${seed} > run.log 2>&1
 }
 
 # ------------------------------------------------------------------
@@ -140,7 +140,7 @@ test_scintillation_trap () {
     echo "----- Test: Scintillation+Cherenkov on trap, 5 x 5 GeV electrons -----"
     local outd="${OUT_DIR}/scintillation_trap"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
-    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${GEOM_DIR}/test_trap_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
+    GPURaytrace -g "${GEOM_DIR}/test_trap_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
     python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation trap" 10 50
 }
 
@@ -149,7 +149,7 @@ test_scintillation_trd () {
     echo "----- Test: Scintillation+Cherenkov on trd, 5 x 5 GeV electrons -----"
     local outd="${OUT_DIR}/scintillation_trd"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
-    "${EIC_OPTICKS_BIN}/GPURaytrace" -g "${GEOM_DIR}/test_trd_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
+    GPURaytrace -g "${GEOM_DIR}/test_trd_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
     python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation trd" 10 50
 }
 
