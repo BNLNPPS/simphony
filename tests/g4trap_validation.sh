@@ -16,12 +16,11 @@
 #   ./tests/g4trap_validation.sh scintillation            # Scint from e-
 #
 # Pre-requisites: build the branch in /opt/eic-opticks/build (or set
-# EIC_OPTICKS_BIN/EIC_OPTICKS_CFG).
+# EIC_OPTICKS_BIN).
 
 set -e
 
 EIC_OPTICKS_BIN=${EIC_OPTICKS_BIN:-/opt/eic-opticks/bin}
-EIC_OPTICKS_CFG=${EIC_OPTICKS_CFG:-/opt/eic-opticks/share/simphony/config}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
@@ -41,29 +40,8 @@ export OPTICKS_MAX_BOUNCE=${OPTICKS_MAX_BOUNCE:-10000}
 
 mkdir -p "${OUT_DIR}"
 
-# ------------------------------------------------------------------
-# torch source configs (auto-installed to share/ on first run)
-# ------------------------------------------------------------------
-ensure_torch_config () {
-    local name=$1
-    local content=$2
-    if [ ! -f "${EIC_OPTICKS_CFG}/${name}.json" ]; then
-        echo "${content}" > "${EIC_OPTICKS_CFG}/${name}.json"
-    fi
-}
-
-ensure_torch_config trap_iso '{
-  "torch": {
-    "gentype": "TORCH", "trackid": 0, "matline": 0,
-    "numphoton": 50000,
-    "pos": [20.0, 20.0, -50.0], "time": 0.0,
-    "mom": [0.0, 0.0, 1.0], "weight": 0.0,
-    "pol": [1.0, 0.0, 0.0], "wavelength": 420.0,
-    "zenith":  [0.0, 1.0], "azimuth": [0.0, 1.0],
-    "radius": 0.1, "distance": 0.0, "mode": 255, "type": "sphere_marsaglia"
-  },
-  "event": {"mode": "DebugLite", "maxslot": 1000000}
-}'
+# Torch source config `trap_iso` is installed by CMake into
+# ${OPTICKS_PREFIX}/share/simphony/config/trap_iso.json from config/trap_iso.json.
 
 # ------------------------------------------------------------------
 # compare.py — extract hit count + per-axis chi^2 vs G4
