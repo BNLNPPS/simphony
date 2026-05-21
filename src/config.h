@@ -48,6 +48,15 @@ class Config
     /// Maximum photon bounce count.
     int max_bounce{31};
 
+    /// Ray offset after boundary crossing.
+    float propagate_epsilon{0.05f};
+
+    /// Ray offset after bulk interaction.
+    float propagate_epsilon0{0.05f};
+
+    /// Flag mask selecting which bulk interactions use propagate_epsilon0.
+    std::string propagate_epsilon0_mask{"TO,CK,SI,SC,RE"};
+
     /// Base directory for event output folders.
     std::filesystem::path output_dir{std::filesystem::current_path()};
 
