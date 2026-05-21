@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scuda.h"
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
    #define SMATH_METHOD __device__
@@ -168,4 +169,3 @@ inline SMATH_METHOD float smath::erfcinvf(float u2)
     return 0.f ; 
 #endif
 }
-
