@@ -43,7 +43,7 @@ class Config
     EventMode event_mode{EventMode::DebugLite};
 
     /// Maximum event slots applied to SEventConfig.
-    int maxslot{1000000};
+    int maxslot{0};
 
     /// Maximum photon bounce count.
     int max_bounce{31};
