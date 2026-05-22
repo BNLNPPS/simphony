@@ -133,10 +133,6 @@ set(REPORT_SOURCES
    sreport.cc
 )
 
-set(RETIRED_TEST_SOURCES
-   SProcTest.cc
-)
-
 set(BASH_RUN_TEST_SOURCES
     SOpticksResourceTest.cc
     SEnvTest_PASS.cc
