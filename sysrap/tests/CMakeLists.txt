@@ -150,10 +150,6 @@ if(NLJSON_FOUND)
 endif()
 
 
-set(_TEST_SOURCES
-   UnwindTest.cc
-)
-
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
     add_executable(${TGT} ${SRC})
