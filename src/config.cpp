@@ -137,7 +137,13 @@ void AssignOutputDirIfPresent(const nlohmann::json& event, std::filesystem::path
 void AssignTorchGentypeIfPresent(const nlohmann::json& torch, unsigned& gentype)
 {
     if (const auto it = torch.find("gentype"); it != torch.end())
-        gentype = OpticksGenstep_::Type(it->get<std::string>());
+    {
+        const std::string gentype_name = it->get<std::string>();
+        if (OpticksGenstep_::Type(gentype_name) != OpticksGenstep_TORCH)
+            throw std::invalid_argument{"Invalid torch.gentype \"" + gentype_name + "\". Expected TORCH"};
+
+        gentype = OpticksGenstep_TORCH;
+    }
 }
 
 void AssignTorchTypeIfPresent(const nlohmann::json& torch, unsigned& type)
