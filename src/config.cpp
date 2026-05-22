@@ -119,7 +119,18 @@ void AssignFloat3IfPresent(const nlohmann::json& object, const char* key, float3
 void AssignNormalizedFloat3IfPresent(const nlohmann::json& object, const char* key, float3& value)
 {
     if (const auto it = object.find(key); it != object.end())
-        value = normalize(make_float3((*it)[0].get<float>(), (*it)[1].get<float>(), (*it)[2].get<float>()));
+    {
+        const float3 candidate = make_float3(
+            (*it)[0].get<float>(),
+            (*it)[1].get<float>(),
+            (*it)[2].get<float>());
+        constexpr float epsilon = 1e-12f;
+        const float     length_squared = candidate.x * candidate.x + candidate.y * candidate.y + candidate.z * candidate.z;
+        if (length_squared <= epsilon)
+            throw std::invalid_argument(std::string("Cannot normalize vector for key '") + key + "'");
+
+        value = normalize(candidate);
+    }
 }
 
 void AssignEventModeIfPresent(const nlohmann::json& event, EventMode& mode)

@@ -20,7 +20,7 @@ vector<sphoton> generate_photons(const storch& torch, unsigned int num_photons, 
     int             unused = -1;
     qtorch          qt{.t = torch};
 
-    for (int i = 0; i < num_photons; i++)
+    for (unsigned int i = 0; i < num_photons; i++)
     {
         sphoton photon;
         storch::generate(photon, rng, qt.q, unused, unused);

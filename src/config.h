@@ -40,7 +40,7 @@ class Config
     std::string name{"dev"};
 
     /// Event persistence mode applied to SEventConfig.
-    EventMode event_mode{EventMode::DebugLite};
+    EventMode event_mode{EventMode::Minimal};
 
     /// Maximum event slots applied to SEventConfig.
     int maxslot{0};
