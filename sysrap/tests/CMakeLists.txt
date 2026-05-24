@@ -133,10 +133,6 @@ set(REPORT_SOURCES
    sreport.cc
 )
 
-set(RETIRED_TEST_SOURCES
-   SProcTest.cc
-)
-
 set(BASH_RUN_TEST_SOURCES
     SOpticksResourceTest.cc
     SEnvTest_PASS.cc
@@ -149,10 +145,6 @@ if(NLJSON_FOUND)
    list(APPEND TEST_SOURCES SMetaTest.cc)
 endif()
 
-
-set(_TEST_SOURCES
-   UnwindTest.cc
-)
 
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)

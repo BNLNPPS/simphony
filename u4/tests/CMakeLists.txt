@@ -59,10 +59,6 @@ set(TEST_SOURCES
 
    U4Debug_Test.cc 
    U4Hit_Debug_Test.cc 
-
-   G4ThreeVectorTest.cc 
-
-
    U4PhysicsTableTest.cc 
 )
 
