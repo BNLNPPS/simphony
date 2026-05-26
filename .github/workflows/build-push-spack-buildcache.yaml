@@ -1,0 +1,112 @@
+name: Build Push Spack Buildcache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - .github/workflows/build-push-spack-buildcache.yaml
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - .github/workflows/build-push-spack-buildcache.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name || github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  refresh-buildcache:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'build-spack-buildcache' }}
+    runs-on: ubuntu-latest
+    env:
+      SPACK_BASE_IMAGE: simphony-spack-base:buildcache-${{ github.run_id }}
+      SPACK_BASE_CACHE_SCOPE: spack-base-defaults
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Spack base image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          pull: true
+          load: true
+          target: spack-base
+          tags: ${{ env.SPACK_BASE_IMAGE }}
+          cache-from: type=gha,scope=${{ env.SPACK_BASE_CACHE_SCOPE }}
+          cache-to: type=gha,mode=max,scope=${{ env.SPACK_BASE_CACHE_SCOPE }}
+
+      # Keep the Spack install/publish phase in the workflow instead of a Dockerfile
+      # RUN step. BuildKit secrets could pass GHCR credentials into `docker build`,
+      # but registry writes are easier to reason about as explicit workflow side
+      # effects, and this keeps partial autopush progress plus cache verification
+      # separate from image layer creation.
+      - name: Populate dependency buildcache
+        run: |
+          docker run --rm \
+            -e REGISTRY_USER='${{ github.actor }}' \
+            -e REGISTRY_TOKEN='${{ secrets.GITHUB_TOKEN }}' \
+            '${{ env.SPACK_BASE_IMAGE }}' \
+            bash -lc '
+              set -euo pipefail
+
+              # Spack 1.x keeps the builtin package repo in the separate spack-packages git
+              # repository, so we can keep the Spack tool pinned while still floating package
+              # metadata to the latest builtin develop branch on each run.
+              spack repo update -b develop builtin
+              # Fetch the latest simphony package metadata from the external repo as well.
+              spack repo add https://github.com/BNLNPPS/spack-packages
+              # Use a dedicated GHCR package for the Spack OCI mirror so Docker cache cleanup
+              # jobs cannot prune buildcache artifacts behind the Spack mirror.
+              spack mirror add --autopush --unsigned --oci-username-variable REGISTRY_USER --oci-password-variable REGISTRY_TOKEN simphony-spack-buildcache "${SPACK_BUILDCACHE_MIRROR}"
+              spack external find --not-buildable --path /usr/local/cuda cuda
+
+              # Autopush dependencies as soon as source builds complete, so partial progress
+              # survives a failed long-running buildcache refresh.
+              spack install --only=dependencies --reuse --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+
+              # Keep the cache focused on dependencies; the PR workflow still builds simphony itself.
+              spack mirror set --no-autopush simphony-spack-buildcache
+              spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+
+              # Autopush uploads OCI blobs immediately, but Spack still needs an updated
+              # index so later CI runs can discover the freshly published binaries.
+              spack buildcache update-index simphony-spack-buildcache
+            '
+
+      - name: Verify dependency buildcache
+        run: |
+          docker run --rm \
+            '${{ env.SPACK_BASE_IMAGE }}' \
+            bash -lc '
+              set -euo pipefail
+
+              # Match the publish step by floating the builtin spack-packages repo while keeping
+              # the Spack tool itself pinned in spack-base.
+              spack repo update -b develop builtin
+              # Fetch the latest simphony package metadata from the external repo as well.
+              spack repo add https://github.com/BNLNPPS/spack-packages
+              spack mirror add --unsigned simphony-spack-buildcache "${SPACK_BUILDCACHE_MIRROR}"
+              spack external find --not-buildable --path /usr/local/cuda cuda
+              spack install --only=dependencies --use-buildcache only simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+            '
+
+      - name: Cleanup local base image
+        if: ${{ always() }}
+        run: |
+          docker image rm -f '${{ env.SPACK_BASE_IMAGE }}' || true
