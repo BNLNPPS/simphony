@@ -17,10 +17,7 @@ CU.h : UploadArray/DownloadArray/UploadVec/DownloadVec
     ./CSG/CSGFoundry.cc
 
 **/
-
-#ifdef WITH_SLOG
 #include "plog/Severity.h"
-#endif
 
 struct dim3 ;
 #include <vector>
@@ -28,9 +25,7 @@ struct dim3 ;
 
 struct CSG_API CU
 {
-#ifdef WITH_SLOG
-    static const plog::Severity LEVEL ; 
-#endif
+    static const plog::Severity LEVEL;
 
     template <typename T>
     static T* AllocArray(unsigned num_items ) ; 

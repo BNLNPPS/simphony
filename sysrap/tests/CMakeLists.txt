@@ -133,10 +133,6 @@ set(REPORT_SOURCES
    sreport.cc
 )
 
-set(RETIRED_TEST_SOURCES
-   SProcTest.cc
-)
-
 set(BASH_RUN_TEST_SOURCES
     SOpticksResourceTest.cc
     SEnvTest_PASS.cc
@@ -145,24 +141,10 @@ set(BASH_RUN_TEST_SOURCES
 
     SSceneLoadTest.cc
 )
-
 if(NLJSON_FOUND)
    list(APPEND TEST_SOURCES SMetaTest.cc)
 endif()
 
-
-if(WITH_SIMG)
-   list(APPEND TEST_SOURCES SIMGTest.cc)
-endif()
-
-if(WITH_STTF)
-   list(APPEND TEST_SOURCES STTFTest.cc)
-endif()
-
-
-set(_TEST_SOURCES
-   UnwindTest.cc
-)
 
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)

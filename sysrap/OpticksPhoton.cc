@@ -9,10 +9,10 @@
 #include "SBit.hh"
 #include "sstr.h"
 
-#ifdef WITH_SLOG
 #include "SLOG.hh"
+
 const plog::Severity OpticksPhoton::LEVEL = SLOG::EnvLevel("OpticksPhoton", "DEBUG");
-#endif
+
 const char* OpticksPhoton::flag2color = R"LITERAL(
     {
         "CERENKOV":"white",
@@ -177,7 +177,6 @@ void OpticksPhoton::AbbrevToFlagValSequence( unsigned long long& seqhis, unsigne
        seqhis |= ( bitpos << ishift )  ;
        seqval |= ( val1 << ishift )  ;
 
-#ifdef WITH_SLOG
        LOG(debug)
                    << "["
                    <<  skey
@@ -186,7 +185,6 @@ void OpticksPhoton::AbbrevToFlagValSequence( unsigned long long& seqhis, unsigne
                    << ( sval.empty() ? "EMPTY" : "" )
                    << " val1 " << val1
                     ;
-#endif
     }
 
 }
@@ -211,6 +209,3 @@ const char* OpticksPhoton::PointAbbrev( const unsigned long long& seqhis , unsig
     unsigned flg = PointFlag(seqhis, bitpos );
     return Abbrev(flg);
 }
-
-
-
