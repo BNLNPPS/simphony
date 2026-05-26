@@ -26,6 +26,10 @@
   "event": {
     "mode": "DebugLite",
     "maxslot": 1000000,
+    "max_bounce": 31,
+    "propagate_epsilon": 0.05,
+    "propagate_epsilon0": 0.05,
+    "propagate_epsilon0_mask": "TO,CK,SI,SC,RE",
     "output_dir": "./"
   }
 }
