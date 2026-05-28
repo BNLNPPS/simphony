@@ -65,13 +65,9 @@
 // Modified: bv@bnl.gov, 2008/4/16 for DetSim
 //--------------------------------------------------------------------
 //
-#ifdef STANDALONE
 
 #include "SLOG.hh"
 #include "U4.hh"
-#else
-#include <boost/python.hpp>
-#endif
 
 #include "Local_DsG4Scintillation.hh"
 #include "globals.hh"
@@ -174,20 +170,12 @@ Local_DsG4Scintillation::Local_DsG4Scintillation(G4int opticksMode, const G4Stri
     theSlowIntegralTable = NULL;
     theReemissionIntegralTable = NULL;
 
-    //verboseLevel = 2;
-    //G4cout << " Local_DsG4Scintillation set verboseLevel by hand to " << verboseLevel << G4endl;
-
-#ifdef STANDALONE
-    {
-        const char* level_ = getenv("Local_DsG4Scintillation_verboseLevel") ;
-        const char* fallback = "0" ;  
-        int level =  std::atoi(level_ ? level_ : fallback) ;
-        SetVerboseLevel(level); 
-        std::cout << "Local_DsG4Scintillation::Local_DsG4Scintillation level " << level << " verboseLevel " << verboseLevel << std::endl ;  
-    }
-#endif
-
+    const char* level_ = getenv("Local_DsG4Scintillation_verboseLevel");
+    const char* fallback = "0";
+    int         level = std::atoi(level_ ? level_ : fallback);
+    SetVerboseLevel(level);
     if (verboseLevel > 0) {
+        std::cout << "Local_DsG4Scintillation::Local_DsG4Scintillation level " << level << " verboseLevel " << verboseLevel << std::endl;
         G4cout << GetProcessName() << " is created " << G4endl;
     }
 
@@ -292,11 +280,6 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
     }
 
     G4double TotalEnergyDeposit = aStep.GetTotalEnergyDeposit();
-#ifdef STANDALONE
-    //LOG(info) << "TotalEnergyDeposit " << TotalEnergyDeposit ; 
-#endif
-
-
     if (verboseLevel > 0 ) { 
       G4cout << " TotalEnergyDeposit " << TotalEnergyDeposit 
              << " material " << aTrack.GetMaterial()->GetName() << G4endl;
@@ -567,10 +550,7 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
   
      }
 
-#ifdef STANDALONE
     U4::GenPhotonAncestor(&aTrack);  
-#endif
-
     for(G4int scnt = 0 ; scnt < nscnt ; scnt++){
 
          G4double ScintillationTime = 0.*ns;
@@ -599,7 +579,6 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
 
         G4int NumPhoton =  NumVec[scnt] ; 
 
-#ifdef STANDALONE
         if(flagReemission) assert( NumPhoton == 0 || NumPhoton == 1);   // expecting only 0 or 1 remission photons
         bool is_opticks_genstep = NumPhoton > 0 && !flagReemission ; 
         if(is_opticks_genstep && (m_opticksMode & 1))
@@ -607,17 +586,12 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
             NumPhoton = std::min( NumPhoton, 3 );  // for debugging purposes it helps to have less photons
             U4::CollectGenstep_DsG4Scintillation_r4695( &aTrack, &aStep, NumPhoton, scnt, ScintillationTime); 
         }
-#endif
 
          if( m_opticksMode == 0 || (m_opticksMode & 2) )
          {
 
          for(G4int i = 0 ; i < NumPhoton ; i++) {
-
-#ifdef STANDALONE
            U4::GenPhotonBegin(i); 
-#endif
-
            G4double sampledEnergy;
            if ( !flagReemission ) {
                 // normal scintillation
@@ -790,17 +764,9 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
             aSecondaryTrack->SetWeight( weight );
             if ( verboseLevel > 0 ) {
               G4cout << " aSecondaryTrack->SetWeight( " << weight<< " ) ; aSecondaryTrack->GetWeight() = " << aSecondaryTrack->GetWeight() << G4endl;}        
-
-#ifdef STANDALONE
            U4::GenPhotonEnd(i, aSecondaryTrack);  
-#endif
-
          }    // i:genloop over NumPhoton
-  
- 
          }   //  (opticksMode == 0) || (opticksMode & 2 )   : opticks not enabled, or opticks enabled and doing Geant4 comparison
-
-
    }         // scntloop
 
 

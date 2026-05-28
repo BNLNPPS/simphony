@@ -80,15 +80,8 @@
 #include "OpticksRandom.hh"
 #endif
 
-#ifdef STANDALONE
 #include "SLOG.hh"
 #include "U4.hh"
-#endif
-
-
-/////////////////////////
-// Class Implementation  
-/////////////////////////
 
 //G4bool G4Cerenkov::fTrackSecondariesFirst = false;
 //G4double G4Cerenkov::fMaxBetaChange = 0.;
@@ -355,10 +348,6 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 
   ////////////////////////////////////////////////////////////////
 
-#ifdef STANDALONE
-  fNumPhotons = std::min( fNumPhotons, 5 );   // artifical reduction for debugging convenience
-#endif
-
   aParticleChange.SetNumberOfSecondaries(fNumPhotons);
 
   if (fTrackSecondariesFirst) {
@@ -367,7 +356,6 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
   }
 
 
-#ifdef STANDALONE
   U4::CollectGenstep_G4Cerenkov_modified( 
       &aTrack, 
       &aStep, 
@@ -380,18 +368,12 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
       MeanNumberOfPhotons1,
       MeanNumberOfPhotons2
   );     
-#endif
-
-#ifdef STANDALONE
     U4::GenPhotonAncestor(&aTrack);  
-#endif
 
   for (G4int i = 0; i < fNumPhotons; i++) {
       // Determine photon energy
 
-#ifdef STANDALONE
       U4::GenPhotonBegin(i); 
-#endif
 
 #ifdef FLOAT_TEST
       float rand(0.f); 
@@ -612,13 +594,7 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
       aSecondaryTrack->SetParentID(aTrack.GetTrackID());
 
       aParticleChange.AddSecondary(aSecondaryTrack);
-
-#ifdef STANDALONE
       U4::GenPhotonEnd(i, aSecondaryTrack);
-#endif
-
-
-
   }
 
   if (verboseLevel>0) {
@@ -1309,5 +1285,3 @@ void Local_G4Cerenkov_modified::DumpPhysicsTable() const
       v->DumpValues();
   }
 }
-
-
