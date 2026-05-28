@@ -170,15 +170,12 @@ Local_DsG4Scintillation::Local_DsG4Scintillation(G4int opticksMode, const G4Stri
     theSlowIntegralTable = NULL;
     theReemissionIntegralTable = NULL;
 
-    //verboseLevel = 2;
-    //G4cout << " Local_DsG4Scintillation set verboseLevel by hand to " << verboseLevel << G4endl;
-
     const char* level_ = getenv("Local_DsG4Scintillation_verboseLevel");
     const char* fallback = "0";
     int         level = std::atoi(level_ ? level_ : fallback);
     SetVerboseLevel(level);
-    std::cout << "Local_DsG4Scintillation::Local_DsG4Scintillation level " << level << " verboseLevel " << verboseLevel << std::endl;
     if (verboseLevel > 0) {
+        std::cout << "Local_DsG4Scintillation::Local_DsG4Scintillation level " << level << " verboseLevel " << verboseLevel << std::endl;
         G4cout << GetProcessName() << " is created " << G4endl;
     }
 
