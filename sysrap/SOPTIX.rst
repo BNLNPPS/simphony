@@ -4,7 +4,7 @@ SOPTIX.rst : triangulated machinery
 Overview
 ----------
 
-The SOPTIX,SCUDA,SMesh,SGLFW structs were developed to learn how to 
+The SOPTIX, SCUDA, SMesh, SGLFW structs were developed to learn how to 
 implement a triangulated geometry workflow with the NVIDIA OptiX 7+ API
 and also to implement interactive OpenGL rendering of the triangulated geometry.  
 
@@ -60,27 +60,17 @@ tests
 SGLFW_SOPTIX_Scene_test.{sh,cc}
     interactive raytrace visualization of triangulated geometry::
 
-         ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.sh
-
+         sysrap/tests/SGLFW_SOPTIX_Scene_test.sh
 
 SOPTIX_Scene_test.{sh,cc} SOPTIX_Scene_Encapsulated_test.cc
     ppm non-interactive raytrace render of triangulated geometry
     both non-encapsulated and encapsulated versions can be built
     and run with the script::
    
-         ~/o/sysrap/tests/SOPTIX_Scene_test.sh
-
-
-
-SOPTIX_Module_test.{sh,cc}
-    TODO: CHECK
+         sysrap/tests/SOPTIX_Scene_test.sh
 
 SOPTIX_Options_test.{sh,cc}
     TODO: CHECK
-
-SOPTIX_Pipeline_test.{sh,cc}
-    TODO: CHECK
-
 
 
 SOPTIX_SBT::initHitgroup
@@ -99,7 +89,3 @@ Need nested loop like CSGOptiX/SBT.cc SBT::createHitgroup::
            sub-SMesh 
 
 So need access to scene data to form the SBT 
-
-
-
-
