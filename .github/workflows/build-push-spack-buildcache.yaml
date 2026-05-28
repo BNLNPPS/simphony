@@ -4,12 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 1'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - Dockerfile
-      - .github/workflows/build-push-spack-buildcache.yaml
   push:
     branches:
       - main
@@ -27,7 +21,6 @@ permissions:
 
 jobs:
   refresh-buildcache:
-    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'build-spack-buildcache' }}
     runs-on: ubuntu-latest
     env:
       SPACK_BASE_IMAGE: simphony-spack-base:buildcache-${{ github.run_id }}
