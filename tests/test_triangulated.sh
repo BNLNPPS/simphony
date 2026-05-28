@@ -23,11 +23,10 @@ MAC="$OPTICKS_HOME/tests/run.mac"
 SEED=42
 TOL=0.02
 
-ANA=$(USER=ci GEOM=trisphere_ana \
-    GPURaytrace -g "$GDML" -m "$MAC" -s "$SEED" 2>&1 \
+ANA=$(GPURaytrace -g "$GDML" -m "$MAC" -s "$SEED" 2>&1 \
     | awk '/Opticks: NumHits:/ {print $NF}')
 
-TRI=$(USER=ci GEOM=trisphere_tri stree__force_triangulate_solid=G4_WATER_solid \
+TRI=$(stree__force_triangulate_solid=G4_WATER_solid \
     GPURaytrace -g "$GDML" -m "$MAC" -s "$SEED" 2>&1 \
     | awk '/Opticks: NumHits:/ {print $NF}')
 
