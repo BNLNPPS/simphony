@@ -110,3 +110,25 @@ jobs:
         if: ${{ always() }}
         run: |
           docker image rm -f '${{ env.SPACK_BASE_IMAGE }}' || true
+
+  cleanup-buildcache-registry:
+    if: ${{ always() && needs.refresh-buildcache.result != 'skipped' }}
+    needs: refresh-buildcache
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Define cleanup targets
+        run: |
+          PACKAGE_NAME=$(echo "${{ github.event.repository.name }}-spack-buildcache" | tr '[:upper:]' '[:lower:]')
+          echo "PACKAGE_NAME=${PACKAGE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Cleanup stale untagged GHCR versions
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          packages: ${{ env.PACKAGE_NAME }}
+          # Keep a small buffer so the cleanup pass does not race just-published manifests.
+          delete-untagged: true
+          older-than: 1 day
