@@ -348,7 +348,6 @@ G4VParticleChange* Local_G4Cerenkov_modified::PostStepDoIt(const G4Track& aTrack
 
   ////////////////////////////////////////////////////////////////
 
-  fNumPhotons = std::min( fNumPhotons, 5 );   // artifical reduction for debugging convenience
   aParticleChange.SetNumberOfSecondaries(fNumPhotons);
 
   if (fTrackSecondariesFirst) {
