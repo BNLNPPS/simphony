@@ -44,6 +44,7 @@ endif()
 
 # used by src/config.h.in
 set(GPHOX_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
+set(GPHOX_BUILD_PTX_DIR "${PROJECT_BINARY_DIR}/ptx")
 
 add_subdirectory(sysrap)
 add_subdirectory(sysrap/tests)
