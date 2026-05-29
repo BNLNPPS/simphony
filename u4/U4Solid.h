@@ -556,11 +556,21 @@ inline sn* U4Solid::init_Sphere_(char layer)
     double deltaPhi = sphere->GetDeltaPhiAngle()/CLHEP::radian ;
     bool has_deltaPhi = startPhi != 0. || deltaPhi != 2.*CLHEP::pi  ;
 
-    bool has_deltaPhi_expect = has_deltaPhi == false ;
-    assert( has_deltaPhi_expect );
-    if(!has_deltaPhi_expect) std::raise(SIGINT);
-
-    return z_slice ? sn::ZSphere( radius, zmin, zmax ) : sn::Sphere(radius ) ;
+    // F4 phi-bake: a phi-wedge G4Sphere now builds a phi-clipped ZSphere
+    // (startPhi/deltaPhi baked into the primitive) instead of aborting.
+    // See sn::ZSphere(5-arg) + csg_intersect_leaf_zsphere.h.
+    if (z_slice || has_deltaPhi)
+    {
+        if (!z_slice)
+        {
+            zmin = -radius;
+            zmax = +radius;
+        }
+        if (has_deltaPhi)
+            return sn::ZSphere(radius, zmin, zmax, startPhi, deltaPhi);
+        return sn::ZSphere(radius, zmin, zmax);
+    }
+    return sn::Sphere(radius);
 }
 
 
@@ -800,8 +810,19 @@ inline void U4Solid::init_Tubs()
     double rmin = tubs->GetInnerRadius()/CLHEP::mm ;
     bool has_inner = rmin > 0. ;
 
-    sn* outer = sn::Cylinder(rmax, -hz, hz );
+    // F5 phi-bake: build phi-clipped cylinders for a G4Tubs with a phi wedge
+    // (startPhi/deltaPhi baked into the primitive via sn::Cylinder 5-arg).
+    double startPhi = tubs->GetStartPhiAngle() / CLHEP::radian;
+    double deltaPhi = tubs->GetDeltaPhiAngle() / CLHEP::radian;
+    bool   has_deltaPhi = startPhi != 0. || deltaPhi != 2. * CLHEP::pi;
 
+    auto makeCyl = [&](double R, double zlo, double zhi) {
+        return has_deltaPhi
+                   ? sn::Cylinder(R, zlo, zhi, startPhi, deltaPhi)
+                   : sn::Cylinder(R, zlo, zhi);
+    };
+
+    sn* outer = makeCyl(rmax, -hz, hz);
 
     if(has_inner == false)
     {
@@ -813,7 +834,7 @@ inline void U4Solid::init_Tubs()
         double nudge_inner = 0.01 ;
         double dz = do_nudge_inner ? hz*nudge_inner : 0. ;
 
-        sn* inner = sn::Cylinder(rmin, -(hz+dz), hz+dz );
+        sn* inner = makeCyl(rmin, -(hz + dz), hz + dz);
         root = sn::Boolean( CSG_DIFFERENCE, outer, inner );
     }
 
