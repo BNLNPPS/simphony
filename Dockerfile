@@ -136,3 +136,30 @@ ENV NVIDIA_DRIVER_CAPABILITIES=graphics,compute,utility
 WORKDIR ${OPTICKS_HOME}
 
 SHELL ["/bin/bash", "-l", "-c"]
+
+
+FROM spack-base AS spack-no-env
+
+WORKDIR ${OPTICKS_HOME}
+
+# Intentionally track the latest Spack repo state in CI to catch packaging regressions.
+RUN spack repo update -b develop builtin
+RUN spack repo add https://github.com/BNLNPPS/spack-packages
+RUN spack mirror add --unsigned simphony-buildcache "${SPACK_BUILDCACHE_MIRROR}"
+RUN spack external find --not-buildable --path /usr/local/cuda cuda
+# Prefer dependency binaries when they exist, but let PR validation fall back to
+# source builds if the mirror lags behind the latest Spack package metadata.
+RUN spack install --only=dependencies --reuse --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+RUN spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+RUN spack clean -a && rm -rf /root/.cache
+# Once simphony is installed it can be loaded in the user environment
+# $ spack load simphony
+# $ spack load --sh simphony >> /etc/profile.d/z10_load_simphony_from_spack.sh
+RUN set -euo pipefail \
+ && spack find --format "{name}{@version} {/hash}" simphony \
+ && prefix="$(spack location -i simphony)" \
+ && echo "Installed prefix: $prefix" \
+ && test -d "$prefix" \
+ && (test -f "$prefix/.spack/spec.json" || test -f "$prefix/.spack/spec.yaml")
+
+FROM develop AS default
