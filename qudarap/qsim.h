@@ -1263,6 +1263,19 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
     ctx.current_material_index = reflect ? s.index.x : s.index.y;
     ctx.current_group_velocity = reflect ? s.material1_group_velocity() : s.material2_group_velocity();
 
+    // F7 SIBLING-PAIR carry: update current_matline so propagate() at the NEXT
+    // boundary knows the photon's actual medium even when that boundary doesn't
+    // reference it (the sibling-pair case). _c1 = -dot(p.mom,normal) here, so
+    // _c1 < 0 maps to cosTheta > 0 in qbnd::fill_state (m1=IMAT, m2=OMAT).
+    {
+        const unsigned bnd_idx = ctx.prd->boundary();
+        const unsigned imat_line = bnd_idx * _BOUNDARY_NUM_MATSUR + IMAT;
+        const unsigned omat_line = bnd_idx * _BOUNDARY_NUM_MATSUR + OMAT;
+        const unsigned this_m1_line = (_c1 < 0.f) ? imat_line : omat_line;
+        const unsigned this_m2_line = (_c1 < 0.f) ? omat_line : imat_line;
+        ctx.current_matline = reflect ? this_m1_line : this_m2_line;
+    }
+
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
     if( flag ==  BOUNDARY_REFLECT )
     {
@@ -2153,7 +2166,7 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
     // copy geometry info into the sphoton struct
     ctx.p.set_prd(boundary, identity, cosTheta, iindex );  // HMM: lposcost not passed along
 
-    bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.pidx, base->pidx );
+    bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.pidx, base->pidx, ctx.current_matline); // F7: pass carried matline for sibling-pair override
 
     if (ctx.current_material_index == 0u)
     {
