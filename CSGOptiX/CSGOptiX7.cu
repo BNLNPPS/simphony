@@ -906,8 +906,18 @@ extern "C" __global__ void __intersection__is()
         const unsigned boundary = node->boundary() ;  // all CSGNode in the tree for one CSGPrim tree have same boundary
         const unsigned globalPrimIdx_boundary = (( globalPrimIdx & 0xffffu ) << 16 ) | ( boundary & 0xffffu ) ;
 
+        // Sibling-touching coincident-face bias: at a face shared between two sibling
+        // primitives OptiX sees two intersections at the same t. The "entering" hit
+        // (cosTheta<0) carries the correct destination material; the "exiting" hit
+        // (cosTheta>0) carries the parent material as m2, wrong for a sibling crossing.
+        // Bias only the t REPORTED to OptiX (closest-hit sorting) by 10 µm for exiting
+        // hits so the entering sibling wins. The real unbiased t (isect.w) is written to
+        // prd, so the photon's position advancement is unperturbed.
+        const float cosI = dot(ray_direction, make_float3(isect.x, isect.y, isect.z));
+        const float t_report = cosI > 0.f ? isect.w + 1.e-2f : isect.w ;
+
 #ifdef WITH_PRD
-        if(optixReportIntersection( isect.w, hitKind))
+        if(optixReportIntersection( t_report, hitKind))
         {
             quad2* prd = SOPTIX_getPRD<quad2>(); // access prd addr from RG program
             prd->q0.f = isect ;  // .w:distance and .xyz:normal which starts as the local frame one
@@ -923,7 +933,7 @@ extern "C" __global__ void __intersection__is()
         a3 = __float_as_uint( isect.w ) ;
         a4 = globalPrimIdx_boundary ;
         a5 = __float_as_uint( lposcost );
-        optixReportIntersection( isect.w, hitKind, a0, a1, a2, a3, a4, a5 );
+        optixReportIntersection( t_report, hitKind, a0, a1, a2, a3, a4, a5 );  // sort by biased t; a3 carries the real unbiased t
 
         // IS:optixReportIntersection writes the attributes that can be read in CH and AH programs
         // max 8 attribute registers, see PIP::PIP, communicate to __closesthit__ch
