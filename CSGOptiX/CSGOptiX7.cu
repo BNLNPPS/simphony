@@ -439,6 +439,14 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
 #endif
 
     sim->generate_photon(ctx.p, rng, gs, photon_idx, genstep_idx );
+    // F7: seed carried matline from the genstep's source-medium bnd row
+    // (gs.q0.u.z == scerenkov/sscint matline). Updated through
+    // propagate_at_boundary. Guard the -1 sentinel (0xFFFFFFFF) that
+    // SEvt::setGenstep emits for bad_ck/unmapped mtindex.
+    {
+        const unsigned gm = gs.q0.u.z ;
+        ctx.current_matline = (gm == 0xFFFFFFFFu) ? 0u : gm ;
+    }
 
     int command = START ;
     int bounce = 0 ;

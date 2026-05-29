@@ -38,7 +38,7 @@ struct qbnd
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_TEXTURE) || defined(MOCK_CUDA)
     QBND_METHOD float4  boundary_lookup( unsigned ix, unsigned iy );
     QBND_METHOD float4  boundary_lookup( float nm, unsigned line, unsigned k );
-    QBND_METHOD void    fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx );
+    QBND_METHOD void    fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx, unsigned carried_matline = 0u );
 #endif
 
 };
@@ -102,26 +102,42 @@ QTex::setMetaDomainY::
 **/
 inline QBND_METHOD float4 qbnd::boundary_lookup( float nm, unsigned line, unsigned k )
 {
-    //printf("//qbnd.boundary_lookup nm %10.4f line %d k %d boundary_meta %p  \n", nm, line, k, boundary_meta  );
-
     const unsigned& nx = boundary_meta->q0.u.x  ;
     const unsigned& ny = boundary_meta->q0.u.y  ;
     const float& nm0 = boundary_meta->q1.f.x ;
     const float& nms = boundary_meta->q1.f.z ;
 
-    float fx = (nm - nm0)/nms ;
-    float x = (fx+0.5f)/float(nx) ;   // ?? +0.5f ??
+    // WAVELENGTH-LINEAR / MATERIAL-POINT interpolation (2026-05-18 fix for
+    // dRICH outer-arc shoulder deficit). Texture filter mode is POINT to
+    // avoid cross-row blending (see [[BIGBUG]] cudaFilterModeLinear bug),
+    // but we recover wavelength-axis linear interpolation by reading 2
+    // adjacent bins and lerping by hand. This matches G4's per-energy
+    // property interpolation behaviour (G4PhysicsTable) instead of nearest-
+    // bin sampling that POINT alone gave (1.5 % per-photon bias in
+    // Rayleigh scattering_length and Fresnel n1/n2).
+    const float fx_idx = (nm - nm0) / nms ;          // continuous bin index
+    float fx_lo_f = floorf(fx_idx) ;
+    if (fx_lo_f < 0.f) fx_lo_f = 0.f ;
+    unsigned ix_lo = unsigned(fx_lo_f) ;
+    unsigned ix_hi = ix_lo + 1u ;
+    if (ix_hi >= nx) { ix_hi = nx - 1u ; ix_lo = ix_hi ; }
+    const float w_hi = fx_idx - fx_lo_f ;
+    const float w_lo = 1.0f - w_hi ;
 
-    unsigned iy = _BOUNDARY_NUM_FLOAT4*line + k ;    // 2*line+k (0/1)
-    float y = (float(iy)+0.5f)/float(ny) ;
+    const float x_lo = (float(ix_lo) + 0.5f) / float(nx) ;
+    const float x_hi = (float(ix_hi) + 0.5f) / float(nx) ;
 
+    const unsigned iy = _BOUNDARY_NUM_FLOAT4 * line + k ;
+    const float y = (float(iy) + 0.5f) / float(ny) ;
 
-    float4 props = tex2D<float4>( boundary_tex, x, y );
+    const float4 p_lo = tex2D<float4>( boundary_tex, x_lo, y );
+    const float4 p_hi = tex2D<float4>( boundary_tex, x_hi, y );
 
-    // printf("//qbnd.boundary_lookup nm %10.4f nm0 %10.4f nms %10.4f  x %10.4f nx %d ny %d y %10.4f props.x %10.4f %10.4f %10.4f %10.4f  \n",
-    //     nm, nm0, nms, x, nx, ny, y, props.x, props.y, props.z, props.w );
-
-    return props ;
+    return make_float4(
+        w_lo*p_lo.x + w_hi*p_hi.x,
+        w_lo*p_lo.y + w_hi*p_hi.y,
+        w_lo*p_lo.z + w_hi*p_hi.z,
+        w_lo*p_lo.w + w_hi*p_hi.w );
 }
 
 
@@ -183,14 +199,32 @@ s.optical.x
 
 **/
 
-inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx  )
+inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx, unsigned carried_matline  )
 {
     const int line = boundary*_BOUNDARY_NUM_MATSUR ;      // now that are not signing boundary use 0-based
 
-    const int m1_line = cosTheta > 0.f ? line + IMAT : line + OMAT ;
+    int m1_line = cosTheta > 0.f ? line + IMAT : line + OMAT ;
     const int m2_line = cosTheta > 0.f ? line + OMAT : line + IMAT ;
     const int su_line = cosTheta > 0.f ? line + ISUR : line + OSUR ;
 
+    // F7 sibling-pair material override.
+    // GBndLib does not enumerate boundary entries for CSG sibling-pair faces
+    // (two daughters of one parent sharing a face), so OptiX may pick a boundary
+    // whose m1/m2 do not reference the photon's actual medium -> wrong material1.
+    // qsim::propagate passes the photon's carried matline (seeded from the
+    // genstep, updated each propagate_at_boundary); when it is valid we use it
+    // directly as m1 so absorption/scattering sample the true current medium.
+    // (material2 is left as the boundary's other side.)
+    // Guards: 0 = "no carry" (legacy callers); 0xFFFFFFFF = the lookup_mtline=-1
+    // sentinel from SEvt::setGenstep, not a valid table row; and the carried
+    // slot must be a material row (OMAT/IMAT), not a surface row (OSUR/ISUR).
+    const unsigned matline_slot = carried_matline & 0x3u ;
+    if (carried_matline != 0u
+        && carried_matline != 0xFFFFFFFFu
+        && (matline_slot == unsigned(OMAT) || matline_slot == unsigned(IMAT)))
+    {
+        m1_line = int(carried_matline);
+    }
 
     s.material1 = boundary_lookup( wavelength, m1_line, 0);   // refractive_index, absorption_length, scattering_length, reemission_prob
     s.m1group2  = boundary_lookup( wavelength, m1_line, 1);   // x: material1 group_velocity, y: material2 group_velocity, z/w unused
@@ -200,7 +234,7 @@ inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wav
 
     s.optical = optical[su_line].u ;   // 1-based-surface-index-0-meaning-boundary/type/finish/value  (type,finish,value not used currently)
 
-    s.index.x = optical[m1_line].u.x ; // m1 index (1-based, see sstandard::make_optical)
+    s.index.x = optical[m1_line].u.x ; // m1 index (1-based, see sstandard::make_optical) -- reflects override if any
     s.index.y = optical[m2_line].u.x ; // m2 index (1-based, see sstandard::make_optical)
     s.index.z = optical[su_line].u.x ; // su index (1-based, see sstandard::make_optical)
     s.index.w = 0u ;                   // avoid undefined memory comparison issues

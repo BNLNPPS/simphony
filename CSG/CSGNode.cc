@@ -422,7 +422,10 @@ void CSGNode::setAABBLocal()
     {
         float px, py, a, radius, z1, z2 ;
         getParam( px, py, a, radius, z1, z2) ;
-        setAABB( px-radius, py-radius, z1, px+radius, py+radius, z2 );
+        // F6: px,py (cx,cy) are repurposed as startPhi,deltaPhi for phi-wedge
+        // cylinders (sn::Cylinder 5-arg), so they are NOT the centre. Cylinder is
+        // origin-centred -> AABB is simply +/-radius in x/y over [z1,z2].
+        setAABB( -radius, -radius, z1, radius, radius, z2 );
     }
     else if( tc == CSG_DISC )
     {
