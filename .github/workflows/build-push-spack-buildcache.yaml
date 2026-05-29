@@ -73,12 +73,14 @@ jobs:
               # survives a failed long-running buildcache refresh.
               spack install --only=dependencies --reuse --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 
+              # Update the index after dependency autopush so partial progress is immediately discoverable.
+              spack buildcache update-index simphony-spack-buildcache
+
               # Keep the cache focused on dependencies; the PR workflow still builds simphony itself.
               spack mirror set --no-autopush simphony-spack-buildcache
               spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 
-              # Autopush uploads OCI blobs immediately, but Spack still needs an updated
-              # index so later CI runs can discover the freshly published binaries.
+              # Ensure the index is current after the full run as well.
               spack buildcache update-index simphony-spack-buildcache
             '
 
