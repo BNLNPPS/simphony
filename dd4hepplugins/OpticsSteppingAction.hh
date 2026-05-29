@@ -4,7 +4,7 @@
 #include <DDG4/Geant4SteppingAction.h>
 #include <string>
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 //---------------------------------------------------------------------------//
 /*!
@@ -31,4 +31,4 @@ class OpticsSteppingAction final : public dd4hep::sim::Geant4SteppingAction
 };
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony

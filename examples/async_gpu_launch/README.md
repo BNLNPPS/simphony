@@ -46,13 +46,13 @@ A single `G4Mutex` ensures only one GPU kernel runs at a time.
 
 ```bash
 mkdir build && cd build
-cmake .. -DCMAKE_PREFIX_PATH=/path/to/eic-opticks/install
+cmake .. -DCMAKE_PREFIX_PATH=/path/to/simphony/install
 make
 ```
 
 ## Build (in-tree)
 
-The example is also built as part of the main eic-opticks build.
+The example is also built as part of the main simphony build.
 
 ## Run
 

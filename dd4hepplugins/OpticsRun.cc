@@ -17,7 +17,7 @@
 
 #include "DD4hepSensorIdentifier.hh"
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 
 //---------------------------------------------------------------------------//
@@ -150,6 +150,6 @@ void OpticsRun::end(G4Run const *run)
 }
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony
 
-DECLARE_GEANT4ACTION_NS(ddeicopticks, OpticsRun)
+DECLARE_GEANT4ACTION_NS(ddsimphony, OpticsRun)

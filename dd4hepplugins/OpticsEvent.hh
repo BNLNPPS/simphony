@@ -8,7 +8,7 @@
 class SEvt;
 struct sphoton;
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 //---------------------------------------------------------------------------//
 /*!
@@ -47,4 +47,4 @@ class OpticsEvent final : public dd4hep::sim::Geant4EventAction
 };
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony

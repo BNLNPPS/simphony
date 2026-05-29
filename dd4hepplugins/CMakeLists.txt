@@ -15,7 +15,7 @@
 # Detect standalone vs in-tree build
 if(NOT TARGET G4CX)
     cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
-    project(ddeicopticks VERSION 0.1.0 LANGUAGES CXX)
+    project(ddsimphony VERSION 0.1.0 LANGUAGES CXX)
     find_package(DD4hep REQUIRED COMPONENTS DDG4 DDCore)
     find_package(simphony REQUIRED)
     find_package(Geant4 REQUIRED)
@@ -35,7 +35,7 @@ dd4hep_set_compiler_flags()
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
 
-dd4hep_add_plugin(ddeicopticks
+dd4hep_add_plugin(ddsimphony
   SOURCES
     OpticsRun.cc
     OpticsEvent.cc
@@ -48,16 +48,16 @@ dd4hep_add_plugin(ddeicopticks
     ${_sysrap}
 )
 # STANDALONE changes class export macros in simphony headers;
-# only needed when building outside the main eic-opticks tree.
+# only needed when building outside the main simphony tree.
 if(NOT TARGET G4CX)
-    target_compile_definitions(ddeicopticks PRIVATE STANDALONE)
+    target_compile_definitions(ddsimphony PRIVATE STANDALONE)
 endif()
 
-install(TARGETS ddeicopticks
+install(TARGETS ddsimphony
   LIBRARY DESTINATION lib
 )
 
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_MODULE_PREFIX}ddeicopticks.components
+  ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_MODULE_PREFIX}ddsimphony.components
   DESTINATION lib
 )

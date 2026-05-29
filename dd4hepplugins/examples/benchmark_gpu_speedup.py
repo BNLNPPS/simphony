@@ -91,7 +91,7 @@ def run_single_mode(mode, num_events, photon_threshold=0):
         filt.Cut = 1e12
         seq.adopt(filt)
 
-        # eic-opticks DDG4 plugins
+        # simphony DDG4 plugins
         stepping = DDG4.SteppingAction(
             kernel, "OpticsSteppingAction/OpticsStep1"
         )

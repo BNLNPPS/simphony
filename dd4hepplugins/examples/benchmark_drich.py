@@ -15,7 +15,7 @@ Speedup = CPU_optical_time / GPU_simulate_time
 Prerequisites:
   - Spack environment activated with DD4hep, Geant4, simphony
   - `spack load epic` (sets DETECTOR_PATH to EPIC geometry)
-  - DD4HEP_LIBRARY_PATH includes /opt/local/lib (eic-opticks plugins)
+  - DD4HEP_LIBRARY_PATH includes /opt/local/lib (simphony plugins)
 
 Usage:
   python3 benchmark_drich.py                                # all modes, 10 events
@@ -134,7 +134,7 @@ def run_single_mode(mode, num_events, photon_threshold=0, multiplicity=100,
         filt.Cut = 1e12
         seq.adopt(filt)
 
-        # eic-opticks DDG4 plugins
+        # simphony DDG4 plugins
         stepping = DDG4.SteppingAction(
             kernel, "OpticsSteppingAction/OpticsStep1"
         )

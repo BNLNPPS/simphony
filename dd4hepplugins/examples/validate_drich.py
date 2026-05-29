@@ -26,7 +26,7 @@ def setup_kernel(mode):
         os.environ["OPTICKS_INTEGRATION_MODE"] = "1"
         # Ensure DDG4 can find the plugin
         import ctypes
-        ctypes.CDLL("libddeicopticks.so", ctypes.RTLD_GLOBAL)
+        ctypes.CDLL("libddsimphony.so", ctypes.RTLD_GLOBAL)
     else:
         os.environ.pop("OPTICKS_EVENT_MODE", None)
         os.environ.pop("OPTICKS_INTEGRATION_MODE", None)

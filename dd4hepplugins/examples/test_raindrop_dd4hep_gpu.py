@@ -18,7 +18,7 @@ OpticsEvent triggers GPU simulation and injects hits into DD4hep collections.
 Prerequisites:
   - Spack environment activated (ROOT, DD4hep, simphony on PYTHONPATH/LD_LIBRARY_PATH)
   - DD4hepINSTALL set (for elements.xml lookup)
-  - libddeicopticks.so and libRaindropGeo.so on DD4HEP_LIBRARY_PATH
+  - libddsimphony.so and libRaindropGeo.so on DD4HEP_LIBRARY_PATH
 """
 import os
 import sys

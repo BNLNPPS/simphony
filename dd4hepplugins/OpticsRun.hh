@@ -4,7 +4,7 @@
 #include <DDG4/Geant4RunAction.h>
 #include <string>
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 //---------------------------------------------------------------------------//
 /*!
@@ -35,4 +35,4 @@ class OpticsRun final : public dd4hep::sim::Geant4RunAction
 };
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony

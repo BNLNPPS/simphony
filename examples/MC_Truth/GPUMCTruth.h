@@ -36,17 +36,17 @@
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4VisAttributes.hh"
 
-#include "eic-opticks/g4cx/G4CXOpticks.hh"
-#include "eic-opticks/sysrap/NP.hh"
-#include "eic-opticks/sysrap/SEvt.hh"
-#include "eic-opticks/sysrap/STrackInfo.h"
-#include "eic-opticks/sysrap/spho.h"
-#include "eic-opticks/sysrap/sphoton.h"
-#include "eic-opticks/u4/U4.hh"
-#include "eic-opticks/u4/U4Random.hh"
-#include "eic-opticks/u4/U4StepPoint.hh"
-#include "eic-opticks/u4/U4Touchable.h"
-#include "eic-opticks/u4/U4Track.h"
+#include "simphony/g4cx/G4CXOpticks.hh"
+#include "simphony/sysrap/NP.hh"
+#include "simphony/sysrap/SEvt.hh"
+#include "simphony/sysrap/STrackInfo.h"
+#include "simphony/sysrap/spho.h"
+#include "simphony/sysrap/sphoton.h"
+#include "simphony/u4/U4.hh"
+#include "simphony/u4/U4Random.hh"
+#include "simphony/u4/U4StepPoint.hh"
+#include "simphony/u4/U4Touchable.h"
+#include "simphony/u4/U4Track.h"
 
 namespace
 {
