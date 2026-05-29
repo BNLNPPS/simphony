@@ -79,6 +79,10 @@ struct sctx
     sstate  s ;
     float current_group_velocity = 0.f;
     unsigned current_material_index = 0u;
+    float current_n = 0.f;          // refractive index of the medium the photon is currently in (carried across boundaries for sibling-touching coincident faces)
+    float current_abslen = 1.e9f;   // absorption length of the carried medium (cached)
+    float current_scatlen = 1.e9f;  // scattering length of the carried medium (cached)
+    unsigned last_primitive_id = 0u; // globalPrimIdx of the primitive the photon is currently inside; used to ghost-detect coincident sibling faces
 
 #ifndef PRODUCTION
     srec rec ;
