@@ -20,6 +20,20 @@ carry, wavelength-linear lookup) live in `__device__` headers compiled into the
 PTX, so the PTX must be regenerated — not just the host libraries.
 
 ## Build
+
+### CMake (preferred)
+This directory is a standalone CMake project, like the other `examples/`:
+
+```
+cmake -S examples/drich -B build/drich -DCMAKE_PREFIX_PATH=${OPTICKS_PREFIX}
+cmake --build build/drich
+```
+
+It builds `drich_gdml_main` against an installed eic-opticks/simphony and Geant4
+(gdml component); compiling it doubles as a build-smoke for the standalone flow.
+`run.sh` runs it (`./run.sh`, or `GDML_FILE=… MULT=… SEED=… NEVENTS=… ./run.sh`).
+
+### Manual g++
 Adjust `-I/-L` to your install layout. NOTE: the project was renamed
 `eic-opticks` → `simphony`, so installed headers may live under
 `include/simphony/...` (the recipe below used the old `eic-opticks` prefix).
