@@ -1260,8 +1260,17 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
 
     flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT ;
 
-    ctx.current_material_index = reflect ? s.index.x : s.index.y;
-    ctx.current_group_velocity = reflect ? s.material1_group_velocity() : s.material2_group_velocity();
+    // On REFLECT the photon stays in the carried medium — do NOT overwrite the cache from the
+    // boundary lookup (a sibling-touching mismatch would supply the wrong m1/m2). On TRANSMIT
+    // into a genuinely different material, refresh the cache from m2. A "transmit" whose m2
+    // equals the carried material is a ghost crossing of a coincident face — leave the cache.
+    if (!reflect && s.index.y != ctx.current_material_index) {
+        ctx.current_material_index = s.index.y;
+        ctx.current_group_velocity = s.material2_group_velocity();
+        ctx.current_n       = s.material2.x;
+        ctx.current_abslen  = s.material2.y;
+        ctx.current_scatlen = s.material2.z;
+    }
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
     if( flag ==  BOUNDARY_REFLECT )
@@ -2159,12 +2168,28 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
     {
         ctx.current_material_index = ctx.s.index.x;
         ctx.current_group_velocity = ctx.s.material1_group_velocity();
+        ctx.current_n       = ctx.s.material1.x;
+        ctx.current_abslen  = ctx.s.material1.y;
+        ctx.current_scatlen = ctx.s.material1.z;
     }
     else if (ctx.s.index.x == ctx.current_material_index)
     {
-        // When the boundary orientation agrees with the carried medium, refresh
-        // the active velocity from the wavelength-dependent material lookup.
+        // Boundary orientation agrees with the carried medium: refresh the active
+        // values from the wavelength-dependent material lookup.
         ctx.current_group_velocity = ctx.s.material1_group_velocity();
+        ctx.current_n       = ctx.s.material1.x;
+        ctx.current_abslen  = ctx.s.material1.y;
+        ctx.current_scatlen = ctx.s.material1.z;
+    }
+    if (ctx.s.index.x != ctx.current_material_index && ctx.current_material_index != 0u)
+    {
+        // Sibling-touching mismatch: the boundary's m1 is not the medium the photon is
+        // actually in. Override n1/abslen/scatlen with the carried medium for correct Snell.
+        ctx.s.material1.x = ctx.current_n;
+        ctx.s.index.x     = ctx.current_material_index;
+        ctx.s.material1.y = ctx.current_abslen;
+        ctx.s.material1.z = ctx.current_scatlen;
+        ctx.s.material1.w = 0.f;    // no reemission on a mismatch boundary
     }
 
     unsigned flag = 0 ;
