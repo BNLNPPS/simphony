@@ -121,7 +121,7 @@ RUN apt update \
  && apt clean \
  && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/spack && curl -sL https://github.com/spack/spack/archive/v${SPACK_VERSION}.tar.gz | tar -xz --strip-components 1 -C /opt/spack
+RUN mkdir -p /opt/spack && curl -fsSL https://github.com/spack/spack/archive/v${SPACK_VERSION}.tar.gz | tar -xz --strip-components 1 -C /opt/spack
 RUN echo "source /opt/spack/share/spack/setup-env.sh" > /etc/profile.d/z09_source_spack_setup.sh
 RUN echo "source /etc/profile.d/z09_source_spack_setup.sh" >> /etc/bash.bashrc
 
