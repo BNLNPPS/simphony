@@ -2192,6 +2192,32 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
         ctx.s.material1.w = 0.f;    // no reemission on a mismatch boundary
     }
 
+    // Primitive-ID ghost-detect: at a coincident face shared by two sibling primitives the BVH
+    // reports the hit on a DIFFERENT primitive than the one the photon is inside, with the
+    // boundary's m2 equal to the carried medium, no surface, at ~zero distance. That combination
+    // is specific to sibling-touching. Step ~1 µm past the coincident face and continue, skipping
+    // the spurious boundary action.
+    unsigned current_globalPrimIdx = ctx.prd->globalPrimIdx();
+    bool ghost = (ctx.last_primitive_id != 0u)
+              && (current_globalPrimIdx != ctx.last_primitive_id)
+              && (ctx.s.index.y == ctx.current_material_index)
+              && (ctx.s.optical.y == smatsur_NoSurface)
+              && (ctx.prd->q0.f.w < 0.05f);
+#if defined(__CUDACC__) || defined(__CUDABE__)
+    if (ghost)
+    {
+        const float distance_to_boundary = ctx.prd->q0.f.w;
+        const float pa_eps = 1.0e-3f;  // 1 µm clearance past the coincident face
+        ctx.p.pos.x += (distance_to_boundary + pa_eps) * ctx.p.mom.x;
+        ctx.p.pos.y += (distance_to_boundary + pa_eps) * ctx.p.mom.y;
+        ctx.p.pos.z += (distance_to_boundary + pa_eps) * ctx.p.mom.z;
+        ctx.p.time += distance_to_boundary / ctx.current_group_velocity;
+        ctx.last_primitive_id = current_globalPrimIdx;
+        ctx.p.set_flag(0u);
+        return CONTINUE;
+    }
+#endif
+
     unsigned flag = 0 ;
 
     int command = propagate_to_boundary( flag, rng, ctx );
@@ -2234,6 +2260,13 @@ inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  
         else if( ems == smatsur_Surface_zplus_sensor_A )
         {
             command = propagate_at_surface_Detect( flag, rng, ctx ) ;
+        }
+
+        // Track which primitive the photon is now inside, for ghost-detect on the next call.
+        // TRANSMIT enters a new primitive; REFLECT stays; initialise on first intersection.
+        if (flag == BOUNDARY_TRANSMIT || ctx.last_primitive_id == 0u)
+        {
+            ctx.last_primitive_id = current_globalPrimIdx;
         }
     }
     ctx.p.set_flag(flag);
