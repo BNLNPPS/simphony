@@ -930,6 +930,29 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
     p.pos  += distance_to_boundary*(p.mom) ;
     p.time += distance_to_boundary/group_velocity   ;
 
+#if defined(__CUDACC__) || defined(__CUDABE__)
+    // Wächter–Binder safe-spawn snap (Ray Tracing Gems ch. 6): after advancing to the boundary,
+    // nudge the position ~16 ulps along the surface normal in the direction of motion. Rescues
+    // photons left sub-ulp inside thin volumes and stops the next trace from re-finding the same
+    // surface within tmin. ~5 µm at world z≈2700 mm, safely under the 50 µm glue thickness.
+    {
+        const float3* normal = (float3*)&ctx.prd->q0.f.x ;
+        const float sgn = dot(p.mom, *normal) > 0.f ? 1.f : -1.f ;
+        const float3 n_off = make_float3(sgn*normal->x, sgn*normal->y, sgn*normal->z) ;
+        const float origin_thresh = 1.0f / 32.0f ;
+        const float float_scale   = 1.0f / 65536.0f ;
+        const int   int_scale     = 16 ;
+        int3 of_i = make_int3((int)(int_scale*n_off.x), (int)(int_scale*n_off.y), (int)(int_scale*n_off.z)) ;
+        float3 p_i = make_float3(
+            __int_as_float(__float_as_int(p.pos.x) + ((p.pos.x < 0.f) ? -of_i.x : of_i.x)),
+            __int_as_float(__float_as_int(p.pos.y) + ((p.pos.y < 0.f) ? -of_i.y : of_i.y)),
+            __int_as_float(__float_as_int(p.pos.z) + ((p.pos.z < 0.f) ? -of_i.z : of_i.z))) ;
+        p.pos.x = (fabsf(p.pos.x) < origin_thresh) ? p.pos.x + float_scale*n_off.x : p_i.x ;
+        p.pos.y = (fabsf(p.pos.y) < origin_thresh) ? p.pos.y + float_scale*n_off.y : p_i.y ;
+        p.pos.z = (fabsf(p.pos.z) < origin_thresh) ? p.pos.z + float_scale*n_off.z : p_i.z ;
+    }
+#endif
+
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
     float sail_time_delta = distance_to_boundary/group_velocity ;
     if( ctx.pidx == base->pidx ) printf("//qsim.propagate_to_boundary.tail.SAIL pidx %7lld : post = np.array([%10.5f,%10.5f,%10.5f,%10.5f]) ;  sail_time_delta = %10.5f   \n",
