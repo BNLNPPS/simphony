@@ -147,6 +147,7 @@ Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth)
     origin_y(0),
     tmin(0.f),
     tmin0(0.f),
+    boundary_face_bias(nullptr),
     PropagateEpsilon0Mask(0u),
     tmax(0.f),
     vizmask(0xff),
