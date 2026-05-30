@@ -922,11 +922,11 @@ extern "C" __global__ void __intersection__is()
         // by index contrast (params.boundary_face_bias from CSGOptiX::initSimulate): high-contrast
         // faces (quartz/air ~0.47) need it; low-contrast thin gaps gate off; nullptr => always-on.
         const float cosI = dot(ray_direction, make_float3(isect.x, isect.y, isect.z));
-        const bool face_bias_on = (params.boundary_face_bias == nullptr) || (params.boundary_face_bias[boundary] != 0u) ;
-        const float t_report = (cosI > 0.f && face_bias_on) ? isect.w + 1.e-2f : isect.w ;
+        const bool  face_bias_on = (params.boundary_face_bias == nullptr) || (params.boundary_face_bias[boundary] != 0u);
+        const float t_report = (cosI > 0.f && face_bias_on) ? isect.w + 1.e-2f : isect.w;
 
 #ifdef WITH_PRD
-        if(optixReportIntersection( t_report, hitKind))
+        if (optixReportIntersection(t_report, hitKind))
         {
             quad2* prd = SOPTIX_getPRD<quad2>(); // access prd addr from RG program
             prd->q0.f = isect ;  // .w:distance and .xyz:normal which starts as the local frame one
@@ -942,7 +942,7 @@ extern "C" __global__ void __intersection__is()
         a3 = __float_as_uint( isect.w ) ;
         a4 = globalPrimIdx_boundary ;
         a5 = __float_as_uint( lposcost );
-        optixReportIntersection( t_report, hitKind, a0, a1, a2, a3, a4, a5 );
+        optixReportIntersection(t_report, hitKind, a0, a1, a2, a3, a4, a5);
 
         // IS:optixReportIntersection writes the attributes that can be read in CH and AH programs
         // max 8 attribute registers, see PIP::PIP, communicate to __closesthit__ch

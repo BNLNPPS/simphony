@@ -216,7 +216,7 @@ inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wav
 
     s.optical = optical[su_line].u ;   // 1-based-surface-index-0-meaning-boundary/type/finish/value  (type,finish,value not used currently)
 
-    s.index.x = optical[m1_line].u.x;  // m1 index (1-based, see sstandard::make_optical) -- reflects override if any
+    s.index.x = optical[m1_line].u.x; // m1 index (1-based, see sstandard::make_optical) -- reflects override if any
     s.index.y = optical[m2_line].u.x ; // m2 index (1-based, see sstandard::make_optical)
     s.index.z = optical[su_line].u.x ; // su index (1-based, see sstandard::make_optical)
     s.index.w = 0u ;                   // avoid undefined memory comparison issues

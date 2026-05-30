@@ -126,9 +126,7 @@ std::string Params::detail() const
     return s ;
 }
 
-
-Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth)
-    :
+Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth) :
     raygenmode(SRG_RENDER),
     node(nullptr),
     plan(nullptr),

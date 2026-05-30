@@ -616,42 +616,49 @@ void CSGOptiX::initSimulate()
     // sibling bias; low-contrast thin gaps (aerogel/air ~0.025) are harmed and gate OFF.
     // Computed from the bnd table; no per-detector hardcode. Allocated once, reused per launch.
     {
-        const SSim* ssim = foundry ? foundry->getSim() : nullptr ;
-        const NP* bnd = ssim ? ssim->get_bnd() : nullptr ;
-        if( bnd != nullptr && bnd->shape.size() == 5 )
+        const SSim* ssim = foundry ? foundry->getSim() : nullptr;
+        const NP*   bnd = ssim ? ssim->get_bnd() : nullptr;
+        if (bnd != nullptr && bnd->shape.size() == 5)
         {
-            const unsigned num_bnd = bnd->shape[0] ;
-            const unsigned num_wl  = bnd->shape[3] ;
-            const double* bv = bnd->cvalues<double>() ;  // stree/standard bnd is <f8 (double)
-            const unsigned LMAT_OMAT = 0u, LMAT_IMAT = 3u ;  // sstandard mat/sur line order {OMAT,OSUR,ISUR,IMAT}
-            const float DN_THRESHOLD = 0.1f ;
-            std::vector<unsigned char> bits(num_bnd, 0u) ;
-            for(unsigned b=0 ; b < num_bnd ; b++)
+            const unsigned             num_bnd = bnd->shape[0];
+            const unsigned             num_wl = bnd->shape[3];
+            const double*              bv = bnd->cvalues<double>();    // stree/standard bnd is <f8 (double)
+            const unsigned             LMAT_OMAT = 0u, LMAT_IMAT = 3u; // sstandard mat/sur line order {OMAT,OSUR,ISUR,IMAT}
+            const float                DN_THRESHOLD = 0.1f;
+            std::vector<unsigned char> bits(num_bnd, 0u);
+            for (unsigned b = 0; b < num_bnd; b++)
             {
-                double dnmax = 0. ;
-                for(unsigned w=0 ; w < num_wl ; w++)
+                double dnmax = 0.;
+                for (unsigned w = 0; w < num_wl; w++)
                 {
-                    const double n_om = bv[ (((b*4u + LMAT_OMAT)*2u + 0u)*num_wl + w)*4u + 0u ] ;  // RINDEX of omat
-                    const double n_im = bv[ (((b*4u + LMAT_IMAT)*2u + 0u)*num_wl + w)*4u + 0u ] ;  // RINDEX of imat
-                    double dn = n_om - n_im ; if(dn < 0.) dn = -dn ;
-                    if(dn > dnmax) dnmax = dn ;
+                    const double n_om = bv[(((b * 4u + LMAT_OMAT) * 2u + 0u) * num_wl + w) * 4u + 0u]; // RINDEX of omat
+                    const double n_im = bv[(((b * 4u + LMAT_IMAT) * 2u + 0u) * num_wl + w) * 4u + 0u]; // RINDEX of imat
+                    double       dn = n_om - n_im;
+                    if (dn < 0.)
+                        dn = -dn;
+                    if (dn > dnmax)
+                        dnmax = dn;
                 }
-                bits[b] = (dnmax > DN_THRESHOLD) ? 1u : 0u ;
-                LOG(LEVEL) << "boundary_face_bias bnd " << b << " dnmax " << dnmax << " gate " << unsigned(bits[b]) ;
+                bits[b] = (dnmax > DN_THRESHOLD) ? 1u : 0u;
+                LOG(LEVEL) << "boundary_face_bias bnd " << b << " dnmax " << dnmax << " gate " << unsigned(bits[b]);
             }
-            static unsigned char* s_face_bias = nullptr ;
-            static unsigned s_face_bias_num = 0u ;
-            if( s_face_bias == nullptr ){ CUDA_CHECK( cudaMalloc((void**)&s_face_bias, num_bnd) ); s_face_bias_num = num_bnd ; }
-            if( s_face_bias_num == num_bnd )
+            static unsigned char* s_face_bias = nullptr;
+            static unsigned       s_face_bias_num = 0u;
+            if (s_face_bias == nullptr)
             {
-                CUDA_CHECK( cudaMemcpy(s_face_bias, bits.data(), num_bnd, cudaMemcpyHostToDevice) );
-                params->boundary_face_bias = s_face_bias ;
+                CUDA_CHECK(cudaMalloc((void**)&s_face_bias, num_bnd));
+                s_face_bias_num = num_bnd;
             }
-            LOG(LEVEL) << "boundary_face_bias gate computed, num_bnd " << num_bnd ;
+            if (s_face_bias_num == num_bnd)
+            {
+                CUDA_CHECK(cudaMemcpy(s_face_bias, bits.data(), num_bnd, cudaMemcpyHostToDevice));
+                params->boundary_face_bias = s_face_bias;
+            }
+            LOG(LEVEL) << "boundary_face_bias gate computed, num_bnd " << num_bnd;
         }
         else
         {
-            LOG(LEVEL) << "boundary_face_bias: no bnd table (rank != 5) -> gate left null (t-bias always-on)" ;
+            LOG(LEVEL) << "boundary_face_bias: no bnd table (rank != 5) -> gate left null (t-bias always-on)";
         }
     }
 
