@@ -18,7 +18,7 @@ def get_opticks_home():
     """Get OPTICKS_HOME from environment, warn if not set."""
     opticks_home = os.environ.get("OPTICKS_HOME")
     if opticks_home is None:
-        print("Warning: $OPTICKS_HOME is not defined, so this script should be called from the eic-opticks directory.")
+        print("Warning: $OPTICKS_HOME is not defined, so this script should be called from the simphony directory.")
         return Path(".")
     return Path(opticks_home)
 

@@ -9,7 +9,7 @@
 #
 # Build (once):
 #     cd examples/MC_Truth
-#     cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/eic-opticks
+#     cmake -S . -B build -DCMAKE_PREFIX_PATH=/opt/simphony
 #     cmake --build build --parallel
 #
 # Run (this script):
@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-REPO=${REPO:-/workspaces/eic-opticks}
+REPO=${REPO:-/workspaces/simphony}
 BIN=${BIN:-$(dirname "$(realpath "$0")")/build/GPUMCTruth}
 GDML=${GDML:-$REPO/tests/geom/opticks_raindrop.gdml}
 MACRO=${MACRO:-$REPO/tests/run.mac}

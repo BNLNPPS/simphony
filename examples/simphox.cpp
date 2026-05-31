@@ -2,12 +2,12 @@
 #include <string>
 #include <vector>
 
-#include "eic-opticks/g4cx/G4CXOpticks.hh"
-#include "eic-opticks/sysrap/NP.hh"
-#include "eic-opticks/sysrap/sphoton.h"
+#include "simphony/g4cx/G4CXOpticks.hh"
+#include "simphony/sysrap/NP.hh"
+#include "simphony/sysrap/sphoton.h"
 
-#include "eic-opticks/config.h"
-#include "eic-opticks/torch.h"
+#include "simphony/config.h"
+#include "simphony/torch.h"
 
 using namespace std;
 
