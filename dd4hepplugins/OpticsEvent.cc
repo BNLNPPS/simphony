@@ -19,7 +19,7 @@
 #include <map>
 #include <sphoton.h>
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 //---------------------------------------------------------------------------//
 OpticsEvent::OpticsEvent(dd4hep::sim::Geant4Context *ctxt, std::string const &name)
@@ -220,6 +220,6 @@ dd4hep::sim::Geant4Tracker::Hit *OpticsEvent::createTrackerHit(sphoton const &ph
 }
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony
 
-DECLARE_GEANT4ACTION_NS(ddeicopticks, OpticsEvent)
+DECLARE_GEANT4ACTION_NS(ddsimphony, OpticsEvent)

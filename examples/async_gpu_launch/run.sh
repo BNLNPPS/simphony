@@ -20,7 +20,7 @@ MODE="${1:---async}"
 
 if [ ! -f "$GDML" ]; then
     echo "ERROR: $GDML not found"
-    echo "Run from the eic-opticks root or ensure apex.gdml exists."
+    echo "Run from the simphony root or ensure apex.gdml exists."
     exit 1
 fi
 

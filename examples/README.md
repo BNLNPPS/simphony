@@ -1,4 +1,4 @@
-Assuming eic-opticks is properly installed on the system, compile and run this
+Assuming Simphony is properly installed on the system, compile and run this
 example by simply doing from this directory:
 
 ```bash
@@ -14,7 +14,7 @@ configuration, converts them into an NP array, prints the data, and saves it as
 
 ## Examples
 
-EIC-Opticks provides several examples demonstrating GPU-accelerated optical photon simulation:
+Simphony provides several examples demonstrating GPU-accelerated optical photon simulation:
 
 | Example | Physics | Geometry | Use Case |
 |---------|---------|----------|----------|
@@ -39,7 +39,7 @@ Geometry: opticks_raindrop.gdml
 ```
 
 When charged particles traverse the water volume above the Cerenkov threshold, optical photons
-are generated and traced on the GPU. This is a minimal example for validating the eic-opticks pipeline.
+are generated and traced on the GPU. This is a minimal example for validating the Simphony pipeline.
 
 ```bash
 # Run with raindrop geometry (Cerenkov only)
@@ -81,12 +81,12 @@ grep -c "CreationProcessID=1" opticks_hits_output.txt  # Scintillation
 ### Example 3: GPUPhotonSource (G4 + GPU Validation)
 
 `GPUPhotonSource` generates optical photons from a configurable torch source and runs
-both Geant4 and eic-opticks GPU simulation in parallel on the same input photons. This
+both Geant4 and Simphony GPU simulation in parallel on the same input photons. This
 enables direct comparison of hit counts and positions between the two engines.
 
 Both engines detect photons using the same mechanism: border surface physics. On the G4
 side the `SteppingAction` records a hit when `G4OpBoundaryProcess` reports Detection at
-the optical surface, matching how eic-opticks detects photons on the GPU.
+the optical surface, matching how Simphony detects photons on the GPU.
 
 | Argument | Description | Default |
 |----------|-------------|---------|
@@ -101,7 +101,7 @@ GPUPhotonSource -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 42
 ```
 
 **Output:**
-- `opticks_hits_output.txt` — eic-opticks GPU hits, one line per hit
+- `opticks_hits_output.txt` — Simphony GPU hits, one line per hit
 - `g4_hits_output.txt` — Geant4 hits in the same format
 
 Hit format (both files): `time wavelength (pos_x, pos_y, pos_z) (mom_x, mom_y, mom_z) (pol_x, pol_y, pol_z)`
@@ -111,7 +111,7 @@ Hit format (both files): `time wavelength (pos_x, pos_y, pos_z) (mom_x, mom_y, m
 ### Example 4: GPUPhotonSourceMinimal (GPU-Only)
 
 `GPUPhotonSourceMinimal` is a stripped-down version of `GPUPhotonSource` that runs
-**only** eic-opticks GPU simulation. All G4 optical photon tracking infrastructure
+**only** Simphony GPU simulation. All G4 optical photon tracking infrastructure
 (sensitive detectors, stepping actions, tracking actions) is removed. Geant4 is used
 solely for geometry loading and hosting the event loop.
 
@@ -136,7 +136,7 @@ GPUPhotonSourceMinimal -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 
 ### Example 5: GPUPhotonFileSource (File Input, GPU-Only)
 
 `GPUPhotonFileSource` reads optical photons from a plain text file and runs
-GPU-only simulation via eic-opticks. Each line in the input file defines one
+GPU-only simulation via Simphony. Each line in the input file defines one
 photon with 11 space-separated values:
 
 ```

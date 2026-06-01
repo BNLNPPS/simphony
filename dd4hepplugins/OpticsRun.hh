@@ -4,11 +4,11 @@
 #include <DDG4/Geant4RunAction.h>
 #include <string>
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 //---------------------------------------------------------------------------//
 /*!
- * DDG4 action plugin for eic-opticks run-level lifecycle.
+ * DDG4 action plugin for simphony run-level lifecycle.
  *
  * At begin-of-run: initializes G4CXOpticks geometry from the Geant4 world
  * volume, translating the geometry to OptiX acceleration structures on GPU.
@@ -35,4 +35,4 @@ class OpticsRun final : public dd4hep::sim::Geant4RunAction
 };
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony

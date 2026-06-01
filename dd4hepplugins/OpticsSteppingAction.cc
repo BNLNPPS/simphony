@@ -21,7 +21,7 @@ namespace
 G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
 }
 
-namespace ddeicopticks
+namespace ddsimphony
 {
 //---------------------------------------------------------------------------//
 OpticsSteppingAction::OpticsSteppingAction(dd4hep::sim::Geant4Context *ctxt, std::string const &name)
@@ -139,6 +139,6 @@ void OpticsSteppingAction::operator()(const G4Step *step, G4SteppingManager *mgr
 }
 
 //---------------------------------------------------------------------------//
-} // namespace ddeicopticks
+} // namespace ddsimphony
 
-DECLARE_GEANT4ACTION_NS(ddeicopticks, OpticsSteppingAction)
+DECLARE_GEANT4ACTION_NS(ddsimphony, OpticsSteppingAction)

@@ -899,9 +899,6 @@ void SBT::createHitgroup()
     hitgroup = new HitGroup[tot_rec] ;
     HitGroup* hg = hitgroup ;
 
-    for(unsigned i=0 ; i < tot_rec ; i++)   // pack headers CPU side
-         OPTIX_CHECK( optixSbtRecordPackHeader( pip->hitgroup_pg, hitgroup + i ) );
-
     unsigned sbt_offset = 0 ;
 
     for(IT it=vgas.begin() ; it !=vgas.end() ; it++)
@@ -973,6 +970,9 @@ void SBT::createHitgroup()
 
                 int boundary = foundry->getPrimBoundary_(prim);
                 assert( boundary > -1 );
+
+                OptixProgramGroup record_pg = trimesh ? pip->hitgroup_pg_tri : pip->hitgroup_pg;
+                OPTIX_CHECK(optixSbtRecordPackHeader(record_pg, hg));
 
                 if( trimesh == false )  // analytic
                 {

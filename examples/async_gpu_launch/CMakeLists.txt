@@ -6,15 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(eic-opticks REQUIRED)
+find_package(simphony REQUIRED)
 find_package(Geant4 REQUIRED)
 
 add_executable(async_gpu_launch async_gpu_launch.cpp async_gpu_launch.h)
 target_link_libraries(async_gpu_launch
-    eic-opticks::gphox
-    eic-opticks::G4CX
-    eic-opticks::SysRap
-    eic-opticks::U4
+    simphony::gphox
+    simphony::G4CX
+    simphony::SysRap
+    simphony::U4
     ${Geant4_LIBRARIES}
 )
 

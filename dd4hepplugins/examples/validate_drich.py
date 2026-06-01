@@ -2,7 +2,7 @@
 """Run GPU and CPU with simplified dRICH geometry (no non-optical PDU components)."""
 import math, os, sys, numpy as np
 
-_SCRIPT_DIR = "/tmp/eic-opticks/dd4hepplugins/examples"
+_SCRIPT_DIR = "/tmp/simphony/dd4hepplugins/examples"
 _GEOM_DIR = os.path.join(_SCRIPT_DIR, "geometry")
 sys.path.insert(0, _SCRIPT_DIR)
 
@@ -26,7 +26,7 @@ def setup_kernel(mode):
         os.environ["OPTICKS_INTEGRATION_MODE"] = "1"
         # Ensure DDG4 can find the plugin
         import ctypes
-        ctypes.CDLL("libddeicopticks.so", ctypes.RTLD_GLOBAL)
+        ctypes.CDLL("libddsimphony.so", ctypes.RTLD_GLOBAL)
     else:
         os.environ.pop("OPTICKS_EVENT_MODE", None)
         os.environ.pop("OPTICKS_INTEGRATION_MODE", None)
