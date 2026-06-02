@@ -26,6 +26,15 @@ set(BUILD_SHARED_LIBS ON)
 include(GNUInstallDirs)
 include(CTest)
 
+# Make installed binaries self-describing at runtime:
+# - use $ORIGIN so executables/libraries can find Simphony's own shared libs
+# - append linked dependency directories automatically (for Geant4, etc.)
+if(UNIX AND NOT APPLE)
+    set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN;\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+
 # used by src/config.h.in
 set(GPHOX_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
 
