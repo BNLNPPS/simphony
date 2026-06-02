@@ -20,6 +20,7 @@ requirements](https://developer.nvidia.com/designworks/optix/downloads/legacy):
 
 | OptiX version | Release date  | Minimum driver required |
 |---            |---:           |---                      |
+| 9.1.0         | December 2025 | 590                     |
 | 9.0.0         | February 2025 | 570                     |
 | 8.1.0         | October 2024  | 555                     |
 | 8.0.0         | August 2023   | 535                     |
