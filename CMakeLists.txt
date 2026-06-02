@@ -25,14 +25,21 @@ set(BUILD_SHARED_LIBS ON)
 
 include(GNUInstallDirs)
 include(CTest)
+include(CheckLinkerFlag)
 
 # Make installed binaries self-describing at runtime:
 # - use $ORIGIN so executables/libraries can find Simphony's own shared libs
-# - append linked dependency directories automatically (for Geant4, etc.)
-if(UNIX AND NOT APPLE)
+# - append linked dependency directories automatically
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
     set(CMAKE_INSTALL_RPATH "\$ORIGIN;\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    # Prefer transitive DT_RPATH over DT_RUNPATH so container runtimes such as
+    # Apptainer can resolve indirect dependencies reliably.
+    check_linker_flag(CXX "LINKER:--disable-new-dtags" SIMPHONY_HAVE_DISABLE_NEW_DTAGS)
+    if(SIMPHONY_HAVE_DISABLE_NEW_DTAGS)
+        add_link_options("LINKER:--disable-new-dtags")
+    endif()
 endif()
 
 # used by src/config.h.in
