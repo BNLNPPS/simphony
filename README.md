@@ -1,47 +1,22 @@
-This simulation package interfaces NVIDIA OptiX with Geant4 to accelerate
-optical photon transport for physics experiments. It supports detector
-geometries defined in the GDML format and is based on the work by Simon Blyth,
-whose original Opticks framework can be found
-[here](https://simoncblyth.bitbucket.io/opticks/).
+# Simphony
+
+[![Build](https://github.com/BNLNPPS/simphony/actions/workflows/build-push.yaml/badge.svg?branch=main)](https://github.com/BNLNPPS/simphony/actions/workflows/build-push.yaml)
+[![Release](https://github.com/BNLNPPS/simphony/actions/workflows/release.yaml/badge.svg?event=push)](https://github.com/BNLNPPS/simphony/actions/workflows/release.yaml)
+[![Latest Release](https://img.shields.io/github/v/release/BNLNPPS/simphony)](https://github.com/BNLNPPS/simphony/releases)
+[![GHCR Package](https://img.shields.io/badge/GHCR-simphony-2088FF?logo=docker&logoColor=white)](https://github.com/BNLNPPS/simphony/pkgs/container/simphony)
+
+Simphony is a GPU-accelerated optical photon transport framework that couples
+NVIDIA OptiX with Geant4 for detector simulation workflows. It imports GDML
+detector geometries, offloads optical photon propagation to NVIDIA GPUs, and
+provides example applications for Cerenkov, scintillation, torch-driven, and
+file-driven photon transport studies.
+
+The project builds on Simon Blyth's original
+[Opticks](https://simoncblyth.bitbucket.io/opticks/) work and adapts that
+approach for current OptiX- and Geant4-based simulation workflows.
 
 
-## Prerequisites
-
-Before building or running this package, ensure that your system meets both the
-hardware and software requirements listed below.
-
-* A CUDA-capable NVIDIA GPU
-
-* CUDA 12+
-* NVIDIA OptiX 7+
-* Geant4 11+
-* CMake 3.18+
-* Python 3.8+
-
-OptiX releases have specific [minimum NVIDIA driver
-requirements](https://developer.nvidia.com/designworks/optix/downloads/legacy):
-
-| OptiX version | Release date  | Minimum driver required |
-|---            |---:           |---                      |
-| 9.0.0         | February 2025 | 570                     |
-| 8.1.0         | October 2024  | 555                     |
-| 8.0.0         | August 2023   | 535                     |
-| 7.7.0         | March 2023    | 530.41                  |
-| 7.6.0         | October 2022  | 522.25                  |
-| 7.5.0         | June 2022     | 515.48                  |
-| 7.4.0         | November 2021 | 495.89                  |
-| 7.3.0         | April 2021    | 465.84                  |
-| 7.2.0         | October 2020  | 455.28                  |
-| 7.1.0         | June 2020     | 450                     |
-| 7.0.0         | August 2019   | 435.80                  |
-
-Optionally, if you plan to develop or run the simulation in a containerized
-environment, ensure that your system has the following tools installed:
-
-* [Docker Engine](https://docs.docker.com/engine/install/)
-* NVIDIA container toolkit ([installation guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html))
-
-## Build
+## Quick start
 
 ```shell
 git clone https://github.com/BNLNPPS/simphony.git
@@ -49,409 +24,49 @@ cmake -S simphony -B build
 cmake --build build
 ```
 
-## Docker
+To build from source, install CUDA 12.1+, NVIDIA OptiX 7+, and Geant4 11.3+.
+A CUDA-capable NVIDIA GPU is required only to run Simphony and its GPU-backed
+examples.
 
-Build latest `simphony` image by hand:
-
-```shell
-docker build -t ghcr.io/bnlnpps/simphony:latest https://github.com/BNLNPPS/simphony.git
-```
-
-Build and run for development:
+Simphony can also be installed via Spack as a dependency:
 
 ```shell
-docker build -t ghcr.io/bnlnpps/simphony:develop --target=develop .
+spack repo add https://github.com/BNLNPPS/spack-packages
+spack install simphony
 ```
 
-Example commands for interactive and non-interactive tests:
+To try the latest release image and verify that GPU-enabled code runs on your
+machine, you can use either Docker or Apptainer/Singularity:
 
 ```shell
-docker run --rm -it -v $HOME/.Xauthority:/root/.Xauthority -e DISPLAY=$DISPLAY --net=host ghcr.io/bnlnpps/simphony:develop
-
-docker run --rm -it -v $HOME:/esi -v $HOME/simphony:/workspaces/simphony -e DISPLAY=$DISPLAY -e HOME=/esi --net=host ghcr.io/bnlnpps/simphony:develop
-
-docker run ghcr.io/bnlnpps/simphony bash -c 'simg4ox -g tests/geom/sphere_leak.gdml -m tests/run.mac -c sphere_leak'
+docker run --rm --gpus all ghcr.io/bnlnpps/simphony simg4ox -g tests/geom/raindrop.gdml -m tests/run.mac
+apptainer exec --nv docker://ghcr.io/bnlnpps/simphony simg4ox -g /workspaces/simphony/tests/geom/opticks_raindrop.gdml -m /workspaces/simphony/tests/run.mac
 ```
 
-
-## Singularity
-
-```shell
-singularity run --nv -B simphony-prefix/:/opt/simphony -B simphony:/workspaces/simphony docker://ghcr.io/bnlnpps/simphony:develop
-```
-
-
-## Running a test job at NERSC (Perlmutter)
-
-To submit a test run of `simphony` on Perlmutter, use the following example. Make sure to update
-any placeholder values as needed.
-
-```
-sbatch scripts/submit.sh
-```
-
-```
-#!/bin/bash
-
-#SBATCH -N 1                    # number of nodes
-#SBATCH -C gpu                  # constraint: use GPU partition
-#SBATCH -G 1                    # request 1 GPU
-#SBATCH -q regular              # queue
-#SBATCH -J simphony             # job name
-#SBATCH --mail-user=<USER_EMAIL>
-#SBATCH --mail-type=ALL
-#SBATCH -A m4402                # allocation account
-#SBATCH -t 00:05:00             # time limit (hh:mm:ss)
-
-# Path to your image on Perlmutter
-IMAGE="docker:bnlnpps/simphony:develop"
-CMD='cd /src/simphony && simg4ox -g $OPTICKS_HOME/tests/geom/sphere_leak.gdml -m $OPTICKS_HOME/tests/run.mac -c sphere_leak'
-
-# Launch the container using Shifter
-srun -n 1 -c 8 --cpu_bind=cores -G 1 --gpu-bind=single:1 shifter --image=$IMAGE /bin/bash -l -c "$CMD"
-```
-
-
-## Optical Surface Models in Geant4
-
-In Geant4, optical surface properties such as **finish**, **model**, and **type** are defined using enums in the
-`G4OpticalSurface` and `G4SurfaceProperty` header files:
-
-- [`G4OpticalSurface.hh`](https://github.com/Geant4/geant4/blob/geant4-11.3-release/source/materials/include/G4OpticalSurface.hh#L52-L113)
-- [`G4SurfaceProperty.hh`](https://github.com/Geant4/geant4/blob/geant4-11.3-release/source/materials/include/G4SurfaceProperty.hh#L58-L68)
-
-These enums allow users to configure how optical photons interact with surfaces, controlling behaviors like reflection,
-transmission, and absorption based on physical models and surface qualities. The string values corresponding to these
-enums (e.g. "ground", "glisur", "dielectric_dielectric") can also be used directly in **GDML** files when defining
-`<opticalsurface>` elements for geometry. Geant4 will parse these attributes and apply the corresponding surface
-behavior.
-
-For a physics-motivated explanation of how Geant4 handles optical photon boundary interactions, refer to the [Geant4
-Application Developer Guide — Boundary
-Process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#boundary-process).
-
-```gdml
-<gdml>
-  ...
-  <solids>
-    <opticalsurface finish="ground" model="glisur" name="medium_surface" type="dielectric_dielectric" value="1">
-      <property name="EFFICIENCY" ref="EFFICIENCY_DEF"/>
-      <property name="REFLECTIVITY" ref="REFLECTIVITY_DEF"/>
-    </opticalsurface>
-  </solids>
-  ...
-</gdml>
-```
-
-### Torch configuration
-
-`GPUPhotonSource` and `GPUPhotonSourceMinimal` read photon source parameters from a
-JSON config file (default `config/dev.json`). Key fields:
-
-| Field | Description |
-|-------|-------------|
-| `type` | Source shape: `disc`, `sphere`, `point` |
-| `radius` | Size of the source area (mm) |
-| `pos` | Center position `[x, y, z]` (mm) |
-| `mom` | Emission direction `[x, y, z]` (normalized automatically) |
-| `numphoton` | Number of photons to generate |
-| `wavelength` | Photon wavelength (nm) |
-
-### Code Differences
-
-| Feature | GPUCerenkov | GPURaytrace | GPUPhotonSource | GPUPhotonSourceMinimal | GPUPhotonFileSource |
-|---------|-------------|-------------|-----------------|----------------------|---------------------|
-| Cerenkov genstep collection | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Scintillation genstep collection | ✗ | ✓ | ✗ | ✗ | ✗ |
-| Wavelength shifting (WLS) | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Torch photon generation | ✗ | ✗ | ✓ | ✓ | ✗ |
-| Photon input from text file | ✗ | ✗ | ✗ | ✗ | ✓ |
-| G4 optical photon tracking | ✓ | ✓ | ✓ | ✗ | ✗ |
-| GPU simulation (Simphony) | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Multi-threaded | ✓ | ✓ | ✗ | ✗ | ✗ |
-
-`GPUCerenkov` and `GPURaytrace` collect gensteps from charged particle interactions and
-pass them to Simphony for GPU photon generation and tracing. `GPUPhotonSource` and
-`GPUPhotonSourceMinimal` instead generate photons directly from a torch configuration.
-`GPUPhotonSource` runs both G4 and GPU tracking for validation, while
-`GPUPhotonSourceMinimal` skips G4 tracking entirely for a lean simplistic code so showcase what is needed for GPU only.
-`GPUPhotonFileSource` reads photons from a user-provided text file, enabling custom photon
-distributions without code changes.
-
-
-### GDML Scintillation Properties for Geant4 11.x + Simphony
-
-For scintillation to work with both Geant4 11.x and Simphony GPU simulation, the GDML
-must define properties using the correct syntax:
-
-1. **Const properties** (yield, time constants) must use `coldim="1"` matrices:
-```xml
-<define>
-    <matrix coldim="1" name="SCINT_YIELD" values="5000.0"/>
-    <matrix coldim="1" name="FAST_TIME_CONST" values="21.5"/>
-</define>
-```
-
-2. **Both old and new style property names** are required for Simphony compatibility:
-```xml
-<material name="Crystal">
-    <!-- New Geant4 11.x names -->
-    <property name="SCINTILLATIONYIELD" ref="SCINT_YIELD"/>
-    <property name="SCINTILLATIONCOMPONENT1" ref="SCINT_SPECTRUM"/>
-    <property name="SCINTILLATIONTIMECONSTANT1" ref="FAST_TIME_CONST"/>
-    <!-- Old-style names for Opticks U4Scint -->
-    <property name="FASTCOMPONENT" ref="SCINT_SPECTRUM"/>
-    <property name="SLOWCOMPONENT" ref="SCINT_SPECTRUM"/>
-    <property name="REEMISSIONPROB" ref="REEMISSION_PROB"/>
-</material>
-```
-
-See `tests/geom/8x8SiPM_w_CSI_optial_grease.gdml` for a complete working example.
-
-## User/developer defined inputs
-
-### Defining primary particles
-
-There are certain user defined inputs that the user/developer has to define. In
-the ```src/GPUCerenkov``` example that imports ```src/GPUCerenkov.h``` we provide
-a working example with a simple geometry. The User/developer has to change the
-following details: **Number of primary particles** to simulate in a macro file
-and the **number of G4 threads**. For example:
-
-```
-/run/numberOfThreads {threads}
-/run/verbose 1
-/process/optical/cerenkov/setStackPhotons {flag}
-/run/initialize
-/run/beamOn 500
-```
-
-Here setStackPhotons defines **whether G4 will propagate optical photons or
-not**. In production Simphony (GPU) takes care of the optical photon propagation.
-Additionally the user has to define the **starting position**, **momentum** etc
-of the primary particles define in the **GeneratePrimaries** function in
-```src/GPUCerenkov.h```. The hits of the optical photons are returned in the
-**EndOfRunAction** function. If more photons are simulated than can fit in the
-GPU RAM the execution of a GPU call should be moved to **EndOfEventAction**
-together with retriving the hits.
-
-### Loading in geometry into Simphony
-
-Simphony can import geometries with GDML format automatically. There are
-about 10 primitives supported now, eg. G4Box. G4Trd or G4Trap are not supported
-yet, we are working on them. ```GPUCerenkov``` takes GDML files through
-arguments, eg. ```GPUCerenkov -g mygdml.gdml```.
-
-The GDML must define all optical properties of surfaces of materials including:
-- Efficiency (used by Simphony to specify detection efficiency and assign
-  sensitive surfaces)
-- Refractive index
-- Group velocity
-- Reflectivity
-- Etc.
-
-
-## Performance studies
-
-In order to quantify the speed-up achieved by Simphony compared to G4 we
-provide a python code that runs the same G4 simulation with and without tracking
-optical photons in G4. The difference of the runs will yield the time required
-to simulate photons. Meanwhile the same photons are simulated on GPU with
-Simphony and the simulation time is saved.
-
-```
-mkdir -p /tmp/out/dev
-mkdir -p /tmp/out/rel
-
-docker build -t simphony:perf-dev --target=develop
-docker run --rm -t -v /tmp/out:/tmp/out simphony:perf-dev run-performance -o /tmp/out/dev
-
-docker build -t simphony:perf-rel --target=release
-docker run --rm -t -v /tmp/out:/tmp/out simphony:perf-rel run-performance -o /tmp/out/rel
-```
-
-### Debug Analysis with `optiphy/ana/photon_history_summary.py`
-
-The script analyzes GPU optical photon simulation output to debug where photons
-went and why: which were detected, absorbed, scattered, or trapped bouncing
-forever, and whether the physics (wavelength shifting, energy conservation)
-worked correctly. Without it, the simulation is a black box that only reports
-a hit count.
-
-#### Prerequisites
-
-The simulation must be run with `OPTICKS_EVENT_MODE` set so that output arrays
-are saved to disk. The default mode (`Minimal`) only gathers hits into memory
-and does **not** write `.npy` files.
-
-```bash
-export OPTICKS_EVENT_MODE=HitPhoton   # saves photon, hit, inphoton, record, seq
-```
-
-Valid modes for this script: `HitPhoton`, `DebugLite`, `DebugHeavy`.
-
-#### Running a simulation with output saving
-
-```bash
-OPTICKS_EVENT_MODE=HitPhoton GPUPhotonSourceMinimal -g tests/geom/wls_test.gdml -c wls_test -m tests/run.mac -s 42
-```
-
-#### Output file location
-
-Opticks writes `.npy` arrays to:
-
-```
-$TMP/GEOM/$GEOM/<ExecutableName>/ALL0_no_opticks_event_name/A000/
-```
-
-| Variable | Default | Override |
-|----------|---------|---------|
-| `$TMP` | `/tmp/$USER/opticks` | `export TMP=/path/to/tmp` |
-| `$GEOM` | `GEOM` | `export GEOM=mygeom` |
-
-For example, with defaults:
-
-```
-/tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name/A000/
-├── photon.npy      # (N, 4, 4) float32 — final state of all photons
-├── hit.npy         # (H, 4, 4) float32 — detected photons only
-├── inphoton.npy    # (N, 4, 4) float32 — input photons before simulation
-├── record.npy      # (N, 32, 4, 4) float32 — step-by-step history (up to 32 steps)
-├── seq.npy         # (N, 2, 2) uint64 — compressed step sequence per photon
-├── genstep.npy     # generation step parameters
-└── domain.npy      # domain compression parameters
-```
-
-#### Running the analysis
-
-```bash
-# Basic summary tables:
-python optiphy/ana/photon_history_summary.py <event_folder>
-
-# Auto-resolves A000 subfolder:
-python optiphy/ana/photon_history_summary.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
-
-# Show step-by-step trace for specific photons:
-python optiphy/ana/photon_history_summary.py <path> --trace 0,227,235
-
-# Show all non-detected (lost) photons with full traces:
-python optiphy/ana/photon_history_summary.py <path> --lost
-
-# Filter by terminal flag:
-python optiphy/ana/photon_history_summary.py <path> --flag BULK_ABSORB
-
-# Show per-photon detail for first 20 photons:
-python optiphy/ana/photon_history_summary.py <path> --detail 20
-```
-
-#### Output tables
-
-The script prints six summary tables by default: photon outcomes by terminal
-flag with hit rate and MaxBounce truncation count, cumulative flagmask history
-distribution, wavelength statistics with energy conservation check, position/time
-stats, ranked step sequence histories decoded from seq nibbles, and step count
-distribution flagging truncated photons. The `--lost`, `--trace`, and `--flag`
-options drill into specific photons with full step-by-step position, wavelength,
-and flag traces for debugging exactly where and why a photon died.
-
-| Table | Description |
-|-------|-------------|
-| **Photon Outcomes** | Counts by terminal flag (SURFACE_DETECT, BULK_ABSORB, etc.) with boundary indices, hitmask, and MaxBounce truncation count |
-| **Photon Histories** | Unique cumulative flagmask combinations (e.g. TO\|RE\|BT\|SD) |
-| **Wavelength Analysis** | Input vs output wavelengths, shift count, energy conservation check |
-| **Position / Time** | Radius and time statistics |
-| **Sequence Histories** | Top N step-by-step sequences from seq.npy (e.g. "TO RE BT SD") |
-| **Step Counts** | Distribution of steps per photon, flags truncated ones at max |
-
-#### Photon data layout (`sphoton.h`)
-
-Each photon is a `(4, 4)` float32 matrix — four quads of four floats.
-`photon.npy` holds the final state, `hit.npy` the detected subset,
-`inphoton.npy` the initial state, and `record.npy` stores the full
-step-by-step history (up to 32 bounces per photon, same quad layout per step).
-
-| Quad | .x | .y | .z | .w |
-|------|-----|-----|-----|-----|
-| q0 | pos.x | pos.y | pos.z | time |
-| q1 | mom.x | mom.y | mom.z | iindex |
-| q2 | pol.x | pol.y | pol.z | wavelength (nm) |
-| q3 | orient\_boundary\_flag | identity | index | flagmask |
-
-#### q3 bit packing
-
-q3 is stored as float32 but interpreted as uint32 via `.view(np.uint32)`.
-This is where the physics outcome lives:
-
-**q3.x** (`orient_boundary_flag`) packs three fields into 32 bits:
-
-```
-bit 31          : orient sign (1 = inward-facing surface normal)
-bits 30-16      : boundary index (which pair of materials the photon is at)
-bits 15-0       : terminal flag (what happened last)
-```
-
-Python extraction:
-```python
-q3    = photon[:, 3, :].view(np.uint32)
-flag  = q3[:, 0] & 0xFFFF             # terminal flag
-bnd   = (q3[:, 0] >> 16) & 0x7FFF     # boundary index
-```
-
-**q3.w** (`flagmask`) is the cumulative OR of every flag set during the
-photon's lifetime. Each call to `set_flag(f)` does both
-`flag = f` (replace) and `flagmask |= f` (accumulate). So a single integer
-tells you the full history — e.g. `0x0854` = `TO|RE|SD|BT` means torch
-generation, WLS re-emission, boundary transmit, surface detect.
-
-#### Sequence history encoding (`sseq.h`)
-
-`seq.npy` shape is `(N, 2, 2)` uint64. Each photon gets two pairs of uint64:
-`seqhis[2]` (flag history) and `seqbnd[2]` (boundary history).
-
-Each uint64 holds 16 slots of 4-bit nibbles (total 32 slots across the pair).
-Flag nibbles store the **find-first-set** (FFS) of the flag bit:
-TORCH (bit 2) stores as nibble 3, SURFACE_DETECT (bit 6) stores as 7.
-
-```python
-seqhis = seq[:, 0, :]   # two uint64 per photon
-nibble = (seqhis[0] >> (4 * slot)) & 0xF   # for slot 0-15
-flag   = 1 << (nibble - 1)                  # reconstruct flag
-```
-
-This gives a compact chronological per-step history in 16 bytes per photon.
-
-#### Hit determination and MaxBounce
-
-A photon is a "hit" when `(flagmask & hitmask) == hitmask`. The default
-hitmask is `SD` (SURFACE_DETECT = 0x40), but for PMT efficiency tagging it may be
-`EC` (EFFICIENCY_COLLECT = 0x2000). The script reads the actual hitmask from
-`NPFold_meta.txt` in the event folder.
-
-Photons that exhaust the bounce limit (`MaxBounce`, default 31, giving 32
-steps) receive **no special flag** — the propagation loop simply exits and the
-photon keeps whatever terminal flag it had at its last step. These are typically
-photons trapped by total internal reflection. The script detects them by
-checking `step_count == max_steps` and reports the count in the outcome table.
-
-#### Flag definitions (`OpticksPhoton.h`)
-
-Flags are a power-of-two enum where each GPU physics process gets one bit:
-
-| Flag | Hex | Abbrev | Description |
-|------|-----|--------|-------------|
-| CERENKOV | 0x0001 | CK | Cerenkov generation |
-| SCINTILLATION | 0x0002 | SI | Scintillation generation |
-| TORCH | 0x0004 | TO | Torch (flashlight) source |
-| BULK_ABSORB | 0x0008 | AB | Absorbed in bulk material |
-| BULK_REEMIT | 0x0010 | RE | Re-emitted (scintillation or WLS) |
-| BULK_SCATTER | 0x0020 | SC | Rayleigh scattered |
-| SURFACE_DETECT | 0x0040 | SD | Detected at surface |
-| SURFACE_ABSORB | 0x0080 | SA | Absorbed at surface |
-| SURFACE_DREFLECT | 0x0100 | DR | Diffuse reflection at surface |
-| SURFACE_SREFLECT | 0x0200 | SR | Specular reflection at surface |
-| BOUNDARY_REFLECT | 0x0400 | BR | Fresnel reflection at boundary |
-| BOUNDARY_TRANSMIT | 0x0800 | BT | Transmitted through boundary |
-| NAN_ABORT | 0x1000 | NA | Aborted due to NaN (geometry error) |
-| EFFICIENCY_COLLECT | 0x2000 | EC | Collected by PMT efficiency |
-| EFFICIENCY_CULL | 0x4000 | EL | Culled by PMT efficiency |
-| MISS | 0x8000 | MI | Missed all geometry |
+For local development, you can build the `develop` image yourself or use the
+repository's [devcontainer configuration](.devcontainer/devcontainer.json). On
+a reasonably provisioned machine, building the `develop` image can take under 10
+minutes. See [Getting started](docs/getting-started.md) for Docker, Singularity,
+and development-environment details.
+
+## Supported Images
+
+The `build-push.yaml` workflow publishes the versioned container tags below to GHCR on pushes to `main`, while `release.yaml` publishes the `latest` alias on tagged releases. Tag entries link to the
+[Simphony package page](https://github.com/BNLNPPS/simphony/pkgs/container/simphony).
+
+| Target | OS | CUDA | OptiX | Geant4 | Alias | Tag |
+|---|---|---:|---:|---:|---|---|
+| `release` | `ubuntu24.04` | `13.2.0` | `9.1.0` | `11.4.1` | | [cuda13.2.0-release-ubuntu24.04-optix9.1.0-geant411.4.1-cmake4.3.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `release` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `latest` | [cuda13.0.2-release-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `release` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-release-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `develop` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `develop` | [cuda13.0.2-develop-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `develop` | `ubuntu24.04` | `12.5.1` | `9.0.0` | `11.4.1` | | [cuda12.5.1-develop-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `develop` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-develop-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+
+
+## Documentation
+
+- [Getting started](docs/getting-started.md)
+- [Physics and simulation inputs](docs/physics-and-inputs.md)
+- [Performance and debugging](docs/performance-and-debugging.md)
+- [Examples](examples/README.md)
