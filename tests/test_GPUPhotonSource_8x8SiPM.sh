@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export OPTICKS_MAX_BOUNCE=32
 
 SEED=42
 NSIGMA=3
 PASS=true
+GEOM_FILE="$SCRIPT_DIR/geom/8x8SiPM_w_CSI_optial_grease.gdml"
+MAC_FILE="$SCRIPT_DIR/run.mac"
 
 check_within_nsigma() {
     local label=$1
@@ -42,9 +45,9 @@ echo "Config: 1000 photons inside crystal at (-8.7, -8.7, 4.0)mm, 420nm, disc r=
 echo "Running GPUPhotonSource with seed $SEED ..."
 
 OUTPUT=$(GPUPhotonSource \
-    -g "$OPTICKS_HOME/tests/geom/8x8SiPM_w_CSI_optial_grease.gdml" \
+    -g "$GEOM_FILE" \
     -c 8x8SiPM_crystal \
-    -m "$OPTICKS_HOME/tests/run.mac" \
+    -m "$MAC_FILE" \
     -s "$SEED" 2>&1)
 
 G4_HITS=$(echo "$OUTPUT" | grep "Geant4: NumHits:" | awk '{print $NF}')

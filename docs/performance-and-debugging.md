@@ -13,14 +13,17 @@ photons are simulated on the GPU with Simphony and the GPU simulation time is
 saved.
 
 ```shell
-mkdir -p /tmp/out/dev
-mkdir -p /tmp/out/rel
+cd simphony/
 
-docker build -t simphony:perf-dev --target=develop
-docker run --rm -t -v /tmp/out:/tmp/out simphony:perf-dev run-performance -o /tmp/out/dev
+mkdir -p /tmp/out/develop
+docker build -t simphony:develop --target=develop .
+docker run --rm -t -v /tmp/out:/tmp/out simphony:develop \
+    run-performance -g tests/geom/opticks_raindrop.gdml -o /tmp/out/develop
 
-docker build -t simphony:perf-rel --target=release
-docker run --rm -t -v /tmp/out:/tmp/out simphony:perf-rel run-performance -o /tmp/out/rel
+mkdir -p /tmp/out/release
+docker build -t simphony:release --target=release .
+docker run --rm -t -v /tmp/out:/tmp/out simphony:release \
+    run-performance -g tests/geom/opticks_raindrop.gdml -o /tmp/out/release
 ```
 
 ## Debug analysis with `optiphy/ana/photon_history_summary.py`

@@ -16,9 +16,10 @@
 # forceA,B. If naming A also triangulated B, forceA would equal forceA,B -- so
 # this ordering proves each named solid triangulates only itself.
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-GDML="$OPTICKS_HOME/tests/geom/opticks_two_spheres.gdml"
-MAC="$OPTICKS_HOME/tests/run.mac"
+GDML="$SCRIPT_DIR/geom/opticks_two_spheres.gdml"
+MAC="$SCRIPT_DIR/run.mac"
 SEED=42
 RES=U4Mesh__NumberOfRotationSteps_entityType_G4Orb=12
 hits(){ awk '/Opticks: NumHits:/ {print $NF}'; }

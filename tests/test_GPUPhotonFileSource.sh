@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export OPTICKS_MAX_SLOT=M1
 
 SEED=42
 PASS=true
 PHOTON_FILE=$(mktemp /tmp/test_photons_XXXXXX.txt)
 HITS_FILE=opticks_hits_output.txt
+GEOM_FILE="$SCRIPT_DIR/geom/opticks_raindrop.gdml"
+MAC_FILE="$SCRIPT_DIR/run.mac"
 
 cleanup() {
     rm -f "$PHOTON_FILE" "$HITS_FILE"
@@ -32,9 +35,9 @@ EOF
 
 echo "Running GPUPhotonFileSource with seed $SEED ..."
 OUTPUT=$(GPUPhotonFileSource \
-    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
+    -g "$GEOM_FILE" \
     -p "$PHOTON_FILE" \
-    -m "$OPTICKS_HOME/tests/run.mac" \
+    -m "$MAC_FILE" \
     -s "$SEED" 2>&1)
 
 LOADED=$(echo "$OUTPUT" | grep "Loaded" | awk '{print $2}')
@@ -100,9 +103,9 @@ EOF
 
 echo "Running GPUPhotonFileSource ..."
 OUTPUT=$(GPUPhotonFileSource \
-    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
+    -g "$GEOM_FILE" \
     -p "$PHOTON_FILE" \
-    -m "$OPTICKS_HOME/tests/run.mac" \
+    -m "$MAC_FILE" \
     -s "$SEED" 2>&1)
 
 LOADED=$(echo "$OUTPUT" | grep "Loaded" | awk '{print $2}')
@@ -123,8 +126,8 @@ echo ""
 echo "=== Test 3: Missing --photons argument ==="
 
 if GPUPhotonFileSource \
-    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
-    -m "$OPTICKS_HOME/tests/run.mac" 2>&1; then
+    -g "$GEOM_FILE" \
+    -m "$MAC_FILE" 2>&1; then
     echo "FAILED: Should have exited with error for missing --photons"
     PASS=false
 else
