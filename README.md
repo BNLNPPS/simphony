@@ -51,8 +51,7 @@ and development-environment details.
 
 ## Supported Images
 
-The GitHub Actions build matrix currently publishes the following container
-combinations to GHCR. Tag entries link to the
+The `build-push.yaml` workflow publishes the versioned container tags below to GHCR on pushes to `main`, while `release.yaml` publishes the `latest` alias on tagged releases. Tag entries link to the
 [Simphony package page](https://github.com/BNLNPPS/simphony/pkgs/container/simphony).
 
 | Target | OS | CUDA | OptiX | Geant4 | Alias | Tag |

@@ -72,7 +72,7 @@ For example, with defaults:
 |-- record.npy      # (N, 32, 4, 4) float32 - step-by-step history (up to 32 steps)
 |-- seq.npy         # (N, 2, 2) uint64 - compressed step sequence per photon
 |-- genstep.npy     # generation step parameters
-`-- domain.npy      # domain compression parameters
+|-- domain.npy      # domain compression parameters
 ```
 
 ### Running the analysis
