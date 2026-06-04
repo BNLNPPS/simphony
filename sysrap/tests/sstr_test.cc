@@ -160,6 +160,9 @@ hello:27:-1  ## some comment #
             << std::endl
             ;
     }
+
+    const std::string trimmed = sstr::TrimString(" \thello:27:-1\n");
+    assert( trimmed == "hello:27:-1" );
 }
 
 
@@ -696,6 +699,19 @@ int sstr_test::split()
      sstr::split<double>( elem, spec, ',' );
 
      std::cout << sstr::desc<double>(elem) ;
+
+     std::vector<int> empty_middle ;
+     sstr::split<int>( empty_middle, "1,,3", ',' );
+     assert( empty_middle.size() == 3 );
+     assert( empty_middle[0] == 1 );
+     assert( empty_middle[1] == 0 );
+     assert( empty_middle[2] == 3 );
+
+     std::vector<int> leading_empty ;
+     sstr::split<int>( leading_empty, ",3", ',' );
+     assert( leading_empty.size() == 2 );
+     assert( leading_empty[0] == 0 );
+     assert( leading_empty[1] == 3 );
 
      return 0;
 }
