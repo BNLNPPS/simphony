@@ -1387,7 +1387,7 @@ int CSGOptiX::render_flightpath() // for making mp4 movies
 
 void CSGOptiX::saveMeta(const char* path) const
 {
-    const char* json_path = SStr::ReplaceEnd(path, ".npy", ".json");
+    const std::string json_path = sstr::ReplaceEnd_(path, ".npy", ".json");
     LOG(LEVEL) << "[ json_path " << json_path  ;
 
     nlohmann::json& js = meta->js ;
