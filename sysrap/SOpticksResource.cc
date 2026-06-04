@@ -5,7 +5,6 @@
 #include "SSys.hh"
 #include "ssys.h"
 
-#include "SStr.hh"
 #include "sstr.h"
 #include "spath.h"
 
@@ -546,15 +545,15 @@ const char* SOpticksResource::Get(const char* key) // static
 
 std::string SOpticksResource::Desc() 
 {
-    std::vector<std::string> keys ; 
-    SStr::Split(KEYS, ' ', keys); 
+    std::vector<std::string> keys;
+    sstr::Split(KEYS, ' ', keys);
 
     std::stringstream ss ; 
     ss << "SOpticksResource::Desc" << std::endl ; 
     for(unsigned i=0 ; i < keys.size() ; i++ ) 
     {
-        const char* key = keys[i].c_str() ; 
-        std::string lab = SStr::Format("SOpticksResource::Get(\"%s\") ", key) ; 
+        const char* key = keys[i].c_str();
+        std::string lab = sstr::Format_("SOpticksResource::Get(\"%s\") ", key);
         const char* val = Get(key); 
         ss 
             << std::setw(70) << lab.c_str() 
@@ -592,4 +591,3 @@ std::string SOpticksResource::Desc()
     std::string s = ss.str(); 
     return s ; 
 }
-

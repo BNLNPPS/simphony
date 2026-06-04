@@ -1,10 +1,10 @@
 #include "SArgs.hh"
 #include "s_time.h"
 
-#include "SStr.hh"
-#include "sproc.h"
-#include "SOpticks.hh"
 #include "SEventConfig.hh"
+#include "SOpticks.hh"
+#include "spath.h"
+#include "sproc.h"
 
 #include "SLOG.hh"
 
@@ -56,10 +56,7 @@ const char* SOpticks::getOutDir() const
 
 const char* SOpticks::CFBaseScriptPath() 
 {
-    std::stringstream ss ; 
-    ss << "/tmp/CFBASE.sh" ; 
-    std::string s = ss.str(); 
-    return strdup(s.c_str()); 
+    return strdup("/tmp/CFBASE.sh");
 }
 
 std::string SOpticks::CFBaseScriptString(const char* cfbase, const char* msg )
@@ -95,7 +92,7 @@ void SOpticks::WriteCFBaseScript(const char* cfbase, const char* msg)
         << "]"
         ;
 
-    SStr::Save(sh_path, sh.c_str()) ;
+    spath::Write(sh.c_str(), sh_path);
 }
 
 
@@ -121,31 +118,28 @@ void SOpticks::WriteOutputDirScript() // static
 void SOpticks::WriteOutputDirScript(const char* outdir) // static
 {
     const char* exename = sproc::ExecutableName() ;
-    const char* envvar = SStr::Concat(exename,  "_OUTPUT_DIR" ); 
-    const char* sh_path = SStr::Concat(exename, "_OUTPUT_DIR" , ".sh")   ;    
+    const std::string envvar = std::string(exename) + "_OUTPUT_DIR";
+    const std::string sh_path = envvar + ".sh";
 
-    std::stringstream ss ; 
-    ss   
-        << "# SOpticks::WriteOutputDirScript " << std::endl 
-        << "# " << s_time::Stamp() << std::endl 
-        << std::endl 
-        << "export " << envvar << "=" << outdir  
-        << std::endl 
-        ;    
-  
-    std::string sh = ss.str(); 
+    std::stringstream ss;
+    ss
+        << "# SOpticks::WriteOutputDirScript " << std::endl
+        << "# " << s_time::Stamp() << std::endl
+        << std::endl
+        << "export " << envvar << "=" << outdir
+        << std::endl;
 
-    LOG(LEVEL) 
-        << " outdir " << outdir 
+    std::string sh = ss.str();
+
+    LOG(LEVEL)
+        << " outdir " << outdir
         << "writing sh_path " << sh_path << std::endl
         << "sh [" << std::endl
-        << sh   
-        << "]"  
-        ;    
+        << sh
+        << "]";
 
-    SStr::Save(sh_path, sh.c_str()) ;  
+    spath::Write(sh.c_str(), sh_path.c_str());
 }
-
 
 
 
