@@ -43,7 +43,7 @@ struct sstr
     static const char* TrimTrailing(const char* s);
     static const char* Trim(const char* s); // both leading and trailing
 
-    static std::string TrimString(const std::string& str, const std::string& whitespace=" \t\n\r" );
+    static std::string TrimString(const std::string& str, const std::string& whitespace = " \t\n\r");
 
     static bool        HasTail(const std::vector<std::string>& names, const char* end="0x");
     static size_t      CountTail(const std::vector<std::string>& names, const char* end="0x");
@@ -671,7 +671,7 @@ inline int sstr::split( std::vector<T>& elem, const char* str, char delim )
     while (std::getline(ss, s, delim))
     {
         std::istringstream iss(s);
-        T v{} ;
+        T                  v{};
         iss >> v ;
         elem.push_back(v) ;
     }
