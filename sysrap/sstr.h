@@ -1,16 +1,16 @@
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+#include <csignal>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <cstring>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
-#include <algorithm>
-#include <csignal>
 
 #include <charconv> // std::from_chars
 #include <type_traits>
@@ -248,20 +248,23 @@ preceding characters, otherwise treat *q* as a prefix.
 
 inline bool sstr::SimpleMatch(const char* s, const char* q)
 {
-    if(s == nullptr || q == nullptr) return false ;
+    if (s == nullptr || q == nullptr)
+        return false;
 
     std::string_view sv(s);
     std::string_view qv(q);
 
-    if(sv.empty() || qv.empty()) return false ;
+    if (sv.empty() || qv.empty())
+        return false;
 
-    const bool require_exact = qv.back() == '$' || qv.back() == '@' ;
-    if(require_exact) qv.remove_suffix(1);
+    const bool require_exact = qv.back() == '$' || qv.back() == '@';
+    if (require_exact)
+        qv.remove_suffix(1);
 
-    if(require_exact) return sv == qv ;
-    return sv.size() >= qv.size() && sv.substr(0, qv.size()) == qv ;
+    if (require_exact)
+        return sv == qv;
+    return sv.size() >= qv.size() && sv.substr(0, qv.size()) == qv;
 }
-
 
 inline bool sstr::MatchEnd( const char* s, const char* q)
 {

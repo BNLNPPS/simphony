@@ -25,11 +25,11 @@
 #include <vector>
 
 #include "SAr.hh"
-#include "SSys.hh"
 #include "SDigest.hh"
-#include "sstr.h"
-#include "SPath.hh"
 #include "SOpticksKey.hh"
+#include "SPath.hh"
+#include "SSys.hh"
+#include "sstr.h"
 
 #include "SLOG.hh"
 
@@ -64,7 +64,7 @@ SOpticksKey* SOpticksKey::GetKey()
 
 const char* SOpticksKey::StemName( const char* ext, const char* sep )
 {
-    return sstr::Concat(IDSTEM, sep, ext );
+    return sstr::Concat(IDSTEM, sep, ext);
 }
 
 
@@ -151,8 +151,8 @@ SOpticksKey::SOpticksKey(const char* spec)
     m_current_exename( SAr::Instance ? SAr::Instance->exename() : "OpticksEmbedded" ), 
     m_live(false)
 {
-    std::vector<std::string> elem ; 
-    sstr::Split(spec, '.', elem ); 
+    std::vector<std::string> elem;
+    sstr::Split(spec, '.', elem);
 
     bool four = elem.size() == 4  ;
     LOG_IF(fatal, !four) << " expecting 4 element spec delimited by dot [" << spec << "]" ;  

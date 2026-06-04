@@ -323,8 +323,8 @@ NPFold* U4Material::MakePropertyFold_flat()
             const char* propname = propnames[j].c_str() ;
             G4MaterialPropertyVector* prop = GetProperty(mat, propname );
             NP* a = U4MaterialPropertyVector::ConvertToArray(prop);
-            const std::string key = sstr::Format_("%s/%s", material, propname);
-            fold->add( key.c_str(), a );
+            const std::string         key = sstr::Format_("%s/%s", material, propname);
+            fold->add(key.c_str(), a);
         }
     }
     return fold ;
@@ -503,24 +503,35 @@ G4MaterialPropertiesTable* U4Material::MakeMaterialPropertiesTable(const char* m
 
         char type = Classify(a);
         double* values = a->values<double>() ;
-        ss << Desc(key.c_str(), a) << std::endl ;
-
+        ss << Desc(key.c_str(), a) << std::endl;
 
 // guessed version fork
 #if G4VERSION_NUMBER < 1100
         switch(type)
         {
-            case 'C': mpt->AddConstProperty(key.c_str(), values[1])    ; break ;
-            case 'P': mpt->AddProperty(key.c_str(), MakeProperty(a))   ; break ;
-            case 'F': mpt->AddProperty(key.c_str(), MakeProperty(a))   ; break ;
+        case 'C':
+            mpt->AddConstProperty(key.c_str(), values[1]);
+            break;
+        case 'P':
+            mpt->AddProperty(key.c_str(), MakeProperty(a));
+            break;
+        case 'F':
+            mpt->AddProperty(key.c_str(), MakeProperty(a));
+            break;
         }
 #else
         G4bool createNewKey = true ; // Geant4 11.2.1 throws exception for new keys without this
         switch(type)
         {
-            case 'C': mpt->AddConstProperty(key.c_str(), values[1], createNewKey)    ; break ;
-            case 'P': mpt->AddProperty(key.c_str(), MakeProperty(a), createNewKey)   ; break ;
-            case 'F': mpt->AddProperty(key.c_str(), MakeProperty(a), createNewKey)   ; break ;
+        case 'C':
+            mpt->AddConstProperty(key.c_str(), values[1], createNewKey);
+            break;
+        case 'P':
+            mpt->AddProperty(key.c_str(), MakeProperty(a), createNewKey);
+            break;
+        case 'F':
+            mpt->AddProperty(key.c_str(), MakeProperty(a), createNewKey);
+            break;
         }
 #endif
     }
@@ -554,15 +565,15 @@ G4MaterialPropertiesTable* U4Material::MakeMaterialPropertiesTable(const char* m
     //const char* matdir = SPath::Resolve(matdir_, NOOP);
 
     std::vector<std::string> keys ;
-    sstr::Split( keys_, delim, keys );
+    sstr::Split(keys_, delim, keys);
 
     G4MaterialPropertiesTable* mpt = new G4MaterialPropertiesTable();
     for(unsigned i=0 ; i < keys.size() ; i++)
     {
         const std::string& key_ = keys[i];
         const char* key = key_.c_str();
-        const std::string name = sstr::Format_("%s.npy", key );
-        NP* a = NP::Load(matdir, name.c_str() );
+        const std::string  name = sstr::Format_("%s.npy", key);
+        NP*                a = NP::Load(matdir, name.c_str());
         assert(a);
 
         LOG(info)
@@ -888,8 +899,8 @@ succeed to load.
 
 G4Material* U4Material::LoadOri(const char* name)
 {
-    const std::string matdir = sstr::Format_("%s/%s_ori", LIBDIR, name );
-    G4Material* mat = MakeMaterial(name, matdir.c_str() );
+    const std::string matdir = sstr::Format_("%s/%s_ori", LIBDIR, name);
+    G4Material*       mat = MakeMaterial(name, matdir.c_str());
     return mat ;
 }
 

@@ -28,8 +28,8 @@
 #include <fstream>
 
 #include "SPath.hh"
-#include "spath.h"
 #include "sdigest.h"
+#include "spath.h"
 
 #include "OPTICKS_LOG.hh"
 
@@ -375,12 +375,12 @@ void test_SearchDirUpTreeWithFile()
 
 void test_Copy()
 {
-    const char* src = "/tmp/src.txt" ; 
-    const char* dst = "/tmp/dst.txt" ; 
-    const char* srcn = "src.txt" ; 
-    const char* dstn = "dst2.txt" ; 
+    const char* src = "/tmp/src.txt";
+    const char* dst = "/tmp/dst.txt";
+    const char* srcn = "src.txt";
+    const char* dstn = "dst2.txt";
 
-    spath::Write("SPathTest test_Copy src text\n", src ); 
+    spath::Write("SPathTest test_Copy src text\n", src);
     SPath::Copy(dst, src ) ; 
     SPath::Copy(dstn, srcn, "/tmp" ) ; 
 

@@ -1151,7 +1151,7 @@ void CSGFoundry::findSolidIdx(std::vector<unsigned>& solid_idx, const char* labe
     std::vector<unsigned>& ss = solid_idx ;
 
     std::vector<std::string> elem ;
-    sstr::Split(label, ',', elem );
+    sstr::Split(label, ',', elem);
 
     for(unsigned i=0 ; i < elem.size() ; i++)
     {
@@ -1160,7 +1160,7 @@ void CSGFoundry::findSolidIdx(std::vector<unsigned>& solid_idx, const char* labe
         {
             const CSGSolid& so = solid[j];
 
-            bool match = sstr::SimpleMatch(so.label, ele.c_str()) ;
+            bool     match = sstr::SimpleMatch(so.label, ele.c_str());
             unsigned count = std::count(ss.begin(), ss.end(), j );  // count if j is already collected
             if(match && count == 0) ss.push_back(j) ;
         }
@@ -1317,17 +1317,17 @@ std::string CSGFoundry::detailPrim(unsigned primIdx) const
     float4 ce = pr->ce();
 
     std::stringstream ss ;
-    auto label_value = [](const char* label, int value)
-    {
+
+    auto label_value = [](const char* label, int value) {
         return sstr::Format_("%s:%d", label, value);
     };
     ss
         << std::setw(10) << label_value("pri", primIdx)
         << std::setw(10) << label_value("lpr", pr_primIdx)
-        << std::setw(8)  << label_value("gas", gasIdx)
-        << std::setw(8)  << label_value("msh", meshIdx)
-        << std::setw(8)  << label_value("bnd", boundary)
-        << std::setw(8)  << label_value("nno", numNode)
+        << std::setw(8) << label_value("gas", gasIdx)
+        << std::setw(8) << label_value("msh", meshIdx)
+        << std::setw(8) << label_value("bnd", boundary)
+        << std::setw(8) << label_value("nno", numNode)
         << std::setw(10) << label_value("nod", nodeOffset)
         << " ce "
         << "(" << std::setw(10) << std::fixed << std::setprecision(2) << ce.x
@@ -1335,9 +1335,8 @@ std::string CSGFoundry::detailPrim(unsigned primIdx) const
         << "," << std::setw(10) << std::fixed << std::setprecision(2) << ce.z
         << "," << std::setw(10) << std::fixed << std::setprecision(2) << ce.w
         << ")"
-        << " meshName " << std::setw(15) << ( meshName ? meshName : "-" )
-        << " bndName "  << std::setw(15) << ( bndName  ? bndName  : "-" )
-        ;
+        << " meshName " << std::setw(15) << (meshName ? meshName : "-")
+        << " bndName " << std::setw(15) << (bndName ? bndName : "-");
 
     std::string s = ss.str();
     return s ;

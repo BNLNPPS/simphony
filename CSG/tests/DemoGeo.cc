@@ -1,16 +1,15 @@
-#include <iostream>
-#include <iomanip>
-#include <cstring>
-#include <array>
 #include <algorithm>
-
+#include <array>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
 
 //#include <vector_types.h>
 
-#include "sstr.h"
-#include "ssys.h"
 #include "NP.hh"
 #include "SLOG.hh"
+#include "sstr.h"
+#include "ssys.h"
 
 #include "scuda.h"
 #include "CSGFoundry.h"
@@ -22,16 +21,16 @@
 
 namespace
 {
-    void ParseGridSpec(std::array<int,9>& grid, const char* spec)
-    {
-        std::vector<int> values;
-        std::stringstream ss(spec ? spec : "");
-        std::string item;
-        while(std::getline(ss, item, ',')) sstr::split<int>(values, item.c_str(), ':');
-        assert(values.size() == grid.size());
-        std::copy(values.begin(), values.end(), grid.begin());
-    }
+void ParseGridSpec(std::array<int, 9>& grid, const char* spec)
+{
+    std::vector<int>  values;
+    std::stringstream ss(spec ? spec : "");
+    std::string       item;
+    while (std::getline(ss, item, ',')) sstr::split<int>(values, item.c_str(), ':');
+    assert(values.size() == grid.size());
+    std::copy(values.begin(), values.end(), grid.begin());
 }
+} // namespace
 
 DemoGeo::DemoGeo(CSGFoundry* foundry_, const char* geom)
     :
@@ -59,15 +58,15 @@ void DemoGeo::init(const char* geom)
     {
         init_parade();
     }
-    else if(sstr::StartsWith(geom, "clustered_"))
+    else if (sstr::StartsWith(geom, "clustered_"))
     {
         init_clustered( geom + strlen("clustered_"));
     }
-    else if(sstr::StartsWith(geom, "scaled_"))
+    else if (sstr::StartsWith(geom, "scaled_"))
     {
         init_scaled( geom, geom + strlen("scaled_"), outer, layers, numgas );
     }
-    else if(sstr::StartsWith(geom, "layered_"))
+    else if (sstr::StartsWith(geom, "layered_"))
     {
         init_layered( geom + strlen("layered_"), outer, layers );
     }

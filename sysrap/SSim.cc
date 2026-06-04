@@ -7,13 +7,13 @@
 #include "sdigest.h"
 #include "stree.h"
 
+#include "SBitSet.h"
 #include "SLOG.hh"
-#include "sstr.h"
-#include "ssys.h"
+#include "SScene.h"
 #include "spath.h"
 #include "sstamp.h"
-#include "SScene.h"
-#include "SBitSet.h"
+#include "sstr.h"
+#include "ssys.h"
 
 #include "SEvt.hh"
 #include "SSim.hh"
@@ -724,9 +724,9 @@ NP* SSim::AddOptical(
 
     for(unsigned b=0 ; b < num_add ; b++)
     {
-        const std::string spec = sstr::TrimString(specs[b]);
+        const std::string        spec = sstr::TrimString(specs[b]);
         std::vector<std::string> elem ;
-        sstr::Split(spec.c_str(), '/', elem );
+        sstr::Split(spec.c_str(), '/', elem);
 
         bool four_elem = elem.size() == 4 ;
         LOG_IF(fatal, four_elem == false) << " expecting four elem spec [" << spec << "] elem.size " << elem.size() ;
@@ -857,7 +857,7 @@ NP* SSim::AddBoundary( const NP* dsrc, const std::vector<std::string>& specs ) /
         dst_names.push_back(spec);
 
         std::vector<std::string> elem ;
-        sstr::Split(spec.c_str(), '/', elem );
+        sstr::Split(spec.c_str(), '/', elem);
 
         bool four_elem = elem.size() == 4 ;
         LOG_IF(fatal, four_elem == false) << " expecting four elem spec [" << spec << "] elem.size " << elem.size() ;
@@ -1029,7 +1029,7 @@ std::string SSim::DescOptical(const NP* optical, const NP* bnd )
         {
             elem.clear();
             const std::string& spec = bnd->names[b] ;
-            sstr::Split( spec.c_str(), '/', elem );
+            sstr::Split(spec.c_str(), '/', elem);
             ss << std::setw(4) << b << " " << spec<< std::endl ;
         }
 

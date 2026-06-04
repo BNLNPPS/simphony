@@ -1,12 +1,12 @@
 #include <algorithm>
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
-#include "ssys.h"
-#include "sstr.h"
-#include "scuda.h"
 #include "saabb.h"
+#include "scuda.h"
+#include "sstr.h"
+#include "ssys.h"
 
 #include "DemoGrid.h"
 
@@ -15,47 +15,48 @@
 
 namespace
 {
-    void ParseGridSpec(std::array<int,9>& grid, const char* spec)
-    {
-        std::vector<int> values;
-        std::stringstream ss(spec ? spec : "");
-        std::string item;
-        while(std::getline(ss, item, ',')) sstr::split<int>(values, item.c_str(), ':');
-        assert(values.size() == grid.size());
-        std::copy(values.begin(), values.end(), grid.begin());
-    }
-
-    void GridMinMax(const std::array<int,9>& grid, glm::ivec3& mn, glm::ivec3& mx)
-    {
-        mn.x = grid[0] ; mx.x = grid[1] ;
-        mn.y = grid[3] ; mx.y = grid[4] ;
-        mn.z = grid[6] ; mx.z = grid[7] ;
-    }
+void ParseGridSpec(std::array<int, 9>& grid, const char* spec)
+{
+    std::vector<int>  values;
+    std::stringstream ss(spec ? spec : "");
+    std::string       item;
+    while (std::getline(ss, item, ',')) sstr::split<int>(values, item.c_str(), ':');
+    assert(values.size() == grid.size());
+    std::copy(values.begin(), values.end(), grid.begin());
 }
 
+void GridMinMax(const std::array<int, 9>& grid, glm::ivec3& mn, glm::ivec3& mx)
+{
+    mn.x = grid[0];
+    mx.x = grid[1];
+    mn.y = grid[3];
+    mx.y = grid[4];
+    mn.z = grid[6];
+    mx.z = grid[7];
+}
+} // namespace
 
 float4 DemoGrid::AddInstances( CSGFoundry* foundry_, unsigned ias_idx_, unsigned num_solid_ )  // static 
 {
-    DemoGrid gr(foundry_, ias_idx_, num_solid_ ); 
-    return gr.center_extent(); 
-} 
+    DemoGrid gr(foundry_, ias_idx_, num_solid_);
+    return gr.center_extent();
+}
 
-DemoGrid::DemoGrid( CSGFoundry* foundry_, unsigned ias_idx_, unsigned num_solid_ )
-    :
+DemoGrid::DemoGrid(CSGFoundry* foundry_, unsigned ias_idx_, unsigned num_solid_) :
     foundry(foundry_),
     ias_idx(ias_idx_),
     num_solid(num_solid_),
     gridscale(ssys::getenvfloat("GRIDSCALE", 1.f))
 {
-    std::string gridspec = ssys::getenv_<std::string>("GRIDSPEC", "-10:11,2,-10:11:2,-10:11,2") ; 
+    std::string gridspec = ssys::getenv_<std::string>("GRIDSPEC", "-10:11,2,-10:11:2,-10:11,2");
     ParseGridSpec(grid, gridspec.c_str());
     ssys::fill_evec<unsigned>(solid_modulo, "GRIDMODULO", "0,1", ',');
     ssys::fill_evec<unsigned>(solid_single, "GRIDSINGLE", "2", ',');
 
-    LOG(info) << "GRIDSPEC " << gridspec ; 
-    LOG(info) << "GRIDSCALE " << gridscale ; 
-    LOG(info) << "GRIDMODULO " << ssys::desc_vec(&solid_modulo) ; 
-    LOG(info) << "GRIDSINGLE " << ssys::desc_vec(&solid_single) ; 
+    LOG(info) << "GRIDSPEC " << gridspec;
+    LOG(info) << "GRIDSCALE " << gridscale;
+    LOG(info) << "GRIDMODULO " << ssys::desc_vec(&solid_modulo);
+    LOG(info) << "GRIDSINGLE " << ssys::desc_vec(&solid_single);
 
     init();   // add qat4 instances to foundry 
 }
@@ -63,9 +64,9 @@ DemoGrid::DemoGrid( CSGFoundry* foundry_, unsigned ias_idx_, unsigned num_solid_
 
 const float4 DemoGrid::center_extent() const 
 {
-    glm::ivec3 imn(0,0,0); 
-    glm::ivec3 imx(0,0,0); 
-    GridMinMax(grid, imn, imx); 
+    glm::ivec3 imn(0, 0, 0);
+    glm::ivec3 imx(0, 0, 0);
+    GridMinMax(grid, imn, imx);
 
     float3 mn = gridscale*make_float3( float(imn.x), float(imn.y), float(imn.z) ) ;
     float3 mx = gridscale*make_float3( float(imx.x), float(imx.y), float(imx.z) ) ;

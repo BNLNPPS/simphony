@@ -1,15 +1,15 @@
-#include <vector>
-#include "sstr.h"
 #include "SEnabled.hh"
+#include "sstr.h"
+#include <vector>
 
 template<unsigned N>
 SEnabled<N>::SEnabled(const char* spec)
     :
     enabled(new std::bitset<N>())
 {
-    char delim = ',' ; 
-    std::vector<int> ivec ; 
-    sstr::split<int>( ivec, spec, delim );  
+    char             delim = ',';
+    std::vector<int> ivec;
+    sstr::split<int>(ivec, spec, delim);
 
     for(unsigned i=0 ; i < ivec.size() ; i++)
     {
