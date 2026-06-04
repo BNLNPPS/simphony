@@ -774,7 +774,7 @@ void SEventConfig::LIMIT_Check()
    //assert( _MaxBounce >= 0 && _MaxBounce <  LIMIT ) ;
    // MaxBounce should not in principal be limited
 
-   assert( _MaxRecord >= 0 && _MaxRecord <= RecordLimit() ) ;
+   assert(_MaxRecord >= 0); // RecordLimit relaxed to allow large record arrays for step analysis
    assert( _MaxRec    >= 0 && _MaxRec    <= RecordLimit() ) ;
    assert( _MaxPrd    >= 0 && _MaxPrd    <= RecordLimit() ) ;
 
@@ -1562,7 +1562,8 @@ void SEventConfig::Initialize_Comp_Simulate_(unsigned& gather_mask, unsigned& sa
         else if(IsDebugLite())
         {
             SEventConfig::SetMaxRec(0);
-            SEventConfig::SetMaxRecord(record_limit);
+            int env_max_record = ssys::getenvint(kMaxRecord, 0);
+            SEventConfig::SetMaxRecord(env_max_record > 0 ? env_max_record : record_limit);
             SEventConfig::SetMaxSeq(1);  // formerly incorrectly set to max_bounce+1
         }
 
