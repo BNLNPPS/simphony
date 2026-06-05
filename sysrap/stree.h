@@ -6135,7 +6135,6 @@ inline void stree::get_remainder_nidx(std::vector<int>& nodes ) const
     get_repeat_nidx(nodes, q_repeat_index, q_repeat_ordinal);
 }
 
-
 /**
 stree::get_repeat_node
 -----------------------
@@ -6148,11 +6147,8 @@ not handle the rem and tri nodes.
 ::
 
    TEST=get_repeat_node stree_load_test
-
-   TEST=get_repeat_node RIDX=1 RORD=10 stree_load_test run
-
-   TEST=get_repeat_node RIDX=9 RORD=0 stree_load_test run
-
+   TEST=get_repeat_node RIDX=1 RORD=10 stree_load_test
+   TEST=get_repeat_node RIDX=9 RORD=0 stree_load_test
 **/
 
 inline void stree::get_repeat_node(std::vector<snode>& nodes, int q_repeat_index, int q_repeat_ordinal ) const
@@ -6431,8 +6427,6 @@ stree::get_global_aabb_sibling_overlaps
 -----------------------------------------
 
 TEST=get_global_aabb_sibling_overlaps stree_load_test
-TEST=get_global_aabb_sibling_overlaps stree_load_test pdb
-
 **/
 
 

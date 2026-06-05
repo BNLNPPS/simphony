@@ -1,10 +1,5 @@
 /**
-stree_load_test.cc
-===================
-
-::
-
-    stree_load_test
+    ctest -R SysRapTest.stree_load_test --output-on-failure
 
     TEST=get_inst IIDX=100                      stree_load_test
     TEST=pick_lvid_ordinal_node                 stree_load_test
@@ -18,7 +13,16 @@ stree_load_test.cc
     TEST=desc_factor_nodes FIDX=0               stree_load_test
     TEST=desc_repeat_node RIDX=0 RORD=0         stree_load_test
 
+    TEST=desc_solid LVID=43 stree_load_test
+    TEST=desc_solid LVID=124 stree_load_test
+    TEST=desc_solid LVID=32 stree_load_test
+
+    TEST=desc_node_ELVID ELVID=43,44,45,46 stree_load_test
+    TEST=desc_node_ECOPYNO ECOPYNO=52400   stree_load_test
+    TEST=desc_node_EBOUNDARY EBOUNDARY=303 stree_load_test
 **/
+
+#include "OPTICKS_LOG.hh"
 
 #include "ssys.h"
 #include "stree.h"
@@ -27,13 +31,27 @@ stree_load_test.cc
 #include "sn.h"
 #include "SBitSet.h"
 
+#include "U4GDML.h"
+#include "U4SensitiveDetector.hh"
+#include "U4Tree.h"
+
+#ifdef STREE_LOAD_TEST_DEFAULT_GDML
+static constexpr const char* STREE_LOAD_TEST_DEFAULT_GDML_PATH = STREE_LOAD_TEST_DEFAULT_GDML;
+#else
+static constexpr const char* STREE_LOAD_TEST_DEFAULT_GDML_PATH = nullptr;
+#endif
 
 struct stree_load_test
 {
-    const char* TEST ;
-    const stree* st ;
+    static constexpr const char* DEFAULT_TEST = "desc";
 
-    stree_load_test();
+    const char* TEST ;
+    const char* gdmlpath;
+    stree*      st;
+    U4Tree*     tr;
+
+    stree_load_test(int argc, char** argv);
+    void init(int argc, char** argv);
     void init();
 
     int get_combined_transform(int LVID, int NDID  );
@@ -82,24 +100,70 @@ struct stree_load_test
     int main();
 };
 
-inline stree_load_test::stree_load_test()
-    :
-    TEST(ssys::getenvvar("TEST", nullptr)),
-    st(nullptr)
+inline stree_load_test::stree_load_test(int argc, char** argv) :
+    TEST(ssys::getenvvar("TEST", DEFAULT_TEST)),
+    gdmlpath(ssys::getenvvar("STREE_LOAD_TEST_GDML", STREE_LOAD_TEST_DEFAULT_GDML_PATH)),
+    st(nullptr),
+    tr(nullptr)
 {
+    init(argc, argv);
+}
+
+inline void stree_load_test::init(int argc, char** argv)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        const char* arg = argv[i];
+        if (arg == nullptr)
+            continue;
+
+        std::string a(arg);
+        bool        is_gdml = a.size() >= 5 && a.compare(a.size() - 5, 5, ".gdml") == 0;
+
+        if (is_gdml)
+        {
+            gdmlpath = arg;
+        }
+        else
+        {
+            TEST = arg;
+        }
+    }
+
     init();
 }
 
 inline void stree_load_test::init()
 {
     bool noload = strcmp(TEST,"get_global_aabb_check") == 0 ;
-    if(!noload)
+
+    if (noload == false && gdmlpath != nullptr)
+    {
+        if (U4SensitiveDetector::Get("PhotonDetector") == nullptr)
+            new U4SensitiveDetector("PhotonDetector");
+        if (U4SensitiveDetector::Get("PMTSDMgr") == nullptr)
+            new U4SensitiveDetector("PMTSDMgr");
+
+        const G4VPhysicalVolume* world = U4GDML::Read(gdmlpath);
+        LOG_IF(fatal, world == nullptr)
+            << "stree_load_test::init FAILED TO READ GDML "
+            << " gdmlpath " << (gdmlpath ? gdmlpath : "-");
+
+        if (world != nullptr)
+        {
+            st = new stree;
+            tr = U4Tree::Create(st, world);
+        }
+    }
+    else if (!noload)
     {
         st = stree::Load();
         if( st == nullptr ) std::cout << "stree_load_test::init FAILED TO LOAD TREE \n" ;
     }
 
     std::cout << "[stree_load_test::init\n" ;
+    std::cout << " TEST " << (TEST ? TEST : "-") << "\n";
+    std::cout << " gdmlpath " << (gdmlpath ? gdmlpath : "-") << "\n";
     std::cout << ( st ? st->desc_id() : "-" ) << "\n" ;
     std::cout << "]stree_load_test::init\n" ;
 }
@@ -674,14 +738,12 @@ inline int stree_load_test::desc_node_ECOPYNO() const
     std::cout << st->desc_node_ECOPYNO() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_node_EBOUNDARY() const
 {
     std::cout << st->desc_node_EBOUNDARY() << "\n" ;
     return 0 ;
 }
-
-
-
 
 inline int stree_load_test::desc_node_solids() const
 {
@@ -701,6 +763,7 @@ inline int stree_load_test::desc_solids() const
     std::cout << st->desc_solids() ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_solid(int lvid) const
 {
     std::cout << st->desc_solid(lvid) ;
@@ -729,9 +792,6 @@ inline int stree_load_test::desc_solid(int lvid) const
         std::cout << "gtd\n" << stra<double>::Desc(m2w) << "\n" ;
     }
 
-
-
-
     std::vector<sn*> nds ;    // CSG constituent nodes of the LV
     sn::GetLVNodes(nds, lvid );
     int num_nds = nds.size();
@@ -750,11 +810,13 @@ inline int stree_load_test::desc_solid(int lvid) const
 
     return 0 ;
 }
+
 inline int stree_load_test::desc() const
 {
     std::cout << st->desc() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::save_desc(const char* fold) const
 {
     std::cout
@@ -767,6 +829,7 @@ inline int stree_load_test::save_desc(const char* fold) const
     st->save_desc(fold);
     return 0 ;
 }
+
 inline int stree_load_test::make_tree_digest() const
 {
     const char* tree_digest = st->get_tree_digest();
@@ -802,15 +865,11 @@ inline int stree_load_test::desc_nodes_with_center_within_ce() const
      return 0 ;
 }
 
-
 inline int stree_load_test::desc_prim() const
 {
      std::cout << st->desc_prim();
      return 0 ;
 }
-
-
-
 
 inline int stree_load_test::main()
 {
@@ -864,20 +923,10 @@ inline int stree_load_test::main()
     return rc ;
 }
 
-
 int main(int argc, char** argv)
 {
-    stree_load_test t;
+    OPTICKS_LOG(argc, argv);
+
+    stree_load_test t(argc, argv);
     return t.main();
 }
-
-/**
-    TEST=desc_solid LVID=43 stree_load_test  run
-    TEST=desc_solid LVID=124 stree_load_test  run
-    TEST=desc_solid LVID=32 stree_load_test
-
-
-    TEST=desc_node_ELVID ELVID=43,44,45,46 stree_load_test
-    TEST=desc_node_ECOPYNO ECOPYNO=52400   stree_load_test
-    TEST=desc_node_EBOUNDARY EBOUNDARY=303   stree_load_test
-**/
