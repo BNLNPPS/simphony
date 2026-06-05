@@ -109,10 +109,10 @@ inline QBND_METHOD float4 qbnd::boundary_lookup( float nm, unsigned line, unsign
 
     // POINT filtering avoids cross-row blending on the categorical y-axis.
     // Recover wavelength-linear interpolation by reading two adjacent x-bins.
-    const float fx_idx = (nm - nm0) / nms;
-    float       fx_lo_f = floorf(fx_idx);
-    if (fx_lo_f < 0.f)
-        fx_lo_f = 0.f;
+    float fx_idx = (nm - nm0) / nms;
+    if (fx_idx < 0.f)
+        fx_idx = 0.f;
+    float    fx_lo_f = floorf(fx_idx);
     unsigned ix_lo = unsigned(fx_lo_f);
     unsigned ix_hi = ix_lo + 1u;
     if (ix_hi >= nx)
