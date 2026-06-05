@@ -20,9 +20,9 @@ Boundary class changes need to match in all the below::
 #include "G4ProcessManager.hh"
 #include "G4FastSimulationManagerProcess.hh"
 
-
+#include "G4OpAbsorption.hh"
 #include "G4OpBoundaryProcess.hh"
-
+#include "G4OpRayleigh.hh"
 
 #include "SLOG.hh"
 const plog::Severity U4Physics::LEVEL = SLOG::EnvLevel("U4Physics", "DEBUG") ;
@@ -153,9 +153,6 @@ void U4Physics::ConstructEM()
 #include "Local_G4Cerenkov_modified.hh"
 #include "Local_DsG4Scintillation.hh"
 
-#include "ShimG4OpAbsorption.hh"
-#include "ShimG4OpRayleigh.hh"
-
 
 std::string U4Physics::desc() const
 {
@@ -177,14 +174,7 @@ std::string U4Physics::desc() const
 
 std::string U4Physics::Desc()  // static
 {
-    std::stringstream ss ;
-#ifdef DEBUG_TAG
-    ss << ( ShimG4OpAbsorption::FLOAT ? "ShimG4OpAbsorption_FLOAT" : "ShimG4OpAbsorption_ORIGINAL" ) ;
-    ss << "_" ;
-    ss << ( ShimG4OpRayleigh::FLOAT ? "ShimG4OpRayleigh_FLOAT" : "ShimG4OpRayleigh_ORIGINAL" ) ;
-#endif
-    std::string str = ss.str();
-    return str ;
+    return {};
 }
 
 
@@ -260,20 +250,12 @@ void U4Physics::ConstructOp()
 
     if(OpAbsorption_DISABLE == 0)
     {
-#ifdef DEBUG_TAG
-        fAbsorption = new ShimG4OpAbsorption();
-#else
         fAbsorption = new G4OpAbsorption();
-#endif
     }
 
     if(OpRayleigh_DISABLE == 0)
     {
-#ifdef DEBUG_TAG
-        fRayleigh = new ShimG4OpRayleigh();
-#else
         fRayleigh = new G4OpRayleigh();
-#endif
     }
 
     if(OpBoundaryProcess_DISABLE == 0)

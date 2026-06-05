@@ -144,8 +144,6 @@ loglevel(){
    export junoPMTOpticalModelSimple=INFO
    #export SEvt=INFO     ## thus is exceedingly verbose
    export SEventConfig=INFO
-   export ShimG4OpAbsorption=INFO
-   export ShimG4OpRayleigh=INFO
 }
 
 
