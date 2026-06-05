@@ -60,6 +60,8 @@ set(TEST_SOURCES
    U4Debug_Test.cc 
    U4Hit_Debug_Test.cc 
    U4PhysicsTableTest.cc 
+
+   SpherePhiCutQuarterShellTest.cc
 )
 
 set(EXPECTED_TO_FAIL_SOURCES
@@ -77,6 +79,7 @@ foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
     add_executable(${TGT} ${SRC})
     target_link_libraries(${TGT} U4)
+    target_include_directories(${TGT} PRIVATE ${CMAKE_BINARY_DIR}/src)
 
     add_test(
        NAME ${name}.${TGT} 
