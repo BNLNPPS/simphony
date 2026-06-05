@@ -19,12 +19,7 @@ CPU-only: compiled with MOCK_TEXTURE so tex2D is software nearest-neighbor.
 #include <cstdio>
 #include <cstring>
 
-#ifndef MOCK_CUDA
-#define MOCK_CUDA
-#endif
-#ifndef MOCK_TEXTURE
 #define MOCK_TEXTURE
-#endif
 
 #include "NP.hh"
 #include "s_mock_texture.h"
