@@ -26,11 +26,11 @@ CPU-only: compiled with MOCK_TEXTURE so tex2D is software nearest-neighbor.
 #define MOCK_TEXTURE
 #endif
 
+#include "NP.hh"
+#include "s_mock_texture.h"
 #include "scuda.h"
 #include "squad.h"
 #include "sstate.h"
-#include "NP.hh"
-#include "s_mock_texture.h"
 
 MockTextureManager* MockTextureManager::INSTANCE = nullptr;
 
@@ -63,7 +63,7 @@ int main()
     const unsigned ny = ni * nj * nk; // 16 rows
     const unsigned nx = nl;           // 4 wavelength bins
 
-    NP* bnd = NP::Make<float>(ni, nj, nk, nl, nm);
+    NP*    bnd = NP::Make<float>(ni, nj, nk, nl, nm);
     float* vv = bnd->values<float>();
     memset(vv, 0, bnd->arr_bytes());
 
