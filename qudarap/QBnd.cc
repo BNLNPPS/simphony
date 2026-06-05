@@ -3,7 +3,6 @@
 #include <sstream>
 #include <map>
 #include <csignal>
-#include <cstdlib>
 
 #include "SBnd.h"
 #include "NP.hh"
@@ -155,7 +154,7 @@ QTex<float4>* QBnd::MakeBoundaryTex(const NP* buf )   // static
 
     const float* values = buf->cvalues<float>(); 
 
-    char filterMode = std::getenv("QBND_FILTER_POINT") ? 'P' : 'L'; // F1 BIGBUG: POINT avoids 0.4% cross-row blend on large (>5000-row) bnd tables; run with QBND_FILTER_POINT=1
+    char filterMode = 'P';
     //bool normalizedCoords = false ; 
     bool normalizedCoords = true ; 
 

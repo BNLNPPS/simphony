@@ -107,11 +107,8 @@ inline QBND_METHOD float4 qbnd::boundary_lookup( float nm, unsigned line, unsign
     const float& nm0 = boundary_meta->q1.f.x ;
     const float& nms = boundary_meta->q1.f.z ;
 
-    // Wavelength-linear lookup. The bnd texture is sampled with POINT filtering
-    // (QBND_FILTER_POINT, see QBnd.cc) to avoid cross-row blending between
-    // material/surface rows, but POINT also makes the wavelength axis nearest-bin.
-    // Recover G4-style per-wavelength linear interpolation by reading the two
-    // adjacent wavelength bins and lerping by hand (material axis stays POINT).
+    // POINT filtering avoids cross-row blending on the categorical y-axis.
+    // Recover wavelength-linear interpolation by reading two adjacent x-bins.
     const float fx_idx = (nm - nm0) / nms;
     float       fx_lo_f = floorf(fx_idx);
     if (fx_lo_f < 0.f)
