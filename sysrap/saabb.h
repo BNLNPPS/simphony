@@ -1,7 +1,10 @@
 #pragma once
 
+#include "scuda.h"
+
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
+   #include <cmath>
    #include <sstream>
    #include <iostream>
    #include <iomanip>
@@ -285,5 +288,3 @@ AABB_METHOD std::string AABB::Compare(unsigned& mismatch, const float* a, const 
  
 
 #endif 
-
-

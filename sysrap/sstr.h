@@ -1,15 +1,16 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <cstring>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <csignal>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include <charconv> // std::from_chars
 #include <type_traits>
@@ -26,6 +27,7 @@ struct sstr
     static bool MatchAll(   const char* s, const char* q);
     static bool MatchStart( const char* s, const char* q);
     static bool StartsWith( const char* s, const char* q);
+    static bool SimpleMatch(const char* s, const char* q);
     static bool MatchEnd(   const char* s, const char* q);
     static bool EndsWith(   const char* s, const char* q);
 
@@ -41,7 +43,7 @@ struct sstr
     static const char* TrimTrailing(const char* s);
     static const char* Trim(const char* s); // both leading and trailing
 
-    static std::string TrimString(const std::string& str, const std::string& whitespace=" \t" );
+    static std::string TrimString(const std::string& str, const std::string& whitespace = " \t\n\r");
 
     static bool        HasTail(const std::vector<std::string>& names, const char* end="0x");
     static size_t      CountTail(const std::vector<std::string>& names, const char* end="0x");
@@ -199,8 +201,8 @@ inline bool sstr::MatchAll( const char* s, const char* q)
 }
 
 /**
-sstr::MatchStart (NB this can replace SStr::StartsWith with same args)
--------------------------------------------------------------------------
+sstr::MatchStart
+-----------------
 
 The 2nd query string must be less than or equal to the length of the first string and
 all the characters of the query string must match with the first string in order
@@ -235,6 +237,34 @@ inline bool sstr::StartsWith( const char* s, const char* q)  // synonym for sstr
     return s && q && strlen(q) <= strlen(s) && strncmp(s, q, strlen(q)) == 0 ;
 }
 
+/**
+sstr::SimpleMatch
+-------------------
+
+When *q* ends with '$' or '@' require an exact full-string match of the
+preceding characters, otherwise treat *q* as a prefix.
+
+**/
+
+inline bool sstr::SimpleMatch(const char* s, const char* q)
+{
+    if (s == nullptr || q == nullptr)
+        return false;
+
+    std::string_view sv(s);
+    std::string_view qv(q);
+
+    if (sv.empty() || qv.empty())
+        return false;
+
+    const bool require_exact = qv.back() == '$' || qv.back() == '@';
+    if (require_exact)
+        qv.remove_suffix(1);
+
+    if (require_exact)
+        return sv == qv;
+    return sv.size() >= qv.size() && sv.substr(0, qv.size()) == qv;
+}
 
 inline bool sstr::MatchEnd( const char* s, const char* q)
 {
@@ -641,7 +671,7 @@ inline int sstr::split( std::vector<T>& elem, const char* str, char delim )
     while (std::getline(ss, s, delim))
     {
         std::istringstream iss(s);
-        T v ;
+        T                  v{};
         iss >> v ;
         elem.push_back(v) ;
     }
@@ -1359,5 +1389,3 @@ inline std::vector<std::string>* sstr::LoadList( const char* arg, char delim )
     LoadList(arg, *lines, delim );
     return lines ;
 }
-
-

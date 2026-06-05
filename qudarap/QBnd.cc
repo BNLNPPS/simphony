@@ -154,7 +154,7 @@ QTex<float4>* QBnd::MakeBoundaryTex(const NP* buf )   // static
 
     const float* values = buf->cvalues<float>(); 
 
-    char filterMode = 'L' ; 
+    char filterMode = 'P';
     //bool normalizedCoords = false ; 
     bool normalizedCoords = true ; 
 

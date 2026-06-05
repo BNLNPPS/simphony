@@ -172,9 +172,9 @@ int SEvtTest::InputPhoton0()
 
     NP* fr = NP::Make<float>(1,4,4);
     memcpy( fr->bytes(), q->cdata(), fr->arr_bytes() );
-    fr->save(FOLD, SStr::Name("fr", ipf, ".npy" ));
+    fr->save(FOLD, spath::Name("fr", ipf, ".npy" ));
 
-    tr->save( FOLD, SStr::Name("tr",ipf, ".npy" )) ;
+    tr->save( FOLD, spath::Name("tr",ipf, ".npy" )) ;
 
     */
     return 0 ;

@@ -12,7 +12,6 @@ by both lookup sampling and for comparison by the traditional rejection sampling
 #include <iomanip>
 #include <random>
 
-#include "SStr.hh"
 #include "SRng.hh"
 #include "SPath.hh"
 #include "QCK.hh"
@@ -198,4 +197,3 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
