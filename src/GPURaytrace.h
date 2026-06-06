@@ -311,6 +311,8 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
     }
 };
 
+constexpr double kHC_eVnm = 1239.8418754200; // h*c in eV*nm (same as smath::hc_eVnm)
+
 struct EventAction : G4UserEventAction
 {
     SEvt *sev;
@@ -351,7 +353,7 @@ struct EventAction : G4UserEventAction
                     {
                         const PhotonHit* p = (*phc)[j];
                         g4OutFile << p->ftime << " "
-                                  << 1239.84 / p->fenergy << "  "
+                                  << kHC_eVnm / p->fenergy << "  "
                                   << "(" << p->fposition.x() << ", " << p->fposition.y() << ", " << p->fposition.z() << ")  "
                                   << "(" << p->fdirection.x() << ", " << p->fdirection.y() << ", " << p->fdirection.z() << ")  "
                                   << "(" << p->fpolarization.x() << ", " << p->fpolarization.y() << ", " << p->fpolarization.z() << ")"

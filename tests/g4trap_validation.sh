@@ -9,11 +9,11 @@
 #
 # Usage:
 #   ./tests/g4trap_validation.sh                          # all tests
-#   ./tests/g4trap_validation.sh trap                     # trap-only test
-#   ./tests/g4trap_validation.sh trd                      # trd-only test
-#   ./tests/g4trap_validation.sh single_photon            # 1-photon golden
-#   ./tests/g4trap_validation.sh cherenkov                # Cherenkov from e-
-#   ./tests/g4trap_validation.sh scintillation            # Scint from e-
+#   ./tests/g4trap_validation.sh trap                     # trap iso-source only
+#   ./tests/g4trap_validation.sh trd                      # trd iso-source only
+#   ./tests/g4trap_validation.sh scintillation            # scint+Cherenkov (trap & trd)
+#   ./tests/g4trap_validation.sh scintillation_trap       # scint+Cherenkov trap only
+#   ./tests/g4trap_validation.sh scintillation_trd        # scint+Cherenkov trd only
 #
 # Pre-requisites: GPUPhotonSource and GPURaytrace on PATH (any standard
 # install of simphony puts them in OPTICKS_PREFIX/bin which is added to
@@ -25,75 +25,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
 
-# eps=0.001 mm (= 1 µm) was the sweet spot in an eps-scan over 1e-5..5e-2.
-# Smaller values cause photons to get stuck at boundaries (float32 ulp issues);
-# larger values cause leakage. eps=0.001 matched G4 best across hit count
-# (within 0.14%) and all spatial+temporal chi^2 (all < 5.5).
-export OPTICKS_PROPAGATE_EPSILON=${OPTICKS_PROPAGATE_EPSILON:-0.001}
-export OPTICKS_PROPAGATE_EPSILON0=${OPTICKS_PROPAGATE_EPSILON0:-0.001}
-# MAX_BOUNCE=10000 keeps the long late-tail in Opticks. G4's effective
-# cap is much lower (~50-100 from G4Transportation looper-kill) — for a
-# pure G4-count match in lossless media use MAX_BOUNCE=100, but the
-# right physics setting is 10000 with realistic ABSLENGTH (< ~100 m).
-export OPTICKS_MAX_BOUNCE=${OPTICKS_MAX_BOUNCE:-10000}
-
 mkdir -p "${OUT_DIR}"
 
-# Torch source config `trap_iso` is installed by CMake into
-# ${OPTICKS_PREFIX}/share/simphony/config/trap_iso.json from config/trap_iso.json.
-
-# ------------------------------------------------------------------
-# compare.py — extract hit count + per-axis chi^2 vs G4
-# ------------------------------------------------------------------
-COMPARE_PY="${OUT_DIR}/compare.py"
-cat > "${COMPARE_PY}" <<'PYEOF'
-import re, sys, numpy as np
-PAT = re.compile(r'^\s*([\-\d.eE+]+)\s+([\-\d.eE+]+)\s+\(([^)]+)\)\s+\(([^)]+)\)')
-def load(p):
-    rows = []
-    for line in open(p):
-        m = PAT.match(line)
-        if not m: continue
-        rows.append((float(m.group(1)), float(m.group(2)),
-                     *[float(x) for x in m.group(3).split(',')],
-                     *[float(x) for x in m.group(4).split(',')]))
-    return np.array(rows, float) if rows else np.empty((0,8))
-def chi2_1d(a,b,bins):
-    ha,_ = np.histogram(a, bins=bins); hb,_ = np.histogram(b, bins=bins)
-    m = (ha+hb) > 0
-    return float(np.sum((ha[m]-hb[m])**2 / (ha[m]+hb[m]))), int(m.sum())
-g_path, o_path, label = sys.argv[1], sys.argv[2], sys.argv[3]
-tolerance_count = float(sys.argv[4]) if len(sys.argv) > 4 else 5.0
-tolerance_chi2  = float(sys.argv[5]) if len(sys.argv) > 5 else 5.0
-g = load(g_path); o = load(o_path)
-n_g, n_o = len(g), len(o)
-rel = abs(n_o-n_g)/((n_o+n_g)/2)*100 if n_o+n_g>0 else 0
-print(f"=== {label} ===")
-print(f"  G4 hits:      {n_g}")
-print(f"  Opticks hits: {n_o}")
-print(f"  rel diff:     {rel:.3f}%   (tol={tolerance_count}%)")
-fail = []
-if rel > tolerance_count: fail.append(f"count rel-diff {rel:.2f}% > {tolerance_count}%")
-if n_g == 0 or n_o == 0:
-    print("  no hits, skip distributions")
-else:
-    for col, name, bins in [
-        (2,'x',  np.linspace(min(g[:,2].min(),o[:,2].min()), max(g[:,2].max(),o[:,2].max()), 31)),
-        (3,'y',  np.linspace(min(g[:,3].min(),o[:,3].min()), max(g[:,3].max(),o[:,3].max()), 31)),
-        (5,'dx', np.linspace(-1, 1, 21)),
-        (6,'dy', np.linspace(-1, 1, 21)),
-        (7,'dz', np.linspace(-1, 1, 21)),
-    ]:
-        chi2, ndf = chi2_1d(g[:,col], o[:,col], bins)
-        ratio = chi2/max(ndf,1)
-        marker = "FAIL" if ratio > tolerance_chi2 else "ok"
-        print(f"  {name:>2}: chi2/ndf = {chi2:7.2f}/{ndf} = {ratio:5.2f}  {marker}")
-        if ratio > tolerance_chi2: fail.append(f"{name} chi2/ndf {ratio:.2f}")
-if fail:
-    print(f"  FAILED: {', '.join(fail)}")
-    sys.exit(1)
-print("  PASS")
-PYEOF
+COMPARE_PY="${SCRIPT_DIR}/g4trap_compare.py"
 
 # ------------------------------------------------------------------
 # run helpers
