@@ -70,3 +70,6 @@ The `build-push.yaml` workflow publishes the versioned container tags below to G
 - [Physics and simulation inputs](docs/physics-and-inputs.md)
 - [Performance and debugging](docs/performance-and-debugging.md)
 - [Examples](examples/README.md)
+
+<!-- ci baseline probe: trigger test suite on current main; do not merge -->
+
