@@ -64,7 +64,7 @@ struct Params
     float      tmin ;
 
     float      tmin0 ;
-    const unsigned char* boundary_face_bias;    // per-boundary gate (1=apply sibling-coincident t-bias) keyed on |n_m1-n_m2|>0.1; nullptr => always-on
+    const unsigned char* boundary_face_bias;       // per-boundary gate (1=apply sibling-coincident t-bias) keyed on |n_m1-n_m2|>0.1; nullptr => always-on
     unsigned   PropagateEpsilon0Mask ;   // default from SEventConfig TO,CK,SI,SC,RE
     float      PropagateRefineDistance ;
     bool       PropagateRefine ;
