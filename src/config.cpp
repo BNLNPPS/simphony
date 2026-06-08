@@ -278,6 +278,7 @@ void Config::ReadConfig(std::string filepath)
             AssignEventModeIfPresent(event_, event_mode);
             AssignIfPresent(event_, "maxslot", maxslot);
             AssignIfPresent(event_, "max_bounce", max_bounce);
+            AssignIfPresent(event_, "max_genstep", max_genstep);
             AssignIfPresent(event_, "propagate_epsilon", propagate_epsilon);
             AssignIfPresent(event_, "propagate_epsilon0", propagate_epsilon0);
             AssignIfPresent(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
@@ -302,6 +303,7 @@ void Config::Apply() const
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetMaxBounce(max_bounce);
+    SEventConfig::SetMaxGenstep(max_genstep);
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
