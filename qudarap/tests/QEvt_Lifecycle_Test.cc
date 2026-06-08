@@ -87,6 +87,7 @@ int main(int argc, char** argv)
     bool overwrite = false ;
     //ssys::setenvvar("OPTICKS_INPUT_PHOTON", "RainXZ_Z230_10k_f8.npy", overwrite );
     SEventConfig::SetInputPhoton("RainXZ_Z230_10k_f8.npy");
+    SEventConfig::SetMaxSlot(1000000); // cap slots: lifecycle test only needs the 10k input photons, not VRAM-scale
 
     ssys::setenvvar("GEOM", "TEST_CC", overwrite );
 
