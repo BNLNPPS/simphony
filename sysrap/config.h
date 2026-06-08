@@ -47,6 +47,9 @@ class Config
     /// Maximum photon bounce count.
     int max_bounce{31};
 
+    /// Maximum gensteps allocated for event uploads.
+    int max_genstep{10000000};
+
     /// Ray offset after boundary crossing.
     float propagate_epsilon{0.05f};
 
