@@ -16,6 +16,7 @@ set(TEST_SOURCES
    QUTest.cc
    QTexMakerTest.cc
    QTexLookupTest.cc
+   qbnd_boundary_lookup_test.cc
    QMultiFilmTest.cc
 
 
