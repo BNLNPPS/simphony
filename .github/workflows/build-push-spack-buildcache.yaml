@@ -76,9 +76,14 @@ jobs:
               # Update the index after dependency autopush so partial progress is immediately discoverable.
               spack buildcache update-index simphony-spack-buildcache
 
-              # Keep the cache focused on dependencies; the PR workflow still builds simphony itself.
+              # Keep the cache focused on dependencies, then build simphony itself from source.
               spack mirror set --no-autopush simphony-spack-buildcache
               spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+              spack find --format "{name}{@version} {/hash}" simphony
+              prefix="$(spack location -i simphony)"
+              echo "Installed prefix: $prefix"
+              test -d "$prefix"
+              (test -f "$prefix/.spack/spec.json" || test -f "$prefix/.spack/spec.yaml")
 
               # Ensure the index is current after the full run as well.
               spack buildcache update-index simphony-spack-buildcache
