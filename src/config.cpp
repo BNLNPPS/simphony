@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <ranges>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -62,6 +63,22 @@ bool FileExists(const std::string& path)
         return false;
     std::error_code ec;
     return std::filesystem::exists(path, ec) && !ec;
+}
+
+std::vector<std::string> SplitSearchPaths(std::string_view paths)
+{
+    std::vector<std::string> search_paths;
+
+    size_t last = 0;
+    size_t next = 0;
+    while ((next = paths.find(':', last)) != std::string_view::npos)
+    {
+        search_paths.push_back(std::string{paths.substr(last, next - last)});
+        last = next + 1;
+    }
+
+    search_paths.push_back(std::string{paths.substr(last)});
+    return search_paths;
 }
 
 std::string ValidEventModes()
@@ -178,15 +195,24 @@ std::string Config::PtxPath(const std::string& ptx_name)
     if (env_path && FileExists(env_path))
         return env_path;
 
-    std::string default_path = std::string(GPHOX_PTX_DIR) + "/" + ptx_name;
-    if (FileExists(default_path))
-        return default_path;
+    std::vector<std::string> candidates;
+    for (const auto& dir : SplitSearchPaths(GPHOX_PTX_SEARCH_PATHS))
+    {
+        if (dir.empty())
+            continue;
+
+        std::string candidate = (std::filesystem::path{dir} / ptx_name).string();
+        candidates.push_back(candidate);
+        if (FileExists(candidate))
+            return candidate;
+    }
 
     std::stringstream errmsg;
     errmsg << "Could not resolve PTX file \"" << ptx_name << "\".\n"
            << "Expected one of:\n"
-           << "  - " << GPHOX_PTX_PATH_ENV << "=<path-to-ptx>\n"
-           << "  - " << default_path;
+           << "  - " << GPHOX_PTX_PATH_ENV << "=<path-to-ptx>\n";
+    for (const auto& candidate : candidates)
+        errmsg << "  - " << candidate << "\n";
     throw std::runtime_error(errmsg.str());
 }
 
@@ -198,17 +224,7 @@ std::string Config::Locate(std::string filename) const
 
     if (user_dir.empty())
     {
-        std::string paths(GPHOX_CONFIG_SEARCH_PATHS);
-
-        size_t last = 0;
-        size_t next = 0;
-        while ((next = paths.find(':', last)) != std::string::npos)
-        {
-            search_paths.push_back(paths.substr(last, next - last));
-            last = next + 1;
-        }
-
-        search_paths.push_back(paths.substr(last));
+        search_paths = SplitSearchPaths(GPHOX_CONFIG_SEARCH_PATHS);
     }
     else
     {

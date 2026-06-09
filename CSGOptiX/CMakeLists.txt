@@ -37,9 +37,20 @@ target_compile_definitions(${OPTIX_PTX_TARGET} PUBLIC WITH_PRD WITH_SIMULATE WIT
         PLOG_LOCAL RNG_PHILOX DEBUG_TAG DEBUG_PIDX DEBUG_PIDXYZ OPTICKS_OKCONF OPTICKS_QUDARAP NVCC)
 target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
 
+get_filename_component(ptx_stem "${OPTIX_PTX_SRC}" NAME_WE)
+set(ptx_output "${GPHOX_BUILD_PTX_DIR}/${ptx_stem}.ptx")
+add_custom_target(gphox_ptx
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${GPHOX_BUILD_PTX_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_OBJECTS:${OPTIX_PTX_TARGET}>" "${ptx_output}"
+    BYPRODUCTS "${ptx_output}"
+    VERBATIM
+)
+add_dependencies(gphox_ptx ${OPTIX_PTX_TARGET})
+
 message(STATUS "Configured PTX build for ${OPTIX_PTX_SRC}")
 
 add_library( ${name} SHARED ${SOURCES} ${HEADERS} )
+add_dependencies(${name} gphox_ptx)
 
 target_compile_definitions( ${name} PRIVATE WITH_PRD )  # using Pointer trick means can reduce attrib and payload to 2 
 target_compile_definitions( ${name} PUBLIC WITH_SIMULATE )
