@@ -19,7 +19,6 @@ and event rendering here.
     ./sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
     ./sysrap/tests/SGLFW_Evt_test.cc
     ./sysrap/tests/SGLFW_Evt_test.sh
-    ./sysrap/tests/tests.txt
     ./sysrap/SGLFW_Evt.h
 
 
@@ -127,5 +126,4 @@ inline std::string  SGLFW_Evt::desc() const
     std::string str = ss.str();
     return str ;
 }
-
 

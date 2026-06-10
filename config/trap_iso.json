@@ -1,0 +1,33 @@
+{
+  "torch": {
+    "gentype": "TORCH",
+    "trackid": 0,
+    "matline": 0,
+    "numphoton": 50000,
+
+    "pos": [20.0, 20.0, -50.0],
+    "time": 0.0,
+
+    "mom": [0.0, 0.0, 1.0],
+    "weight": 0.0,
+
+    "pol": [1.0, 0.0, 0.0],
+    "wavelength": 420.0,
+
+    "zenith":  [0.0, 1.0],
+    "azimuth": [0.0, 1.0],
+
+    "radius": 0.1,
+    "distance": 0.0,
+    "mode": 255,
+    "type": "sphere_marsaglia"
+  },
+
+  "event": {
+    "mode": "DebugLite",
+    "maxslot": 1000000,
+    "max_bounce": 10000,
+    "propagate_epsilon": 0.001,
+    "propagate_epsilon0": 0.001
+  }
+}

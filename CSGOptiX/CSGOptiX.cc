@@ -23,22 +23,22 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include "smeta.h"
 #include "SProf.hh"
 
-#include "SGLM.h"
 #include "NP.hh"
-#include "SRG.h"
 #include "SCAM.h"
 #include "SEventConfig.hh"
-#include "SGeoConfig.hh"
-#include "SSim.hh"
-#include "SStr.hh"
 #include "SEvt.hh"
+#include "SGLM.h"
+#include "SGeoConfig.hh"
+#include "SLOG.hh"
 #include "SMeta.hh"
 #include "SPath.hh"
+#include "SRG.h"
+#include "SSim.hh"
 #include "SVec.hh"
-#include "SLOG.hh"
 #include "scuda.h"
-#include "squad.h"
 #include "sframe.h"
+#include "squad.h"
+#include "sstr.h"
 
 // csg
 #include "CSGPrim.h"
@@ -1418,7 +1418,7 @@ void CSGOptiX::snap(const char* path_, bool inverted)
     framebuf->snap( path  );
     LOG(LEVEL) << "] frame.snap " ;
 
-    if(!flight || SStr::Contains(path,"00000"))
+    if (!flight || sstr::Contains(path, "00000"))
     {
         saveMeta(path);
     }
@@ -1440,7 +1440,7 @@ int CSGOptiX::render_flightpath() // for making mp4 movies
 
 void CSGOptiX::saveMeta(const char* path) const
 {
-    const char* json_path = SStr::ReplaceEnd(path, ".npy", ".json");
+    const std::string json_path = sstr::ReplaceEnd_(path, ".npy", ".json");
     LOG(LEVEL) << "[ json_path " << json_path  ;
 
     nlohmann::json& js = meta->js ;
@@ -1467,7 +1467,7 @@ void CSGOptiX::saveMeta(const char* path) const
         js["av"] = av ;
     }
 
-    meta->save(json_path);
+    meta->save(json_path.c_str());
     LOG(LEVEL) << "] json_path " << json_path  ;
 }
 

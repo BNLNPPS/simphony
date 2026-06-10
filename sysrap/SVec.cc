@@ -28,7 +28,6 @@
 #include <numeric>
 #include <sstream>
 
-#include "SStr.hh"
 #include "SVec.hh"
 
 
@@ -143,8 +142,11 @@ void SVec<T>::MinMax(const std::vector<T>& t, T& mn, T& mx )
 template <typename T>
 void SVec<T>::Extract(std::vector<T>& a, const char* str0, const char* ignore ) 
 {
-    char swap = ' '; 
-    const char* str1 = SStr::ReplaceChars(str0, ignore, swap); 
+    char        swap = ' ';
+    std::string str1(str0 ? str0 : "");
+    for (char& c : str1)
+        if (std::strchr(ignore, c) != nullptr)
+            c = swap;
     std::stringstream ss(str1);  
     std::string s ; 
     T value ; 
@@ -165,5 +167,4 @@ template struct SVec<int>;
 template struct SVec<unsigned>;
 template struct SVec<float>;
 template struct SVec<double>;
-
 

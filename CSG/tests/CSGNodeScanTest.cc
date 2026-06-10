@@ -13,11 +13,11 @@ For lower level tests see::
 #include <vector>
 #include <cmath>
 
-#include "OPTICKS_LOG.hh"
-#include "SSys.hh"
-#include "SStr.hh"
-#include "SPath.hh"
 #include "NP.hh"
+#include "OPTICKS_LOG.hh"
+#include "SPath.hh"
+#include "SSys.hh"
+#include "sstr.h"
 
 #include "scuda.h"
 #include "squad.h"
@@ -28,42 +28,52 @@ For lower level tests see::
 #include "csg_intersect_node.h"
 #include "csg_intersect_tree.h"
 
+namespace
+{
+std::vector<int>* ParseIntList(const char* spec, char delim)
+{
+    auto* values = new std::vector<int>();
+    if (spec)
+        sstr::split<int>(*values, spec, delim);
+    return values;
+}
+} // namespace
+
 struct Scan 
 {
-    const char* geom ; 
-    CSGNode nd ; 
-    float t_min ; 
-    int num ; 
-    bool shifted ; 
-    const char* modes_ ; 
-    const char* axes_ ; 
-    std::vector<int>* modes ; 
-    std::vector<int>* axes ; 
+    const char*       geom;
+    CSGNode           nd;
+    float             t_min;
+    int               num;
+    bool              shifted;
+    const char*       modes_;
+    const char*       axes_;
+    std::vector<int>* modes;
+    std::vector<int>* axes;
 
-    NP* simtrace ; 
-    quad4* qq ;  
-    const char* fold ; 
+    NP*         simtrace;
+    quad4*      qq;
+    const char* fold;
 
-    Scan(); 
-    void init(); 
-    std::string desc() const ; 
-    void save() const ; 
-}; 
+    Scan();
+    void init();
+    std::string desc() const;
+    void save() const;
+};
 
-Scan::Scan()
-    :
+Scan::Scan() :
     geom(SSys::getenvvar("CSGNodeScanTest_GEOM", "iphi")),
-    nd(CSGNode::MakeDemo(geom)),  
-    t_min(SSys::getenvfloat("TMIN",0.f)),
+    nd(CSGNode::MakeDemo(geom)),
+    t_min(SSys::getenvfloat("TMIN", 0.f)),
     num(SSys::getenvint("NUM", 200)),
     shifted(true),
     modes_(SSys::getenvvar("MODES", "0,1,2,3")),
-    axes_(SSys::getenvvar("AXES", "0,2,1")),  // X,Z,Y  3rd gets set to zero 
-    modes(SStr::ISplit(modes_, ',')),
-    axes(SStr::ISplit(axes_, ',')),
-    simtrace(NP::Make<float>(modes->size(),num,4,4)),
+    axes_(SSys::getenvvar("AXES", "0,2,1")), // X,Z,Y  3rd gets set to zero
+    modes(ParseIntList(modes_, ',')),
+    axes(ParseIntList(axes_, ',')),
+    simtrace(NP::Make<float>(modes->size(), num, 4, 4)),
     qq((quad4*)simtrace->values<float>()),
-    fold(SPath::Resolve("$TMP/CSGNodeScanTest", geom, DIRPATH )) 
+    fold(SPath::Resolve("$TMP/CSGNodeScanTest", geom, DIRPATH))
 {
     init(); 
 }

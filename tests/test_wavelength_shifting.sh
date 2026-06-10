@@ -35,7 +35,7 @@ if ! command -v StandAloneGeant4Validation >/dev/null 2>&1; then
     exit 0
 fi
 
-source /opt/eic-opticks/eic-opticks-env.sh 2>/dev/null || true
+source /opt/simphony/simphony-env.sh 2>/dev/null || true
 export OPTICKS_MAX_BOUNCE=100
 export OPTICKS_EVENT_MODE=HitPhoton
 export OPTICKS_MAX_SLOT=100000

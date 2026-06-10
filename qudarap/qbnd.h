@@ -102,26 +102,37 @@ QTex::setMetaDomainY::
 **/
 inline QBND_METHOD float4 qbnd::boundary_lookup( float nm, unsigned line, unsigned k )
 {
-    //printf("//qbnd.boundary_lookup nm %10.4f line %d k %d boundary_meta %p  \n", nm, line, k, boundary_meta  );
-
     const unsigned& nx = boundary_meta->q0.u.x  ;
     const unsigned& ny = boundary_meta->q0.u.y  ;
     const float& nm0 = boundary_meta->q1.f.x ;
     const float& nms = boundary_meta->q1.f.z ;
 
-    float fx = (nm - nm0)/nms ;
-    float x = (fx+0.5f)/float(nx) ;   // ?? +0.5f ??
-
-    unsigned iy = _BOUNDARY_NUM_FLOAT4*line + k ;    // 2*line+k (0/1)
-    float y = (float(iy)+0.5f)/float(ny) ;
-
-
-    float4 props = tex2D<float4>( boundary_tex, x, y );
-
-    // printf("//qbnd.boundary_lookup nm %10.4f nm0 %10.4f nms %10.4f  x %10.4f nx %d ny %d y %10.4f props.x %10.4f %10.4f %10.4f %10.4f  \n",
-    //     nm, nm0, nms, x, nx, ny, y, props.x, props.y, props.z, props.w );
-
-    return props ;
+    // POINT filtering avoids cross-row blending on the categorical y-axis.
+    // Recover wavelength-linear interpolation by reading two adjacent x-bins.
+    float fx_idx = (nm - nm0) / nms;
+    if (fx_idx < 0.f)
+        fx_idx = 0.f;
+    float    fx_lo_f = floorf(fx_idx);
+    unsigned ix_lo = unsigned(fx_lo_f);
+    unsigned ix_hi = ix_lo + 1u;
+    if (ix_hi >= nx)
+    {
+        ix_hi = nx - 1u;
+        ix_lo = ix_hi;
+    }
+    const float    w_hi = fx_idx - fx_lo_f;
+    const float    w_lo = 1.0f - w_hi;
+    const float    x_lo = (float(ix_lo) + 0.5f) / float(nx);
+    const float    x_hi = (float(ix_hi) + 0.5f) / float(nx);
+    const unsigned iy = _BOUNDARY_NUM_FLOAT4 * line + k;
+    const float    y = (float(iy) + 0.5f) / float(ny);
+    const float4   p_lo = tex2D<float4>(boundary_tex, x_lo, y);
+    const float4   p_hi = tex2D<float4>(boundary_tex, x_hi, y);
+    return make_float4(
+        w_lo * p_lo.x + w_hi * p_hi.x,
+        w_lo * p_lo.y + w_hi * p_hi.y,
+        w_lo * p_lo.z + w_hi * p_hi.z,
+        w_lo * p_lo.w + w_hi * p_hi.w);
 }
 
 
