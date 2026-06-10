@@ -7,6 +7,8 @@ LLVM_REQUESTED_VERSION="${VERSION:-latest}"
 
 . /etc/os-release
 
+LLVM_DIST="llvm-toolchain-${VERSION_CODENAME}"
+
 apt-get update -y
 apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -17,9 +19,17 @@ install -d -m 0755 /etc/apt/keyrings
 
 wget -qO /etc/apt/keyrings/apt.llvm.org.asc https://apt.llvm.org/llvm-snapshot.gpg.key
 
-# Use the generic apt.llvm.org suite.
+# Use a pinned per-version suite when available. Fall back to the generic
+# suite for the current tip version, which may not have a dedicated suite yet.
+if [ "${LLVM_REQUESTED_VERSION}" != "latest" ] && [ -n "${LLVM_REQUESTED_VERSION}" ]; then
+    VERSIONED_DIST="llvm-toolchain-${VERSION_CODENAME}-${LLVM_REQUESTED_VERSION}"
+    if wget -q --spider "https://apt.llvm.org/${VERSION_CODENAME}/dists/${VERSIONED_DIST}/InRelease"; then
+        LLVM_DIST="${VERSIONED_DIST}"
+    fi
+fi
+
 cat > /etc/apt/sources.list.d/llvm.list <<EOF
-deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] https://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME} main
+deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc] https://apt.llvm.org/${VERSION_CODENAME}/ ${LLVM_DIST} main
 EOF
 
 apt-get update -y
@@ -42,8 +52,20 @@ else
 fi
 
 echo "Using LLVM version: ${LLVM_VERSION}"
+echo "Using LLVM APT suite: ${LLVM_DIST}"
+
+for pkg in "clang-format-${LLVM_VERSION}" "clangd-${LLVM_VERSION}" "clang-tidy-${LLVM_VERSION}"; do
+    POLICY_OUTPUT="$(apt-cache policy "${pkg}")"
+    if ! printf '%s\n' "${POLICY_OUTPUT}" | grep -Fq "apt.llvm.org/${VERSION_CODENAME}" \
+        || ! printf '%s\n' "${POLICY_OUTPUT}" | grep -Fq "${LLVM_DIST}/main"; then
+        echo "ERROR: ${pkg} is not available from the expected repository: apt.llvm.org/${VERSION_CODENAME} ${LLVM_DIST}/main." >&2
+        printf '%s\n' "${POLICY_OUTPUT}" >&2
+        exit 1
+    fi
+done
 
 apt-get install -y --no-install-recommends \
+    -t "${LLVM_DIST}" \
     clang-format-${LLVM_VERSION} \
     clangd-${LLVM_VERSION} \
     clang-tidy-${LLVM_VERSION}

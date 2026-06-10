@@ -65,13 +65,9 @@
 // Modified: bv@bnl.gov, 2008/4/16 for DetSim
 //--------------------------------------------------------------------
 //
-#ifdef STANDALONE
 
 #include "SLOG.hh"
 #include "U4.hh"
-#else
-#include <boost/python.hpp>
-#endif
 
 #include "Local_DsG4Scintillation.hh"
 #include "globals.hh"
@@ -83,21 +79,6 @@
 #include "G4Gamma.hh"
 #include "G4Electron.hh"
 #include "globals.hh"
-
-#ifdef WITH_G4OPTICKS
-#include "G4Opticks.hh"
-#include "CGenstep.hh"
-#include "CTrack.hh"
-#include "CPhotonInfo.hh"
-#include "SLOG.hh"
-#endif
-
-
-
-#ifdef WITH_G4OPTICKS
-//const plog::Severity Local_DsG4Scintillation::LEVEL = SLOG::EnvLevel("Local_DsG4Scintillation", "DEBUG") ; 
-const plog::Severity Local_DsG4Scintillation::LEVEL = error ; 
-#endif
 
 
 #include "U4Stack.h"
@@ -189,20 +170,12 @@ Local_DsG4Scintillation::Local_DsG4Scintillation(G4int opticksMode, const G4Stri
     theSlowIntegralTable = NULL;
     theReemissionIntegralTable = NULL;
 
-    //verboseLevel = 2;
-    //G4cout << " Local_DsG4Scintillation set verboseLevel by hand to " << verboseLevel << G4endl;
-
-#ifdef STANDALONE
-    {
-        const char* level_ = getenv("Local_DsG4Scintillation_verboseLevel") ;
-        const char* fallback = "0" ;  
-        int level =  std::atoi(level_ ? level_ : fallback) ;
-        SetVerboseLevel(level); 
-        std::cout << "Local_DsG4Scintillation::Local_DsG4Scintillation level " << level << " verboseLevel " << verboseLevel << std::endl ;  
-    }
-#endif
-
+    const char* level_ = getenv("Local_DsG4Scintillation_verboseLevel");
+    const char* fallback = "0";
+    int         level = std::atoi(level_ ? level_ : fallback);
+    SetVerboseLevel(level);
     if (verboseLevel > 0) {
+        std::cout << "Local_DsG4Scintillation::Local_DsG4Scintillation level " << level << " verboseLevel " << verboseLevel << std::endl;
         G4cout << GetProcessName() << " is created " << G4endl;
     }
 
@@ -307,11 +280,6 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
     }
 
     G4double TotalEnergyDeposit = aStep.GetTotalEnergyDeposit();
-#ifdef STANDALONE
-    //LOG(info) << "TotalEnergyDeposit " << TotalEnergyDeposit ; 
-#endif
-
-
     if (verboseLevel > 0 ) { 
       G4cout << " TotalEnergyDeposit " << TotalEnergyDeposit 
              << " material " << aTrack.GetMaterial()->GetName() << G4endl;
@@ -582,35 +550,7 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
   
      }
 
-//-------------------------------------------------//
-
-#ifdef WITH_G4OPTICKS
-
-    CPho ancestor = CPhotonInfo::Get(&aTrack); 
-    int ancestor_id = ancestor.get_id() ; 
-
-
-    /**
-    ancestor_id:-1 
-        normal case, meaning that aTrack was not a photon
-        so the generation loop will yield "primary" photons 
-        with id : gs.offset + i  
-             
-    ancestor_id>-1
-        aTrack is a photon that may be about to reemit (Num=0 or 1) 
-        ancestor_id is the absolute id of the primary parent photon, 
-        this id is retained thru any subsequent remission secondary generations
-    **/
-
-#endif
-
-#ifdef STANDALONE
     U4::GenPhotonAncestor(&aTrack);  
-#endif
-
-
-//-------------------------------------------------//
-
     for(G4int scnt = 0 ; scnt < nscnt ; scnt++){
 
          G4double ScintillationTime = 0.*ns;
@@ -639,19 +579,6 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
 
         G4int NumPhoton =  NumVec[scnt] ; 
 
-
-#ifdef WITH_G4OPTICKS
-        if(flagReemission) assert( NumPhoton == 0 || NumPhoton == 1);   // expecting only 0 or 1 remission photons
-        bool is_opticks_genstep = NumPhoton > 0 && !flagReemission ; 
-
-        CGenstep gs ; 
-        if(is_opticks_genstep && (m_opticksMode & 1))
-        {
-            gs = G4Opticks::Get()->collectGenstep_Local_DsG4Scintillation_r4695( &aTrack, &aStep, NumPhoton, scnt, ScintillationTime); 
-        }
-#endif
-
-#ifdef STANDALONE
         if(flagReemission) assert( NumPhoton == 0 || NumPhoton == 1);   // expecting only 0 or 1 remission photons
         bool is_opticks_genstep = NumPhoton > 0 && !flagReemission ; 
         if(is_opticks_genstep && (m_opticksMode & 1))
@@ -659,19 +586,12 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
             NumPhoton = std::min( NumPhoton, 3 );  // for debugging purposes it helps to have less photons
             U4::CollectGenstep_DsG4Scintillation_r4695( &aTrack, &aStep, NumPhoton, scnt, ScintillationTime); 
         }
-#endif
 
          if( m_opticksMode == 0 || (m_opticksMode & 2) )
          {
 
          for(G4int i = 0 ; i < NumPhoton ; i++) {
-#ifdef WITH_G4OPTICKS
-           G4Opticks::Get()->setAlignIndex( ancestor_id > -1 ? ancestor_id : gs.offset + i );  // aka photon_id
-#endif
-#ifdef STANDALONE
            U4::GenPhotonBegin(i); 
-#endif
-
            G4double sampledEnergy;
            if ( !flagReemission ) {
                 // normal scintillation
@@ -844,22 +764,9 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
             aSecondaryTrack->SetWeight( weight );
             if ( verboseLevel > 0 ) {
               G4cout << " aSecondaryTrack->SetWeight( " << weight<< " ) ; aSecondaryTrack->GetWeight() = " << aSecondaryTrack->GetWeight() << G4endl;}        
-
-#ifdef WITH_G4OPTICKS
-           aSecondaryTrack->SetUserInformation(CPhotonInfo::MakeScintillation(gs, i, ancestor ));  
-           G4Opticks::Get()->setAlignIndex(-1);
-#endif
-
-#ifdef STANDALONE
            U4::GenPhotonEnd(i, aSecondaryTrack);  
-#endif
-
          }    // i:genloop over NumPhoton
-  
- 
          }   //  (opticksMode == 0) || (opticksMode & 2 )   : opticks not enabled, or opticks enabled and doing Geant4 comparison
-
-
    }         // scntloop
 
 
@@ -874,55 +781,6 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
 
     return change ; 
 }
-
-
-
-#ifdef WITH_G4OPTICKS
-G4MaterialPropertyVector* Local_DsG4Scintillation::getMaterialProperty(const char* name, G4int materialIndex)
-{
-    const G4MaterialTable* theMaterialTable = G4Material::GetMaterialTable();
-    G4int numOfMaterials = G4Material::GetNumberOfMaterials();
-    assert( materialIndex < numOfMaterials ); 
-
-    G4Material* aMaterial = (*theMaterialTable)[materialIndex];
-    G4MaterialPropertiesTable* aMaterialPropertiesTable = aMaterial->GetMaterialPropertiesTable();
-    G4MaterialPropertyVector* prop = aMaterialPropertiesTable ? aMaterialPropertiesTable->GetProperty(name) : nullptr ;  
-    return prop ; 
-}
-
-G4PhysicsOrderedFreeVector* Local_DsG4Scintillation::getScintillationIntegral(G4int scnt, G4int materialIndex) const
-{
-    G4PhysicsOrderedFreeVector* ScintillationIntegral = NULL;
-
-    if ( scnt == 0 ){
-          ScintillationIntegral =
-                (G4PhysicsOrderedFreeVector*)((*theFastIntegralTable)(materialIndex));
-    }
-    else{
-          ScintillationIntegral =
-                (G4PhysicsOrderedFreeVector*)((*theSlowIntegralTable)(materialIndex));
-    }         
-
-    return ScintillationIntegral ; 
-}
-
-
-G4double Local_DsG4Scintillation::getSampledEnergy(G4int scnt, G4int materialIndex) const 
-{
-    G4PhysicsOrderedFreeVector* ScintillationIntegral = getScintillationIntegral(scnt, materialIndex); 
-    G4double CIIvalue = G4UniformRand()*ScintillationIntegral->GetMaxValue();
-    G4double sampledEnergy = ScintillationIntegral->GetEnergy(CIIvalue);
-    return sampledEnergy ; 
-}
-
-G4double Local_DsG4Scintillation::getSampledWavelength(G4int scnt, G4int materialIndex) const
-{
-    G4double sampledEnergy = getSampledEnergy(scnt, materialIndex ); 
-    G4double wavelength = h_Planck*c_light/sampledEnergy ; 
-    G4double wavelength_nm = wavelength/nm ; 
-    return wavelength_nm ; 
-}
-#endif
 
 
 // BuildThePhysicsTable for the scintillation process

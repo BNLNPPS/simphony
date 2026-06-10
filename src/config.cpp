@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <ranges>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -64,6 +65,22 @@ bool FileExists(const std::string& path)
     return std::filesystem::exists(path, ec) && !ec;
 }
 
+std::vector<std::string> SplitSearchPaths(std::string_view paths)
+{
+    std::vector<std::string> search_paths;
+
+    size_t last = 0;
+    size_t next = 0;
+    while ((next = paths.find(':', last)) != std::string_view::npos)
+    {
+        search_paths.push_back(std::string{paths.substr(last, next - last)});
+        last = next + 1;
+    }
+
+    search_paths.push_back(std::string{paths.substr(last)});
+    return search_paths;
+}
+
 std::string ValidEventModes()
 {
     std::string names;
@@ -97,22 +114,76 @@ EventMode ReadEventMode(const nlohmann::json& event)
         "Invalid event.mode \"" + std::string{name} + "\". Expected one of: " + ValidEventModes()};
 }
 
-std::filesystem::path ReadOutputDir(const nlohmann::json& event)
+template <typename T>
+void AssignIfPresent(const nlohmann::json& object, const char* key, T& value)
 {
-    if (event.contains("output_dir"))
-        return event["output_dir"].get<std::string>();
+    if (const auto it = object.find(key); it != object.end())
+        value = it->get<T>();
+}
 
-    return std::filesystem::current_path();
+void AssignFloat2IfPresent(const nlohmann::json& object, const char* key, float2& value)
+{
+    if (const auto it = object.find(key); it != object.end())
+        value = make_float2((*it)[0].get<float>(), (*it)[1].get<float>());
+}
+
+void AssignFloat3IfPresent(const nlohmann::json& object, const char* key, float3& value)
+{
+    if (const auto it = object.find(key); it != object.end())
+        value = make_float3((*it)[0].get<float>(), (*it)[1].get<float>(), (*it)[2].get<float>());
+}
+
+void AssignNormalizedFloat3IfPresent(const nlohmann::json& object, const char* key, float3& value)
+{
+    if (const auto it = object.find(key); it != object.end())
+    {
+        const float3 candidate = make_float3(
+            (*it)[0].get<float>(),
+            (*it)[1].get<float>(),
+            (*it)[2].get<float>());
+        constexpr float epsilon = 1e-12f;
+        const float     length_squared = candidate.x * candidate.x + candidate.y * candidate.y + candidate.z * candidate.z;
+        if (length_squared <= epsilon)
+            throw std::invalid_argument(std::string("Cannot normalize vector for key '") + key + "'");
+
+        value = normalize(candidate);
+    }
+}
+
+void AssignEventModeIfPresent(const nlohmann::json& event, EventMode& mode)
+{
+    if (event.contains("mode"))
+        mode = ReadEventMode(event);
+}
+
+void AssignOutputDirIfPresent(const nlohmann::json& event, std::filesystem::path& output_dir)
+{
+    if (const auto it = event.find("output_dir"); it != event.end())
+        output_dir = it->get<std::string>();
+}
+
+void AssignTorchGentypeIfPresent(const nlohmann::json& torch, unsigned& gentype)
+{
+    if (const auto it = torch.find("gentype"); it != torch.end())
+    {
+        const std::string gentype_name = it->get<std::string>();
+        if (OpticksGenstep_::Type(gentype_name) != OpticksGenstep_TORCH)
+            throw std::invalid_argument{"Invalid torch.gentype \"" + gentype_name + "\". Expected TORCH"};
+
+        gentype = OpticksGenstep_TORCH;
+    }
+}
+
+void AssignTorchTypeIfPresent(const nlohmann::json& torch, unsigned& type)
+{
+    if (const auto it = torch.find("type"); it != torch.end())
+        type = storchtype::Type(it->get<std::string>());
 }
 
 } // namespace
 
 Config::Config(std::string config_name) :
-    name{config_name},
-    event_mode{EventMode::Minimal},
-    maxslot{0},
-    output_dir{std::filesystem::current_path()},
-    torch{}
+    name{config_name}
 {
     ReadConfig(Locate(name + ".json"));
     Apply();
@@ -124,15 +195,24 @@ std::string Config::PtxPath(const std::string& ptx_name)
     if (env_path && FileExists(env_path))
         return env_path;
 
-    std::string default_path = std::string(GPHOX_PTX_DIR) + "/" + ptx_name;
-    if (FileExists(default_path))
-        return default_path;
+    std::vector<std::string> candidates;
+    for (const auto& dir : SplitSearchPaths(GPHOX_PTX_SEARCH_PATHS))
+    {
+        if (dir.empty())
+            continue;
+
+        std::string candidate = (std::filesystem::path{dir} / ptx_name).string();
+        candidates.push_back(candidate);
+        if (FileExists(candidate))
+            return candidate;
+    }
 
     std::stringstream errmsg;
     errmsg << "Could not resolve PTX file \"" << ptx_name << "\".\n"
            << "Expected one of:\n"
-           << "  - " << GPHOX_PTX_PATH_ENV << "=<path-to-ptx>\n"
-           << "  - " << default_path;
+           << "  - " << GPHOX_PTX_PATH_ENV << "=<path-to-ptx>\n";
+    for (const auto& candidate : candidates)
+        errmsg << "  - " << candidate << "\n";
     throw std::runtime_error(errmsg.str());
 }
 
@@ -144,17 +224,7 @@ std::string Config::Locate(std::string filename) const
 
     if (user_dir.empty())
     {
-        std::string paths(GPHOX_CONFIG_SEARCH_PATHS);
-
-        size_t last = 0;
-        size_t next = 0;
-        while ((next = paths.find(':', last)) != std::string::npos)
-        {
-            search_paths.push_back(paths.substr(last, next - last));
-            last = next + 1;
-        }
-
-        search_paths.push_back(paths.substr(last));
+        search_paths = SplitSearchPaths(GPHOX_CONFIG_SEARCH_PATHS);
     }
     else
     {
@@ -195,34 +265,40 @@ void Config::ReadConfig(std::string filepath)
         std::ifstream ifs(filepath);
         ifs >> json;
 
-        if (json.contains("torch"))
+        if (const auto it = json.find("torch"); it != json.end())
         {
-            nlohmann::json torch_ = json["torch"];
+            const nlohmann::json& torch_ = *it;
 
-            torch = {
-                .gentype = OpticksGenstep_::Type(torch_["gentype"]),
-                .trackid = torch_["trackid"],
-                .matline = torch_["matline"],
-                .numphoton = torch_["numphoton"],
-                .pos = make_float3(torch_["pos"][0], torch_["pos"][1], torch_["pos"][2]),
-                .time = torch_["time"],
-                .mom = normalize(make_float3(torch_["mom"][0], torch_["mom"][1], torch_["mom"][2])),
-                .weight = torch_["weight"],
-                .pol = make_float3(torch_["pol"][0], torch_["pol"][1], torch_["pol"][2]),
-                .wavelength = torch_["wavelength"],
-                .zenith = make_float2(torch_["zenith"][0], torch_["zenith"][1]),
-                .azimuth = make_float2(torch_["azimuth"][0], torch_["azimuth"][1]),
-                .radius = torch_["radius"],
-                .distance = torch_["distance"],
-                .mode = torch_["mode"],
-                .type = storchtype::Type(torch_["type"])};
+            AssignTorchGentypeIfPresent(torch_, torch.gentype);
+            AssignIfPresent(torch_, "trackid", torch.trackid);
+            AssignIfPresent(torch_, "matline", torch.matline);
+            AssignIfPresent(torch_, "numphoton", torch.numphoton);
+            AssignFloat3IfPresent(torch_, "pos", torch.pos);
+            AssignIfPresent(torch_, "time", torch.time);
+            AssignNormalizedFloat3IfPresent(torch_, "mom", torch.mom);
+            AssignIfPresent(torch_, "weight", torch.weight);
+            AssignFloat3IfPresent(torch_, "pol", torch.pol);
+            AssignIfPresent(torch_, "wavelength", torch.wavelength);
+            AssignFloat2IfPresent(torch_, "zenith", torch.zenith);
+            AssignFloat2IfPresent(torch_, "azimuth", torch.azimuth);
+            AssignIfPresent(torch_, "radius", torch.radius);
+            AssignIfPresent(torch_, "distance", torch.distance);
+            AssignIfPresent(torch_, "mode", torch.mode);
+            AssignTorchTypeIfPresent(torch_, torch.type);
         }
 
-        nlohmann::json event_ = json["event"];
+        if (const auto it = json.find("event"); it != json.end())
+        {
+            const nlohmann::json& event_ = *it;
 
-        event_mode = ReadEventMode(event_);
-        maxslot = event_["maxslot"].get<int>();
-        output_dir = ReadOutputDir(event_);
+            AssignEventModeIfPresent(event_, event_mode);
+            AssignIfPresent(event_, "maxslot", maxslot);
+            AssignIfPresent(event_, "max_bounce", max_bounce);
+            AssignIfPresent(event_, "propagate_epsilon", propagate_epsilon);
+            AssignIfPresent(event_, "propagate_epsilon0", propagate_epsilon0);
+            AssignIfPresent(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
+            AssignOutputDirIfPresent(event_, output_dir);
+        }
     }
     catch (nlohmann::json::exception& e)
     {
@@ -241,6 +317,10 @@ void Config::Apply() const
 
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetMaxSlot(maxslot);
+    SEventConfig::SetMaxBounce(max_bounce);
+    SEventConfig::SetPropagateEpsilon(propagate_epsilon);
+    SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
+    SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
     SEventConfig::SetOutFold(output_dir_str.c_str());
 }
 

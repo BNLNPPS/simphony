@@ -2,9 +2,6 @@
 /**
 OpticksPhoton.hh
 =================
-
-The STANDALONE subset of methods can be used header only.
-
 **/
 
 #include <cassert>
@@ -14,22 +11,13 @@ The STANDALONE subset of methods can be used header only.
 #include <iostream>
 #include <sstream>
 
-#ifdef WITH_SLOG
 #include "plog/Severity.h"
-#endif
 
 #include "OpticksPhoton.h"
-
-#ifdef STANDALONE
-struct OpticksPhoton
-#else
 #include "SYSRAP_API_EXPORT.hh"
 struct SYSRAP_API OpticksPhoton
-#endif
 {
-#ifdef WITH_SLOG
     static const plog::Severity LEVEL ;
-#endif
     static constexpr const char* ZERO_ = ".";
     static constexpr const char* CERENKOV_ = "CERENKOV";
     static constexpr const char* SCINTILLATION_ = "SCINTILLATION" ;
@@ -95,8 +83,6 @@ struct SYSRAP_API OpticksPhoton
 
     static std::string FlagMaskLabel(const unsigned mskhis, bool abbrev=true);
 
-#ifdef STANDALONE
-#else
     static const char* flag2color ;
 
     static unsigned EnumFlag(unsigned bitpos);
@@ -111,10 +97,7 @@ struct SYSRAP_API OpticksPhoton
     static unsigned PointVal1( const unsigned long long& seqval , unsigned bitpos );
     static unsigned PointFlag( const unsigned long long& seqhis , unsigned bitpos );
     static const char* PointAbbrev( const unsigned long long& seqhis , unsigned bitpos );
-#endif
 };
-
-
 
 inline bool OpticksPhoton::IsTerminalFlag(const unsigned flag) // static : AB SA SD MI
 {
@@ -328,8 +311,3 @@ inline std::string OpticksPhoton::FlagMaskLabel(const unsigned mskhis, bool abbr
     for(unsigned i=0 ; i < nlab ; i++ ) ss << labels[i] << ( i < nlab - 1 ? "|" : ""  ) ;
     return ss.str();
 }
-
-
-
-
-

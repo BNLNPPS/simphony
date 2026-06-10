@@ -1,15 +1,15 @@
-#include <vector>
-#include "SStr.hh"
 #include "SEnabled.hh"
+#include "sstr.h"
+#include <vector>
 
 template<unsigned N>
 SEnabled<N>::SEnabled(const char* spec)
     :
     enabled(new std::bitset<N>())
 {
-    char delim = ',' ; 
-    std::vector<int> ivec ; 
-    SStr::ISplit( spec, ivec, delim );  
+    char             delim = ',';
+    std::vector<int> ivec;
+    sstr::split<int>(ivec, spec, delim);
 
     for(unsigned i=0 ; i < ivec.size() ; i++)
     {
@@ -39,5 +39,4 @@ template struct SEnabled<128>;
 template struct SEnabled<256>;
 template struct SEnabled<512>;
 template struct SEnabled<1024>;
-
 

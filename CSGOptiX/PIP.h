@@ -31,9 +31,10 @@ struct PIP
 
     OptixModule module = nullptr;
 
-    OptixProgramGroup raygen_pg   = nullptr;
-    OptixProgramGroup miss_pg     = nullptr;
-    OptixProgramGroup hitgroup_pg = nullptr;
+    OptixProgramGroup raygen_pg = nullptr;
+    OptixProgramGroup miss_pg = nullptr;
+    OptixProgramGroup hitgroup_pg = nullptr;     // analytic (custom primitive): IS + CH
+    OptixProgramGroup hitgroup_pg_tri = nullptr; // triangle: CH only (builtin IS)
 
     OptixPipeline pipeline = nullptr;
 

@@ -9,8 +9,6 @@ find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(OpenSSL REQUIRED)
 
-set(WITH_SLOG YES)
-
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 configure_file(sconfig.h.in inc/sconfig.h)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/sconfig.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
@@ -24,8 +22,6 @@ set(SOURCES
     SProf.cc
     SMeta.cc
 
-
-    SStr.cc
     SPath.cc
     SSeq.cc
     STranche.cc
@@ -147,7 +143,6 @@ set(HEADERS
     SSys.hh
 
     sstr.h
-    SStr.hh
 
     schrono.h
     stimer.h
@@ -492,86 +487,6 @@ set(HEADERS
     SSimtrace.h
 )
 
-# using absolute ANADIR avoids build environment requiring it in PATH 
-get_filename_component(ANADIR ../ana ABSOLUTE)
-get_filename_component(BINDIR ../bin ABSOLUTE)
-
-message(STATUS "CMAKE_CURRENT_SOURCE_DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "ANADIR : ${ANADIR}")
-
-
-
-set(HGS ${CMAKE_CURRENT_SOURCE_DIR}/OpticksGenstep.h)
-set(IGS ${CMAKE_CURRENT_BINARY_DIR}/OpticksGenstep_Enum.ini)
-add_custom_command(
-   OUTPUT 
-         ${IGS}
-   COMMAND 
-          ${ANADIR}/enum_.py ${HGS} --quiet --simple --inipath ${IGS}
-   DEPENDS 
-         ${HGS}
-)
-add_custom_target(PythonGS ALL DEPENDS ${IGS} )
-
-#[=[
-
-   cd ~/opticks/sysrap ; ../ana/enum_.py OpticksGenstep.h --quiet --simple --inipath /tmp/OpticksGenstep_Enum.ini && cat /tmp/OpticksGenstep_Enum.ini 
-#]=]
-
-
-## HMM:the flags change very infrequently : easier to code generate into source directories for discoverability 
-set(HPH ${CMAKE_CURRENT_SOURCE_DIR}/OpticksPhoton.h)
-set(IPH ${CMAKE_CURRENT_BINARY_DIR}/OpticksPhoton_Enum.ini)
-add_custom_command(
-   OUTPUT 
-         ${IPH}
-   COMMAND 
-          ${ANADIR}/enum_.py ${HPH} --quiet --inipath ${IPH}
-   DEPENDS 
-         ${HPH}
-)
-add_custom_target(PythonPH ALL DEPENDS ${IPH} )
-# ALL : Indicates that this custom target should be added to the 
-# default build target so that it will be run every time.
-
-
-
-set(CCFL ${CMAKE_CURRENT_SOURCE_DIR}/OpticksPhoton.hh)
-set(PYJS ${CMAKE_CURRENT_BINARY_DIR}/OpticksPhoton_Abbrev.json)
-
-add_custom_command(
-   OUTPUT 
-         ${PYJS}
-   COMMAND 
-         ${ANADIR}/OpticksPhoton.py ${CCFL} --quiet --jsonpath ${PYJS}
-   DEPENDS 
-         ${CCFL}
-)
-add_custom_target(PythonJSON ALL DEPENDS ${PYJS} )
-
-
-list(APPEND HEADERS 
-  ${IGS} 
-  ${IPH} 
-  ${PYJS}
-) 
-
-
-set(WITH_SIMG YES)
-if(WITH_SIMG)
-    list(APPEND HEADERS   stb_image.h  stb_image_write.h)   
-    list(APPEND HEADERS   SIMG.h  )   
-    list(APPEND HEADERS   SIMG_Frame.h  )   
-endif()
-
-
-set(WITH_STTF YES)
-if(WITH_STTF)
-    list(APPEND HEADERS stb_truetype.h)
-    list(APPEND HEADERS STTF.h)    
-endif()
-
-
 set(WITH_NP YES)
 
 
@@ -658,16 +573,6 @@ target_compile_definitions( ${name}
       $<$<CONFIG:Debug>:DEBUG_PIDXYZ>
       $<$<CONFIG:Release>:PRODUCTION>
 )
-
-
-
-
-if(WITH_STTF)
-target_compile_definitions( ${name} PUBLIC WITH_STTF)
-endif()
-if(WITH_SLOG)
-target_compile_definitions( ${name} PUBLIC WITH_SLOG)
-endif()
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
 

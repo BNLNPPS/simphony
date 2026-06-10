@@ -47,6 +47,7 @@
 namespace
 {
 G4Mutex genstep_mutex = G4MUTEX_INITIALIZER;
+G4Mutex g4_hits_file_mutex = G4MUTEX_INITIALIZER;
 }
 
 bool IsSubtractionSolid(G4VSolid *solid)
@@ -310,6 +311,8 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
     }
 };
 
+constexpr double kHC_eVnm = 1239.8418754200; // h*c in eV*nm (same as smath::hc_eVnm)
+
 struct EventAction : G4UserEventAction
 {
     SEvt *sev;
@@ -328,6 +331,14 @@ struct EventAction : G4UserEventAction
         G4HCofThisEvent *hce = event->GetHCofThisEvent();
         if (hce)
         {
+            G4AutoLock lock(&g4_hits_file_mutex);
+
+            static bool   first_event = true;
+            std::ofstream g4OutFile;
+            g4OutFile.open("g4_hits_output.txt",
+                           first_event ? std::ios::out : std::ios::app);
+            first_event = false;
+
             for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
             {
                 G4VHitsCollection *hc = hce->GetHC(i);
@@ -335,7 +346,23 @@ struct EventAction : G4UserEventAction
                 {
                     fTotalG4Hits += hc->GetSize();
                 }
+                PhotonHitsCollection* phc = dynamic_cast<PhotonHitsCollection*>(hc);
+                if (phc && g4OutFile.is_open())
+                {
+                    for (size_t j = 0; j < phc->entries(); j++)
+                    {
+                        const PhotonHit* p = (*phc)[j];
+                        g4OutFile << p->ftime << " "
+                                  << kHC_eVnm / p->fenergy << "  "
+                                  << "(" << p->fposition.x() << ", " << p->fposition.y() << ", " << p->fposition.z() << ")  "
+                                  << "(" << p->fdirection.x() << ", " << p->fdirection.y() << ", " << p->fdirection.z() << ")  "
+                                  << "(" << p->fpolarization.x() << ", " << p->fpolarization.y() << ", " << p->fpolarization.z() << ")"
+                                  << std::endl;
+                    }
+                }
             }
+            if (g4OutFile.is_open())
+                g4OutFile.close();
         }
     }
 

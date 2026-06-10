@@ -534,11 +534,13 @@ CSGNode* CSGImport::importNode(int nodeOffset, int partIdx, const snode& node, c
 
     int  typecode = nd ? nd->typecode : CSG_ZERO ;
     bool leaf = CSG::IsLeaf(typecode) ;
+    bool has_planes = nd && nd->getPlanes() && nd->getPlanes()->size() > 0;
 
     bool external_bbox_is_expected = CSG::ExpectExternalBBox(typecode);
     // CSG_CONVEXPOLYHEDRON, CSG_CONTIGUOUS, CSG_DISCONTIGUOUS, CSG_OVERLAP
 
-    bool expect = external_bbox_is_expected == false ;
+    // Allow CSG_CONVEXPOLYHEDRON when sn node carries plane data
+    bool expect = external_bbox_is_expected == false || has_planes;
     LOG_IF(fatal, !expect)
         << " NOT EXPECTING LEAF WITH EXTERNAL BBOX EXPECTED "
         << " for node of type " << CSG::Name(typecode)
@@ -561,7 +563,25 @@ CSGNode* CSGImport::importNode(int nodeOffset, int partIdx, const snode& node, c
     n->setBoundary(node.boundary);
     n->setComplement( nd ? nd->complement : false );
     n->setTransform(tranIdx);
-    n->setParam_Narrow( nd ? nd->getPA_data() : nullptr );
+
+    if (has_planes)
+    {
+        // ConvexPolyhedron: store planes in foundry, set planeIdx/planeNum on node
+        const std::vector<double>* pl = nd->getPlanes();
+        unsigned                   num_planes = pl->size() / 4;
+        unsigned                   planeIdx = fd->plan.size(); // 0-based, matches csg_intersect_leaf_convexpolyhedron.h
+        for (unsigned i = 0; i < num_planes; i++)
+        {
+            float4 plane = make_float4((*pl)[i * 4 + 0], (*pl)[i * 4 + 1], (*pl)[i * 4 + 2], (*pl)[i * 4 + 3]);
+            fd->addPlan(plane);
+        }
+        n->setPlaneIdx(planeIdx);
+        n->setPlaneNum(num_planes);
+    }
+    else
+    {
+        n->setParam_Narrow(nd ? nd->getPA_data() : nullptr);
+    }
     n->setAABB_Narrow(aabb ? aabb : nullptr  );
 
     return n ;

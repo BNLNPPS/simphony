@@ -3,7 +3,8 @@ set(name CSGOptiX)
 find_package(OptiX 7 REQUIRED)
 
 set(SOURCES)
-set(OPTIX_SOURCES)
+set(OPTIX_PTX_SRC CSGOptiX7.cu)
+set(OPTIX_PTX_TARGET CSGOptiX7_ptx)
 
 
 list(APPEND SOURCES
@@ -25,35 +26,31 @@ list(APPEND HEADERS
     CSGOPTIX_LOG.hh
 )
 
-list(APPEND OPTIX_SOURCES 
-     CSGOptiX7.cu
-     Check.cu
+add_library(${OPTIX_PTX_TARGET} OBJECT ${OPTIX_PTX_SRC})
+set_target_properties(${OPTIX_PTX_TARGET} PROPERTIES CUDA_PTX_COMPILATION ON)
+target_include_directories(${OPTIX_PTX_TARGET} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/CSG>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/sysrap>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/qudarap>)
+target_compile_definitions(${OPTIX_PTX_TARGET} PUBLIC WITH_PRD WITH_SIMULATE WITH_SIMTRACE WITH_RENDER
+        OPTICKS_CSGOPTIX WITH_THRUST OPTICKS_CSG WITH_CONTIGUOUS WITH_S_BB CONFIG_Debug OPTICKS_SYSRAP WITH_CHILD
+        PLOG_LOCAL RNG_PHILOX DEBUG_TAG DEBUG_PIDX DEBUG_PIDXYZ OPTICKS_OKCONF OPTICKS_QUDARAP NVCC)
+target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
+
+get_filename_component(ptx_stem "${OPTIX_PTX_SRC}" NAME_WE)
+set(ptx_output "${GPHOX_BUILD_PTX_DIR}/${ptx_stem}.ptx")
+add_custom_target(gphox_ptx
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${GPHOX_BUILD_PTX_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_OBJECTS:${OPTIX_PTX_TARGET}>" "${ptx_output}"
+    BYPRODUCTS "${ptx_output}"
+    VERBATIM
 )
+add_dependencies(gphox_ptx ${OPTIX_PTX_TARGET})
 
-
-message(STATUS "OPTIX_SOURCES : ${OPTIX_SOURCES} ")
-
-set(_generated_PTX_files "")
-
-foreach(cu_src IN LISTS OPTIX_SOURCES)
-    message(STATUS "Processing ${cu_src}")
-    add_library(${cu_src} OBJECT ${cu_src})
-    set_target_properties(${cu_src} PROPERTIES CUDA_PTX_COMPILATION ON)
-    target_include_directories(${cu_src} PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/CSG>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/sysrap>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/qudarap>)
-    target_compile_definitions(${cu_src} PUBLIC WITH_PRD WITH_SIMULATE WITH_SIMTRACE WITH_RENDER
-            OPTICKS_CSGOPTIX WITH_THRUST OPTICKS_CSG WITH_CONTIGUOUS WITH_S_BB CONFIG_Debug OPTICKS_SYSRAP WITH_CHILD
-            PLOG_LOCAL RNG_PHILOX DEBUG_TAG DEBUG_PIDX DEBUG_PIDXYZ WITH_STTF WITH_SLOG OPTICKS_OKCONF OPTICKS_QUDARAP NVCC)
-    target_link_libraries(${cu_src} PUBLIC OptiX::OptiX)
-
-    list(APPEND _generated_PTX_files "${cu_src}.ptx")
-endforeach()
-
-message(STATUS "_generated_PTX_files ${_generated_PTX_files}") 
+message(STATUS "Configured PTX build for ${OPTIX_PTX_SRC}")
 
 add_library( ${name} SHARED ${SOURCES} ${HEADERS} )
+add_dependencies(${name} gphox_ptx)
 
 target_compile_definitions( ${name} PRIVATE WITH_PRD )  # using Pointer trick means can reduce attrib and payload to 2 
 target_compile_definitions( ${name} PUBLIC WITH_SIMULATE )
@@ -84,7 +81,7 @@ target_include_directories( ${name} PUBLIC
 
 target_link_libraries(${name} PUBLIC OptiX::OptiX CSG QUDARap SysRap gphox)
 
-install(FILES $<TARGET_OBJECTS:CSGOptiX7.cu> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES $<TARGET_OBJECTS:${OPTIX_PTX_TARGET}> DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${name})
 
 install(TARGETS ${name}

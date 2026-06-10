@@ -69,11 +69,6 @@
 #ifndef Local_DsG4Scintillation_h
 #define Local_DsG4Scintillation_h 1
 
-
-#ifdef WITH_G4OPTICKS
-#include "plog/Severity.h"
-#endif
-
 #include "globals.hh"
 #include "templates.hh"
 #include "Randomize.hh"
@@ -90,11 +85,6 @@
 #include "G4PhysicsOrderedFreeVector.hh"
 #include "G4UImessenger.hh"
 
-#ifdef STANDALONE
-#else
-#include "DsPhysConsOptical.h"
-#endif
-
 class G4UIcommand;
 class G4UIdirectory;
 
@@ -110,11 +100,6 @@ class G4UIdirectory;
 
 class Local_DsG4Scintillation : public G4VRestDiscreteProcess, public G4UImessenger
 { //too lazy to create another UImessenger class
-
-private:
-#ifdef WITH_G4OPTICKS
-     static const plog::Severity LEVEL ; 
-#endif
 
 public:
      static const bool FLOAT ; 
@@ -193,13 +178,6 @@ public: // With description
 
        void SetUseFastMu300nsTrick(const G4bool fastMu300nsTrick);
        G4bool GetUseFastMu300nsTrick() const;
-
-#ifdef WITH_G4OPTICKS
-       G4MaterialPropertyVector* getMaterialProperty(const char* name, G4int materialIndex) ;
-       G4PhysicsOrderedFreeVector* getScintillationIntegral(G4int scnt, G4int materialIndex) const;
-       G4double getSampledEnergy(G4int scnt, G4int materialIndex) const ;
-       G4double getSampledWavelength(G4int scnt, G4int materialIndex) const ;
-#endif
 
         void SetScintillationExcitationRatio(const G4double excitationratio);
         // Called to set the scintillation exciation ratio, needed when

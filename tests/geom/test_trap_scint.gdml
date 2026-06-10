@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="http://cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+  <define>
+    <matrix coldim="2" name="RINDEX_Vacuum" values="1.55e-06 1.0 6.2e-06 1.0 1.033e-05 1.0 1.55e-05 1.0"/>
+    <matrix coldim="2" name="RINDEX_Quartz" values="1.55e-06 1.46 6.2e-06 1.46 1.033e-05 1.46 1.55e-05 1.46"/>
+    <!-- ABSLENGTH = 100 m (100000 mm) so absorption is the natural cut-off
+         and the bounce/looper-kill mismatch between G4 and Opticks does
+         not dominate the time tail. -->
+    <matrix coldim="2" name="ABSLENGTH_Quartz" values="1.55e-06 100000 6.2e-06 100000 1.033e-05 100000 1.55e-05 100000"/>
+
+    <!-- Scintillation: peak at 420 nm (E=2.952 eV). Yield 1000 photons/MeV,
+         fast time constant 2 ns. coldim=1 is the GDML convention for scalar
+         constants accessed via GetConstProperty. -->
+    <matrix coldim="2" name="SCINT_SPECTRUM"
+            values="2.480e-06 0.05 2.755e-06 0.50 2.952e-06 1.00 3.100e-06 0.80 3.542e-06 0.20"/>
+    <matrix coldim="1" name="SCINT_YIELD" values="10.0"/>
+    <matrix coldim="1" name="RESOLUTION_SCALE" values="1.0"/>
+    <matrix coldim="1" name="FAST_TIME_CONST" values="2.0"/>
+    <matrix coldim="1" name="YIELD_RATIO" values="1.0"/>
+    <matrix coldim="2" name="REEMISSION_PROB" values="1.55e-06 0.0 1.55e-05 0.0"/>
+
+    <matrix coldim="2" name="REFLECTIVITY_Det" values="1.55e-06 0 6.2e-06 0 1.033e-05 0 1.55e-05 0"/>
+    <matrix coldim="2" name="EFFICIENCY_Det" values="1.55e-06 1 6.2e-06 1 1.033e-05 1 1.55e-05 1"/>
+  </define>
+
+  <materials>
+    <isotope N="28" Z="14" name="Si28"><atom unit="g/mole" value="27.977"/></isotope>
+    <element name="Silicon"><fraction n="1.0" ref="Si28"/></element>
+    <isotope N="16" Z="8" name="O16"><atom unit="g/mole" value="15.995"/></isotope>
+    <element name="Oxygen"><fraction n="1.0" ref="O16"/></element>
+    <material Z="1" name="Vacuum" state="gas">
+      <D unit="g/cm3" value="1e-25"/>
+      <atom unit="g/mole" value="1.00794"/>
+      <property name="RINDEX" ref="RINDEX_Vacuum"/>
+    </material>
+    <material name="Quartz" state="solid">
+      <D unit="g/cm3" value="2.2"/>
+      <fraction n="0.4674" ref="Silicon"/>
+      <fraction n="0.5326" ref="Oxygen"/>
+      <property name="RINDEX" ref="RINDEX_Quartz"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_Quartz"/>
+      <!-- Synthetic scintillation properties (Quartz isn't really a scintillator).
+           Both new (G4 11.x) and old (G4 10.x / Opticks U4Scint) names are
+           required: G4 reads the new ones to fire G4Scintillation; U4Scint
+           reads the old ones (FASTCOMPONENT, SLOWCOMPONENT, REEMISSIONPROB)
+           to initialize the GPU wavelength ICDF. Missing either set leaves
+           one side without a working scintillation path. -->
+      <!-- Geant4 11.x scintillation property names -->
+      <property name="SCINTILLATIONYIELD" ref="SCINT_YIELD"/>
+      <property name="RESOLUTIONSCALE" ref="RESOLUTION_SCALE"/>
+      <property name="SCINTILLATIONCOMPONENT1" ref="SCINT_SPECTRUM"/>
+      <property name="SCINTILLATIONTIMECONSTANT1" ref="FAST_TIME_CONST"/>
+      <property name="SCINTILLATIONYIELD1" ref="YIELD_RATIO"/>
+      <!-- Geant4 10.x / Opticks U4Scint property names (point to same matrices) -->
+      <property name="FASTCOMPONENT" ref="SCINT_SPECTRUM"/>
+      <property name="SLOWCOMPONENT" ref="SCINT_SPECTRUM"/>
+      <property name="FASTTIMECONSTANT" ref="FAST_TIME_CONST"/>
+      <property name="SLOWTIMECONSTANT" ref="FAST_TIME_CONST"/>
+      <property name="YIELDRATIO" ref="YIELD_RATIO"/>
+      <property name="REEMISSIONPROB" ref="REEMISSION_PROB"/>
+    </material>
+  </materials>
+
+  <solids>
+    <box name="WorldSolid" x="2000" y="2000" z="2000" lunit="mm"/>
+    <trap name="TrapSolid" z="400" theta="10" phi="30"
+          y1="300" x1="200" x2="60" alpha1="-15"
+          y2="300" x3="200" x4="60" alpha2="-15"
+          aunit="deg" lunit="mm"/>
+    <box name="DetSolid" x="500" y="500" z="1" lunit="mm"/>
+    <opticalsurface name="DetOpSurface" model="0" finish="0" type="1" value="1">
+      <property name="REFLECTIVITY" ref="REFLECTIVITY_Det"/>
+      <property name="EFFICIENCY" ref="EFFICIENCY_Det"/>
+    </opticalsurface>
+  </solids>
+
+  <structure>
+    <volume name="DetVolume">
+      <materialref ref="Quartz"/>
+      <solidref ref="DetSolid"/>
+      <auxiliary auxtype="SensDet" auxvalue="PMT"/>
+    </volume>
+    <volume name="TrapVolume">
+      <materialref ref="Quartz"/>
+      <solidref ref="TrapSolid"/>
+    </volume>
+    <volume name="World">
+      <materialref ref="Vacuum"/>
+      <solidref ref="WorldSolid"/>
+      <physvol name="TrapPV">
+        <volumeref ref="TrapVolume"/>
+      </physvol>
+      <physvol name="DetPV">
+        <volumeref ref="DetVolume"/>
+        <position name="DetPV_pos" unit="mm" x="0" y="0" z="250"/>
+      </physvol>
+    </volume>
+    <skinsurface name="DetSkinSurface" surfaceproperty="DetOpSurface">
+      <volumeref ref="DetVolume"/>
+    </skinsurface>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="World"/>
+  </setup>
+</gdml>

@@ -13,7 +13,9 @@
     ]
   },
   "features": {
-    "./features/llvm": {}
+    "./features/llvm": {
+      "version": "23"
+    }
   },
   "remoteEnv": {
     "CODEX_HOME": "${containerWorkspaceFolder}/.codex"

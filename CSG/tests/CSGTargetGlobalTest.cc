@@ -11,7 +11,6 @@ MOI=solidXJfixture:64 CSGTargetGlobalTest
 #include "SPath.hh"
 #include "SSys.hh"
 #include "SSim.hh"
-#include "SStr.hh"
 #include "OPTICKS_LOG.hh"
 
 #include "scuda.h"
@@ -91,6 +90,5 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
 
 

@@ -1,0 +1,8 @@
+# Validation macro for G4Trap/G4Trd comparison runs.
+# /process/optical/boundary/setInvokeSD true:  needed so that G4 fires the
+# sensitive detector when an optical photon hits an EFFICIENCY>0 surface
+# (default off; without it G4 records 0 hits while Opticks records them all).
+/run/verbose 1
+/process/optical/boundary/setInvokeSD true
+/run/initialize
+/run/beamOn 1

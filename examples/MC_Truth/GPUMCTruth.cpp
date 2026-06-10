@@ -11,7 +11,7 @@
 
 #include "G4UImanager.hh"
 
-#include "eic-opticks/sysrap/OPTICKS_LOG.hh"
+#include "simphony/sysrap/OPTICKS_LOG.hh"
 
 #include "GPUMCTruth.h"
 
