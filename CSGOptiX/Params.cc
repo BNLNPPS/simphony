@@ -126,9 +126,7 @@ std::string Params::detail() const
     return s ;
 }
 
-
-Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth)
-    :
+Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth) :
     raygenmode(SRG_RENDER),
     node(nullptr),
     plan(nullptr),
@@ -147,6 +145,7 @@ Params::Params(int raygenmode_, unsigned width, unsigned height, unsigned depth)
     origin_y(0),
     tmin(0.f),
     tmin0(0.f),
+    boundary_face_bias(nullptr),
     PropagateEpsilon0Mask(0u),
     tmax(0.f),
     vizmask(0xff),
