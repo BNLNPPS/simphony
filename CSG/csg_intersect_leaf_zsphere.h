@@ -3,18 +3,38 @@
 LEAF_FUNC
 float distance_leaf_zsphere(const float3& pos, const quad& q0, const quad& q1 )
 {
-    float3 center = make_float3(q0.f);
-    float radius = q0.f.w;
+    // ZSphere is always centred at the local origin (G4Sphere doesn't carry
+    // a translation in its primitive — that's done by the parent transform).
+    // q0.f.x and q0.f.y therefore carry an OPTIONAL phi-wedge clip:
+    //   q0.f.x = startPhi (rad),  q0.f.y = deltaPhi (rad).
+    // deltaPhi == 0 (or ≥ 2π) means no clip — original ZSphere behaviour.
+    const float  startPhi = q0.f.x;
+    const float  deltaPhi = q0.f.y;
+    const float  radius = q0.f.w;
     const float2 zdelta = make_float2(q1.f);
-    const float z2 = center.z + zdelta.y ; 
-    const float z1 = center.z + zdelta.x ;    
+    const float  z2 = zdelta.y;
+    const float  z1 = zdelta.x;
 
-    float3 p = pos - center;
-    float sd_sphere = length(p) - radius ; 
-    float sd_capslab = fmaxf( pos.z - z2 , z1 - pos.z ); 
+    const float3 p = pos;
+    float        sd_sphere = length(p) - radius;
+    float        sd_capslab = fmaxf(pos.z - z2, z1 - pos.z);
 
     float sd = fmaxf( sd_capslab, sd_sphere );    // CSG intersect
-    return sd ; 
+
+    if (deltaPhi > 0.f && deltaPhi < 2.f * M_PIf)
+    {
+        float       phi = atan2f(p.y, p.x);
+        const float twoPi = 2.f * M_PIf;
+        while (phi < startPhi) phi += twoPi;
+        float dphi = phi - startPhi;
+        if (dphi > deltaPhi)
+        {
+            float r_xy = sqrtf(p.x * p.x + p.y * p.y);
+            float d_to_edge = r_xy * fminf(dphi - deltaPhi, twoPi - dphi);
+            sd = fmaxf(sd, d_to_edge);
+        }
+    }
+    return sd;
 }
 
 /**
@@ -44,10 +64,24 @@ See : notes/issues/unexpected_zsphere_miss_from_inside_for_rays_that_would_be_ex
 LEAF_FUNC
 void intersect_leaf_zsphere(bool& valid_isect, float4& isect, const quad& q0, const quad& q1, const float& t_min, const float3& ray_origin, const float3& ray_direction )
 {
-    const float3 center = make_float3(q0.f);
-    float3 O = ray_origin - center;  
+    // ZSphere is always centred at the local origin; q0.f.x/q0.f.y carry an
+    // OPTIONAL phi-wedge clip (see distance_leaf_zsphere comment).
+    const float3 center = make_float3(0.f, 0.f, 0.f);
+    float3       O = ray_origin - center;
     float3 D = ray_direction;
     const float radius = q0.f.w;
+#ifdef ZSPHERE_PHI_DEBUG
+    if (q0.f.y > 0.f && q0.f.y < 6.28f)
+    {
+        static int cnt = 0;
+        if (cnt < 5)
+        {
+            printf("// ZSphere phi: startPhi=%.4f deltaPhi=%.4f radius=%.2f z1=%.2f z2=%.2f\n",
+                   q0.f.x, q0.f.y, q0.f.w, q1.f.x, q1.f.y);
+            cnt++;
+        }
+    }
+#endif
 
     float b = dot(O, D);               // t of closest approach to sphere center
     float c = dot(O, O)-radius*radius; // < 0. indicates ray_origin inside sphere
@@ -109,18 +143,41 @@ void intersect_leaf_zsphere(bool& valid_isect, float4& isect, const quad& q0, co
 
     // hmm somehow is seems unclean to have to use both z and t language
 
-    float t_cand = t_min ; 
+    // Optional phi-wedge clip on the sphere-surface candidates.
+    // q0.f.x = startPhi (rad), q0.f.y = deltaPhi (rad). deltaPhi == 0
+    // (or ≥ 2π) means no clip — the original two-cap ZSphere behaviour.
+    const float startPhi = q0.f.x;
+    const float deltaPhi = q0.f.y;
+    const bool  has_phi_clip = (deltaPhi > 0.f && deltaPhi < 2.f * M_PIf);
+    auto        phi_in_wedge = [&](float t) -> bool {
+        if (!has_phi_clip)
+            return true;
+        float       x = O.x + t * D.x; // local-frame hit coords (O = origin − center)
+        float       y = O.y + t * D.y;
+        float       phi = atan2f(y, x);
+        const float twoPi = 2.f * M_PIf;
+        while (phi < startPhi) phi += twoPi;
+        float dphi = phi - startPhi;
+        return dphi <= deltaPhi;
+    };
+    bool t1sph_ok = (z1sph > zmin && z1sph <= zmax) && phi_in_wedge(t1sph);
+    bool t2sph_ok = (z2sph > zmin && z2sph <= zmax) && phi_in_wedge(t2sph);
+
+    float t_cand = t_min;
     if(sdisc > 0.f)
     {
 
 #ifdef DEBUG_RECORD
-        //std::raise(SIGINT); 
+        // std::raise(SIGINT);
 #endif
 
-        if(      t1sph > t_min && z1sph > zmin && z1sph <= zmax )  t_cand = t1sph ;  // t1sph qualified and t1cap disabled or disqualified -> t1sph
-        else if( t1cap > t_min )                                   t_cand = t1cap ;  // t1cap qualifies -> t1cap 
+        if (t1sph > t_min && t1sph_ok)
+            t_cand = t1sph; // t1sph qualified and t1cap disabled or disqualified -> t1sph
+        else if (t1cap > t_min)
+            t_cand = t1cap;                                                          // t1cap qualifies -> t1cap
         else if( t2cap > t_min )                                   t_cand = t2cap ;  // t2cap qualifies -> t2cap
-        else if( t2sph > t_min && z2sph > zmin && z2sph <= zmax)   t_cand = t2sph ;  // t2sph qualifies and t2cap disabled or disqialified -> t2sph
+        else if (t2sph > t_min && t2sph_ok)
+            t_cand = t2sph; // t2sph qualifies and t2cap disabled or disqialified -> t2sph
     }
 
     valid_isect = t_cand > t_min ;

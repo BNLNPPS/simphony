@@ -43,7 +43,8 @@ set(TEST_SOURCES
 
     CSGCopyTest.cc
 
-    intersect_leaf_phicut_test.cc 
+    intersect_leaf_phicut_test.cc
+    intersect_leaf_phi_wedge_test.cc
     intersect_leaf_thetacut_test.cc
     intersect_leaf_box3_test.cc 
     intersect_leaf_cylinder_test.cc 

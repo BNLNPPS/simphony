@@ -442,6 +442,7 @@ struct SYSRAP_API sn
     std::string descXF() const ;
 
     static sn* Cylinder(double radius, double z1, double z2) ;
+    static sn* Cylinder(double radius, double z1, double z2, double startPhi, double deltaPhi); // F5 phi-baked
     static sn* CutCylinder(
         double R,
         double dz,
@@ -469,6 +470,7 @@ struct SYSRAP_API sn
     static sn* Cone(double r1, double z1, double r2, double z2);
     static sn* Sphere(double radius);
     static sn* ZSphere(double radius, double z1, double z2);
+    static sn* ZSphere(double radius, double z1, double z2, double startPhi, double deltaPhi); // F4 phi-baked
     static sn* Box3(double fullside);
     static sn* Box3(double fx, double fy, double fz );
     static sn* ConvexPolyhedron(const double* pl, unsigned num_planes, double bbmin_x, double bbmin_y, double bbmin_z, double bbmax_x, double bbmax_y, double bbmax_z);
@@ -3066,6 +3068,17 @@ inline sn* sn::Cylinder(double radius, double z1, double z2) // static
     nd->setBB( -radius, -radius, z1, +radius, +radius, z2 );
     return nd ;
 }
+inline sn* sn::Cylinder(double radius, double z1, double z2, double startPhi, double deltaPhi) // static
+{
+    assert(z2 > z1);
+    sn* nd = Create(CSG_CYLINDER);
+    // F5 phi-bake: park startPhi/deltaPhi (radians) in cx/cy slots (0 for a
+    // centred cylinder). csg_intersect_leaf_cylinder.h treats deltaPhi==0
+    // (or >=2pi) as "no clip". Same convention as the phi-aware ZSphere.
+    nd->setPA(startPhi, deltaPhi, 0.f, radius, z1, z2);
+    nd->setBB(-radius, -radius, z1, +radius, +radius, z2);
+    return nd;
+}
 
 /**
 sn::CutCylinder
@@ -3245,6 +3258,19 @@ inline sn* sn::ZSphere(double radius, double z1, double z2)  // static
     nd->setPA( zero, zero, zero, radius, z1, z2 );
     nd->setBB(  -radius, -radius, z1,  radius, radius, z2  );
     return nd ;
+}
+inline sn* sn::ZSphere(double radius, double z1, double z2, double startPhi, double deltaPhi) // static
+{
+    assert(radius > zero);
+    assert(z2 > z1);
+    sn* nd = Create(CSG_ZSPHERE);
+    // F4 phi-bake: park startPhi/deltaPhi (radians) into the cx/cy param slots
+    // (always zero for a centred ZSphere, so safely repurposed). q1.f.z/.w are
+    // reserved by CSGNode for boundary/index. csg_intersect_leaf_zsphere.h treats
+    // deltaPhi==0 (or >=2pi) as "no clip", so the 3-arg ZSphere is unchanged.
+    nd->setPA(startPhi, deltaPhi, zero, radius, z1, z2);
+    nd->setBB(-radius, -radius, z1, radius, radius, z2);
+    return nd;
 }
 inline sn* sn::Box3(double fullside)  // static
 {
