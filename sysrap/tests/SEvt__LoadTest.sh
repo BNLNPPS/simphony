@@ -49,7 +49,6 @@ if [ "${arg/build}" != "$arg" ]; then
          ../SEvent.cc \
          ../SDigest.cc \
          ../SProc.cc \
-         ../SASCII.cc \
          ../../okconf/OKConf.cc \
          -I.. \
          -I$OPTICKS_PREFIX/include/OKConf \
