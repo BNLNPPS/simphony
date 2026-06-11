@@ -147,10 +147,12 @@ RUN spack repo update -b develop builtin
 RUN spack repo add https://github.com/BNLNPPS/spack-packages
 RUN spack mirror add --unsigned simphony-buildcache "${SPACK_BUILDCACHE_MIRROR}"
 RUN spack external find --not-buildable --path /usr/local/cuda cuda
+# Print out concretized specs
+RUN spack spec --fresh -Il simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 # Prefer dependency binaries when they exist, but let PR validation fall back to
 # source builds if the mirror lags behind the latest Spack package metadata.
-RUN spack install --only=dependencies --reuse --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
-RUN spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+RUN spack install --only=dependencies --fresh --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+RUN spack install --fresh --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 RUN spack clean -a && rm -rf /root/.cache
 # Once simphony is installed it can be loaded in the user environment
 # $ spack load simphony
