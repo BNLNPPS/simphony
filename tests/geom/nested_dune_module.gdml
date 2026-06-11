@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+  <define>
+    <matrix coldim="2" name="RINDEX_pTP" values="2.33932e-06 1.65 2.91728e-06 1.65 3.0996e-06 1.65 3.64659e-06 1.65 4.06506e-06 1.65 7.74901e-06 1.65 9.68627e-06 1.65 1.16966e-05 1.65"/>
+    <matrix coldim="2" name="GROUPVEL_pTP" values="2.33932e-06 181.692 2.6283e-06 181.692 3.00844e-06 181.692 3.3731e-06 181.692 3.85582e-06 181.692 5.90703e-06 181.692 8.71764e-06 181.692 1.16966e-05 181.692"/>
+    <matrix coldim="2" name="WLSCOMPONENT_pTP" values="2.33932e-06 0 2.91728e-06 0.0005 3.0996e-06 0.002 3.64659e-06 0.022 4.06506e-06 0.0005 7.74901e-06 0 9.68627e-06 0 1.16966e-05 0"/>
+    <matrix coldim="2" name="WLSABSLENGTH_pTP" values="2.33932e-06 10000 2.91728e-06 10000 3.0996e-06 10000 3.64659e-06 10000 4.06506e-06 0.187 7.74901e-06 0.0005 9.68627e-06 0.0005 1.16966e-05 0.0005"/>
+    <matrix coldim="1" name="WLSTIMECONST_pTP" values="1.136"/>
+
+    <matrix coldim="2" name="RINDEX_bluewls" values="2.33932e-06 1.58 2.91728e-06 1.58 3.0996e-06 1.58 3.64659e-06 1.58 4.06506e-06 1.58 7.74901e-06 1.58 9.68627e-06 1.58 1.16966e-05 1.58"/>
+    <matrix coldim="2" name="GROUPVEL_bluewls" values="2.33932e-06 189.742 2.6283e-06 189.742 3.00844e-06 189.742 3.3731e-06 189.742 3.85582e-06 189.742 5.90703e-06 189.742 8.71764e-06 189.742 1.16966e-05 189.742"/>
+    <matrix coldim="2" name="WLSCOMPONENT_bluewls" values="2.33932e-06 0.0005 2.91728e-06 0.02 3.0996e-06 0 3.64659e-06 0 4.06506e-06 0 7.74901e-06 0 9.68627e-06 0 1.16966e-05 0"/>
+    <matrix coldim="2" name="WLSABSLENGTH_bluewls" values="2.33932e-06 2000 2.91728e-06 2000 3.0996e-06 0.8 3.64659e-06 0.8 4.06506e-06 3 7.74901e-06 0.0001 9.68627e-06 0.0001 1.16966e-05 0.0001"/>
+    <matrix coldim="1" name="WLSTIMECONST_bluewls" values="1.26"/>
+    <matrix coldim="2" name="ABSLENGTH_acrylic" values="2.33932e-06 10000 2.91728e-06 5000 3.0996e-06 2000 3.64659e-06 500 4.06506e-06 50 7.74901e-06 0.001 9.68627e-06 0.001 1.16966e-05 0.001"/>
+
+    <matrix coldim="2" name="RINDEX_lAr" values="2.33932e-06 1.23 2.91728e-06 1.23 3.0996e-06 1.23 3.64659e-06 1.23 4.06506e-06 1.235 7.74901e-06 1.315 9.68627e-06 1.45 1.16966e-05 1.6"/>
+    <matrix coldim="2" name="GROUPVEL_lAr" values="2.33932e-06 243.734 2.6283e-06 243.734 3.00844e-06 243.734 3.3731e-06 243.734 3.85582e-06 234.483 5.90703e-06 214.29 8.71764e-06 150.84 1.16966e-05 187.4"/>
+    <matrix coldim="2" name="RAYLEIGH_lAr" values="1.18626e-06 12008000 1.68626e-06 3907470 2.18626e-06 1286330 2.68626e-06 549691 3.18626e-06 271918 3.68626e-06 148537 4.18626e-06 87169 4.68626e-06 53974.2 5.18626e-06 34813.7 5.68626e-06 23165.1 6.18626e-06 15776.3 6.68626e-06 10920.2 7.18626e-06 7630.45 7.68626e-06 5342.32 8.18626e-06 3713.35 8.68626e-06 2529.42 9.18626e-06 1653.8 9.68626e-06 999.003 1.01863e-05 512.653 1.06863e-05 174.95 1.11863e-05 9.64341"/>
+    <matrix coldim="2" name="ABSLENGTH_lAr" values="2.5e-06 80000 5.0e-06 80000 7.0e-06 80000 7.5e-06 80000 8.0e-06 10000 9.0e-06 10000 9.5e-06 10000 1.0136e-05 10000"/>
+    <matrix coldim="2" name="SCINTCOMP_lAr" values="8.9197e-06 0.001391 9.3221e-06 0.019945 9.6862e-06 0.0398859 1.00800e-05 0.019945 1.05969e-05 0.001391"/>
+    <matrix coldim="2" name="REEMPROB_lAr" values="2.33932e-06 0 2.91728e-06 0 3.0996e-06 0 3.64659e-06 0 4.06506e-06 0 7.74901e-06 0 9.68627e-06 0 1.16966e-05 0"/>
+    <matrix coldim="1" name="SCINTYIELD" values="24000"/>
+    <matrix coldim="1" name="RESSCALE" values="1"/>
+    <matrix coldim="1" name="SCINTTIMECONST1" values="7"/>
+    <matrix coldim="1" name="SCINTTIMECONST2" values="1400"/>
+    <matrix coldim="1" name="SCINTYIELD1" values="0.75"/>
+    <matrix coldim="1" name="SCINTYIELD2" values="0.25"/>
+    <matrix coldim="2" name="EFFICIENCY_SIPM" values="2.33932e-06 1.0 2.91728e-06 1.0 3.0996e-06 1.0 3.64659e-06 1.0 4.06506e-06 1.0 7.74901e-06 1.0 9.68627e-06 1.0 1.16966e-05 1.0"/>
+  </define>
+
+  <materials>
+    <isotope N="12" Z="6" name="C12">
+      <atom unit="g/mole" value="12"/>
+    </isotope>
+    <isotope N="13" Z="6" name="C13">
+      <atom unit="g/mole" value="13.0034"/>
+    </isotope>
+    <element name="C">
+      <fraction n="0.9893" ref="C12"/>
+      <fraction n="0.0107" ref="C13"/>
+    </element>
+    <isotope N="1" Z="1" name="H1">
+      <atom unit="g/mole" value="1.00782503081372"/>
+    </isotope>
+    <isotope N="2" Z="1" name="H2">
+      <atom unit="g/mole" value="2.01410199966617"/>
+    </isotope>
+    <element name="H">
+      <fraction n="0.999885" ref="H1"/>
+      <fraction n="0.000115" ref="H2"/>
+    </element>
+    <material name="pTP" state="solid">
+      <property name="RINDEX" ref="RINDEX_pTP"/>
+      <property name="GROUPVEL" ref="GROUPVEL_pTP"/>
+      <property name="WLSCOMPONENT" ref="WLSCOMPONENT_pTP"/>
+      <property name="WLSABSLENGTH" ref="WLSABSLENGTH_pTP"/>
+      <property name="WLSTIMECONSTANT" ref="WLSTIMECONST_pTP"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_acrylic"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="68.6661371678143"/>
+      <D unit="g/cm3" value="1.23"/>
+      <fraction n="0.938728183298287" ref="C"/>
+      <fraction n="0.0612718167017128" ref="H"/>
+    </material>
+    <material name="bluewlsacrylic" state="solid">
+      <property name="RINDEX" ref="RINDEX_bluewls"/>
+      <property name="GROUPVEL" ref="GROUPVEL_bluewls"/>
+      <property name="WLSCOMPONENT" ref="WLSCOMPONENT_bluewls"/>
+      <property name="WLSABSLENGTH" ref="WLSABSLENGTH_bluewls"/>
+      <property name="WLSTIMECONSTANT" ref="WLSTIMECONST_bluewls"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_acrylic"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="64.6844741120544"/>
+      <D unit="g/cm3" value="1.023"/>
+      <fraction n="0.914708531800025" ref="C"/>
+      <fraction n="0.0852914681999746" ref="H"/>
+    </material>
+    <isotope N="36" Z="18" name="Ar36">
+      <atom unit="g/mole" value="35.9675"/>
+    </isotope>
+    <isotope N="38" Z="18" name="Ar38">
+      <atom unit="g/mole" value="37.9627"/>
+    </isotope>
+    <isotope N="40" Z="18" name="Ar40">
+      <atom unit="g/mole" value="39.9624"/>
+    </isotope>
+    <element name="Ar">
+      <fraction n="0.003365" ref="Ar36"/>
+      <fraction n="0.000632" ref="Ar38"/>
+      <fraction n="0.996003" ref="Ar40"/>
+    </element>
+    <material name="G4_lAr" state="liquid">
+      <property name="RINDEX" ref="RINDEX_lAr"/>
+      <property name="GROUPVEL" ref="GROUPVEL_lAr"/>
+      <property name="RAYLEIGH" ref="RAYLEIGH_lAr"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_lAr"/>
+      <property name="SCINTILLATIONCOMPONENT1" ref="SCINTCOMP_lAr"/>
+      <property name="SCINTILLATIONCOMPONENT2" ref="SCINTCOMP_lAr"/>
+      <property name="FASTCOMPONENT" ref="SCINTCOMP_lAr"/>
+      <property name="SLOWCOMPONENT" ref="SCINTCOMP_lAr"/>
+      <property name="REEMISSIONPROB" ref="REEMPROB_lAr"/>
+      <property name="SCINTILLATIONYIELD" ref="SCINTYIELD"/>
+      <property name="RESOLUTIONSCALE" ref="RESSCALE"/>
+      <property name="SCINTILLATIONTIMECONSTANT1" ref="SCINTTIMECONST1"/>
+      <property name="SCINTILLATIONTIMECONSTANT2" ref="SCINTTIMECONST2"/>
+      <property name="SCINTILLATIONYIELD1" ref="SCINTYIELD1"/>
+      <property name="SCINTILLATIONYIELD2" ref="SCINTYIELD2"/>
+      <T unit="K" value="293.15"/>
+      <MEE unit="eV" value="188"/>
+      <D unit="g/cm3" value="1.396"/>
+      <fraction n="1" ref="Ar"/>
+    </material>
+  </materials>
+
+  <solids>
+    <box lunit="mm" name="larInner" x="60000" y="13500" z="13000"/>
+    <box lunit="mm" name="pTPshell" x="60000.4" y="13500.4" z="13000.4"/>
+    <box lunit="mm" name="bluewlsShell" x="60012.4" y="13512.4" z="13012.4"/>
+    <box lunit="mm" name="detectorShell" x="60014.4" y="13514.4" z="13014.4"/>
+    <box lunit="mm" name="solidWorld" x="70000" y="25000" z="25000"/>
+    <opticalsurface finish="0" model="1" name="SiPMSurface" type="0" value="0">
+      <property name="EFFICIENCY" ref="EFFICIENCY_SIPM"/>
+    </opticalsurface>
+  </solids>
+
+  <structure>
+    <volume name="logicLArInner">
+      <materialref ref="G4_lAr"/>
+      <solidref ref="larInner"/>
+    </volume>
+    <volume name="logicpTPShell">
+      <materialref ref="pTP"/>
+      <solidref ref="pTPshell"/>
+      <physvol name="physLArInner">
+        <volumeref ref="logicLArInner"/>
+        <position name="physLArInner_pos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+    <volume name="logicBlueWLSShell">
+      <materialref ref="bluewlsacrylic"/>
+      <solidref ref="bluewlsShell"/>
+      <physvol name="physpTPShell">
+        <volumeref ref="logicpTPShell"/>
+        <position name="physpTPShell_pos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+    <volume name="logicDetectorShell">
+      <materialref ref="G4_lAr"/>
+      <solidref ref="detectorShell"/>
+      <auxiliary auxtype="SensDet" auxvalue="PhotonDetector"/>
+      <physvol name="physBlueWLSShell">
+        <volumeref ref="logicBlueWLSShell"/>
+        <position name="physBlueWLSShell_pos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+    <volume name="logicWorld">
+      <materialref ref="G4_lAr"/>
+      <solidref ref="solidWorld"/>
+      <physvol name="physDetectorShell">
+        <volumeref ref="logicDetectorShell"/>
+        <position name="physDetectorShell_pos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+    <skinsurface name="skinDetector" surfaceproperty="SiPMSurface">
+      <volumeref ref="logicDetectorShell"/>
+    </skinsurface>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="logicWorld"/>
+  </setup>
+
+</gdml>
