@@ -69,16 +69,20 @@ jobs:
               spack mirror add --autopush --unsigned --oci-username-variable REGISTRY_USER --oci-password-variable REGISTRY_TOKEN simphony-spack-buildcache "${SPACK_BUILDCACHE_MIRROR}"
               spack external find --not-buildable --path /usr/local/cuda cuda
 
-              # Autopush dependencies as soon as source builds complete, so partial progress
-              # survives a failed long-running buildcache refresh.
-              spack install --only=dependencies --reuse --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+              # Print out concretized specs
+              spack spec --fresh -Il simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+
+              # Solve fresh against current package metadata, but still install exact matches
+              # from the mirror. Autopush dependencies as soon as source builds complete, so
+              # partial progress survives a failed long-running buildcache refresh.
+              spack install --only=dependencies --fresh --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 
               # Update the index after dependency autopush so partial progress is immediately discoverable.
               spack buildcache update-index simphony-spack-buildcache
 
               # Keep the cache focused on dependencies, then build simphony itself from source.
               spack mirror set --no-autopush simphony-spack-buildcache
-              spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+              spack install --fresh --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
               spack find --format "{name}{@version} {/hash}" simphony
               prefix="$(spack location -i simphony)"
               echo "Installed prefix: $prefix"
@@ -103,7 +107,7 @@ jobs:
               spack repo add https://github.com/BNLNPPS/spack-packages
               spack mirror add --unsigned simphony-spack-buildcache "${SPACK_BUILDCACHE_MIRROR}"
               spack external find --not-buildable --path /usr/local/cuda cuda
-              spack install --only=dependencies --use-buildcache only simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+              spack install --only=dependencies --fresh --use-buildcache only simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
             '
 
       - name: Cleanup local base image
