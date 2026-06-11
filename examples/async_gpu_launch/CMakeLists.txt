@@ -11,6 +11,7 @@ find_package(Geant4 REQUIRED)
 
 add_executable(async_gpu_launch async_gpu_launch.cpp async_gpu_launch.h)
 target_link_libraries(async_gpu_launch
+    simphony::simphony_argparse
     simphony::gphox
     simphony::G4CX
     simphony::SysRap

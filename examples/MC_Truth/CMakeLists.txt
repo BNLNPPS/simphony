@@ -11,10 +11,8 @@ find_package(simphony REQUIRED)
 find_package(Geant4 REQUIRED ui_all vis_all)
 
 add_executable(GPUMCTruth GPUMCTruth.cpp GPUMCTruth.h)
-target_include_directories(GPUMCTruth PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-)
 target_link_libraries(GPUMCTruth
+    simphony::simphony_argparse
     simphony::G4CX
     simphony::SysRap
     simphony::U4
