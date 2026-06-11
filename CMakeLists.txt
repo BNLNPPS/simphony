@@ -27,6 +27,12 @@ include(GNUInstallDirs)
 include(CTest)
 include(CheckLinkerFlag)
 
+add_library(simphony_argparse INTERFACE)
+target_include_directories(simphony_argparse INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party>
+)
+
 # Make installed binaries self-describing at runtime:
 # - use $ORIGIN so executables/libraries can find Simphony's own shared libs
 # - append linked dependency directories automatically
@@ -97,6 +103,16 @@ install(
     EXPORT ${PROJECT_NAME}Targets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     NAMESPACE ${PROJECT_NAME}::
+)
+
+install(
+    TARGETS simphony_argparse
+    EXPORT ${PROJECT_NAME}Targets
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party
 )
 
 install(
