@@ -15,7 +15,7 @@
 #include <cuda_runtime.h>
 #include <nlohmann/json.hpp>
 
-#include "sysrap/SEventConfig.hh"
+#include "SEventConfig.hh"
 
 #include "config.h"
 #include "config_path.h"

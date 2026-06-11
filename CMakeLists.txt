@@ -48,7 +48,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
-# used by src/config.h.in
+# used by sysrap/config_path.h.in
 set(GPHOX_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
 set(GPHOX_BUILD_PTX_DIR "${PROJECT_BINARY_DIR}/ptx")
 

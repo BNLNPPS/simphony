@@ -11,11 +11,14 @@ find_package(OpenSSL REQUIRED)
 
 set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 configure_file(sconfig.h.in inc/sconfig.h)
+configure_file(config_path.h.in inc/config_path.h @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/sconfig.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
 set(SOURCES
     SYSRAP_LOG.cc 
     SLOG.cc 
+    config.cpp
+    torch.cpp
 
     SCurandStateMonolithic.cc
     SSys.cc
@@ -110,6 +113,8 @@ set(SOURCES
 
 set(HEADERS
     OPTICKS_LOG.hh
+    config.h
+    torch.h
 
     SYSRAP_LOG.hh
     SYSRAP_API_EXPORT.hh

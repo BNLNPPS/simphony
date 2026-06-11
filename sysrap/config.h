@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "sysrap/storch.h"
 #include "torch.h"
 
 namespace gphox
