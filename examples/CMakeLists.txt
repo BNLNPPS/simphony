@@ -9,6 +9,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(simphony REQUIRED)
 
 add_executable(simphox simphox.cpp)
-target_link_libraries(simphox simphony::gphox simphony::G4CX simphony::SysRap)
+target_link_libraries(simphox simphony::G4CX simphony::SysRap)
 
 install(TARGETS simphox)

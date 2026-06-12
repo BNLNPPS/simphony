@@ -1,7 +1,7 @@
 #include <curand_kernel.h>
 
-#include "sysrap/srng.h"
-#include "sysrap/storch.h"
+#include "srng.h"
+#include "storch.h"
 #include "torch.h"
 
 using namespace std;

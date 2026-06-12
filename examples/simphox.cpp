@@ -6,8 +6,8 @@
 #include "simphony/sysrap/NP.hh"
 #include "simphony/sysrap/sphoton.h"
 
-#include "simphony/config.h"
-#include "simphony/torch.h"
+#include "simphony/sysrap/config.h"
+#include "simphony/sysrap/torch.h"
 
 using namespace std;
 

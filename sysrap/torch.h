@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "sysrap/scuda.h"
-#include "sysrap/sphoton.h"
-#include "sysrap/storch.h"
+#include "scuda.h"
+#include "sphoton.h"
+#include "storch.h"
 
 inline const storch default_torch{
     .gentype = OpticksGenstep_TORCH,
