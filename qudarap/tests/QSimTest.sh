@@ -71,7 +71,7 @@ msg="=== $BASH_SOURCE :"
 #test=propagate_at_surface
 #test=randgaussq_shoot
 
-test=fake_propagate
+test=fill_state_0
 #test=gentorch
 
 #test=smear_normal_sigma_alpha
@@ -153,7 +153,6 @@ random_direction_marsaglia) script=random_direction_marsaglia.py ;;
    propagate_at_multifilm*) script=propagate_at_multifilm.py ;;
 
     lambertian_direction)  script=lambertian_direction.py ;;
-         fake_propagate*)  script=fake_propagate.py ;;
          randgaussq_shoot) script=randgaussq_shoot.py ;;
             smear_normal*) script=smear_normal.py ;;
                         *) script=generic.py      ;;
@@ -341,4 +340,3 @@ if [ "${arg/OLDana}" != "$arg" ]; then
 fi
 
 exit 0
-

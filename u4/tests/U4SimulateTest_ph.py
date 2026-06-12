@@ -6,8 +6,7 @@ U4SimulateTest_ph.py
 ::
 
     u4t
-    ./U4SimulateTest.sh ph
-    ./U4SimulateTest.sh nph
+    python U4SimulateTest_ph.py
 
 """
 import os, numpy as np
@@ -17,7 +16,7 @@ from opticks.ana.p import *
 LABEL = os.environ.get("LABEL", "U4SimulateTest_ph.py" )
 N =  int(os.environ.get("VERSION", "-1"))
 VERSION = N 
-CMDLINE = "N=%d ./U4SimulateTest.sh ph" % N
+CMDLINE = "N=%d python U4SimulateTest_ph.py" % N
 
 MODE =  int(os.environ.get("MODE", "2"))
 assert MODE in [0,2,3]
