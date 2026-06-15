@@ -17,25 +17,32 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+#include <cassert>
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
 #include <iostream>
-#include <algorithm>
 #include <string>
-
 
 #include "SLOG.hh"
 #include "ssys.h"
 #include "s_time.h"
 #include "sproc.h"
 
-#include "SASCII.hh"
+SLOG* SLOG::instance = NULL;
 
-SLOG* SLOG::instance = NULL ; 
+const int SLOG::MAXARGC = 100;
 
-const int SLOG::MAXARGC = 100 ;  
-
+namespace
+{
+std::string ToUpperCopy(const char* value)
+{
+    std::string upper = value ? value : "";
+    std::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+    return upper;
+}
+} // namespace
 
 /**
 
@@ -170,9 +177,9 @@ Static initializers run very early, prior to logging being setup.
 
 plog::Severity SLOG::EnvLevel( const char* key, const char* fallback)
 {
-    const char* level = ssys::getenvvar(key, fallback);  
-    const char* upper_level = SASCII::ToUpper(level); 
-    plog::Severity severity = plog::severityFromString(upper_level) ;
+    const char*    level = ssys::getenvvar(key, fallback);
+    std::string    upper_level = ToUpperCopy(level);
+    plog::Severity severity = plog::severityFromString(upper_level.c_str());
 
     if(strcmp(level, fallback) != 0)
     {
@@ -492,5 +499,4 @@ std::string SLOG::desc() const
     std::string s = ss.str(); 
     return s ; 
 }
-
 
