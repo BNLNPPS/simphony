@@ -1,12 +1,3 @@
-/**
-QEvt_Lifecycle_Test.cc
-=========================
-
-~/o/qudarap/tests/QEvt_Lifecycle_Test.sh
-
-
-**/
-
 #include <csignal>
 #include "OPTICKS_LOG.hh"
 #include "ssys.h"
@@ -75,21 +66,9 @@ int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
-    /**
-    HMM: might expect that using the lower level ssys::setenvvar
-    would allow a setting that can be overriden from the script
-    QEvt_Lifecycle_Test.sh : but that dont work for
-    OPTICKS_INPUT_PHOTON as the SEventConfig statics run before the main does.
-
-    Override from script  does work for GEOM because that is used as a plain envvar
-    **/
-
-    bool overwrite = false ;
-    //ssys::setenvvar("OPTICKS_INPUT_PHOTON", "RainXZ_Z230_10k_f8.npy", overwrite );
-    SEventConfig::SetInputPhoton("RainXZ_Z230_10k_f8.npy");
+    const char* input_photon = argc > 1 ? argv[1] : "RainXZ_Z230_10k_f8.npy";
+    SEventConfig::SetInputPhoton(input_photon);
     SEventConfig::SetMaxSlot(1000000); // cap slots: lifecycle test only needs the 10k input photons, not VRAM-scale
-
-    ssys::setenvvar("GEOM", "TEST_CC", overwrite );
 
     return QEvt_Lifecycle_Test::EventLoop() ;
 }
