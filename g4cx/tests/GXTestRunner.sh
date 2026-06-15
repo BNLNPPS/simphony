@@ -37,14 +37,21 @@ Resolve_GDMLPathFromGEOM()
    fi  
 }
 
-if [ -n "$GEOM" -a -n "${GEOM}_CFBaseFromGEOM" ]; then
-    echo $BASH_SOURCE - use externaly set GEOM CFBaseFromGEOM
+if [ -n "$SIMPHONY_GEOM_FILE" ]; then
+    :
+elif [ -n "$GEOM" ]; then
+    cfbase_var="${GEOM}_CFBaseFromGEOM"
+    if [ -n "${!cfbase_var}" ]; then
+        echo $BASH_SOURCE - use externally set GEOM CFBaseFromGEOM
+    else
+        Resolve_GDMLPathFromGEOM
+    fi
 else
     Resolve_GDMLPathFromGEOM
 fi
 
 
-vars="HOME PWD GEOM ${GEOM}_GDMLPathFromGEOM BASH_SOURCE EXECUTABLE ARGS"
+vars="HOME PWD GEOM SIMPHONY_GEOM_FILE ${GEOM}_GDMLPathFromGEOM BASH_SOURCE EXECUTABLE ARGS"
 for var in $vars ; do printf "%20s : %s\n" "$var" "${!var}" ; done 
 
 #env 
@@ -52,4 +59,3 @@ $EXECUTABLE $@
 [ $? -ne 0 ] && echo $BASH_SOURCE : FAIL from $EXECUTABLE && exit 1 
 
 exit 0
-

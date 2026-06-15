@@ -419,20 +419,6 @@ const char* SOpticksResource::OpticksGDMLPath()
     return getenv(OpticksGDMLPath_) ;   
 }
 
-const char* SOpticksResource::SomeGDMLPath_ = "SomeGDMLPath" ; 
-const char* SOpticksResource::SomeGDMLPath()
-{
-    const char* path0 = getenv(SomeGDMLPath_) ;   
-    const char* path1 = spath::Resolve("$HOME/.opticks/GEOM/$GEOM/origin.gdml");  
-    const char* path2 = nullptr ; 
-
-    const char* path = SPath::PickFirstExisting(path0, path1, path2); 
-    LOG(LEVEL)  << " path " << ( path ? path : "-" ) ;    
-    return path ; 
-}
-
-
-
 /**
 SOpticksResource::GDMLPath
 ----------------------------
@@ -476,9 +462,7 @@ const char* SOpticksResource::GEOM_Aux(const char* _geom, const char* aux)
     return geom == nullptr ? nullptr : ssys::getenvvar(spath::Name(geom, aux)) ; 
 }
 
-
-
-const char* SOpticksResource::KEYS = "IDPath CFBase CFBaseAlt GeocacheDir RuncacheDir RNGDir PrecookedDir DefaultOutputDir SomeGDMLPath GDMLPath GEOMSub GEOMWrap CFBaseFromGEOM UserGEOMDir GEOMList" ; 
+const char* SOpticksResource::KEYS = "IDPath CFBase CFBaseAlt GeocacheDir RuncacheDir RNGDir PrecookedDir DefaultOutputDir GDMLPath GEOMSub GEOMWrap CFBaseFromGEOM UserGEOMDir GEOMList";
 
 /**
 SOpticksResource::Get
@@ -510,8 +494,6 @@ envvars with the same keys can be used to override these defaults.
 +-------------------------+-----------------------------------------------------+
 |   DefaultGeometryBase   | eg /tmp/blyth/opticks/GEOM                          |
 +-------------------------+-----------------------------------------------------+
-|   SomeGDMLPath          |                                                     |
-+-------------------------+-----------------------------------------------------+
 |   GDMLPath              | GEOM gives Name, Name_GDMLPath gives path           |
 +-------------------------+-----------------------------------------------------+
 |   CFBaseFromGeom        | GEOM gives Name, Name_CFBaseFromGeom gives dirpath  |
@@ -535,7 +517,6 @@ const char* SOpticksResource::Get(const char* key) // static
     else if( strcmp(key, "DefaultOutputDir")==0) tok = SOpticksResource::DefaultOutputDir(); 
     else if( strcmp(key, "DefaultGeometryBase")==0) tok = SOpticksResource::DefaultGeometryBase(); 
     else if( strcmp(key, "DefaultGeometryDir")==0) tok = SOpticksResource::DefaultGeometryDir(); 
-    else if( strcmp(key, "SomeGDMLPath")==0)     tok = SOpticksResource::SomeGDMLPath(); 
     else if( strcmp(key, "GDMLPathFromGEOM")==0) tok = SOpticksResource::GDMLPathFromGEOM(); 
     else if( strcmp(key, "CFBaseFromGEOM")==0)   tok = SOpticksResource::CFBaseFromGEOM(); 
     else if( strcmp(key, "UserGEOMDir")==0)      tok = SOpticksResource::UserGEOMDir(); 

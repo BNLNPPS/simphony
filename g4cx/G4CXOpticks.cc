@@ -74,7 +74,12 @@ G4CXOpticks* G4CXOpticks::SetGeometryFromGDML()
     return gx ;
 }
 
-
+G4CXOpticks* G4CXOpticks::SetGeometry(const char* gdmlpath)
+{
+    G4CXOpticks* gx = new G4CXOpticks;
+    gx->setGeometry(gdmlpath);
+    return gx;
+}
 
 G4CXOpticks* G4CXOpticks::SetGeometry(const G4VPhysicalVolume* world)
 {
@@ -229,14 +234,14 @@ void G4CXOpticks::setGeometryFromGDML()
 {
     LOG(LEVEL) << " argumentless " ;
 
-    if(spath::has_CFBaseFromGEOM())
+    const char* test_gdmlpath = ssys::getenvvar("SIMPHONY_GEOM_FILE");
+    if (test_gdmlpath)
     {
-        LOG(LEVEL) << " has_CFBaseFromGEOM " ;
-        setGeometry(spath::Resolve("$CFBaseFromGEOM/origin.gdml"));
+        setGeometry(test_gdmlpath);
     }
     else
     {
-        LOG(fatal) << " failed to setGeometryFromGDML " ;
+        LOG(fatal) << " failed to setGeometryFromGDML : missing SIMPHONY_GEOM_FILE ";
         assert(0);
     }
 }
@@ -244,10 +249,10 @@ void G4CXOpticks::setGeometryFromGDML()
 
 void G4CXOpticks::setGeometry()
 {
-    if(spath::has_CFBaseFromGEOM())
+    const char* test_gdmlpath = ssys::getenvvar("SIMPHONY_GEOM_FILE");
+    if (test_gdmlpath)
     {
-        LOG(LEVEL) << " SomeGDMLPath " ;
-        setGeometry(SOpticksResource::SomeGDMLPath());
+        setGeometry(test_gdmlpath);
     }
     else if(ssys::hasenv_("GEOM"))
     {

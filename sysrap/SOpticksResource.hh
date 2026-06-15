@@ -92,9 +92,6 @@ struct SYSRAP_API SOpticksResource
     static const char* SearchCFBase(const char* dir); 
     static constexpr const char* SearchCFBase_RELF = "CSGFoundry/solid.npy" ; 
 
-    static const char* SomeGDMLPath_ ; 
-    static const char* SomeGDMLPath(); 
-
     static const char* OpticksGDMLPath_ ; 
     static const char* OpticksGDMLPath(); 
 
@@ -115,6 +112,3 @@ struct SYSRAP_API SOpticksResource
     static std::string Desc() ; 
 
 };
-
-
-

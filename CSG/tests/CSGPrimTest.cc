@@ -25,18 +25,25 @@ NB to control which geometry is loaded invoke this executable via the CSGPrimTes
 
 int main(int argc, char** argv)
 {
-    OPTICKS_LOG(argc, argv); 
+    OPTICKS_LOG(argc, argv);
 
-    SSim::Create(); 
+    SSim::Create();
 
-    CSGFoundry* fd = CSGFoundry::Load(); 
+    CSGFoundry* fd = CSGFoundry::Load();
 
-    LOG(info) << "fd.desc" << fd->desc() ; 
-    LOG(info) << "fd.summary" ; 
-    fd->summary(); 
+    LOG(info) << "fd.desc" << fd->desc();
+    LOG(info) << "fd.summary";
+    fd->summary();
 
-    LOG(info) << "fd.detailPrim" << std::endl << fd->detailPrim() ; 
+    if (SSys::getenvvar("SIMPHONY_GEOM_FILE", nullptr) == nullptr)
+    {
+        LOG(info) << "fd.detailPrim" << std::endl
+                  << fd->detailPrim();
+    }
+    else
+    {
+        LOG(info) << "skip fd.detailPrim for SIMPHONY_GEOM_FILE in-memory geometry";
+    }
 
     return 0 ; 
 }
-

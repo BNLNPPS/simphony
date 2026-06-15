@@ -63,16 +63,61 @@ set( DEFERRED_TEST_SOURCES
     CSGGeometryFromGeocacheTest.cc
 )
 
+set(GEOM raindrop)
+set(SIMPHONY_GEOM_FILE ${CMAKE_SOURCE_DIR}/tests/geom/${GEOM}.gdml)
+set(GDML_BOOTSTRAP_SOURCE CSGFoundry_GDMLBootstrap.cc)
+set(GDML_BOOTSTRAP_TEST_SOURCES
+    CSGNodeTest.cc
+    CSGNodeImpTest.cc
+    CSGPrimTest.cc
+    CSGPrimSpecTest.cc
+    CSGFoundryTest.cc
+    CSGFoundry_CreateFromSimTest.cc
+    CSGFoundry_getCenterExtent_Test.cc
+    CSGFoundry_findSolidIdx_Test.cc
+    CSGNameTest.cc
+    CSGTargetTest.cc
+    CSGTargetGlobalTest.cc
+    CSGFoundry_MakeCenterExtentGensteps_Test.cc
+    CSGFoundry_getFrame_Test.cc
+    CSGFoundry_getFrameE_Test.cc
+    CSGFoundry_getMeshName_Test.cc
+    CSGFoundryLoadTest.cc
+    CSGQueryTest.cc
+    CSGSimtraceTest.cc
+    CSGSimtraceRerunTest.cc
+    CSGSimtraceSampleTest.cc
+    CSGCopyTest.cc
+)
+
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
-    add_executable(${TGT} ${SRC})
-    target_link_libraries(${TGT} CSG CUDA::cudart)
+    list(FIND GDML_BOOTSTRAP_TEST_SOURCES ${SRC} GDML_BOOTSTRAP_INDEX)
+    if(GDML_BOOTSTRAP_INDEX GREATER -1)
+        # Most GDML-refactored CSG tests still call CSGFoundry::Load or
+        # SSim::Create internally, so the bootstrap prepares an in-memory
+        # foundry from SIMPHONY_GEOM_FILE before test main starts.
+        add_executable(${TGT} ${SRC} ${GDML_BOOTSTRAP_SOURCE})
+        target_link_libraries(${TGT} CSG G4CX CUDA::cudart)
+    elseif("${SRC}" STREQUAL "CSGScanTest.cc")
+        # CSGScanTest needs G4CX for explicit GDML setup, but must not use
+        # the static bootstrap because it selects host-only scan mode in main.
+        add_executable(${TGT} ${SRC})
+        target_link_libraries(${TGT} CSG G4CX CUDA::cudart)
+    else()
+        add_executable(${TGT} ${SRC})
+        target_link_libraries(${TGT} CSG CUDA::cudart)
+    endif()
 
     add_test(
        NAME ${name}.${TGT} 
        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/CSGTestRunner.sh ${CMAKE_CURRENT_BINARY_DIR}/${TGT}
     )
-    set_tests_properties(${name}.${TGT} PROPERTIES DEPENDS "G4CXTest.G4CXOpticks_setGeometry_Test")
+    if(GDML_BOOTSTRAP_INDEX GREATER -1 OR "${SRC}" STREQUAL "CSGScanTest.cc")
+        set_tests_properties(${name}.${TGT} PROPERTIES
+           ENVIRONMENT "SIMPHONY_GEOM_FILE=${SIMPHONY_GEOM_FILE}"
+        )
+    endif()
 endforeach()
 
 set(TGT CSGDemoTest)

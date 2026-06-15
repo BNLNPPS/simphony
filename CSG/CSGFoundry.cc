@@ -3264,6 +3264,9 @@ will continue to do so for now.
 
 CSGFoundry* CSGFoundry::Load_() // static
 {
+    if (ssys::getenvbool("CSGFoundry_GDMLBootstrap_ReturnExisting") && CSGFoundry::Get() != nullptr)
+        return CSGFoundry::Get();
+
     const char* cfbase = ResolveCFBase() ;
     if(ssys::getenvbool(_Load_DUMP)) std::cout << "CSGFoundry::Load_[" << cfbase << "]\n" ;
 
@@ -4032,6 +4035,3 @@ void CSGFoundry::kludgeScalePrimBBox( unsigned solidIdx, float dscale )
         pr->scaleAABB_(scale);
     }
 }
-
-
-

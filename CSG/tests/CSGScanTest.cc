@@ -10,14 +10,15 @@
 
 #include "CSGFoundry.h"
 #include "CSGMaker.h"
-#include "CSGSolid.h"
 #include "CSGScan.h"
-
+#include "CSGSolid.h"
+#include "G4CXOpticks.hh"
 
 struct CSGScanTest
 {
     const char* geom ;
     const char* scan ;
+    bool            gdml_mode;
     CSGFoundry* fd ;
     const CSGSolid* so ;
     CSGScan*  sc ;
@@ -27,10 +28,10 @@ struct CSGScanTest
     int intersect();
 };
 
-inline CSGScanTest::CSGScanTest()
-    :
+inline CSGScanTest::CSGScanTest() :
     geom(ssys::getenvvar("GEOM")),
-    scan(ssys::getenvvar("SCAN","axis,rectangle,circle")),
+    scan(ssys::getenvvar("SCAN", "axis,rectangle,circle")),
+    gdml_mode(ssys::hasenv_("SIMPHONY_GEOM_FILE")),
     fd(nullptr),
     so(nullptr),
     sc(nullptr)
@@ -40,10 +41,15 @@ inline CSGScanTest::CSGScanTest()
 
 inline void CSGScanTest::init()
 {
-    SSim::Create();
-
-    if(CSGMaker::CanMake(geom))
+    if (gdml_mode)
     {
+        G4CXOpticks::SetNoGPU(true);
+        G4CXOpticks::SetGeometry(ssys::getenvvar("SIMPHONY_GEOM_FILE"));
+        fd = CSGFoundry::Get();
+    }
+    else if (CSGMaker::CanMake(geom))
+    {
+        SSim::Create();
         fd = CSGMaker::MakeGeom(geom);
         if(ssys::getenvbool("CSGScanTest__init_SAVEFOLD"))
         {
@@ -52,13 +58,15 @@ inline void CSGScanTest::init()
     }
     else
     {
+        SSim::Create();
         fd = CSGFoundry::Load();
     }
-    fd->upload();
+    if (!gdml_mode)
+        fd->upload();
     so = fd->getSolid(0);
     // TODO: makes more sense to pick a CSGPrim (or root CSGNode) not a solid
 
-    sc = new CSGScan( fd, so, scan );
+    sc = new CSGScan(fd, so, scan, !gdml_mode);
 }
 
 inline int CSGScanTest::intersect()

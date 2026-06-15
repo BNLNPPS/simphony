@@ -30,6 +30,8 @@ set(TEST_SOURCES
    G4CXOpticks_setGeometry_Test.cc
 )
 
+set(GEOM raindrop)
+set(SIMPHONY_GEOM_FILE ${CMAKE_SOURCE_DIR}/tests/geom/${GEOM}.gdml)
 
 foreach(SRC ${SINGLE_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
@@ -43,9 +45,17 @@ foreach(SRC ${TEST_SOURCES})
     add_executable(${TGT} ${SRC})
     target_link_libraries(${TGT} G4CX CUDA::cudart)
 
+    set(TEST_ARGS)
+    if("${TGT}" STREQUAL "G4CXOpticks_setGeometry_Test")
+       set(TEST_ARGS ${SIMPHONY_GEOM_FILE})
+    endif()
+
     add_test(
        NAME ${name}.${TGT} 
-       COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/GXTestRunner.sh ${CMAKE_CURRENT_BINARY_DIR}/${TGT}
+       COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/GXTestRunner.sh ${CMAKE_CURRENT_BINARY_DIR}/${TGT} ${TEST_ARGS}
+    )
+    set_tests_properties(${name}.${TGT} PROPERTIES
+       ENVIRONMENT "SIMPHONY_GEOM_FILE=${SIMPHONY_GEOM_FILE}"
     )
 endforeach()
 
