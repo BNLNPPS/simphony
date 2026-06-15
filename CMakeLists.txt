@@ -13,6 +13,12 @@ endif()
 
 project(simphony VERSION 0.6.0 LANGUAGES CXX CUDA)
 
+# Use CMake's standard testing option, but avoid enabling this project's tests
+# by default when Simphony is pulled in as a subproject.
+if(NOT DEFINED BUILD_TESTING)
+    set(BUILD_TESTING ${PROJECT_IS_TOP_LEVEL} CACHE BOOL "Build the testing tree.")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -24,6 +30,8 @@ set(CMAKE_CUDA_EXTENSIONS OFF)
 set(BUILD_SHARED_LIBS ON)
 
 include(GNUInstallDirs)
+# Keep CTest included even when BUILD_TESTING=OFF so external drivers can run
+# ctest and observe an empty test set rather than a missing configuration.
 include(CTest)
 include(CheckLinkerFlag)
 
@@ -53,18 +61,21 @@ set(GPHOX_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
 set(GPHOX_BUILD_PTX_DIR "${PROJECT_BINARY_DIR}/ptx")
 
 add_subdirectory(sysrap)
-add_subdirectory(sysrap/tests)
 add_subdirectory(CSG)
-add_subdirectory(CSG/tests)
 add_subdirectory(qudarap)
-add_subdirectory(qudarap/tests)
 add_subdirectory(CSGOptiX)
-add_subdirectory(CSGOptiX/tests)
 add_subdirectory(u4)
-add_subdirectory(u4/tests)
 add_subdirectory(g4cx)
-add_subdirectory(g4cx/tests)
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+    add_subdirectory(sysrap/tests)
+    add_subdirectory(CSG/tests)
+    add_subdirectory(qudarap/tests)
+    add_subdirectory(CSGOptiX/tests)
+    add_subdirectory(u4/tests)
+    add_subdirectory(g4cx/tests)
+endif()
 
 # Optional DD4hep integration plugins
 find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
