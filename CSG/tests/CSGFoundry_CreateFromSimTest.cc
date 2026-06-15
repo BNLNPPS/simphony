@@ -11,23 +11,25 @@ Creates CSGFoundry from SSim and SSim/stree
 
 **/
 
-#include <csignal>
+#include "CSGFoundry.h"
 #include "OPTICKS_LOG.hh"
 #include "SSim.hh"
 #include "spath.h"
+#include "ssys.h"
 #include "stree.h"
-#include "CSGFoundry.h"
-
+#include <csignal>
 
 int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
-    SSim* sim = SSim::Load() ;
+    bool  gdml_mode = ssys::hasenv_("SIMPHONY_GEOM_FILE");
+    SSim* sim = gdml_mode ? SSim::Get() : SSim::Load();
     std::cout << "sim.tree.desc" << std::endl << sim->tree->desc() ;
 
-    CSGFoundry* fd = CSGFoundry::CreateFromSim() ; // adopts SSim::INSTANCE
-    fd->save("$FOLD") ;
+    CSGFoundry* fd = gdml_mode ? CSGFoundry::Get() : CSGFoundry::CreateFromSim(); // adopts SSim::INSTANCE
+    if (!gdml_mode)
+        fd->save("$FOLD");
 
     bool fd_expect = fd->sim == sim ;
     assert( fd_expect  );
@@ -35,6 +37,3 @@ int main(int argc, char** argv)
 
     return 0 ;
 }
-
-
-

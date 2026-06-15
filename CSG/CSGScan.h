@@ -19,7 +19,7 @@ struct CSGParams ;
 
 struct CSG_API CSGScan
 {
-    CSGScan( const CSGFoundry* fd_, const CSGSolid* solid_, const char* opt );   
+    CSGScan(const CSGFoundry* fd_, const CSGSolid* solid_, const char* opt, bool device = true);
 
     void initGeom_h(); 
     void initRays_h(const char* opts_); 
@@ -69,5 +69,3 @@ struct CSG_API CSGScan
 
  
 };
-
-

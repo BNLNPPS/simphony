@@ -84,6 +84,8 @@ std::string SSim::DescCompare( const SSim* a , const SSim* b )
 
 SSim* SSim::Create()
 {
+    if (INSTANCE && ssys::getenvbool("CSGFoundry_GDMLBootstrap_ReturnExisting"))
+        return INSTANCE;
     LOG_IF(fatal, INSTANCE) << "replacing SSim::INSTANCE" ;
     new SSim ;
     return INSTANCE ;
@@ -1074,8 +1076,3 @@ bool SSim::findName( int& i, int& j, const char* qname ) const
     const NP* bnd = get_bnd();
     return bnd ? SBnd::FindName(i, j, qname, bnd->names) : false ;
 }
-
-
-
-
-
