@@ -75,6 +75,7 @@ if(BUILD_TESTING)
     add_subdirectory(CSGOptiX/tests)
     add_subdirectory(u4/tests)
     add_subdirectory(g4cx/tests)
+    add_subdirectory(tests)
 endif()
 
 # Optional DD4hep integration plugins
