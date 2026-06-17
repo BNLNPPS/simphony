@@ -78,24 +78,9 @@
 // Class Definition
 /////////////////////
 
-#ifdef INSTRUMENTED
-template <typename T> struct OpticksDebug ; 
-struct OpticksRandom ; 
-#endif 
-
-
 class Local_G4Cerenkov_modified : public G4VProcess
 {
 public:
-
-#ifdef INSTRUMENTED
-   template <typename T> friend struct Local_G4Cerenkov_modifiedTest ;  
-   bool looping_condition(unsigned& count); 
-   OpticksDebug<double>* gen ; 
-   OpticksDebug<double>* par ; 
-   OpticksRandom* rnd ; 
-#endif
-
 
   ////////////////////////////////
   // Constructors and Destructor
@@ -252,12 +237,6 @@ private:
 
   G4bool fStackingFlag;
 
-#ifdef INSTRUMENTED
-public:
-  G4int override_fNumPhotons ;  
-private:
-#endif
-
   G4int fNumPhotons;
   G4int fNumPhotons1; // mean
   G4int fNumPhotons2; // mean
@@ -325,5 +304,3 @@ G4PhysicsTable* Local_G4Cerenkov_modified::GetPhysicsTable() const
 }
 
 #endif /* Local_G4Cerenkov_modified_h */
-
-
