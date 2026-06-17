@@ -3,7 +3,7 @@ usage(){ cat << EOU
 U4SimtraceSimpleTest.sh
 =========================
 
-Split from U4SimtraceTest.sh as that has PMTSim_standalone complications
+Lightweight simtrace helper for self-contained geometries
 
 Uses U4SimtraceSimpleTest.cc which creates Geant4 geometry
 with U4VolumeMaker::PV depending on GEOM envvar

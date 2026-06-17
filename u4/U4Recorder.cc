@@ -58,10 +58,6 @@ NP *U4UniformRand::UU = nullptr;
 #include "SCF.h"
 #include "U4Step.h"
 
-#ifdef WITH_PMTSIM
-#include "PMTSim.hh"
-#endif
-
 
 #include "G4OpBoundaryProcess.hh"
 
@@ -130,16 +126,6 @@ std::string U4Recorder::Switches()  // static
 {
     std::stringstream ss ;
     ss << "U4Recorder::Switches" << std::endl ;
-#ifdef WITH_PMTSIM
-    ss << "WITH_PMTSIM" << std::endl ;
-#else
-    ss << "NOT:WITH_PMTSIM" << std::endl ;
-#endif
-#ifdef PMTSIM_STANDALONE
-    ss << "PMTSIM_STANDALONE" << std::endl ;
-#else
-    ss << "NOT:PMTSIM_STANDALONE" << std::endl ;
-#endif
 
 #ifdef PRODUCTION
     ss << "PRODUCTION" << std::endl ;
@@ -349,14 +335,6 @@ void U4Recorder::EndOfEventAction_(int eventID_)
 {
     assert( eventID == eventID_ );
     LOG_IF(info, SEvt::LIFECYCLE ) << " eventID " << eventID ;
-
-    #if defined(WITH_PMTSIM) && defined(POM_DEBUG)
-        NP* mtda = PMTSim::ModelTrigger_Debug_Array();
-        std::string name = mtda->get_meta<std::string>("NAME", "MTDA.npy") ;
-        sev->add_array( name.c_str(), mtda );
-    #else
-        LOG(LEVEL) << "not-(WITH_PMTSIM and POM_DEBUG)"  ;
-    #endif
 
 
     // adding to extrafold

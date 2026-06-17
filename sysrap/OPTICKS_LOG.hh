@@ -150,14 +150,6 @@ What you need to do to get logging to work for a package
 #include "G4CX_LOG.hh"
 #endif
 
-/*
-#ifdef WITH_PMTSIM
-#include "J_PMTSIM_LOG.hh"
-#endif
-*/
-
-
-
 #include "SYSRAP_API_EXPORT.hh"
 
 

@@ -30,7 +30,6 @@ struct U4_API U4VolumeMaker
     static const char* PVG_WriteNames_Sub ;
 
     static const G4VPhysicalVolume* PVG_(const char* name);
-    static const G4VPhysicalVolume* PVP_(const char* name);
 
     static const G4VPhysicalVolume* PVS_(const char* name);
     static const G4VPhysicalVolume* PVL_(const char* name);
@@ -127,5 +126,4 @@ struct U4_API U4VolumeMaker
     static void WrapAround( const char* prefix, const NP* trs, std::vector<G4LogicalVolume*>& lvs, G4LogicalVolume* mother_lv );
 
 };
-
 
