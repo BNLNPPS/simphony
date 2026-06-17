@@ -146,7 +146,7 @@ template<typename T> void SPM::merge_partial_select(
     using key_functor   = typename T::key_functor;
 
 
-    printf("[SPM::merge_partial_select num_in %d select_flagmask %d time_window %7.3f \n", num_in, select_flagmask, time_window );
+    printf("[SPM::merge_partial_select num_in %zu select_flagmask %d time_window %7.3f \n", num_in, select_flagmask, time_window );
 
     if (num_in == 0) { *d_out = nullptr; if (num_out) *num_out = 0; return; }
 
@@ -284,7 +284,7 @@ template<typename T> void SPM::merge_partial_select(
 
     float select_frac = float(num_selected)/float(num_in);
     float merge_frac = float(merged)/float(num_selected) ;
-    printf("]SPM::merge_partial_select select_flagmask %d time_window %7.3f in %d selected %d merged %d selected/in %7.3f merged/selected %7.3f \n",
+    printf("]SPM::merge_partial_select select_flagmask %d time_window %7.3f in %zu selected %zu merged %zu selected/in %7.3f merged/selected %7.3f \n",
                 select_flagmask, time_window, num_in, num_selected, merged, select_frac, merge_frac );
 
 }
