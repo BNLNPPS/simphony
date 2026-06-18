@@ -79,6 +79,9 @@ def main():
                     logfile.write(f"--- STDERR ---\n{stderr}\n")
                     logfile.flush()
 
+                    if result.returncode != 0:
+                        raise subprocess.CalledProcessError(result.returncode, cmd, output=stdout, stderr=stderr)
+
                     # Save simulation time for true run only
                     if flag == 'true':
                         sim_time_true = parse_sim_time(stdout + stderr)
