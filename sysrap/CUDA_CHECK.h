@@ -23,13 +23,8 @@ inline void CUDA_Log_NoThrow(cudaError_t error, const char* call, const char* fi
 {
     if (error != cudaSuccess)
     {
-        std::stringstream ss;
-        ss << "CUDA call (" << call << " ) failed with error: '"
-           << cudaGetErrorString(error)
-           << "' (" << file << ":" << line << ")\n";
-
-        const std::string msg = ss.str();
-        std::fputs(msg.c_str(), stderr);
+        std::fprintf(stderr, "CUDA call (%s) failed with error: '%s' (%s:%d)\n",
+                     call, cudaGetErrorString(error), file, line);
     }
 }
 
