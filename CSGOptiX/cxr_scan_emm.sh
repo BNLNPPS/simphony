@@ -1,1 +1,0 @@
-cxr_scan.sh

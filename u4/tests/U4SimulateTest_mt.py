@@ -6,7 +6,7 @@ U4SimulateTest_mt.py
 ::
 
     u4t
-    ./U4SimulateTest.sh mt
+    python U4SimulateTest_mt.py
 
 """
 import os, textwrap, numpy as np
@@ -33,7 +33,7 @@ BT = BOUNDARY_TRANSMIT.bit_length()
 TO = TORCH.bit_length()
 
 N = int(os.environ.get("VERSION", "-1"))
-CMDLINE = "N=%d ./U4SimulateTest.sh mt" % N
+CMDLINE = "N=%d python U4SimulateTest_mt.py" % N
 
 TEST = os.environ.get("TEST", "Manual")
 GEOM = os.environ.get("GEOM", "DummyGEOM")
