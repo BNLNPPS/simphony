@@ -1,5 +1,6 @@
 #pragma once
- 
+
+#include "CUDA_CHECK.h"
 #include "SOPTIX_BuildInput.h"
 
 struct SOPTIX_BuildInput_IA : public SOPTIX_BuildInput
@@ -10,9 +11,13 @@ struct SOPTIX_BuildInput_IA : public SOPTIX_BuildInput
     CUdeviceptr                instances_buffer;
 
     SOPTIX_BuildInput_IA(std::vector<OptixInstance>& _instances);
-    ~SOPTIX_BuildInput_IA() override
+    ~SOPTIX_BuildInput_IA() noexcept override
     {
-        CUDA_CHECK(cudaFree(reinterpret_cast<void*>(instances_buffer)));
+        if (instances_buffer != 0)
+        {
+            // Destructors cannot allow CUDA cleanup failures to escape.
+            CUDA_CHECK_NOEXCEPT(cudaFree(reinterpret_cast<void*>(instances_buffer)));
+        }
     }
 };
 
@@ -38,6 +43,3 @@ inline SOPTIX_BuildInput_IA::SOPTIX_BuildInput_IA(std::vector<OptixInstance>& _i
     instanceArray.instances = instances_buffer ;  
     instanceArray.numInstances = instances.size() ; 
 }
-
-
-

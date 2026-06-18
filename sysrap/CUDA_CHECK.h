@@ -1,9 +1,9 @@
 #pragma once
 
-
-#include <stdexcept>
+#include <cstdio>
+#include <cuda_runtime.h>
 #include <sstream>
-
+#include <stdexcept>
 
 #define CUDA_CHECK( call )                                                     \
     do                                                                         \
@@ -19,6 +19,26 @@
         }                                                                      \
     } while( 0 )
 
+inline void CUDA_Log_NoThrow(cudaError_t error, const char* call, const char* file, int line) noexcept
+{
+    if (error != cudaSuccess)
+    {
+        std::stringstream ss;
+        ss << "CUDA call (" << call << " ) failed with error: '"
+           << cudaGetErrorString(error)
+           << "' (" << file << ":" << line << ")\n";
+
+        const std::string msg = ss.str();
+        std::fputs(msg.c_str(), stderr);
+    }
+}
+
+#define CUDA_CHECK_NOEXCEPT(call)                           \
+    do                                                      \
+    {                                                       \
+        cudaError_t error = call;                           \
+        CUDA_Log_NoThrow(error, #call, __FILE__, __LINE__); \
+    } while (0)
 
 #define CUDA_SYNC_CHECK()                                                      \
     do                                                                         \
@@ -45,5 +65,3 @@ class CUDA_Exception : public std::runtime_error
      { }
 
 };
-
-
