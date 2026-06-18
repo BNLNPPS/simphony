@@ -101,7 +101,7 @@ extern "C" unsigned QEvt_count_genstep_photons(sevent* evt)
 
 #ifdef DEBUG_QEVENT
     //thrust::for_each( gs_pho.begin(), gs_pho.end(), printf_functor() );
-    printf("//QEvt_count_genstep_photons evt.num_genstep %d evt.num_seed %d evt.max_photon %d \n", evt->num_genstep, evt->num_seed, evt->max_photon );
+    printf("//QEvt_count_genstep_photons evt.num_genstep %zu evt.num_seed %zu evt.max_photon %zu \n", evt->num_genstep, evt->num_seed, evt->max_photon );
 #endif
     assert( evt->num_seed <= evt->max_photon );
 
@@ -141,7 +141,7 @@ ACTUALLY THIS IS DUE TO A A LIMITATION OF IEXPAND, see sysrap/iexpand.h::
 extern "C" void QEvt_fill_seed_buffer(sevent* evt )
 {
 #ifdef DEBUG_QEVENT
-    printf("//QEvt_fill_seed_buffer evt.num_genstep %d evt.num_seed %d evt.max_photon %d \n", evt->num_genstep, evt->num_seed, evt->max_photon );
+    printf("//QEvt_fill_seed_buffer evt.num_genstep %zu evt.num_seed %zu evt.max_photon %zu \n", evt->num_genstep, evt->num_seed, evt->max_photon );
 #endif
 
     assert( evt->seed && evt->num_seed > 0 );
@@ -198,18 +198,18 @@ extern "C" void QEvt_count_genstep_photons_and_fill_seed_buffer(sevent* evt )
     evt->num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end() );
 
 #ifdef DEBUG_QEVENT
-    printf("//QEvt_count_genstep_photons_and_fill_seed_buffer evt.num_genstep %d evt.num_seed %d evt.max_photon %d \n", evt->num_genstep, evt->num_seed, evt->max_photon );
+    printf("//QEvt_count_genstep_photons_and_fill_seed_buffer evt.num_genstep %zu evt.num_seed %zu evt.max_photon %zu \n", evt->num_genstep, evt->num_seed, evt->max_photon );
 #endif
 
     bool expect_seed =  evt->seed && evt->num_seed > 0 ;
-    if(!expect_seed) printf("//QEvt_count_genstep_photons_and_fill_seed_buffer  evt.seed %s  evt.num_seed %d \n",  (evt->seed ? "YES" : "NO " ), evt->num_seed );
+    if(!expect_seed) printf("//QEvt_count_genstep_photons_and_fill_seed_buffer  evt.seed %s  evt.num_seed %zu \n",  (evt->seed ? "YES" : "NO " ), evt->num_seed );
     assert( expect_seed );
 
     bool num_seed_ok = evt->num_seed <= evt->max_photon ;
 
     if( num_seed_ok == false )
     {
-        printf("//QEvt_count_genstep_photons_and_fill_seed_buffer FAIL evt.num_seed %d evt.max_photon %d num_seed_ok %d \n", evt->num_seed, evt->max_photon, num_seed_ok  );
+        printf("//QEvt_count_genstep_photons_and_fill_seed_buffer FAIL evt.num_seed %zu evt.max_photon %zu num_seed_ok %d \n", evt->num_seed, evt->max_photon, num_seed_ok  );
     }
 
     assert( num_seed_ok );
