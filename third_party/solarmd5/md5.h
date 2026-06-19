@@ -23,7 +23,7 @@
  * See md5.c for more information.
  */
 
-#ifdef HAVE_OPENSSL
+#if defined(HAVE_OPENSSL) || defined(OPENSSL_MD5_H) || defined(HEADER_MD5_H)
 #include <openssl/md5.h>
 #elif !defined(_MD5_H)
 #define _MD5_H
