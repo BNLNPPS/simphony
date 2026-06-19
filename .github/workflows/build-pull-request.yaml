@@ -30,7 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           style: file
-          ignore: include/argparse
+          ignore: third_party
           lines-changed-only: true
           thread-comments: update
           format-review: false

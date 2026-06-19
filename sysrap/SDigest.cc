@@ -202,7 +202,7 @@ std::string SDigest::DigestPath2(const char* path)
 
     fclose (fp);
  
-    assert( MD5_DIGEST_LENGTH == 16 ); 
+    constexpr int MD5_DIGEST_LENGTH = 16;
     unsigned char digest[MD5_DIGEST_LENGTH];
     MD5_Final (digest,&mdContext);
     char *out = (char*)malloc(MD5_DIGEST_LENGTH*2+1);
@@ -415,4 +415,3 @@ std::string SDigest::digest_skipdupe( std::vector<std::string>& ss)
     }
     return dig.finalize();
 }
-

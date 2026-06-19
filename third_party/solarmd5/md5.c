@@ -1,24 +1,4 @@
 /*
- * Copyright (c) 2019 Opticks Team. All Rights Reserved.
- *
- * This file is part of Opticks
- * (see https://bitbucket.org/simoncblyth/opticks).
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License.  
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
- * See the License for the specific language governing permissions and 
- * limitations under the License.
- */
-
-//  see solarmd5-
-/*
  * This is an OpenSSL-compatible implementation of the RSA Data Security, Inc.
  * MD5 Message-Digest Algorithm (RFC 1321).
  *
@@ -57,9 +37,9 @@
 
 #ifndef HAVE_OPENSSL
 
-#include <cstring>
+#include <string.h>
 
-#include "md5.hh"
+#include "md5.h"
 
 /*
  * The basic MD5 functions.
@@ -83,12 +63,19 @@
 	(a) += (b);
 
 /*
- * SET reads 4 input bytes in little-endian byte order and stores them
- * in a properly aligned word in host byte order.
+ * SET reads 4 input bytes in little-endian byte order and stores them in a
+ * properly aligned word in host byte order.
  *
- * The check for little-endian architectures that tolerate unaligned
- * memory accesses is just an optimization.  Nothing will break if it
- * doesn't work.
+ * The check for little-endian architectures that tolerate unaligned memory
+ * accesses is just an optimization.  Nothing will break if it fails to detect
+ * a suitable architecture.
+ *
+ * Unfortunately, this optimization may be a C strict aliasing rules violation
+ * if the caller's data buffer has effective type that cannot be aliased by
+ * MD5_u32plus.  In practice, this problem may occur if these MD5 routines are
+ * inlined into a calling function, or with future and dangerously advanced
+ * link-time optimizations.  For the time being, keeping these MD5 routines in
+ * their own translation unit avoids the problem.
  */
 #if defined(__i386__) || defined(__x86_64__) || defined(__vax__)
 #define SET(n) \
@@ -107,8 +94,8 @@
 #endif
 
 /*
- * This processes one or more 64-byte data blocks, but does NOT update
- * the bit counters.  There are no alignment requirements.
+ * This processes one or more 64-byte data blocks, but does NOT update the bit
+ * counters.  There are no alignment requirements.
  */
 static const void *body(MD5_CTX *ctx, const void *data, unsigned long size)
 {
@@ -261,6 +248,13 @@ void MD5_Update(MD5_CTX *ctx, const void *data, unsigned long size)
 
 	memcpy(ctx->buffer, data, size);
 }
+
+#define OUT(dst, src) \
+	(dst)[0] = (unsigned char)(src); \
+	(dst)[1] = (unsigned char)((src) >> 8); \
+	(dst)[2] = (unsigned char)((src) >> 16); \
+	(dst)[3] = (unsigned char)((src) >> 24);
+
 void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 {
 	unsigned long used, available;
@@ -281,33 +275,15 @@ void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 	memset(&ctx->buffer[used], 0, available - 8);
 
 	ctx->lo <<= 3;
-	ctx->buffer[56] = ctx->lo;
-	ctx->buffer[57] = ctx->lo >> 8;
-	ctx->buffer[58] = ctx->lo >> 16;
-	ctx->buffer[59] = ctx->lo >> 24;
-	ctx->buffer[60] = ctx->hi;
-	ctx->buffer[61] = ctx->hi >> 8;
-	ctx->buffer[62] = ctx->hi >> 16;
-	ctx->buffer[63] = ctx->hi >> 24;
+	OUT(&ctx->buffer[56], ctx->lo)
+	OUT(&ctx->buffer[60], ctx->hi)
 
 	body(ctx, ctx->buffer, 64);
 
-	result[0] = ctx->a;
-	result[1] = ctx->a >> 8;
-	result[2] = ctx->a >> 16;
-	result[3] = ctx->a >> 24;
-	result[4] = ctx->b;
-	result[5] = ctx->b >> 8;
-	result[6] = ctx->b >> 16;
-	result[7] = ctx->b >> 24;
-	result[8] = ctx->c;
-	result[9] = ctx->c >> 8;
-	result[10] = ctx->c >> 16;
-	result[11] = ctx->c >> 24;
-	result[12] = ctx->d;
-	result[13] = ctx->d >> 8;
-	result[14] = ctx->d >> 16;
-	result[15] = ctx->d >> 24;
+	OUT(&result[0], ctx->a)
+	OUT(&result[4], ctx->b)
+	OUT(&result[8], ctx->c)
+	OUT(&result[12], ctx->d)
 
 	memset(ctx, 0, sizeof(*ctx));
 }

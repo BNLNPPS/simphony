@@ -140,12 +140,7 @@ add_library( ${name} ${SOURCES} )
 get_target_property(ILL ${name} INTERFACE_LINK_LIBRARIES)
 message(STATUS "${name} INTERFACE_LINK_LIBRARIES:${ILL} " )
 
-find_package(OpenSSL REQUIRED)
-
-target_link_libraries( ${name} SysRap
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
+target_link_libraries(${name} SysRap)
 
 target_compile_definitions( ${name} PUBLIC OPTICKS_QUDARAP DEBUG_TAG)
 

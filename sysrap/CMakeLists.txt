@@ -7,7 +7,6 @@ find_package(GLEW REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
-find_package(OpenSSL REQUIRED)
 
 configure_file(config_path.h.in config_path.h @ONLY)
 
@@ -48,7 +47,7 @@ set(SOURCES
     SLogger.cc
     SSortKV.cc
     SPairVec.cc
-    md5.cc
+    ../third_party/solarmd5/md5.c
     SPPM.cc
     SColor.cc
     SId.cc
@@ -490,6 +489,10 @@ set(WITH_NP YES)
 
 add_library( ${name} ${SOURCES} )
 
+# The project enables CXX/CUDA but not C, so compile the vendored C source
+# as C++ so the OpenSSL-compatible MD5 API is available from SysRap.
+set_source_files_properties(../third_party/solarmd5/md5.c PROPERTIES LANGUAGE CXX)
+
 set_property( TARGET ${name} PROPERTY INTERFACE_DESCRIPTION ${desc} )
 
 target_link_libraries(${name}
@@ -499,16 +502,16 @@ target_link_libraries(${name}
     GLEW::GLEW
     glfw
     glm::glm
-    OpenSSL::SSL
-    OpenSSL::Crypto
 )
 
 target_include_directories( ${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../third_party>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party>
 )
 
 
