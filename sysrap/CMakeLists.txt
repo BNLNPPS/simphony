@@ -490,7 +490,7 @@ set(WITH_NP YES)
 add_library( ${name} ${SOURCES} )
 
 # The project enables CXX/CUDA but not C, so compile the vendored C source
-# as C++ to keep its OpenSSL-compatible MD5 symbols available in SysRap.
+# as C++ so the OpenSSL-compatible MD5 API is available from SysRap.
 set_source_files_properties(../third_party/solarmd5/md5.c PROPERTIES LANGUAGE CXX)
 
 set_property( TARGET ${name} PROPERTY INTERFACE_DESCRIPTION ${desc} )
