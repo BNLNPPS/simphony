@@ -90,7 +90,6 @@ if [ "${arg/build}" != "$arg" ]; then
          ../s_tv.cc \
          ../s_bb.cc \
          ../s_csg.cc \
-         -DWITH_CHILD \
          -std=c++17 -lstdc++ -lm \
          -I.. -g \
          -I$GLM_PREFIX \

@@ -28,10 +28,7 @@ base=/tmp/blyth/opticks/U4TreeCreateTest/stree/_csg
 export BASE=${BASE:-$base}
 export s_csg_level=0
 
-opt="-DWITH_CHILD"
-
-
-vars="BASH_SOURCE SDIR name bin script arg FOLD BASE opt"
+vars="BASH_SOURCE SDIR name bin script arg FOLD BASE"
 
 if [ "${arg/info}" != "$arg" ]; then
     for var in $vars ; do printf "%20s : %s \n" "$var" "${!var}" ; done 
@@ -39,7 +36,6 @@ fi
 
 if [ "${arg/build}" != "$arg" ]; then
     gcc \
-        $opt \
         $SDIR/$name.cc \
         $SDIR/../sn.cc \
         $SDIR/../s_tv.cc \
@@ -49,7 +45,7 @@ if [ "${arg/build}" != "$arg" ]; then
         -I$SDIR/.. \
         -I$HOME/np \
         -I$OPTICKS_PREFIX/externals/glm/glm \
-        $opt -g -std=c++11 -lstdc++ -o $bin
+        -g -std=c++11 -lstdc++ -o $bin
 
     [ $? -ne 0 ] && echo $BASH_SOURCE : build fail && exit 1
 fi 

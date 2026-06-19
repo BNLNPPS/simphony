@@ -23,8 +23,6 @@ script=$name.py
 defarg="info_build_run"
 arg=${1:-$defarg}
 
-opt=-DWITH_CHILD
-
 cuda_prefix=/usr/local/cuda
 CUDA_PREFIX=${CUDA_PREFIX:-$cuda_prefix}
 
@@ -55,7 +53,7 @@ logging()
 [ -n "$LOG" ] && logging
 
 
-vars="BASH_SOURCE bin script opt TEST sn__level"
+vars="BASH_SOURCE bin script TEST sn__level"
 
 if [ "${arg/info}" != "$arg" ]; then
     for var in $vars ; do printf "%20s : %s \n" "$var" "${!var}" ; done
@@ -73,7 +71,7 @@ if [ "${arg/build}" != "$arg" ]; then
         -I$OPTICKS_PREFIX/externals/glm/glm \
         -I$CUDA_PREFIX/include \
         -lm \
-        $opt -g -std=c++17 -lstdc++ -o $bin
+        -g -std=c++17 -lstdc++ -o $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE build error && exit 1
 fi
 
@@ -99,4 +97,3 @@ if [ "${arg/ana}" != "$arg" ]; then
 fi
 
 exit 0
-

@@ -2038,12 +2038,6 @@ std::string QSim::Desc(char delim)  // static
        << "NOT-PRODUCTION"
 #endif
        << delim
-#ifdef WITH_CHILD
-       << "WITH_CHILD"
-#else
-       << "NOT-WITH_CHILD"
-#endif
-       << delim
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else

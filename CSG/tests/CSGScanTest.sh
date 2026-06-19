@@ -118,7 +118,6 @@ if [ "${arg/build}" != "$arg" ]; then
         -L${CUDA_PREFIX}/lib64 -lcudart -lstdc++ \
         -L${OPTICKS_PREFIX}/lib64 \
         -lSysRap \
-        -DWITH_CHILD \
         -o $bin
         #-DWITH_VERBOSE \
 

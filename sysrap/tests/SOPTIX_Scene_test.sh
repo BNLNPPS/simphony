@@ -121,7 +121,6 @@ if [ "${arg/build}" != "$arg" ]; then
         -I$CUDA_PREFIX/include \
         -I$OPTIX_PREFIX/include \
         -I$OPTICKS_PREFIX/externals/glm/glm \
-         -DWITH_CHILD \
         -L$CUDA_PREFIX/$cuda_l -lcudart \
         -o $bin
     [ $? -ne 0 ] && echo $BASH_SOURCE : build error && exit 1 
@@ -145,4 +144,3 @@ fi
 
 
 exit 0 
-
