@@ -69,19 +69,19 @@ EOF
 RUN cat /etc/bash.nonint >> /etc/bash.bashrc
 
 ENV BASH_ENV=/etc/bash.nonint
-ENV OPTICKS_PREFIX=/opt/simphony
-ENV OPTICKS_HOME=/workspaces/simphony
-ENV OPTICKS_BUILD=/opt/simphony/build
-ENV LD_LIBRARY_PATH=${OPTICKS_PREFIX}/lib:${LD_LIBRARY_PATH}
-ENV VIRTUAL_ENV=${OPTICKS_HOME}/.venv
-ENV PATH=${OPTICKS_PREFIX}/bin:${VIRTUAL_ENV}/bin:${PATH}
+ENV SIMPHONY_PREFIX=/opt/simphony
+ENV SIMPHONY_HOME=/workspaces/simphony
+ENV SIMPHONY_BUILD=/opt/simphony/build
+ENV LD_LIBRARY_PATH=${SIMPHONY_PREFIX}/lib:${LD_LIBRARY_PATH}
+ENV VIRTUAL_ENV=${SIMPHONY_HOME}/.venv
+ENV PATH=${SIMPHONY_PREFIX}/bin:${VIRTUAL_ENV}/bin:${PATH}
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,compute,utility
 
-WORKDIR $OPTICKS_HOME
+WORKDIR $SIMPHONY_HOME
 
 # Install Python dependencies
-COPY pyproject.toml uv.lock $OPTICKS_HOME/
-COPY optiphy $OPTICKS_HOME/optiphy
+COPY pyproject.toml uv.lock $SIMPHONY_HOME/
+COPY optiphy $SIMPHONY_HOME/optiphy
 RUN uv sync
 
 
@@ -89,10 +89,10 @@ FROM base AS release
 
 ARG CMAKE_BUILD_JOBS
 
-COPY . $OPTICKS_HOME
+COPY . $SIMPHONY_HOME
 
-RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Release \
- && cmake --build $OPTICKS_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
+RUN cmake -S $SIMPHONY_HOME -B $SIMPHONY_BUILD -DCMAKE_INSTALL_PREFIX=$SIMPHONY_PREFIX -DCMAKE_BUILD_TYPE=Release \
+ && cmake --build $SIMPHONY_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
 
 
 FROM base AS develop
@@ -101,10 +101,10 @@ ARG CMAKE_BUILD_JOBS
 
 RUN apt update && apt install -y x11-apps mesa-utils vim
 
-COPY . $OPTICKS_HOME
+COPY . $SIMPHONY_HOME
 
-RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Debug \
- && cmake --build $OPTICKS_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
+RUN cmake -S $SIMPHONY_HOME -B $SIMPHONY_BUILD -DCMAKE_INSTALL_PREFIX=$SIMPHONY_PREFIX -DCMAKE_BUILD_TYPE=Debug \
+ && cmake --build $SIMPHONY_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
 
 
 FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS spack-base
@@ -128,7 +128,9 @@ RUN echo "source /opt/spack/share/spack/setup-env.sh" > /etc/profile.d/z09_sourc
 RUN echo "source /etc/profile.d/z09_source_spack_setup.sh" >> /etc/bash.bashrc
 
 ENV BASH_ENV=/etc/profile.d/z09_source_spack_setup.sh
-ENV OPTICKS_HOME=/workspaces/simphony
+ENV SIMPHONY_PREFIX=/opt/simphony
+ENV SIMPHONY_HOME=/workspaces/simphony
+ENV SIMPHONY_BUILD=/opt/simphony/build
 ENV OPTIX_VERSION=${OPTIX_VERSION}
 ENV GEANT4_VERSION=${GEANT4_VERSION}
 ENV SPACK_BUILDCACHE_MIRROR=${SPACK_BUILDCACHE_MIRROR}
@@ -136,7 +138,7 @@ ENV SPACK_TARGET=${SPACK_TARGET}
 ENV PATH=/opt/spack/bin:${PATH}
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,compute,utility
 
-WORKDIR ${OPTICKS_HOME}
+WORKDIR ${SIMPHONY_HOME}
 
 SHELL ["/bin/bash", "-l", "-c"]
 
@@ -150,7 +152,7 @@ EOF
 
 FROM spack-base AS spack-no-env
 
-WORKDIR ${OPTICKS_HOME}
+WORKDIR ${SIMPHONY_HOME}
 
 # Intentionally track the latest Spack repo state in CI to catch packaging regressions.
 RUN spack repo update -b develop builtin

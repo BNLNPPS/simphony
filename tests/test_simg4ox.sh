@@ -2,5 +2,7 @@
 
 set -e
 
-simg4ox -g "$OPTICKS_HOME/tests/geom/raindrop.gdml" -m "$OPTICKS_HOME/tests/run.mac"
-python "$OPTICKS_HOME/tests/compare_ab.py"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+simg4ox -g "$SCRIPT_DIR/geom/raindrop.gdml" -m "$SCRIPT_DIR/run.mac"
+python3 "$SCRIPT_DIR/compare_ab.py"

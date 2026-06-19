@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 SEED=42
 TOLERANCE=113
 PASS=true
+MAC_FILE="$SCRIPT_DIR/run.mac"
+GEOM_CERENKOV="$SCRIPT_DIR/geom/opticks_raindrop.gdml"
+GEOM_SCINT="$SCRIPT_DIR/geom/opticks_raindrop_with_scintillation.gdml"
+GEOM_REEMIT="$SCRIPT_DIR/geom/opticks_raindrop_reemit_no_scint.gdml"
 
 GEANT4_VERSION=$(geant4-version version)
 GEANT4_SERIES=$(geant4-version series)
@@ -68,8 +73,8 @@ set_expected_hits cerenkov
 
 echo "Running GPURaytrace with seed $SEED ..."
 OUTPUT=$(GPURaytrace \
-    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop.gdml" \
-    -m "$OPTICKS_HOME/tests/run.mac" \
+    -g "$GEOM_CERENKOV" \
+    -m "$MAC_FILE" \
     -s "$SEED" 2>&1)
 
 G4_HITS=$(echo "$OUTPUT" | grep "Geant4: NumHits:" | awk '{print $NF}')
@@ -88,8 +93,8 @@ set_expected_hits cerenkov_scintillation
 
 echo "Running GPURaytrace with seed $SEED ..."
 OUTPUT=$(GPURaytrace \
-    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop_with_scintillation.gdml" \
-    -m "$OPTICKS_HOME/tests/run.mac" \
+    -g "$GEOM_SCINT" \
+    -m "$MAC_FILE" \
     -s "$SEED" 2>&1)
 
 G4_HITS=$(echo "$OUTPUT" | grep "Geant4: NumHits:" | awk '{print $NF}')
@@ -107,8 +112,8 @@ echo "=== Test 3: Cerenkov + Re-emission, no Scintillation (opticks_raindrop_ree
 
 echo "Running GPURaytrace with seed $SEED ..."
 USER=fakeuser GEOM=fakegeom GPURaytrace \
-    -g "$OPTICKS_HOME/tests/geom/opticks_raindrop_reemit_no_scint.gdml" \
-    -m "$OPTICKS_HOME/tests/run.mac" \
+    -g "$GEOM_REEMIT" \
+    -m "$MAC_FILE" \
     -s "$SEED"
 
 # ---- Summary ----

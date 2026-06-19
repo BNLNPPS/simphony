@@ -16,8 +16,8 @@
 #   ./tests/g4trap_validation.sh scintillation_trd        # scint+Cherenkov trd only
 #
 # Pre-requisites: GPUPhotonSource and GPURaytrace on PATH (any standard
-# install of simphony puts them in OPTICKS_PREFIX/bin which is added to
-# PATH in the Dockerfile and devcontainer).
+# install of simphony puts them in the chosen install prefix's `bin/`,
+# which is added to PATH in the Dockerfile and devcontainer).
 
 set -e
 
