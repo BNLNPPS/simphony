@@ -1,10 +1,22 @@
-name: Build Push Image
+name: Build Push Base Image
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
   push:
     branches:
       - main
-      - test
+    paths:
+      - Dockerfile
+      - pyproject.toml
+      - uv.lock
+      - optiphy/**
+      - .github/workflows/build-push-base.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name || github.event_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -12,60 +24,47 @@ permissions:
 
 jobs:
 
-  build-push:
+  build-push-base:
+    if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: release
-            os: ubuntu24.04
+          - os: ubuntu24.04
             cuda_version: 13.2.0
             optix_version: 9.1.0
             geant4_version: 11.4.1
             cmake_version: 4.3.1
-          - target: release
-            os: ubuntu24.04
+            default_alias: false
+          - os: ubuntu24.04
             cuda_version: 13.0.2
             optix_version: 9.0.0
             geant4_version: 11.4.1
             cmake_version: 4.2.1
-          - target: release
-            os: ubuntu22.04
-            cuda_version: 12.1.1
-            optix_version: 8.0.0
-            geant4_version: 11.3.2
-            cmake_version: 3.22.1
-          - target: develop
-            os: ubuntu24.04
-            cuda_version: 13.0.2
-            optix_version: 9.0.0
-            geant4_version: 11.4.1
-            cmake_version: 4.2.1
-          - target: develop
-            os: ubuntu24.04
+            default_alias: true
+          - os: ubuntu24.04
             cuda_version: 12.5.1
             optix_version: 9.0.0
             geant4_version: 11.4.1
             cmake_version: 3.28.3
-          - target: develop
-            os: ubuntu22.04
+            default_alias: false
+          - os: ubuntu22.04
             cuda_version: 12.1.1
             optix_version: 8.0.0
             geant4_version: 11.3.2
             cmake_version: 3.22.1
+            default_alias: false
 
     steps:
       - name: Define environment variables
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
           CACHE_IMAGE_NAME=${IMAGE_NAME}-buildcache
-          BASE_VARIANT=cuda${{ matrix.cuda_version }}-base-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-base-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${BUILD_VARIANT} >> $GITHUB_ENV
-          echo BASE_CACHE_REF=${CACHE_IMAGE_NAME}:${BASE_VARIANT} >> $GITHUB_ENV
           echo CACHE_REF=${CACHE_IMAGE_NAME}:${BUILD_VARIANT} >> $GITHUB_ENV
 
       - name: Checkout code
@@ -81,33 +80,33 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push to registries
+      - name: Build and push base image
         uses: docker/build-push-action@v6
         with:
           context: .
+          pull: true
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          target: ${{ matrix.target }}
+          target: base
           build-args: |
             OS=${{ matrix.os }}
             CUDA_VERSION=${{ matrix.cuda_version }}
             OPTIX_VERSION=${{ matrix.optix_version }}
             GEANT4_VERSION=${{ matrix.geant4_version }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
-          cache-from: |
-            type=registry,ref=${{ env.BASE_CACHE_REF }}
-            type=registry,ref=${{ env.CACHE_REF }}
+          cache-from: type=registry,ref=${{ env.CACHE_REF }}
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          no-cache-filters: ${{ github.event_name != 'push' && 'base' || '' }}
 
-      - name: Add devel alias tag for default CUDA
-        if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.os == 'ubuntu24.04' && matrix.cuda_version == '13.0.2' && matrix.optix_version == '9.0.0' && matrix.geant4_version == '11.4.1' && matrix.cmake_version == '4.2.1' }}
+      - name: Add base alias tag for default CUDA
+        if: ${{ github.ref_name == 'main' && matrix.default_alias }}
         run: |
-          docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:develop ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:base ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   cleanup:
     runs-on: ubuntu-latest
-    needs: build-push
+    needs: build-push-base
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:

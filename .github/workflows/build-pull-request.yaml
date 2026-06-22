@@ -97,9 +97,11 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')-buildcache
           REF_SANITIZED=PR-${{ github.event.pull_request.number }}
+          BASE_VARIANT=cuda${{ matrix.cuda_version }}-base-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
           BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
+          echo BASE_CACHE_REF=${IMAGE_NAME}:${BASE_VARIANT} >> $GITHUB_ENV
           echo CACHE_REF=${IMAGE_NAME}:${BUILD_VARIANT} >> $GITHUB_ENV
 
       - name: Checkout code
@@ -128,7 +130,9 @@ jobs:
             OPTIX_VERSION=${{ matrix.optix_version }}
             GEANT4_VERSION=${{ matrix.geant4_version }}
             CMAKE_VERSION=${{ matrix.cmake_version }}
-          cache-from: type=registry,ref=${{ env.CACHE_REF }}
+          cache-from: |
+            type=registry,ref=${{ env.BASE_CACHE_REF }}
+            type=registry,ref=${{ env.CACHE_REF }}
           push: ${{ matrix.target == 'develop' && github.event.pull_request.head.repo.full_name == github.repository }}
 
   test-develop-image:
