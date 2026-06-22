@@ -15,6 +15,7 @@ set(SOURCES
     SLOG.cc 
     config.cpp
     torch.cpp
+    torch.cu
 
     SSys.cc
     SProf.cc
@@ -259,6 +260,7 @@ set(HEADERS
     tcomplex.h
 
     srng.h
+    srng_traits.h
     srngcpu.h
     scurand.h  
 

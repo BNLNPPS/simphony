@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "scuda.h"
 #include "sphoton.h"
 #include "storch.h"
 
@@ -32,3 +31,4 @@ inline const storch default_torch{
 };
 
 std::vector<sphoton> generate_photons(const storch& torch = default_torch, unsigned int num_photons = 0, unsigned int seed = 0);
+std::vector<sphoton> generate_photons_gpu(const storch& torch = default_torch, unsigned int num_photons = 0, unsigned int seed = 0);
