@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO_DIR=${REPO_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}
 
-simg4ox -g "$SCRIPT_DIR/geom/raindrop.gdml" -m "$SCRIPT_DIR/run.mac"
-python3 "$SCRIPT_DIR/compare_ab.py"
+SIMG4OX_BIN=${SIMG4OX_BIN:-simg4ox}
+PYTHON=${PYTHON:-python3}
+
+export OPTICKS_HOME="${REPO_DIR}"
+export GPHOX_CONFIG_DIR="${GPHOX_CONFIG_DIR:-${REPO_DIR}/config}"
+export PYTHONPATH="${REPO_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+
+"${SIMG4OX_BIN}" -g "${REPO_DIR}/tests/geom/raindrop.gdml" -m "${REPO_DIR}/tests/run.mac" -c dev
+"${PYTHON}" "${REPO_DIR}/optiphy/ana/compare_ab.py"
