@@ -153,25 +153,25 @@ std::string_view EventModeName(EventMode mode)
 }
 
 template <typename T>
-void AssignIfPresent(const nlohmann::json& object, const char* key, T& value)
+void Assign(const nlohmann::json& object, const char* key, T& value)
 {
     if (const auto it = object.find(key); it != object.end())
         value = it->get<T>();
 }
 
-void AssignFloat2IfPresent(const nlohmann::json& object, const char* key, float2& value)
+void AssignFloat2(const nlohmann::json& object, const char* key, float2& value)
 {
     if (const auto it = object.find(key); it != object.end())
         value = make_float2((*it)[0].get<float>(), (*it)[1].get<float>());
 }
 
-void AssignFloat3IfPresent(const nlohmann::json& object, const char* key, float3& value)
+void AssignFloat3(const nlohmann::json& object, const char* key, float3& value)
 {
     if (const auto it = object.find(key); it != object.end())
         value = make_float3((*it)[0].get<float>(), (*it)[1].get<float>(), (*it)[2].get<float>());
 }
 
-void AssignNormalizedFloat3IfPresent(const nlohmann::json& object, const char* key, float3& value)
+void AssignNormalizedFloat3(const nlohmann::json& object, const char* key, float3& value)
 {
     if (const auto it = object.find(key); it != object.end())
     {
@@ -189,7 +189,7 @@ void AssignNormalizedFloat3IfPresent(const nlohmann::json& object, const char* k
 }
 
 template <typename Enum, size_t N>
-void AssignNamedEnumIfPresent(
+void AssignNamedEnum(
     const nlohmann::json&                     object,
     const char*                               section,
     const char*                               key,
@@ -200,7 +200,7 @@ void AssignNamedEnumIfPresent(
         value = ReadNamedEnum(object, section, key, infos);
 }
 
-void AssignOutputDirIfPresent(const nlohmann::json& event, std::filesystem::path& output_dir)
+void AssignOutputDir(const nlohmann::json& event, std::filesystem::path& output_dir)
 {
     if (const auto it = event.find("output_dir"); it != event.end())
         output_dir = it->get<std::string>();
@@ -295,38 +295,38 @@ void Config::ReadConfig(std::string filepath)
         {
             const nlohmann::json& torch_ = *it;
 
-            AssignNamedEnumIfPresent(torch_, "torch", "gentype", torch.gentype, TorchGentypeInfos);
-            AssignIfPresent(torch_, "trackid", torch.trackid);
-            AssignIfPresent(torch_, "matline", torch.matline);
-            AssignIfPresent(torch_, "numphoton", torch.numphoton);
-            AssignFloat3IfPresent(torch_, "pos", torch.pos);
-            AssignIfPresent(torch_, "time", torch.time);
-            AssignNormalizedFloat3IfPresent(torch_, "mom", torch.mom);
-            AssignIfPresent(torch_, "weight", torch.weight);
-            AssignFloat3IfPresent(torch_, "pol", torch.pol);
-            AssignIfPresent(torch_, "wavelength", torch.wavelength);
-            AssignFloat2IfPresent(torch_, "zenith", torch.zenith);
-            AssignFloat2IfPresent(torch_, "azimuth", torch.azimuth);
-            AssignIfPresent(torch_, "radius", torch.radius);
-            AssignIfPresent(torch_, "distance", torch.distance);
-            AssignIfPresent(torch_, "mode", torch.mode);
-            AssignNamedEnumIfPresent(torch_, "torch", "type", torch.type, TorchTypeInfos);
+            AssignNamedEnum(torch_, "torch", "gentype", torch.gentype, TorchGentypeInfos);
+            Assign(torch_, "trackid", torch.trackid);
+            Assign(torch_, "matline", torch.matline);
+            Assign(torch_, "numphoton", torch.numphoton);
+            AssignFloat3(torch_, "pos", torch.pos);
+            Assign(torch_, "time", torch.time);
+            AssignNormalizedFloat3(torch_, "mom", torch.mom);
+            Assign(torch_, "weight", torch.weight);
+            AssignFloat3(torch_, "pol", torch.pol);
+            Assign(torch_, "wavelength", torch.wavelength);
+            AssignFloat2(torch_, "zenith", torch.zenith);
+            AssignFloat2(torch_, "azimuth", torch.azimuth);
+            Assign(torch_, "radius", torch.radius);
+            Assign(torch_, "distance", torch.distance);
+            Assign(torch_, "mode", torch.mode);
+            AssignNamedEnum(torch_, "torch", "type", torch.type, TorchTypeInfos);
         }
 
         if (const auto it = json.find("event"); it != json.end())
         {
             const nlohmann::json& event_ = *it;
 
-            AssignIfPresent(event_, "max_bounce", max_bounce);
-            AssignIfPresent(event_, "max_genstep", max_genstep);
-            AssignIfPresent(event_, "maxslot", maxslot);
-            AssignNamedEnumIfPresent(event_, "event", "mode", event_mode, EventModeInfos);
-            AssignNamedEnumIfPresent(event_, "event", "mode_lite", mode_lite, ModeLiteInfos);
-            AssignNamedEnumIfPresent(event_, "event", "mode_merge", mode_merge, ModeMergeInfos);
-            AssignOutputDirIfPresent(event_, output_dir);
-            AssignIfPresent(event_, "propagate_epsilon", propagate_epsilon);
-            AssignIfPresent(event_, "propagate_epsilon0", propagate_epsilon0);
-            AssignIfPresent(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
+            Assign(event_, "max_bounce", max_bounce);
+            Assign(event_, "max_genstep", max_genstep);
+            Assign(event_, "maxslot", maxslot);
+            AssignNamedEnum(event_, "event", "mode", event_mode, EventModeInfos);
+            AssignNamedEnum(event_, "event", "mode_lite", mode_lite, ModeLiteInfos);
+            AssignNamedEnum(event_, "event", "mode_merge", mode_merge, ModeMergeInfos);
+            AssignOutputDir(event_, output_dir);
+            Assign(event_, "propagate_epsilon", propagate_epsilon);
+            Assign(event_, "propagate_epsilon0", propagate_epsilon0);
+            Assign(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
         }
     }
     catch (nlohmann::json::exception& e)
