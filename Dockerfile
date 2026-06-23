@@ -23,9 +23,9 @@ RUN apt update \
  && rm -rf /var/lib/apt/lists/*
 
 RUN apt update \
- && apt install -y libssl-dev \
-    nlohmann-json3-dev \
+ && apt install -y nlohmann-json3-dev \
     libglfw3-dev libglu1-mesa-dev libxmu-dev libglew-dev libglm-dev \
+    libxkbcommon-dev \
     qt6-base-dev libxerces-c-dev libexpat1-dev \
  && apt clean \
  && rm -rf /var/lib/apt/lists/*
