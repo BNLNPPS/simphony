@@ -157,6 +157,10 @@ target_compile_definitions(EventTimingProfileReportTest PRIVATE
     EVENT_TIMING_PROFILE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/EventTimingProfileFixture.csv"
 )
 
+target_compile_definitions(ConfigTest PRIVATE
+    SIMPHONY_SOURCE_CONFIG_DIR="${CMAKE_SOURCE_DIR}/config"
+)
+
 add_test(
     NAME ${name}.SUTest.presized
     COMMAND ${CMAKE_COMMAND} -E env TEST=presized $<TARGET_FILE:SUTest>

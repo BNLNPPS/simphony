@@ -14,7 +14,6 @@ run_mac_template = """
 /run/beamOn 500
 """
 
-os.environ["OPTICKS_EVENT_MODE"] = "Minimal"
 SIMPHONY_GEOM_FILE_ENV = "SIMPHONY_GEOM_FILE"
 
 def parse_sim_time(output):
@@ -40,6 +39,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--gdml', type=Path, default=None, help=f"Path to the GDML geometry file. If omitted, uses ${SIMPHONY_GEOM_FILE_ENV}.")
     parser.add_argument('-o', '--outpath', type=Path, default=Path('./'), help="Path where the output file will be saved")
+    parser.add_argument('-c', '--config', default='pfrich', help="JSON configuration name passed to GPUCerenkov")
     args = parser.parse_args()
 
     try:
@@ -64,7 +64,12 @@ def main():
                 for flag in ['true', 'false']:
                     run_mac_path.write_text(run_mac_template.format(threads=threads, flag=flag))
 
-                    cmd = ["GPUCerenkov", "-g", str(gdml_path), "-m", str(run_mac_path)]
+                    cmd = [
+                        "GPUCerenkov",
+                        "-g", str(gdml_path),
+                        "-m", str(run_mac_path),
+                        "-c", args.config,
+                    ]
                     print(f"Running {threads} threads: {' '.join(cmd)}")
                     t0 = time.perf_counter()
                     result = subprocess.run(cmd, capture_output=True, text=True)

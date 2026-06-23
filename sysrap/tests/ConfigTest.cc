@@ -128,5 +128,25 @@ int main()
     EventTimingProfile::Configure(false);
     unsetenv("SIMPHONY_CONFIG_DIR");
     fs::remove_all(directory);
+
+    setenv("SIMPHONY_CONFIG_DIR", SIMPHONY_SOURCE_CONFIG_DIR, 1);
+    const auto assert_event_mode = [](const char* name, simphony::EventMode expected) {
+        const simphony::Config config(name);
+        assert(config.event_mode == expected);
+    };
+    assert_event_mode("8x8SiPM_crystal", simphony::EventMode::Minimal);
+    assert_event_mode("dev", simphony::EventMode::DebugLite);
+    assert_event_mode("dev_timing", simphony::EventMode::DebugLite);
+    assert_event_mode("drich_aerogel", simphony::EventMode::HitPhoton);
+    assert_event_mode("drich_direct_sensor", simphony::EventMode::HitPhoton);
+    assert_event_mode("drich_mirror", simphony::EventMode::HitPhoton);
+    assert_event_mode("dune_mock_wls_detector_box", simphony::EventMode::DebugLite);
+    assert_event_mode("pfrich", simphony::EventMode::Minimal);
+    assert_event_mode("pfrich_profiled", simphony::EventMode::Minimal);
+    assert_event_mode("sibling_pair", simphony::EventMode::HitPhoton);
+    assert_event_mode("sphere_leak", simphony::EventMode::DebugLite);
+    assert_event_mode("trap_iso", simphony::EventMode::DebugLite);
+    assert_event_mode("wls_test", simphony::EventMode::HitPhoton);
+    unsetenv("SIMPHONY_CONFIG_DIR");
     return 0;
 }

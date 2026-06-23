@@ -27,7 +27,7 @@
     "max_bounce": 10000,
     "max_genstep": 10000000,
     "maxslot": 1000000,
-    "mode": "DebugLite",
+    "event_mode": "DebugLite",
     "mode_lite": "Unspecified",
     "mode_merge": "Unspecified",
     "output_dir": "./",
