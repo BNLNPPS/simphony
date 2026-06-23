@@ -14,7 +14,7 @@
 
 # Detect standalone vs in-tree build
 if(NOT TARGET G4CX)
-    cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+    cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
     project(ddsimphony VERSION 0.1.0 LANGUAGES CXX)
     find_package(DD4hep REQUIRED COMPONENTS DDG4 DDCore)
     find_package(simphony REQUIRED)

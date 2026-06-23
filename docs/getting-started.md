@@ -12,7 +12,7 @@ GPU.
 - CUDA 12.1+
 - NVIDIA OptiX 7+
 - Geant4 11.3+
-- CMake 3.18+
+- CMake 3.22+
 - Python 3.10+
 
 OptiX releases have specific [minimum NVIDIA driver
