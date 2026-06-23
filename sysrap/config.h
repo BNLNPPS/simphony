@@ -21,6 +21,33 @@ enum class EventMode
     HitSeq
 };
 
+enum class ModeLite : int
+{
+    /// Preserve SEventConfig's lower-level default or OPTICKS_MODE_LITE value.
+    Unspecified = -1,
+
+    /// Store standard photon/hit components. ModeMerge still controls merged hits.
+    Standard = 0,
+
+    /// Store compact photonlite/hitlite components instead of the standard forms.
+    Lite = 1,
+
+    /// Debug mode that gathers standard, lite, and local comparison components.
+    DebugCompare = 2
+};
+
+enum class ModeMerge : int
+{
+    /// Preserve SEventConfig's lower-level default or OPTICKS_MODE_MERGE value.
+    Unspecified = -1,
+
+    /// Keep unmerged hit or hitlite components as the canonical hit output.
+    Separate = 0,
+
+    /// Use merged hit or hitlitemerged components as the canonical hit output.
+    Merged = 1
+};
+
 /**
  * Provides access to all configuration types and data.
  *
@@ -38,17 +65,26 @@ class Config
     /// A unique name associated with this Config
     std::string name{"dev"};
 
-    /// Event persistence mode applied to SEventConfig.
-    EventMode event_mode{EventMode::Minimal};
-
-    /// Maximum event slots applied to SEventConfig.
-    int maxslot{0};
-
     /// Maximum photon bounce count.
     int max_bounce{31};
 
     /// Maximum gensteps allocated for event uploads.
     int max_genstep{10000000};
+
+    /// Maximum event slots applied to SEventConfig.
+    int maxslot{0};
+
+    /// Event persistence mode applied to SEventConfig.
+    EventMode event_mode{EventMode::Minimal};
+
+    /// Optional compact photon/hit storage mode.
+    ModeLite mode_lite{ModeLite::Unspecified};
+
+    /// Optional hit merge mode, combined with mode_lite to choose hit output.
+    ModeMerge mode_merge{ModeMerge::Unspecified};
+
+    /// Base directory for event output folders.
+    std::filesystem::path output_dir{std::filesystem::current_path()};
 
     /// Ray offset after boundary crossing.
     float propagate_epsilon{0.05f};
@@ -58,9 +94,6 @@ class Config
 
     /// Flag mask selecting which bulk interactions use propagate_epsilon0.
     std::string propagate_epsilon0_mask{"TO,CK,SI,SC,RE"};
-
-    /// Base directory for event output folders.
-    std::filesystem::path output_dir{std::filesystem::current_path()};
 
     storch torch{default_torch};
 

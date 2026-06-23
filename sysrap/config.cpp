@@ -30,32 +30,50 @@ constexpr const char* GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
 namespace
 {
 
-struct EventModeInfo
+template <typename Enum>
+struct NamedEnumInfo
 {
-    EventMode        mode;
+    Enum             value;
     std::string_view name;
 };
 
 inline constexpr std::array EventModeInfos{
-    EventModeInfo{EventMode::DebugHeavy, "DebugHeavy"},
-    EventModeInfo{EventMode::DebugLite, "DebugLite"},
-    EventModeInfo{EventMode::Nothing, "Nothing"},
-    EventModeInfo{EventMode::Minimal, "Minimal"},
-    EventModeInfo{EventMode::Hit, "Hit"},
-    EventModeInfo{EventMode::HitPhoton, "HitPhoton"},
-    EventModeInfo{EventMode::HitPhotonSeq, "HitPhotonSeq"},
-    EventModeInfo{EventMode::HitSeq, "HitSeq"},
+    NamedEnumInfo<EventMode>{EventMode::DebugHeavy, "DebugHeavy"},
+    NamedEnumInfo<EventMode>{EventMode::DebugLite, "DebugLite"},
+    NamedEnumInfo<EventMode>{EventMode::Nothing, "Nothing"},
+    NamedEnumInfo<EventMode>{EventMode::Minimal, "Minimal"},
+    NamedEnumInfo<EventMode>{EventMode::Hit, "Hit"},
+    NamedEnumInfo<EventMode>{EventMode::HitPhoton, "HitPhoton"},
+    NamedEnumInfo<EventMode>{EventMode::HitPhotonSeq, "HitPhotonSeq"},
+    NamedEnumInfo<EventMode>{EventMode::HitSeq, "HitSeq"},
 };
 
-auto FindEventMode(EventMode mode)
-{
-    return std::ranges::find(EventModeInfos, mode, &EventModeInfo::mode);
-}
+inline constexpr std::array TorchGentypeInfos{
+    NamedEnumInfo<unsigned>{OpticksGenstep_TORCH, "TORCH"},
+};
 
-auto FindEventMode(std::string_view name)
-{
-    return std::ranges::find(EventModeInfos, name, &EventModeInfo::name);
-}
+inline constexpr std::array TorchTypeInfos{
+    NamedEnumInfo<unsigned>{T_DISC, "disc"},
+    NamedEnumInfo<unsigned>{T_LINE, "line"},
+    NamedEnumInfo<unsigned>{T_POINT, "point"},
+    NamedEnumInfo<unsigned>{T_CIRCLE, "circle"},
+    NamedEnumInfo<unsigned>{T_RECTANGLE, "rectangle"},
+    NamedEnumInfo<unsigned>{T_SPHERE_MARSAGLIA, "sphere_marsaglia"},
+    NamedEnumInfo<unsigned>{T_SPHERE, "sphere"},
+};
+
+inline constexpr std::array ModeLiteInfos{
+    NamedEnumInfo<ModeLite>{ModeLite::Unspecified, "Unspecified"},
+    NamedEnumInfo<ModeLite>{ModeLite::Standard, "Standard"},
+    NamedEnumInfo<ModeLite>{ModeLite::Lite, "Lite"},
+    NamedEnumInfo<ModeLite>{ModeLite::DebugCompare, "DebugCompare"},
+};
+
+inline constexpr std::array ModeMergeInfos{
+    NamedEnumInfo<ModeMerge>{ModeMerge::Unspecified, "Unspecified"},
+    NamedEnumInfo<ModeMerge>{ModeMerge::Separate, "Separate"},
+    NamedEnumInfo<ModeMerge>{ModeMerge::Merged, "Merged"},
+};
 
 bool FileExists(const std::string& path)
 {
@@ -81,10 +99,11 @@ std::vector<std::string> SplitSearchPaths(std::string_view paths)
     return search_paths;
 }
 
-std::string ValidEventModes()
+template <typename Enum, size_t N>
+std::string ValidNamedEnumNames(const std::array<NamedEnumInfo<Enum>, N>& infos)
 {
     std::string names;
-    for (const auto& info : EventModeInfos)
+    for (const auto& info : infos)
     {
         if (!names.empty())
             names += ", ";
@@ -93,25 +112,44 @@ std::string ValidEventModes()
     return names;
 }
 
-std::string_view EventModeName(EventMode mode)
+template <typename Enum, size_t N>
+std::string_view NamedEnumName(
+    Enum                                      value,
+    const std::array<NamedEnumInfo<Enum>, N>& infos,
+    std::string_view                          fallback)
 {
-    const auto it = FindEventMode(mode);
-    if (it != EventModeInfos.end())
+    const auto it = std::ranges::find(infos, value, &NamedEnumInfo<Enum>::value);
+    if (it != infos.end())
         return it->name;
 
-    return "Minimal";
+    return fallback;
 }
 
-EventMode ReadEventMode(const nlohmann::json& event)
+template <typename Enum, size_t N>
+Enum ReadNamedEnum(
+    const nlohmann::json&                     object,
+    const char*                               section,
+    const char*                               key,
+    const std::array<NamedEnumInfo<Enum>, N>& infos)
 {
-    std::string name = event["mode"].get<std::string>();
+    const std::string full_key = std::string{section} + "." + key;
+    const auto&       value = object.at(key);
+    const std::string valid_names = ValidNamedEnumNames(infos);
 
-    const auto it = FindEventMode(name);
-    if (it != EventModeInfos.end())
-        return it->mode;
+    if (!value.is_string())
+        throw std::invalid_argument{"Invalid " + full_key + " value. Expected string name, one of: " + valid_names};
 
-    throw std::invalid_argument{
-        "Invalid event.mode \"" + std::string{name} + "\". Expected one of: " + ValidEventModes()};
+    const std::string name = value.get<std::string>();
+    const auto        it = std::ranges::find(infos, std::string_view{name}, &NamedEnumInfo<Enum>::name);
+    if (it != infos.end())
+        return it->value;
+
+    throw std::invalid_argument{"Invalid " + full_key + " \"" + name + "\". Expected one of: " + valid_names};
+}
+
+std::string_view EventModeName(EventMode mode)
+{
+    return NamedEnumName(mode, EventModeInfos, "Minimal");
 }
 
 template <typename T>
@@ -150,34 +188,22 @@ void AssignNormalizedFloat3IfPresent(const nlohmann::json& object, const char* k
     }
 }
 
-void AssignEventModeIfPresent(const nlohmann::json& event, EventMode& mode)
+template <typename Enum, size_t N>
+void AssignNamedEnumIfPresent(
+    const nlohmann::json&                     object,
+    const char*                               section,
+    const char*                               key,
+    Enum&                                     value,
+    const std::array<NamedEnumInfo<Enum>, N>& infos)
 {
-    if (event.contains("mode"))
-        mode = ReadEventMode(event);
+    if (object.contains(key))
+        value = ReadNamedEnum(object, section, key, infos);
 }
 
 void AssignOutputDirIfPresent(const nlohmann::json& event, std::filesystem::path& output_dir)
 {
     if (const auto it = event.find("output_dir"); it != event.end())
         output_dir = it->get<std::string>();
-}
-
-void AssignTorchGentypeIfPresent(const nlohmann::json& torch, unsigned& gentype)
-{
-    if (const auto it = torch.find("gentype"); it != torch.end())
-    {
-        const std::string gentype_name = it->get<std::string>();
-        if (OpticksGenstep_::Type(gentype_name) != OpticksGenstep_TORCH)
-            throw std::invalid_argument{"Invalid torch.gentype \"" + gentype_name + "\". Expected TORCH"};
-
-        gentype = OpticksGenstep_TORCH;
-    }
-}
-
-void AssignTorchTypeIfPresent(const nlohmann::json& torch, unsigned& type)
-{
-    if (const auto it = torch.find("type"); it != torch.end())
-        type = storchtype::Type(it->get<std::string>());
 }
 
 } // namespace
@@ -269,7 +295,7 @@ void Config::ReadConfig(std::string filepath)
         {
             const nlohmann::json& torch_ = *it;
 
-            AssignTorchGentypeIfPresent(torch_, torch.gentype);
+            AssignNamedEnumIfPresent(torch_, "torch", "gentype", torch.gentype, TorchGentypeInfos);
             AssignIfPresent(torch_, "trackid", torch.trackid);
             AssignIfPresent(torch_, "matline", torch.matline);
             AssignIfPresent(torch_, "numphoton", torch.numphoton);
@@ -284,21 +310,23 @@ void Config::ReadConfig(std::string filepath)
             AssignIfPresent(torch_, "radius", torch.radius);
             AssignIfPresent(torch_, "distance", torch.distance);
             AssignIfPresent(torch_, "mode", torch.mode);
-            AssignTorchTypeIfPresent(torch_, torch.type);
+            AssignNamedEnumIfPresent(torch_, "torch", "type", torch.type, TorchTypeInfos);
         }
 
         if (const auto it = json.find("event"); it != json.end())
         {
             const nlohmann::json& event_ = *it;
 
-            AssignEventModeIfPresent(event_, event_mode);
-            AssignIfPresent(event_, "maxslot", maxslot);
             AssignIfPresent(event_, "max_bounce", max_bounce);
             AssignIfPresent(event_, "max_genstep", max_genstep);
+            AssignIfPresent(event_, "maxslot", maxslot);
+            AssignNamedEnumIfPresent(event_, "event", "mode", event_mode, EventModeInfos);
+            AssignNamedEnumIfPresent(event_, "event", "mode_lite", mode_lite, ModeLiteInfos);
+            AssignNamedEnumIfPresent(event_, "event", "mode_merge", mode_merge, ModeMergeInfos);
+            AssignOutputDirIfPresent(event_, output_dir);
             AssignIfPresent(event_, "propagate_epsilon", propagate_epsilon);
             AssignIfPresent(event_, "propagate_epsilon0", propagate_epsilon0);
             AssignIfPresent(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
-            AssignOutputDirIfPresent(event_, output_dir);
         }
     }
     catch (nlohmann::json::exception& e)
@@ -316,14 +344,18 @@ void Config::Apply() const
     const std::string event_mode_name{EventModeName(event_mode)};
     const std::string output_dir_str = output_dir.string();
 
-    SEventConfig::SetEventMode(event_mode_name.c_str());
-    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
+    SEventConfig::SetMaxSlot(maxslot);
+    SEventConfig::SetEventMode(event_mode_name.c_str());
+    if (mode_lite != ModeLite::Unspecified)
+        SEventConfig::SetModeLite(static_cast<int>(mode_lite));
+    if (mode_merge != ModeMerge::Unspecified)
+        SEventConfig::SetModeMerge(static_cast<int>(mode_merge));
+    SEventConfig::SetOutFold(output_dir_str.c_str());
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
-    SEventConfig::SetOutFold(output_dir_str.c_str());
 }
 
 } // namespace gphox

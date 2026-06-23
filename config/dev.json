@@ -24,13 +24,15 @@
   },
 
   "event": {
-    "mode": "DebugLite",
-    "maxslot": 1000000,
     "max_bounce": 31,
     "max_genstep": 10000000,
+    "maxslot": 1000000,
+    "mode": "DebugLite",
+    "mode_lite": "Unspecified",
+    "mode_merge": "Unspecified",
+    "output_dir": "./",
     "propagate_epsilon": 0.05,
     "propagate_epsilon0": 0.05,
-    "propagate_epsilon0_mask": "TO,CK,SI,SC,RE",
-    "output_dir": "./"
+    "propagate_epsilon0_mask": "TO,CK,SI,SC,RE"
   }
 }
