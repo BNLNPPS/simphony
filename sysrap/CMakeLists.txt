@@ -6,7 +6,7 @@ find_package(plog REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
-find_package(CUDAToolkit REQUIRED)
+find_package(CUDAToolkit 12.6 REQUIRED)
 
 configure_file(config_path.h.in config_path.h @ONLY)
 

@@ -32,11 +32,11 @@ jobs:
             geant4_version: 11.4.1
             cmake_version: 4.2.1
           - target: release
-            os: ubuntu22.04
-            cuda_version: 12.1.1
-            optix_version: 8.0.0
-            geant4_version: 11.3.2
-            cmake_version: 3.22.1
+            os: ubuntu24.04
+            cuda_version: 12.8.2
+            optix_version: 9.0.0
+            geant4_version: 11.4.1
+            cmake_version: 3.28.3
           - target: develop
             os: ubuntu24.04
             cuda_version: 13.0.2
@@ -44,14 +44,8 @@ jobs:
             geant4_version: 11.4.1
             cmake_version: 4.2.1
           - target: develop
-            os: ubuntu24.04
-            cuda_version: 12.5.1
-            optix_version: 9.0.0
-            geant4_version: 11.4.1
-            cmake_version: 3.28.3
-          - target: develop
             os: ubuntu22.04
-            cuda_version: 12.1.1
+            cuda_version: 12.6.3
             optix_version: 8.0.0
             geant4_version: 11.3.2
             cmake_version: 3.22.1

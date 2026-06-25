@@ -45,13 +45,13 @@ jobs:
             cmake_version: 4.2.1
             default_alias: true
           - os: ubuntu24.04
-            cuda_version: 12.5.1
+            cuda_version: 12.8.2
             optix_version: 9.0.0
             geant4_version: 11.4.1
             cmake_version: 3.28.3
             default_alias: false
           - os: ubuntu22.04
-            cuda_version: 12.1.1
+            cuda_version: 12.6.3
             optix_version: 8.0.0
             geant4_version: 11.3.2
             cmake_version: 3.22.1

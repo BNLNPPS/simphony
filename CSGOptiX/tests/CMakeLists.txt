@@ -1,6 +1,6 @@
 set(name CSGOptiXTest)
 
-find_package(CUDAToolkit REQUIRED)
+find_package(CUDAToolkit 12.6 REQUIRED)
 
 #[=[
 Promote sources to ctests by moving to lower list

@@ -24,7 +24,9 @@ cmake -S simphony -B build
 cmake --build build
 ```
 
-To build from source, install CUDA 12.1+, NVIDIA OptiX 7+, and Geant4 11.3+.
+To build from source, install CUDA 12.6+, NVIDIA OptiX 7+, and Geant4 11.3+.
+CUDA 12.8.2+ is recommended for production Release builds that compile the
+optimized OptiX PTX.
 A CUDA-capable NVIDIA GPU is required only to run Simphony and its GPU-backed
 examples.
 
@@ -60,14 +62,13 @@ while `release.yaml` publishes the `latest` alias on tagged releases. Tag entrie
 |---|---|---:|---:|---:|---|---|
 | `base` | `ubuntu24.04` | `13.2.0` | `9.1.0` | `11.4.1` | | [cuda13.2.0-base-ubuntu24.04-optix9.1.0-geant411.4.1-cmake4.3.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `base` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `base` | [cuda13.0.2-base-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `base` | `ubuntu24.04` | `12.5.1` | `9.0.0` | `11.4.1` | | [cuda12.5.1-base-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `base` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-base-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `base` | `ubuntu24.04` | `12.8.2` | `9.0.0` | `11.4.1` | | [cuda12.8.2-base-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `base` | `ubuntu22.04` | `12.6.3` | `8.0.0` | `11.3.2` | | [cuda12.6.3-base-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `release` | `ubuntu24.04` | `13.2.0` | `9.1.0` | `11.4.1` | | [cuda13.2.0-release-ubuntu24.04-optix9.1.0-geant411.4.1-cmake4.3.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `release` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `latest` | [cuda13.0.2-release-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `release` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-release-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `release` | `ubuntu24.04` | `12.8.2` | `9.0.0` | `11.4.1` | | [cuda12.8.2-release-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `develop` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `develop` | [cuda13.0.2-develop-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `develop` | `ubuntu24.04` | `12.5.1` | `9.0.0` | `11.4.1` | | [cuda12.5.1-develop-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `develop` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-develop-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `develop` | `ubuntu22.04` | `12.6.3` | `8.0.0` | `11.3.2` | | [cuda12.6.3-develop-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 
 
 ## Documentation

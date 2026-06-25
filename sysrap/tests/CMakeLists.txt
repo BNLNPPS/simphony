@@ -1,6 +1,6 @@
 set(name SysRapTest)
 
-find_package(CUDAToolkit REQUIRED)
+find_package(CUDAToolkit 12.6 REQUIRED)
 
 set(TEST_SOURCES
 

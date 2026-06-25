@@ -13,6 +13,11 @@ endif()
 
 project(simphony VERSION 0.6.0 LANGUAGES CXX CUDA)
 
+set(SIMPHONY_MIN_CUDA_VERSION 12.6)
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS SIMPHONY_MIN_CUDA_VERSION)
+    message(FATAL_ERROR "Simphony requires CUDA ${SIMPHONY_MIN_CUDA_VERSION} or newer; found ${CMAKE_CUDA_COMPILER_VERSION}.")
+endif()
+
 # Use CMake's standard testing option, but avoid enabling this project's tests
 # by default when Simphony is pulled in as a subproject.
 if(NOT DEFINED BUILD_TESTING)

@@ -9,11 +9,14 @@ Building from source requires the software stack listed below. Running
 Simphony and the GPU-backed tests additionally requires a CUDA-capable NVIDIA
 GPU.
 
-- CUDA 12.1+
+- CUDA 12.6+
 - NVIDIA OptiX 7+
 - Geant4 11.3+
 - CMake 3.22+
 - Python 3.10+
+
+CUDA 12.8.2+ is recommended for production Release builds that compile the
+optimized OptiX PTX.
 
 OptiX releases have specific [minimum NVIDIA driver
 requirements](https://developer.nvidia.com/designworks/optix/downloads/legacy):

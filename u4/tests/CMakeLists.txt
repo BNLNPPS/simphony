@@ -1,6 +1,6 @@
 set(name U4Test)
 
-find_package(CUDAToolkit REQUIRED)
+find_package(CUDAToolkit 12.6 REQUIRED)
 
 #[=[
 Unlike most executables U4VPrimaryGeneratorTest 
