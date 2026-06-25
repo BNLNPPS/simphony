@@ -24,8 +24,10 @@ TODO:
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
    #define QSIM_METHOD __device__
+   #define QSIM_FORCEINLINE_METHOD __device__ __forceinline__
 #else
    #define QSIM_METHOD
+   #define QSIM_FORCEINLINE_METHOD inline
 #endif
 
 #include "OpticksGenstep.h"
@@ -125,7 +127,7 @@ struct qsim
     QSIM_METHOD void    reflect_specular(                      RNG& rng, sctx& ctx );
 
     QSIM_METHOD void    fake_propagate( sphoton& p, const quad2* mock_prd, RNG& rng, unsigned long long idx );
-    QSIM_METHOD int     propagate(const int bounce, RNG& rng, sctx& ctx );
+    QSIM_FORCEINLINE_METHOD int propagate(const int bounce, RNG& rng, sctx& ctx);
 
     QSIM_METHOD void    hemisphere_polarized( unsigned polz, bool inwards, RNG& rng, sctx& ctx );
     QSIM_METHOD void    generate_photon_simtrace(         quad4&   p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
@@ -2121,7 +2123,7 @@ Prior to supporting special surfaces, within the command == BOUNDARY used::
 
 **/
 
-inline QSIM_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx )  // ::simulate
+QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx)
 {
     const unsigned boundary = ctx.prd->boundary() ;
     const unsigned identity = ctx.prd->identity() ; // sensor_identifier+1, 0:not-a-sensor
