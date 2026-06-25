@@ -32,9 +32,31 @@ target_include_directories(${OPTIX_PTX_TARGET} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/CSG>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/sysrap>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/qudarap>)
-target_compile_definitions(${OPTIX_PTX_TARGET} PUBLIC WITH_PRD WITH_SIMULATE WITH_SIMTRACE WITH_RENDER
-        OPTICKS_CSGOPTIX WITH_THRUST OPTICKS_CSG WITH_CONTIGUOUS WITH_S_BB CONFIG_Debug OPTICKS_SYSRAP
-        PLOG_LOCAL RNG_PHILOX DEBUG_TAG DEBUG_PIDX DEBUG_PIDXYZ OPTICKS_OKCONF OPTICKS_QUDARAP NVCC)
+target_compile_definitions(${OPTIX_PTX_TARGET}
+    PUBLIC
+        WITH_PRD
+        WITH_SIMULATE
+        WITH_SIMTRACE
+        WITH_RENDER
+        OPTICKS_CSGOPTIX
+        WITH_THRUST
+        OPTICKS_CSG
+        WITH_CONTIGUOUS
+        WITH_S_BB
+        $<$<CONFIG:Debug>:CONFIG_Debug>
+        $<$<CONFIG:RelWithDebInfo>:CONFIG_RelWithDebInfo>
+        $<$<CONFIG:Release>:CONFIG_Release>
+        $<$<CONFIG:MinSizeRel>:CONFIG_MinSizeRel>
+        OPTICKS_SYSRAP
+        PLOG_LOCAL
+        RNG_PHILOX
+        $<$<CONFIG:Debug>:DEBUG_TAG>
+        $<$<CONFIG:Debug>:DEBUG_PIDX>
+        $<$<CONFIG:Debug>:DEBUG_PIDXYZ>
+        $<$<CONFIG:Release>:PRODUCTION>
+        OPTICKS_OKCONF
+        OPTICKS_QUDARAP
+        NVCC)
 target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
 
 get_filename_component(ptx_stem "${OPTIX_PTX_SRC}" NAME_WE)
