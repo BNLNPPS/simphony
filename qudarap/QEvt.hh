@@ -173,7 +173,7 @@ public:
     NP*      gatherHitLite() const ;
     NP*      gatherHitLiteMerged() const ;
     NP*      gatherHitMerged() const ;
-
+    NP* gatherRecord() const; // full step records
 
 #ifndef PRODUCTION
     NP*      gatherSeed() const ;
@@ -185,7 +185,6 @@ public:
     NP*      gatherSeq() const ;       // seqhis..
     NP*      gatherPrd() const ;
     NP*      gatherFlat() const ;
-    NP*      gatherRecord() const ;    // full step records
     NP*      gatherTag() const ;
     NP*      gatherRec() const  ;      // compressed step record
 #endif

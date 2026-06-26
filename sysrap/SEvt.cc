@@ -3254,8 +3254,9 @@ void SEvt::pointPhoton(const spho& label)
 
 #ifndef PRODUCTION
     if(first_point == false) ctx.trace(bounce);
-    ctx.point(bounce);  // sseq::add_nibble the current photon flag
 #endif
+    if (evt->record)
+        ctx.point(bounce); // sseq::add_nibble the current photon flag in non-production
 
     LOG(LEVEL)
         << "(" << std::setw(5) << label.id
