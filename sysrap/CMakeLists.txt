@@ -529,9 +529,6 @@ PLOG_LOCAL
    integration with packages (like junosw) that do not hide 
    symbols by default  
 
-RNG_PHILOX
-   Selects the curandStatePhilox4_32_10 implementation in srng.h.
-
 #]=]
 
 
@@ -545,7 +542,6 @@ target_compile_definitions( ${name}
       OPTICKS_SYSRAP 
       GLM_ENABLE_EXPERIMENTAL
       PLOG_LOCAL
-      RNG_PHILOX
 
       $<$<CONFIG:Debug>:DEBUG_TAG>
       $<$<CONFIG:Debug>:DEBUG_PIDX>
