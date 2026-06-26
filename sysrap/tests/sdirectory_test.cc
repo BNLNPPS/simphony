@@ -51,9 +51,9 @@ int sdirectory_test::DirList()
 {
     std::vector<std::string> names ; 
     
-    const char* path = spath::Resolve("${RNGDir:-$HOME/.opticks/rngcache/RNG}") ; 
-    const char* pfx = "QCurandState_" ; 
-    const char* ext = ".bin" ; 
+    const char* path = spath::Resolve("$HOME") ; 
+    const char* pfx = "." ; 
+    const char* ext = "" ; 
     sdirectory::DirList(names, path, pfx, ext ); 
 
     std::cout << "names.size " << names.size() << "\n" ; 

@@ -100,7 +100,7 @@ if __name__ == '__main__':
     TEST = os.environ.get("TEST", "generate") 
 
     TYPE = "float"
-    impl = "CHUNKED_CURANDSTATE"
+    impl = "PHILOX"
 
     reldir = "%s/%s" % (TYPE, impl)
 

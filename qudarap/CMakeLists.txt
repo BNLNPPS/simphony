@@ -7,11 +7,6 @@ set(DEV_SOURCES
 set(SOURCES
     QUDARAP_LOG.cc
 
-    QCurandStateMonolithic.cc
-    QCurandStateMonolithic.cu
-    QCurandState.cu
-
-
     QSim.cc
     QSim.cu
 
@@ -73,10 +68,6 @@ SET(HEADERS
     QUDARAP_LOG.hh
     QUDARAP_API_EXPORT.hh
     QUDA_CHECK.h
-
-
-    QCurandStateMonolithic.hh
-    qcurandwrap.h
 
 
     QSim.hh

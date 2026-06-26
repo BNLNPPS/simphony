@@ -615,7 +615,7 @@ class RUN_META(object):
     @classmethod
     def QSim__RNGLabel(cls, fold):
         switches = cls._QSim__Switches(fold) 
-        return "RNG_PHILOX" if "RNG_PHILOX" in switches else "RNG_XORWOW"   
+        return "RNG_PHILOX" if "RNG_PHILOX" in switches else "RNG_UNKNOWN"   
 
 
     @classmethod

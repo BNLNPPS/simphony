@@ -124,7 +124,6 @@ template <> struct srng<srngcpu>
     static constexpr char CODE = 'C';
     static constexpr const char *NAME = "srngcpu";
     static constexpr unsigned SIZE = sizeof(srngcpu);
-    static constexpr bool UPLOAD_RNG_STATES = false;
 
     static inline float uniform(srngcpu &state)
     {

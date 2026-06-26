@@ -36,7 +36,6 @@ logging(){
    export QRng=INFO
    export QRng__init_VERBOSE=1
    export NP__save_VERBOSE=1
-   #export SCurandChunk__ParseName_DEBUG=1
 }
 
 [ -n "$LOG" ] && logging 
@@ -69,4 +68,3 @@ if [ "${arg/pdb}" != "$arg" ]; then
 fi 
 
 exit 0 
-
