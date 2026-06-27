@@ -175,7 +175,6 @@ EventName [OPTICKS_EVENT_NAME envvar]
 
 **/
 
-
 struct SYSRAP_API SEventConfig
 {
     static const plog::Severity LEVEL ;

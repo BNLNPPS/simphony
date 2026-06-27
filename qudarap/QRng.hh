@@ -36,8 +36,7 @@ struct QUDARAP_API QRng
     static const QRng* Get(); 
     static std::string Desc();
 
-    static constexpr const char* IMPL = "PHILOX" ; 
-
+    static constexpr const char* IMPL = "PHILOX";
 
     const char* RNGNAME ; 
     ULL            skipahead_event_offset ; 

@@ -1,13 +1,13 @@
-#include <sstream>
-#include <cstdlib>
-#include <vector>
 #include "SLOG.hh"
+#include <cstdlib>
+#include <sstream>
+#include <vector>
 
 #include "QRng.hh"
 #include "SEventConfig.hh"
 
-#include "ssys.h"
 #include "sstr.h"
+#include "ssys.h"
 
 #include "qrng.h"
 #include "srng.h"
@@ -21,17 +21,18 @@ const QRng* QRng::Get(){ return INSTANCE ;  }
 
 namespace
 {
-    int ParseSeedOffset(QRng::ULL& seed, QRng::ULL& offset, const char* spec_)
-    {
-        const char* spec = spec_ ? spec_ : "0:0" ;
-        std::vector<std::string> elem ;
-        sstr::Split(spec, ':', elem);
-        if(elem.size() != 2) return 1 ;
-        seed = std::strtoull(elem[0].c_str(), nullptr, 10);
-        offset = std::strtoull(elem[1].c_str(), nullptr, 10);
-        return 0 ;
-    }
+int ParseSeedOffset(QRng::ULL& seed, QRng::ULL& offset, const char* spec_)
+{
+    const char*              spec = spec_ ? spec_ : "0:0";
+    std::vector<std::string> elem;
+    sstr::Split(spec, ':', elem);
+    if (elem.size() != 2)
+        return 1;
+    seed = std::strtoull(elem[0].c_str(), nullptr, 10);
+    offset = std::strtoull(elem[1].c_str(), nullptr, 10);
+    return 0;
 }
+} // namespace
 
 std::string QRng::Desc() // static
 {
@@ -52,15 +53,14 @@ QRng instanciation is invoked from QSim::UploadComponents
 
 **/
 
-QRng::QRng(unsigned skipahead_event_offset_)
-    :
+QRng::QRng(unsigned skipahead_event_offset_) :
     RNGNAME(srng<RNG>::NAME),
     skipahead_event_offset(skipahead_event_offset_),
     seed(0ull),
     offset(0ull),
     SEED_OFFSET(ssys::getenvvar("QRng__SEED_OFFSET")),
-    parse_rc(ParseSeedOffset(seed, offset, SEED_OFFSET )),
-    qr(new qrng<RNG>(seed, offset, skipahead_event_offset)), 
+    parse_rc(ParseSeedOffset(seed, offset, SEED_OFFSET)),
+    qr(new qrng<RNG>(seed, offset, skipahead_event_offset)),
     d_qr(nullptr),
     rngmax(SEventConfig::MaxCurand())
 {

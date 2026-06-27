@@ -45,11 +45,9 @@ struct QRngTest
     static int Main(int argc, char** argv);
 };
 
-
-QRngTest::QRngTest()
-    :
-    num_event(ssys::getenvull(_NUM_EVENT, 3ull)), 
-    num_value(ssys::getenvull(_NUM_VALUE, 16ull)), 
+QRngTest::QRngTest() :
+    num_event(ssys::getenvull(_NUM_EVENT, 3ull)),
+    num_value(ssys::getenvull(_NUM_VALUE, 16ull)),
     skipahead_event_offset(ssys::getenvull(_SKIPAHEAD, 1ull)),
     qr(skipahead_event_offset)
 {
