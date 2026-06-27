@@ -3913,18 +3913,6 @@ CSGFoundry::AfterLoadOrCreate with SSim::afterLoadOrCreate
 void CSGFoundry::AfterLoadOrCreate() // static
 {
     assert(0 && "DONT USE THIS : THIS PREP DONE BY SSim::afterLoadOrCreate " );
-
-    CSGFoundry* fd = CSGFoundry::Get();
-    if(!fd) return ;
-
-#ifdef WITH_OLD_FRAME
-    SEvt::CreateOrReuse() ;   // creates 1/2 SEvt depending on OPTICKS_INTEGRATION_MODE
-
-    sframe fr = fd->getFrameE() ;
-    LOG(LEVEL) << fr ;
-    SEvt::SetFrame(fr); // now only needs to be done once to transform input photons
-#endif
-
 }
 
 

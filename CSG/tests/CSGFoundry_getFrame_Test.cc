@@ -12,11 +12,7 @@ CSG/tests/CSGFoundry_getFrame_Test.cc
 #include "squad.h"
 #include "sqat4.h"
 
-#ifdef WITH_OLD_FRAME
-#include "sframe.h"
-#else
 #include "sfr.h"
-#endif
 
 #include "stree.h"
 #include "ssys.h"
@@ -30,11 +26,7 @@ struct CSGFoundry_getFrame_Test
     const CSGFoundry* fd ;
     const stree* tree ;
 
-#ifdef WITH_OLD_FRAME
-    sframe fr = {} ;
-#else
     sfr fr = {} ;
-#endif
 
     CSGFoundry_getFrame_Test();
 
@@ -57,11 +49,7 @@ inline int CSGFoundry_getFrame_Test::getFrameE()
 {
     std::cout << "[ fd->getFrameE " << std::endl ;
 
-#ifdef WITH_OLD_FRAME
-    fr = fd->getFrameE() ;  // via INST, MOI, OPTICKS_INPUT_PHOTON_FRAME "ipf"
-#else
     fr = tree->get_frame_moi();
-#endif
     std::cout << "] fd->getFrameE " << std::endl ;
 
     int INST = ssys::getenvint("INST",-1) ;
@@ -78,11 +66,6 @@ inline int CSGFoundry_getFrame_Test::save()
     fr.save("$FOLD");
     std::cout << " ] fr.save " << std::endl ;
 
-#ifdef WITH_OLD_FRAME
-    std::cout << " [ fr.save_extras " << std::endl ;
-    fr.save_extras("$FOLD");
-    std::cout << " ] fr.save_extras " << std::endl ;
-#endif
 
     return 0 ;
 }
@@ -106,11 +89,7 @@ inline int CSGFoundry_getFrame_Test::InputPhoton()
     ipt0->save("$FOLD/ipt0.npy");
     ipt1->save("$FOLD/ipt1.npy");
 
-#ifdef WITH_OLD_FRAME
-    evt->setFrame(fr);
-#else
     evt->setFr(fr);
-#endif
 
 
     NP* ipt2 = evt->getInputPhoton() ;

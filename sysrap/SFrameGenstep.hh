@@ -5,7 +5,7 @@ SFrameGenstep.hh
 
 TODO: contrast this with SCenterExtentGenstep and replace all use of that with this
 
-* principal advantage of SFrameGenstep over SCenterExtentGenstep is the sframe.h/sframe.py
+* principal advantage of SFrameGenstep over SCenterExtentGenstep is the frame
   providing a central object on which to hang metadata that is
   available both from C++ and python
 
@@ -42,11 +42,7 @@ struct SYSRAP_API SFrameGenstep
 
     static bool HasConfigEnv();
 
-#ifdef WITH_OLD_FRAME
-    static NP* MakeCenterExtentGenstep_FromFrame(sframe& fr);
-#else
     static NP* MakeCenterExtentGenstep_FromFrame(sfr& fr);
-#endif
     static NP* MakeCenterExtentGenstep_From_CE_geotran(const float4& ce, const std::vector<int>& cegs, float gridscale, const Tran<double>* geotran, int prim);
 
     static void Maybe_Add_PRIOR_SIMTRACE_Genstep( std::vector<NP*>& gsl, int prim );
@@ -95,5 +91,4 @@ struct SYSRAP_API SFrameGenstep
         double cosTheta,
         double sinTheta );
 };
-
 
