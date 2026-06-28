@@ -75,20 +75,11 @@ const char* SEventConfig::_RGModeDefault = "simulate" ;
 const char* SEventConfig::_HitMaskDefault = "SD" ;
 
 
-#if defined(RNG_XORWOW)
-const char* SEventConfig::_MaxSlotDefault = WITH_STATE_LIMIT ;
-const char* SEventConfig::_MaxGenstepDefault = WITH_STATE_LIMIT ;
-const char* SEventConfig::_MaxPhotonDefault = WITH_STATE_LIMIT ;
-const char* SEventConfig::_MaxSimtraceDefault = WITH_STATE_LIMIT ;
-const char* SEventConfig::_MaxCurandDefault = WITH_STATE_LIMIT ;
-
-#elif defined(RNG_PHILOX)
 const char* SEventConfig::_MaxSlotDefault = "0" ;     // see SEventConfig::SetDevice : set according to VRAM
 const char* SEventConfig::_MaxGenstepDefault = NO_STATE_LIMIT_GENSTEP ;  // adhoc
 const char* SEventConfig::_MaxPhotonDefault = NO_STATE_LIMIT ;
 const char* SEventConfig::_MaxSimtraceDefault = NO_STATE_LIMIT ;
 const char* SEventConfig::_MaxCurandDefault = NO_STATE_LIMIT ;
-#endif
 
 
 // HUH: former default was ALL_
@@ -1759,21 +1750,12 @@ launch depends on:
 2. sizeof(curandState)+photon 4x4x4 + plus optional enabled arrays
    configured in SEventConfig::
 
-   sizeof(curandStateXORWOW) 48
-   sizeof(sphoton)           64=4*4*4
-   .                       -----
-   .                        112 bytes per photon (absolute minimum)
+   sizeof(curandStatePhilox4_32_10) 64
+   sizeof(sphoton)                  64=4*4*4
+   .                              -----
+   .                               128 bytes per photon (absolute minimum)
 
-3. limited by available (chunked) curandState, see QRng.hh SCurandState.h
-   (currently M200). BUT other than consuming disk it is perfectly possible
-   to curand_init more chunks of curandState than could ever be used in
-   currently available GPU VRAM (48GB, 80GB)
-   because many launches are done due to curand_init taking lots of stack.
-
-   * for now could just assert in QRng that maxphoton is less than
-     the available curandState slots
-
-4. safety scaledown from theoretical maximum for reliability,
+3. safety scaledown from theoretical maximum for reliability,
    as detector geometry will take a few GB plus other processes
    will use some too
 

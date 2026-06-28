@@ -49,7 +49,6 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
         $<$<CONFIG:MinSizeRel>:CONFIG_MinSizeRel>
         OPTICKS_SYSRAP
         PLOG_LOCAL
-        RNG_PHILOX
         $<$<CONFIG:Debug>:DEBUG_TAG>
         $<$<CONFIG:Debug>:DEBUG_PIDX>
         $<$<CONFIG:Debug>:DEBUG_PIDXYZ>

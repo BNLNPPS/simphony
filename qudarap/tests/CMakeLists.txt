@@ -21,9 +21,6 @@ set(TEST_SOURCES
    QMultiFilmTest.cc
 
 
-   QCurandStateMonolithicTest.cc
-   QCurandStateTest.cc
-
    qrng_test.cc
 )
 

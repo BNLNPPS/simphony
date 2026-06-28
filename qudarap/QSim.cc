@@ -2056,17 +2056,7 @@ std::string QSim::Desc(char delim)  // static
        << "NOT-DEBUG_TAG"
 #endif
        << delim
-#ifdef RNG_XORWOW
-       << "RNG_XORWOW"
-#else
-       << "NOT-RNG_XORWOW"
-#endif
-       << delim
-#ifdef RNG_PHILOX
        << "RNG_PHILOX"
-#else
-       << "NOT-RNG_PHILOX"
-#endif
        << delim
        ;
     std::string str = ss.str() ;

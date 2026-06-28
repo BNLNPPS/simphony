@@ -16,7 +16,6 @@ set(SOURCES
     config.cpp
     torch.cpp
 
-    SCurandStateMonolithic.cc
     SSys.cc
     SProf.cc
     SMeta.cc
@@ -58,8 +57,6 @@ set(SOURCES
     SBit.cc
     SEnabled.cc
     SRand.cc
-
-    SRngSpec.cc
 
     CheckGeo.cc
 
@@ -121,13 +118,6 @@ set(HEADERS
     SLaunchSequence.h 
 
 
-    SCurandSpec.h
-    SCurandChunk.h
-    scurandref.h
-    SCurandState.h
-
-
-    SCurandStateMonolithic.hh
     sproc.h
     sprof.h
     SProf.hh
@@ -255,8 +245,6 @@ set(HEADERS
     SBitSet.h
     SEnabled.hh
     SRand.hh
-
-    SRngSpec.hh
 
     CheckGeo.hh
     SLabelCache.hh
@@ -541,12 +529,6 @@ PLOG_LOCAL
    integration with packages (like junosw) that do not hide 
    symbols by default  
 
-RNG_XORWOW/RNG_PHILOX
-   Use one of these to pick the curandState implementation, in srng.h
-   picking RNG_XORWOW requires curandState files which slows
-   down initialization greatly when simulating many millions 
-   of photons 
-
 #]=]
 
 
@@ -560,7 +542,6 @@ target_compile_definitions( ${name}
       OPTICKS_SYSRAP 
       GLM_ENABLE_EXPERIMENTAL
       PLOG_LOCAL
-      RNG_PHILOX
 
       $<$<CONFIG:Debug>:DEBUG_TAG>
       $<$<CONFIG:Debug>:DEBUG_PIDX>

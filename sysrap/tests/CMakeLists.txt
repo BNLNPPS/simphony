@@ -120,8 +120,6 @@ set(TEST_SOURCES
    ssys_test.cc
    srng_test.cc
 
-   SCurandStateMonolithicTest.cc
-
    SEvt__createInputGenstep_configuredTest.cc
 
 )

@@ -13,7 +13,6 @@ sreport_ab.sh : comparison between two report folders
 
    A=N7 B=A7 PLOT=AB_Substamp_ALL_Etime_vs_Photon ~/o/sreport_ab.sh
        ## commandline that reproduces chep 2024 v0 fig 5 
-       ## (XORWOW with 100M state loading)
 
    A=N8 B=A8 PLOT=AB_Substamp_ALL_Etime_vs_Photon ~/o/sreport_ab.sh
        ## commandline showing Philox scan
@@ -114,4 +113,3 @@ if [ "$arg" == "mpcap" -o "$arg" == "mppub" ]; then
 fi 
 
 exit 0 
-
