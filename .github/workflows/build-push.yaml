@@ -92,7 +92,7 @@ jobs:
             type=registry,ref=${{ env.CACHE_REF }}
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
 
-      - name: Add devel alias tag for default CUDA
+      - name: Add alias tag for default configuration
         if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.config.default_alias }}
         run: |
           docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:develop ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
