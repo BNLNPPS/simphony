@@ -20,16 +20,16 @@ jobs:
       matrix:
         include:
           - target: release
-            os: ubuntu24.04
-            cuda_version: 13.2.0
+            os: ubuntu26.04
+            cuda_version: 13.3.0
             optix_version: 9.1.0
-            geant4_version: 11.4.1
-            cmake_version: 4.3.1
+            geant4_version: 11.4.2
+            cmake_version: 4.3.4
           - target: release
             os: ubuntu24.04
-            cuda_version: 13.0.2
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
           - target: release
             os: ubuntu22.04
@@ -39,9 +39,9 @@ jobs:
             cmake_version: 3.22.1
           - target: develop
             os: ubuntu24.04
-            cuda_version: 13.0.2
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
           - target: develop
             os: ubuntu24.04
@@ -101,7 +101,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
 
       - name: Add devel alias tag for default CUDA
-        if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.os == 'ubuntu24.04' && matrix.cuda_version == '13.0.2' && matrix.optix_version == '9.0.0' && matrix.geant4_version == '11.4.1' && matrix.cmake_version == '4.2.1' }}
+        if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.os == 'ubuntu24.04' && matrix.cuda_version == '13.0.3' && matrix.optix_version == '9.0.0' && matrix.geant4_version == '11.4.2' && matrix.cmake_version == '4.2.1' }}
         run: |
           docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:develop ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 

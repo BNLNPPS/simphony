@@ -19,9 +19,9 @@ jobs:
         include:
           - target: release
             os: ubuntu24.04
-            cuda_version: 13.0.2
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
 
     steps:
