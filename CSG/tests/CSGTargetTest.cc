@@ -191,7 +191,7 @@ int main(int argc, char** argv)
     }
     else if( strcmp(METHOD, "getFrame") == 0 )
     {
-        sframe fr = fd->getFrame() ;  // depends on MOI or its default -1  
+        sframe        fr = fd->getFrame(); // depends on MOI or its default -1
         Tran<double>* tr = fr.getTransform(); 
         std::cout << tr->desc() << std::endl ; 
     }
@@ -199,5 +199,4 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
 

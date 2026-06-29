@@ -3178,8 +3178,6 @@ CSGFoundry* CSGFoundry::Load() // static
     return dst ;
 }
 
-
-
 /**
 CSGFoundry::CopySelect
 -------------------------
@@ -3196,9 +3194,7 @@ overriding the empty dst SSim instance.
 Notice that the stree that the SSim contains is not changed by
 this CSGFoundry level dynamic geometry selection, so
 the stree::get_tree_digest will not change as a result of the
-ELV geometry selection. Due to this issue, added stree::make_tree_digest
-that is used from SSim::AnnotateFrame which includes the elv
-SBitSet info into the dynamically formed digest.
+ELV geometry selection.
 
 **/
 
@@ -3597,10 +3593,9 @@ Grab these from remote with::
 
 )" ;
 
-
-sframe CSGFoundry::getFrame() const // TODO: MIGRATE TO sfr.h
+sframe CSGFoundry::getFrame() const
 {
-    const char* moi_or_iidx = ssys::getenvvar("MOI",sframe::DEFAULT_FRS); // DEFAULT_FRS "-1"
+    const char* moi_or_iidx = ssys::getenvvar("MOI", "-1");
     return getFrame(moi_or_iidx);
 }
 
@@ -3608,206 +3603,37 @@ sframe CSGFoundry::getFrame() const // TODO: MIGRATE TO sfr.h
 CSGFoundry::getFrame
 --------------------
 
-The FRAME_TRANSITION starts moving away from sframe by
-switching to stree::getFrame to provide sfr which is used to
-populate the sframe
-
-Currently sframe::populate lacks handling of the grid metadata
-needed for simtrace. Actually seems that metadata not much used and
-anyhow if it was needed could include into the genstep metadata.
+Return the lightweight frame from stree. This keeps the historical CSGFoundry
+entrypoint while using the same sframe implementation as the rest of the current
+frame path.
 
 **/
 
-
-sframe CSGFoundry::getFrame(const char* q_spec) const //  TODO: MIGRATE TO sfr.h
+sframe CSGFoundry::getFrame(const char* q_spec) const
 {
-    sframe fr = {} ;
-
-#ifdef FRAME_TRANSITION
-    stree* tree = getTree();
+    const stree* tree = getTree();
     assert(tree);
-    sfr f = tree->get_frame(q_spec);
-    fr.populate(f);
-#else
-    const char* arg = frs ? frs : sframe::DEFAULT_FRS ;
-    int rc = getFrame(fr, arg );
-    LOG_IF(error, rc != 0) << " arg" << arg << std::endl << getFrame_NOTES ;
-    if(rc != 0) std::raise(SIGINT);
-#endif
-    fr.prepare();  // creates Tran<double>
 
-    return fr ;
+    const char* spec = q_spec ? q_spec : "-1";
+
+    if (sstr::IsInteger(spec))
+    {
+        std::string inst_spec = stree::INST_PFX;
+        inst_spec += spec;
+        return tree->get_frame(inst_spec.c_str());
+    }
+
+    return tree->get_frame(spec);
 }
-
-
-
-#ifndef FRAME_TRANSITION
-
-/**
-CSGFoundry::getFrame
----------------------
-
-
-FRAME_TRANSITION SEEKS TO ELIMINATE THIS
-
-
-
-
-
-frs
-    frame specification string is regarded to "looks_like_moi" when
-    it starts with a letter or it contains ":" or it is "-1".
-    For such strings parseMOI is used to extract midx, mord, oodx
-
-    Otherwise the string is assumed to be inst_idx and iidxg
-    parsed as an integer
-
-
-Q: is indexing by MOI and inst_idx equivalent ? OR: Can a MOI be converted into inst_idx and vice versa ?
-
-* NO not for global prims : for example for all the repeated prims in the global geometry
-  there is only one inst_idx (zero) but there are many possible MOI
-
-* NO not for most instanced prim, where all the prim within an instance
-  share the same inst_idx and transform
-
-* BUT for the outer prim of an instance a correspondence is possible
-
-TODO : AVOID DUPLICATION BETWEEN THIS AND stree::get_frame
-
-
-looks_like_raw:true
-    frs contains "," delimiting center_extent CE values eg::
-
-         MOI=0.000,0.000,18935.000,1435.000 FULLSCREEN=0 cxr_min.sh
-
-
-**/
-
-
-
-
-int CSGFoundry::getFrame(sframe& fr, const char* frs ) const  //  TODO: MIGRATE TO sfr.h
-{
-
-    bool VERBOSE = ssys::getenvbool(getFrame_VERBOSE) ;
-    LOG(LEVEL) << "[" << getFrame_VERBOSE << "] " << VERBOSE ;
-
-    int rc = 0 ;
-
-    bool looks_like_axis = sstr::StartsWith(frs,stree::AXIS_PFX) ;
-    bool looks_like_raw = strstr(frs,",") ;
-    bool looks_like_moi = sstr::StartsWithLetterAZaz(frs) || strstr(frs, ":") || strcmp(frs,"-1") == 0 ;
-
-    LOG_IF(info, VERBOSE)
-        << "[" << getFrame_VERBOSE << "] " << ( VERBOSE ? "YES" : "NO " )
-        << " frs " << ( frs ? frs : "-" )
-        << " looks_like_moi " << ( looks_like_moi ? "YES" : "NO " )
-        << " looks_like_raw " << ( looks_like_raw ? "YES" : "NO " )
-        ;
-
-    if(looks_like_axis)
-    {
-        // ASSERTS WITHOUT THIS FROM TOO MANY ELEM IN PopulateFromRaw
-        // BUT SUSPECT THE sframe NOT REALLY USED
-        //
-        // ABOVE IS NOT TRUE, THE PERSISTED sframe STILL USED FROM CSGOptiX/cxt_min.py for simtrace plotting
-        // SO STILL MUST DO THINGS IN DUPLICATE
-        sfr lf = sfr::MakeFromAxis<float>(frs + strlen(stree::AXIS_PFX), ',');
-        fr.populate(lf);
-    }
-    else if(looks_like_raw)
-    {
-        rc = sframe::PopulateFromRaw(fr, frs, ',' );
-    }
-    else if(looks_like_moi)
-    {
-        int midx, mord, gord ;  // mesh-index, mesh-ordinal, gas-ordinal
-        parseMOI(midx, mord, gord,  frs );
-
-        rc = getFrame(fr, midx, mord, gord);
-        // NB gas ordinal is not the same as gas index
-
-        LOG_IF(info, VERBOSE)
-            << "[" << getFrame_VERBOSE << "] " << ( VERBOSE ? "YES" : "NO " )
-            << " frs " << ( frs ? frs : "-" )
-            << " looks_like_moi " << ( looks_like_moi ? "YES" : "NO " )
-            << " midx " << midx
-            << " mord " << mord
-            << " gord " << gord
-            << " rc " << rc
-            ;
-
-    }
-    else
-    {
-        int inst_idx = SName::ParseIntString(frs, 0) ;
-        rc = getFrame(fr, inst_idx);
-
-        LOG_IF(info, VERBOSE)
-            << "[" << getFrame_VERBOSE << "] " << ( VERBOSE ? "YES" : "NO " )
-            << " frs " << ( frs ? frs : "-" )
-            << " looks_like_moi " << ( looks_like_moi ? "YES" : "NO " )
-            << " inst_idx " << inst_idx
-            << " rc " << rc
-            ;
-    }
-
-    fr.set_propagate_epsilon( SEventConfig::PropagateEpsilon() );
-    fr.frs = strdup(frs);
-    fr.prepare();  // needed for spawn_lite to work
-
-    LOG_IF(info, VERBOSE)
-        << "[" << getFrame_VERBOSE << "] " << ( VERBOSE ? "YES" : "NO " )
-        << "[fr.desc\n"
-        << fr.desc()
-        << "]fr.desc\n"
-        ;
-
-    LOG_IF(error, rc != 0) << "Failed to lookup frame with frs [" << frs << "] looks_like_moi " << looks_like_moi  ;
-    return rc ;
-}
-#endif
-
 
 int CSGFoundry::getFrame(sframe& fr, int inst_idx) const
 {
-    return target->getFrame( fr, inst_idx );
+    const stree* tree = getTree();
+    assert(tree);
+
+    fr = tree->get_frame_inst(inst_idx);
+    return 0;
 }
-
-/**
-CSGFoundry::getFrame
-----------------------
-
-midx
-    mesh index (aka lv)
-mord
-    mesh ordinal (picking between multipler occurrences of midx
-gord
-    GAS ordinal [NB this is not the GAS index]
-
-
-NB the GAS index is determined from (midx, mord)
-and then gord picks between potentially multiple occurrences
-
-**/
-
-int CSGFoundry::getFrame(sframe& fr, int midx, int mord, int gord) const
-{
-    int rc = 0 ;
-    if( midx == -1 )
-    {
-        unsigned ias_idx = 0 ; // only one IAS
-        unsigned long long emm = 0ull ;   // hmm instance var ?
-        iasCE(fr.ce, ias_idx, emm);
-    }
-    else
-    {
-        rc = target->getFrame( fr, midx, mord, gord );
-    }
-    return rc ;
-}
-
 
 /**
 CSGFoundry::getFrameE
@@ -3827,62 +3653,38 @@ see CSGFoundry::getFrameE. Possible envvars include:
 +------------------------------+----------------------------+
 
 
-The sframe::set_ekv records into frame metadata the envvar key and value
-that picked the frame.
-
-
-Q: WHY NOT DO THIS AT LOWER LEVEL ?
-A: Probably because it needs getFrame and it predates the stree.h reorganization
-   that made frame access at sysrap level possible.
-
-
-NB this is called both by the below CSGFoundry::AfterLoadOrCreate and by CSGOptiX::initFrame
-   so that should mean that frame annotation always gets done for running from
-   persisted or live geometry  (HMM perhaps called twice though)
+The old frame path recorded metadata describing which environment variable
+selected the frame. That metadata is intentionally not preserved for sframe.
 
 **/
-
-
 
 sframe CSGFoundry::getFrameE() const
 {
     bool VERBOSE = ssys::getenvbool(getFrameE_VERBOSE) ;
     LOG(LEVEL) << "[" << getFrameE_VERBOSE << "] " << VERBOSE ;
 
-    sframe fr = {} ;
-
     if(ssys::getenvbool("INST"))
     {
         int INST = ssys::getenvint("INST", 0);
         LOG_IF(info, VERBOSE) << " INST " << INST ;
+        sframe fr = {};
         getFrame(fr, INST ) ;
-
-        fr.set_ekv("INST");
+        return fr;
     }
     else if(ssys::getenvbool("MOI"))
     {
         const char* MOI = ssys::getenvvar("MOI", nullptr) ;
         LOG_IF(info, VERBOSE) << " MOI " << MOI ;
-        fr = getFrame() ;
-        fr.set_ekv("MOI");
+        return getFrame();
     }
     else
     {
         const char* ipf_ = SEventConfig::InputPhotonFrame();  // OPTICKS_INPUT_PHOTON_FRAME
         const char* ipf = ipf_ ? ipf_ : "0" ;
         LOG_IF(info, VERBOSE) << " ipf " << ipf ;
-        fr = getFrame(ipf);
-
-        fr.set_ekv(SEventConfig::kInputPhotonFrame, ipf );
+        return getFrame(ipf);
     }
-
-
-    SSim::AnnotateFrame(fr, elv, "CSGFoundry::getFrameE"  );  // set tree and dynamic digests into the frame
-
-    return fr ;
 }
-
-
 
 /**
 CSGFoundry::AfterLoadOrCreate
@@ -3900,12 +3702,7 @@ Formerly frame mechanics had to be done up here at CSGFoundry level
 due to the need for geometry info to form the frame from envvar config.
 But after stree.h improvements there is no reason not to do within SSim+stree
 
-TODO: reposition SEvt prep into SSim::AfterLoadOrCreate and sframe/sfr prep into stree::AfterLoadOrCreate ?
-
-
-
-Trying to progress with FRAME_TRANSITION by replacing the old
-CSGFoundry::AfterLoadOrCreate with SSim::afterLoadOrCreate
+TODO: reposition SEvt prep into SSim::AfterLoadOrCreate and frame prep into stree::AfterLoadOrCreate ?
 
 
 **/
@@ -3913,18 +3710,6 @@ CSGFoundry::AfterLoadOrCreate with SSim::afterLoadOrCreate
 void CSGFoundry::AfterLoadOrCreate() // static
 {
     assert(0 && "DONT USE THIS : THIS PREP DONE BY SSim::afterLoadOrCreate " );
-
-    CSGFoundry* fd = CSGFoundry::Get();
-    if(!fd) return ;
-
-#ifdef WITH_OLD_FRAME
-    SEvt::CreateOrReuse() ;   // creates 1/2 SEvt depending on OPTICKS_INTEGRATION_MODE
-
-    sframe fr = fd->getFrameE() ;
-    LOG(LEVEL) << fr ;
-    SEvt::SetFrame(fr); // now only needs to be done once to transform input photons
-#endif
-
 }
 
 

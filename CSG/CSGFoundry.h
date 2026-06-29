@@ -19,7 +19,6 @@ struct SMeshGroup ;
 #include "stran.h"
 #include "SGeo.hh"
 
-struct sframe ;
 struct CSGTarget ;
 
 struct SName ;
@@ -89,25 +88,15 @@ plan
 
 
 
-TODO: Remove WITH_SGEO SGeo pure virtual base struct
------------------------------------------------------
+TODO: Remove SGeo pure virtual base struct
+------------------------------------------
 
-The SGeo base enables holding pointer to CSGFoundry within SEvt
-using SEvt::setGeo. But now that all geometry info is better accessed
-from stree this complication can be removed ?
+The SGeo base now only provides a narrow compatibility protocol for geometry
+queries. SEvt frame access has moved to SSim/stree.
 
 **/
 
-
-#define FRAME_TRANSITION 1
-
-#define WITH_SGEO 1
-
-#ifdef WITH_SGEO
 struct CSG_API CSGFoundry : public SGeo
-#else
-struct CSG_API CSGFoundry
-#endif
 {
     static const plog::Severity LEVEL ;
     static const int  VERBOSE ;
@@ -393,8 +382,6 @@ struct CSG_API CSGFoundry
 
     static constexpr const char* getFrame_VERBOSE = "CSGFoundry__getFrame_VERBOSE" ;
 
-    int getFrame(sframe& fr, const char* frs ) const ;
-    int getFrame(sframe& fr, int midx, int mord, int gord) const ;
     int getFrame(sframe& fr, int ins_idx ) const ;
 
     static constexpr const char* getFrameE_VERBOSE = "CSGFoundry__getFrameE_VERBOSE" ;
@@ -498,4 +485,3 @@ struct CSG_API CSGFoundry
     const SBitSet*    elv ;
     const char* save_opt ;
 };
-

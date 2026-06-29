@@ -27,7 +27,7 @@ CSGFoundry Helpers
 -------------------
 
 CSGTarget.h .cc
-    const CSGFoundry ctor argument, sframe/CE:center_extent/transform access
+    const CSGFoundry ctor argument, CE:center_extent/transform access
 
     * CSGFoundry::target instance : with transform related access
     
@@ -197,6 +197,5 @@ csg_stack.h
 
 f4_stack.h
    struct F4_Stack using float4 as micro stack
-
 
 

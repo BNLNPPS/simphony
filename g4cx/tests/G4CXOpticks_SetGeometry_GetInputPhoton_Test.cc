@@ -4,7 +4,7 @@ G4CXOpticks_setGeometry_Test.cc
 
 Action depends on envvars such as OpticksGDMLPath, see G4CXOpticks::setGeometry
 
-The hookup of the sframe obtained from CSGFoundry geometry with SEvt 
+The hookup of the frame obtained from CSGFoundry geometry with SEvt
 is done by G4CXOpticks::setupFrame which gets invoked by G4CXOpticks::setGeometry
 
 **/

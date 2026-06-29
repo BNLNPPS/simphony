@@ -1,100 +1,136 @@
-/**
-sframe_test.cc
-===============
-
-::
-
-   sframe_test
-
-**/
+#include <cassert>
 
 #include "sframe.h"
+#include "ssys.h"
 
-void test_really_uninitialized_dtor()
+struct sframe_test
 {
-    sframe fr ; 
+    static int main();
+    static int DefaultIsZero();
+    static int LoadLegacyFloat();
+    static int MakeFromAxis();
+    static int roundtrip();
+};
+
+int sframe_test::main()
+{
+    // const char* test = "ALL" ;
+    // const char* test = "MakeFromAxis" ;
+    const char* test = "roundtrip";
+    const char* TEST = ssys::getenvvar("TEST", test);
+    bool        ALL = strcmp(TEST, "ALL") == 0;
+    int         rc = 0;
+    if (ALL || 0 == strcmp(TEST, "DefaultIsZero"))
+        rc += DefaultIsZero();
+    if (ALL || 0 == strcmp(TEST, "LoadLegacyFloat"))
+        rc += LoadLegacyFloat();
+    if (ALL || 0 == strcmp(TEST, "roundtrip"))
+        rc += roundtrip();
+    if (ALL || 0 == strcmp(TEST, "MakeFromAxis"))
+        rc += MakeFromAxis();
+    return rc;
 }
 
-
-void test_dtor_after_copy_for_double_free()
+int sframe_test::DefaultIsZero()
 {
-    sframe a ; 
-    a.setTranslate(100.f, 200.f, 300.f) ; 
-    a.prepare(); 
-
-    sframe b = a ; 
-
-    /**
-    BEFORE ADDING COPY CTOR THAT RUNS prepare 
-
-    assert( b.tr_m2w == a.tr_m2w ); 
-    assert( b.tr_w2m == a.tr_w2m ); 
-    //here is the cause of double free : b thinks it owns the pointers of a 
-    **/
-
-    // AFTER ADDING COPY CTOR THAT RUNS prepar
-
-    assert( b.tr_m2w != a.tr_m2w ); 
-    assert( b.tr_w2m != a.tr_w2m ); 
-
+    sframe fr = {};
+    assert(fr.is_zero());
+    return 0;
 }
 
-
-
-void test_uninitialized()
+int sframe_test::LoadLegacyFloat()
 {
-    sframe fr = {} ; 
-    std::cout << "fr" << std::endl << fr << std::endl ; 
+    NP* legacy = NP::Make<float>(sframe::NUM_4x4, 4, 4);
+    legacy->fill<float>(0.f);
+    float* v = legacy->values<float>();
 
-    std::cout << "fr.m2w.q3.i.w " << fr.m2w.q3.i.w  << std::endl; 
-    std::cout << "fr.m2w.q3.f.w " << fr.m2w.q3.f.w  << std::endl; 
+    v[0] = 1.f;
+    v[1] = 2.f;
+    v[2] = 3.f;
+    v[3] = 4.f;
+    v[11] = 5.f;
+
+    v[16 + 0] = 1.f;
+    v[16 + 5] = 1.f;
+    v[16 + 10] = 1.f;
+    v[16 + 12] = 10.f;
+    v[16 + 13] = 20.f;
+    v[16 + 14] = 30.f;
+    v[16 + 15] = 1.f;
+
+    v[32 + 0] = 1.f;
+    v[32 + 5] = 1.f;
+    v[32 + 10] = 1.f;
+    v[32 + 12] = -10.f;
+    v[32 + 13] = -20.f;
+    v[32 + 14] = -30.f;
+    v[32 + 15] = 1.f;
+
+    legacy->set_meta<std::string>("name", "legacy-float-frame");
+
+    sframe b = sframe::Import(legacy);
+    assert(b.name == "legacy-float-frame");
+    for (unsigned i = 0; i < 4; i++)
+        assert(b.cdata()[i] == double(v[i]));
+    for (unsigned i = 0; i < 16; i++)
+        assert(b.cdata()[16 + i] == double(v[16 + i]));
+    for (unsigned i = 0; i < 16; i++)
+        assert(b.cdata()[32 + i] == double(v[32 + i]));
+    assert(b.get_gridscale() == double(v[11]));
+
+    delete legacy;
+    return 0;
 }
 
-
-void test_save_load()
+int sframe_test::MakeFromAxis()
 {
-    sframe a ; 
-    a.frs = "a test of persisting via metadata" ;
-    a.ce.x = 1.f ; 
-    a.ce.y = 2.f ; 
-    a.ce.z = 3.f ; 
-    a.ce.w = 4.f ; 
-    std::cout << "a" << std::endl << a << std::endl ; 
-    a.save("$FOLD"); 
+    const char* tpde = "45,45,0,1000";
+    sframe      mf = sframe::MakeFromAxis<double>(tpde, ',');
 
-    sframe b = sframe::Load("$FOLD");  
-    std::cout << "b" << std::endl << b << std::endl ; 
-    assert( strcmp(a.frs, b.frs) == 0 ); 
+    std::cout
+        << "sframe_test::MakeFromAxis"
+        << " tpde " << tpde
+        << "\n"
+        << mf.desc()
+        << "\n";
+    return 0;
 }
 
-void test_load()
+int sframe_test::roundtrip()
 {
-    sframe b = sframe::Load("$FOLD");  
-    std::cout << "b" << std::endl << b << std::endl ; 
+    sframe a;
+    a.set_name("sframe_test::roundtrip");
+
+    a.aux0.x = 1;
+    a.aux0.y = 2;
+    a.aux0.z = 3;
+    a.aux0.w = 4;
+
+    a.aux1.x = 10;
+    a.aux1.y = 20;
+    a.aux1.z = 30;
+    a.aux1.w = 40;
+
+    a.aux2.x = 100;
+    a.aux2.y = 200;
+    a.aux2.z = 300;
+    a.aux2.w = 400;
+
+    std::array<double, 6> bb = {-300., -200., -100., +100., +200., +300.};
+    a.set_bb(bb.data());
+
+    std::cout << "A\n"
+              << a.desc() << std::endl;
+    a.save("$FOLD");
+
+    sframe b = sframe::Load("$FOLD");
+    std::cout << "B\n"
+              << b.desc() << std::endl;
+
+    return 0;
 }
 
-void test_setTranslate()
+int main()
 {
-    sframe fr ; 
-    fr.setTranslate(100.f, 200.f, 300.f) ; 
-    fr.prepare(); 
-
-    std::cout << fr << std::endl ; 
-    fr.save("$FOLD"); 
-}
-
-
-int main(int argc, char** argv)
-{
-    //test_really_uninitialized_dtor(); 
-    test_dtor_after_copy_for_double_free(); 
-
-    /*
-    test_uninitialized(); 
-    test_save_load() ; 
-    test_load(); 
-    test_setTranslate(); 
-    */
-
-    return 0 ; 
+    return sframe_test::main();
 }

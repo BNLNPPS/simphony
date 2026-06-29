@@ -36,9 +36,9 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include "SSim.hh"
 #include "SVec.hh"
 #include "scuda.h"
-#include "sframe.h"
 #include "squad.h"
 #include "sstr.h"
+#include "stree.h"
 
 // csg
 #include "CSGPrim.h"
@@ -186,9 +186,6 @@ const char* CSGOptiX::desc() const
     return strdup(s.c_str());
 }
 
-
-
-
 /**
 CSGOptiX::InitEvt  TODO : THIS DOES NOT USE GPU : SO SHOULD BE ELSEWHERE
 --------------------------------------------------------------------------
@@ -199,8 +196,8 @@ Invoked from CSGOptiX::Create
 Q: Why the SEvt geometry connection ?
 A: Needed for global to local transform conversion
 
-Q: What uses SEVt::setGeo (SGeo) ?
-A: Essential set_matline of Cerenkov Genstep
+Q: What uses SEvt::setSim ?
+A: Essential stree access for material lookup and frame transforms.
 
 **/
 
@@ -208,12 +205,8 @@ void CSGOptiX::InitEvt( CSGFoundry* fd  )
 {
     SEvt* sev = SEvt::CreateOrReuse(SEvt::EGPU) ;
 
-#ifdef WITH_OLD_FRAME
-    sev->setGeo((SGeo*)fd);
-#else
     const SSim* ssim = fd->getSim();
     sev->setSim(ssim);
-#endif
 
     std::string* rms = SEvt::RunMetaString() ;
     assert(rms);
@@ -432,9 +425,6 @@ void CSGOptiX::init()
     initGeometry();
     initSimulate();
 
-#ifdef WITH_OLD_FRAME
-    initFrame();
-#endif
 
     initRender();
     initPIDXYZ();
@@ -622,41 +612,6 @@ void CSGOptiX::initSimulate()
 
 
 
-#ifdef WITH_OLD_FRAME
-
-/**
-CSGOptiX::initFrame (formerly G4CXOpticks::setupFrame)
----------------------------------------------------------
-
-The frame used depends on envvars INST, MOI, OPTICKS_INPUT_PHOTON_FRAME
-it comprises : fr.ce fr.m2w fr.w2m set by CSGTarget::getFrame
-
-Q: why is the frame needed ?
-A: cx rendering viewpoint, input photon frame and the simtrace genstep grid
-   are all based on the frame center, extent and transforms
-
-Q: Given the sframe and SEvt are from sysrap it feels too high level to do this here,
-   should be at CSG or sysrap level perhaps ?
-   And then CSGOptix could grab the SEvt frame at its initialization.
-
-TODO: see CSGFoundry::AfterLoadOrCreate for maybe auto frame hookup
-
-**/
-
-void CSGOptiX::initFrame()
-{
-    assert(0);
-
-    sframe _fr = foundry->getFrameE() ;   // TODO: migrate to lighweight sfr from stree level
-    LOG(LEVEL) << _fr ;
-
-    SEvt::SetFrame(_fr) ;
-
-    sfr _lfr = _fr.spawn_lite();
-    setFrame(_lfr);
-}
-
-#endif
 
 
 
@@ -832,30 +787,31 @@ A: Currently think that it is just a bookkeeping convenience for simtrace and no
 
 void CSGOptiX::setFrame()
 {
-    assert(0 && " DONT USE THIS - DIRECTLY USE sglm INSTEAD"  );
     setFrame(ssys::getenvvar("MOI", "-1"));  // TODO: generalize to FRS
 }
 
 void CSGOptiX::setFrame(const char* frs)
 {
-    assert(0 && " DONT USE THIS - DIRECTLY USE sglm INSTEAD"  );
     LOG(LEVEL) << " frs " << frs ;
-    sframe fr = foundry->getFrame(frs) ;
-    sfr lfr = fr.spawn_lite();
-    setFrame(lfr);
+    assert(foundry);
 
+    const stree* tree = foundry->getTree();
+    assert(tree);
+
+    const char* spec = frs ? frs : "-1";
+    sframe      fr = tree->get_frame(spec);
+    setFrame(fr);
 }
 void CSGOptiX::setFrame(const float4& ce )
 {
-    assert(0 && " DONT USE THIS - DIRECTLY USE sglm INSTEAD"  );
-    sfr lfr ;   // m2w w2m default to identity
+    sframe fr; // m2w w2m default to identity
 
-    lfr.ce.x = ce.x ;
-    lfr.ce.y = ce.y ;
-    lfr.ce.z = ce.z ;
-    lfr.ce.w = ce.w ;
+    fr.ce.x = ce.x;
+    fr.ce.y = ce.y;
+    fr.ce.z = ce.z;
+    fr.ce.w = ce.w;
 
-    setFrame(lfr);
+    setFrame(fr);
 }
 
 /**
@@ -864,7 +820,7 @@ CSGOptiX::setFrame into the SGLM.h instance
 
 Note that SEvt already holds an sframe used for input photon transformation,
 the sframe here is used for raytrace rendering.  Could perhaps rehome sglm
-into SEvt and use a single sframe for both input photon transformation
+into SEvt and use a single frame for both input photon transformation
 and rendering ? But SGLM is for viz, so that is out of place.
 
 Where to keep the frame?
@@ -879,10 +835,10 @@ for the frame.
 
 **/
 
-void CSGOptiX::setFrame(const sfr& lfr )
+void CSGOptiX::setFrame(const sframe& lfr)
 {
-    assert(0 && " DONT USE THIS - DIRECTLY USE sglm INSTEAD"  );
-    sglm->set_frame(lfr);   // TODO: aim to remove sframe from sglm ? instead operate at ce (or sometimes m2w w2m level)
+    assert(sglm);
+    sglm->set_frame(lfr);
 
     LOG(LEVEL) << "sglm.desc:" << std::endl << sglm->desc() ;
 

@@ -3,7 +3,6 @@
 #include "SLOG.hh"
 #include "scuda.h"
 #include "sqat4.h"
-#include "sframe.h"
 #include "SCenterExtentFrame.h"
 
 #include "CSGFoundry.h"
@@ -17,143 +16,6 @@ CSGTarget::CSGTarget( const CSGFoundry* foundry_ )
 {
 }
 
-
-
-/**
-CSGTarget::getFrame "getFrameFromInstanceLookup"
--------------------------------------------------
-
-* TODO: avoid this inverting the "m2w" instance transform to give w2m
-
-Note that there are typically multiple CSGPrim within the compound CSGSolid
-and that the inst_idx corresponds to the entire compound CSGSolid (aka GMergedMesh).
-Hence the ce included with the frame is the one from the full compound CSGSolid.
-
-* DONE: new minimal U4Tree.h/stree.h geo translation collects paired m2w and w2m transforms
-  and uses those to give both inst and iinst in double precision
-
-* TODO: move the stree.h inst/iinst members and methods into CSGFoundry
-  and use them from a future "CSGFoundry::CreateFromSTree" to add
-  paired double precision transforms, avoiding Invert
-
-TODO: would be better to have sframe access from stree.h
-
-**/
-
-int CSGTarget::getFrame(sframe& fr, int inst_idx ) const
-{
-    const qat4* _t = foundry->getInst(inst_idx);
-
-    LOG(LEVEL)
-        << " inst_idx " << inst_idx
-        << " _t " << ( _t ? "YES" : "NO " )
-        ;
-
-    LOG_IF(error, _t == nullptr)
-        << " inst_idx " << inst_idx
-        << " failed to foundry->getInst(inst_idx), "
-        << " foundry->getNumInst() : " << foundry->getNumInst()
-        ;
-    if(_t == nullptr) return 1 ;
-
-
-    int ins_idx,  gas_idx, sensor_identifier, sensor_index ;
-    _t->getIdentity(ins_idx,  gas_idx, sensor_identifier, sensor_index );
-
-    LOG(LEVEL)
-        << " inst_idx " << inst_idx
-        << " _t " << ( _t ? "YES" : "NO " )
-        << " ins_idx " << ins_idx
-        << " gas_idx " << gas_idx
-        << " sensor_identifier " << sensor_identifier
-        << " sensor_index " << sensor_index
-        ;
-
-    LOG_IF( fatal , gas_idx < 0 )
-        << " gas_idx " << gas_idx
-        << " foundry->inst.size " << foundry->inst.size()
-        << " BAD sqat4.h inst ? "
-        ;
-
-    assert( gas_idx > -1 );
-
-    assert( ins_idx == inst_idx );
-    fr.set_inst(inst_idx);
-
-    // HMM: these values are already there inside the matrices ?
-    fr.set_identity(ins_idx, gas_idx, sensor_identifier, sensor_index ) ;
-
-    qat4 t(_t->cdata());   // copy the instance (transform and identity info)
-    const qat4* v = Tran<double>::Invert(&t);
-
-    qat4::copy(fr.m2w,  t);
-    qat4::copy(fr.w2m, *v);
-
-    delete v ;
-
-    // identity info IS NOT cleared by Tran::Invert
-    // as there is special handling to retain it (see stran.h)
-    // the explicit clearing below fixes a bug revealed during
-    // Raindrop revival
-    // see notes/issues/Raindrop_revival_fix_CSGTarget_getFrame_nan_from_not_clearing_identity_info.rst
-
-
-    fr.m2w.clearIdentity();
-    fr.w2m.clearIdentity();
-
-    // TODO: adopt sframe::setTransform
-
-    const CSGSolid* solid = foundry->getSolid(gas_idx);
-    fr.ce = solid->center_extent ;
-
-
-    LOG(LEVEL)
-        << " inst_idx " << inst_idx
-        << " _t " << ( _t ? "YES" : "NO " )
-        << " ins_idx " << ins_idx
-        << " gas_idx " << gas_idx
-        << " sensor_identifier " << sensor_identifier
-        << " sensor_index " << sensor_index
-        << " fr.m2w.q3.f.w " <<  fr.m2w.q3.f.w
-        << " fr.m2w.q3.i.w " <<  fr.m2w.q3.i.w
-        << " fr.w2m.q3.f.w " <<  fr.w2m.q3.f.w
-        << " fr.w2m.q3.i.w " <<  fr.w2m.q3.i.w
-        ;
-
-    return 0 ;
-}
-
-
-
-/**
-CSGTarget::getFrame
-----------------------
-
-
-midx
-    mesh index (aka lv)
-mord
-    mesh ordinal (picking between multipler occurrences of midx
-gord
-    GAS ordinal [NB this is not the GAS index]
-
-
-NB the GAS index is determined from (midx, mord)
-and then gord picks between potentially multiple occurrences
-
-
-Q: is indexing by MOI and inst_idx equivalent ? OR: Can a MOI be converted into inst_idx and vice versa ?
-A: see notes with CSGFoundry::getFrame
-
-**/
-
-int CSGTarget::getFrame(sframe& fr,  int midx, int mord, int gord ) const
-{
-    fr.set_midx_mord_gord( midx, mord, gord );
-    int rc = getFrameComponents( fr.ce, midx, mord, gord, &fr.m2w , &fr.w2m );
-    LOG(LEVEL) << " midx " << midx << " mord " << mord << " gord " << gord << " rc " << rc ;
-    return rc ;
-}
 
 
 /**
@@ -380,10 +242,7 @@ int CSGTarget::getGlobalCenterExtent(float4& gce, int midx, int mord, int gord, 
     q.getIdentity(ins_idx,  gas_idx, sensor_identifier, sensor_index );
     q.clearIdentity();    // clearIdentity sets the (3,3) 1. : needed before doing any transforming
 
-    // TODO: could incorporate this identity into the sframe ?
-
-
-
+    // TODO: could incorporate this identity into the frame ?
 
     const CSGPrim* lpr = foundry->getMeshPrim(midx, mord);
 
@@ -482,7 +341,5 @@ const qat4* CSGTarget::getInstanceTransform(int midx, int mord, int gord) const
     const qat4* qi = foundry->getInstance_with_GAS_ordinal(gas_idx, gord );
     return qi ;
 }
-
-
 
 

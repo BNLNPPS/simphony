@@ -25,14 +25,8 @@ int main(int argc, char** argv)
     if(VERBOSE) std::cout << " [ fr.save " << std::endl ;
     fr.save("$FOLD");
     if(VERBOSE) std::cout << " ] fr.save " << std::endl ;
-    if(VERBOSE) std::cout << " [ fr.save_extras " << std::endl ;
-    fr.save_extras("$FOLD");
-    if(VERBOSE) std::cout << " ] fr.save_extras " << std::endl ;
-
-
     std::cout << fr << std::endl ;
 
 
     return 0 ;
 }
-

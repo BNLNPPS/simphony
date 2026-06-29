@@ -73,15 +73,7 @@ index and photon offset in addition to  gentype/trackid/matline/numphotons
 
 #include "squad.h"
 
-
-
-//#define WITH_OLD_FRAME 1
-
-#ifdef WITH_OLD_FRAME
 #include "sframe.h"
-#else
-#include "sfr.h"
-#endif
 
 #include "sgs.h"
 #include "SComp.h"
@@ -93,7 +85,6 @@ struct sphotonlite_selector ;
 struct sdebug ;
 struct NP ;
 struct NPFold ;
-struct SGeo ;
 struct S4RandomArray ;
 struct stimer ;
 struct stree ;
@@ -240,7 +231,6 @@ struct SYSRAP_API SEvt : public SCompProvider
     NPFold*               fold ;
     NPFold*               extrafold ;
 
-    const SGeo*           cf ;
     const SSim*           sim ;
     const stree*          tree ;
 
@@ -249,12 +239,7 @@ struct SYSRAP_API SEvt : public SCompProvider
     bool              is_loaded ;
     bool              is_loadfail ;
 
-#ifdef WITH_OLD_FRAME
-    sframe            frame = {};
-#else
-    sfr               fr = {} ;
-#endif
-
+    sframe fr = {};
 
     // comp vectors are populated from SEventConfig in SEvt::init
     std::vector<unsigned> gather_comp ;
@@ -396,13 +381,7 @@ public:
     NP* gatherG4State() const ;
     const NP* getG4State() const ;
 
-
-
-#ifdef WITH_OLD_FRAME
-    void setFrame(const sframe& fr );
-#else
-    void setFr(const sfr& _fr );
-#endif
+    void setFr(const sframe& _fr);
     void setFramePlaceholder();
 
     static const bool transformInputPhoton_VERBOSE ;
@@ -425,11 +404,7 @@ public:
 
     void setFrame_HostsideSimtrace() ;
 
-#ifdef WITH_OLD_FRAME
-    void setGeo(const SGeo* cf);
-#else
     void setSim(const SSim* sim);
-#endif
     void setFrame(unsigned ins_idx);
 
     //// below decl order matches impl order : KEEP IT THAT WAY
@@ -459,12 +434,7 @@ public:
     static SEvt* CreateOrReuse_EGPU();
     static SEvt* CreateOrReuse_ECPU();
     static void CreateOrReuse();
-#ifdef WITH_OLD_FRAME
-    static void SetFrame(const sframe& fr );
-#else
-    static void SetFr(   const sfr& fr );
-#endif
-
+    static void SetFr(const sframe& fr);
 
     bool isEGPU() const ;
     bool isECPU() const ;
@@ -793,11 +763,7 @@ public:
 
     NP*  localize_photon(const NP* hit, bool consistency_check) const ;
 
-#ifdef WITH_OLD_FRAME
     void getPhotonFrame( sframe& fr, const sphoton& p ) const ;
-#else
-    void getPhotonFrame( sfr& fr, const sphoton& p ) const ;
-#endif
 
     std::string descNum() const ;
     std::string descPhoton(unsigned max_print=10) const ;
@@ -821,4 +787,3 @@ public:
     static NP* CountNibbles_Table( const NP* seqnib );
 
 };
-

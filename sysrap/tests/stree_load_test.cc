@@ -38,7 +38,6 @@ struct stree_load_test
 
     int get_combined_transform(int LVID, int NDID  );
     int get_inst(int idx) const ;
-    int get_frame_f4(int idx) const ;
     int pick_lvid_ordinal_node() const ;
     int find_inst_gas() const ;
     int pick_lvid_ordinal_repeat_ordinal_inst_() const ;
@@ -205,22 +204,6 @@ inline int stree_load_test::get_inst(int idx) const
     return 0 ;
 }
 
-inline int stree_load_test::get_frame_f4(int idx) const
-{
-    sframe fr = {} ;
-    st->get_frame_f4( fr, idx );
-
-    std::cout
-       << "stree_load_test::get_frame_f4"
-       << " idx " << idx
-       << std::endl
-       << fr.desc()
-       << std::endl
-       ;
-
-    return 0 ;
-}
-
 inline int stree_load_test::pick_lvid_ordinal_node() const
 {
     std::cout
@@ -371,7 +354,7 @@ inline int stree_load_test::get_frame() const
     for(int i=0 ; i < num ; i++)
     {
         const std::string& spec = v_spec[i] ;
-        sfr fr = st->get_frame(spec.c_str());
+        sframe             fr = st->get_frame(spec.c_str());
         std::cout << fr ;
     }
     return 0 ;
@@ -382,7 +365,7 @@ inline int stree_load_test::get_frame_MOI() const
     const char* MOI = ssys::getenvvar("MOI", nullptr);
     if(!MOI) return 1 ;
 
-    sfr mfr = st->get_frame(MOI);
+    sframe mfr = st->get_frame(MOI);
     std::cout << "stree_load_test::get_frame_MOI\n" <<  MOI << "\n" << mfr << "\n"  ;
     return 0 ;
 }
@@ -410,7 +393,7 @@ inline int stree_load_test::get_frame_scan_(const char* solid, int i0, int i1, i
 
         if(has_frame)
         {
-            sfr mfr = st->get_frame(moi);
+            sframe mfr = st->get_frame(moi);
             //std::cout <<  mfr << "\n" ;
             std::cout <<  mfr.desc_ce() << "\n" ;
         }
@@ -845,7 +828,6 @@ inline int stree_load_test::main()
 
     if(ALL||strcmp(TEST, "get_combined_transform")==0)   rc += get_combined_transform(LVID, NDID );
     if(ALL||strcmp(TEST, "get_inst") == 0)               rc += get_inst(IIDX) ;
-    if(ALL||strcmp(TEST, "get_frame_f4") == 0)           rc += get_frame_f4(IIDX);
     if(ALL||strcmp(TEST, "pick_lvid_ordinal_node") == 0) rc += pick_lvid_ordinal_node();
     if(ALL||strcmp(TEST, "find_inst_gas") == 0)          rc += find_inst_gas();
     if(ALL||strcmp(TEST, "pick_lvid_ordinal_repeat_ordinal_inst_") == 0) rc += pick_lvid_ordinal_repeat_ordinal_inst_();
