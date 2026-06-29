@@ -123,7 +123,6 @@ jobs:
   test-image:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     needs: build-image
-    name: Test PR image (${{ matrix.target }}, ${{ matrix.config.os }}, ${{ matrix.config.cuda_version }}, ${{ matrix.config.optix_version }}, ${{ matrix.config.geant4_version }})
     runs-on: [gpu]
     permissions:
       contents: read
