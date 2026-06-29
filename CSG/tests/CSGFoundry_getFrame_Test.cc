@@ -14,7 +14,6 @@ CSG/tests/CSGFoundry_getFrame_Test.cc
 
 #include "sfr.h"
 
-#include "stree.h"
 #include "ssys.h"
 #include "SSim.hh"
 #include "SEvt.hh"
@@ -24,7 +23,6 @@ CSG/tests/CSGFoundry_getFrame_Test.cc
 struct CSGFoundry_getFrame_Test
 {
     const CSGFoundry* fd ;
-    const stree* tree ;
 
     sfr fr = {} ;
 
@@ -38,8 +36,7 @@ struct CSGFoundry_getFrame_Test
 
 inline CSGFoundry_getFrame_Test::CSGFoundry_getFrame_Test()
     :
-    fd(CSGFoundry::Load()),
-    tree(fd->getTree())
+    fd(CSGFoundry::Load())
 {
     std::cout << " fd.brief " << fd->brief() << std::endl ;
     std::cout << " fd.desc  " << fd->desc() << std::endl ;
@@ -49,7 +46,7 @@ inline int CSGFoundry_getFrame_Test::getFrameE()
 {
     std::cout << "[ fd->getFrameE " << std::endl ;
 
-    fr = tree->get_frame_moi();
+    fr = fd->getFrameE();
     std::cout << "] fd->getFrameE " << std::endl ;
 
     int INST = ssys::getenvint("INST",-1) ;
@@ -126,4 +123,3 @@ int main(int argc, char** argv)
     CSGFoundry_getFrame_Test test ;
     return test.main() ;
 }
-

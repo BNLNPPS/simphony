@@ -38,7 +38,6 @@ struct stree_load_test
 
     int get_combined_transform(int LVID, int NDID  );
     int get_inst(int idx) const ;
-    int get_frame_f4(int idx) const ;
     int pick_lvid_ordinal_node() const ;
     int find_inst_gas() const ;
     int pick_lvid_ordinal_repeat_ordinal_inst_() const ;
@@ -202,22 +201,6 @@ inline int stree_load_test::get_inst(int idx) const
     if(iinst) std::cout << "iinst" << std::endl << strid::Desc<double,int64_t>(*iinst) << std::endl ;
     if(inst_f4)  std::cout << "inst_f4"  << std::endl << strid::Desc<float,int32_t>(*inst_f4) << std::endl ;
     if(iinst_f4) std::cout << "iinst_f4" << std::endl << strid::Desc<float,int32_t>(*iinst_f4) << std::endl ;
-    return 0 ;
-}
-
-inline int stree_load_test::get_frame_f4(int idx) const
-{
-    sframe fr = {} ;
-    st->get_frame_f4( fr, idx );
-
-    std::cout
-       << "stree_load_test::get_frame_f4"
-       << " idx " << idx
-       << std::endl
-       << fr.desc()
-       << std::endl
-       ;
-
     return 0 ;
 }
 
@@ -845,7 +828,6 @@ inline int stree_load_test::main()
 
     if(ALL||strcmp(TEST, "get_combined_transform")==0)   rc += get_combined_transform(LVID, NDID );
     if(ALL||strcmp(TEST, "get_inst") == 0)               rc += get_inst(IIDX) ;
-    if(ALL||strcmp(TEST, "get_frame_f4") == 0)           rc += get_frame_f4(IIDX);
     if(ALL||strcmp(TEST, "pick_lvid_ordinal_node") == 0) rc += pick_lvid_ordinal_node();
     if(ALL||strcmp(TEST, "find_inst_gas") == 0)          rc += find_inst_gas();
     if(ALL||strcmp(TEST, "pick_lvid_ordinal_repeat_ordinal_inst_") == 0) rc += pick_lvid_ordinal_repeat_ordinal_inst_();

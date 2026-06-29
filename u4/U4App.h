@@ -8,7 +8,7 @@ once into the main.  This is effectively providing a Geant4 application in a sin
 Geometry setup in U4App::Construct is done by U4VolumeMaker::PV 
 which is controlled by the GEOM envvar.  
 
-Note that this does not have access to CSGFoundry geometry, so the SEvt/sframe
+Note that this does not have access to CSGFoundry geometry, so the SEvt frame
 is a default one with zero ce.w extent. 
 
 **/
@@ -34,7 +34,6 @@ is a default one with zero ce.w extent.
 #include "SPath.hh"
 #include "SEventConfig.hh"
 #include "NP.hh"
-#include "sframe.h"
 
 #include "U4Material.hh"
 #include "U4VolumeMaker.hh"
@@ -280,5 +279,3 @@ void U4App::Main()  // static
 
     LOG(info) << SLOG::Banner() << " " << " savedir " << SEvt::GetSaveDir(1) ; 
 }
-
-

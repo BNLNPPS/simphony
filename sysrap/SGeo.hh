@@ -31,7 +31,7 @@ Only a little usage from active code::
 #include "plog/Severity.h"
 #include <string>
 #include "SYSRAP_API_EXPORT.hh"
-#include "sframe.h"   // Zepeng reports needed for Rocky Linux 9/gcc 11.3 
+#include "sfr.h"
 struct stree ; 
 
 struct SYSRAP_API SGeo 
@@ -49,7 +49,7 @@ struct SYSRAP_API SGeo
         virtual unsigned           getNumMeshes() const = 0 ; 
         virtual const char*        getMeshName(unsigned midx) const = 0 ;
         virtual int                getMeshIndexWithName(const char* name, bool startswith) const = 0 ;
-        virtual int                getFrame(sframe& fr, int ins_idx ) const = 0 ;
+        virtual int                getFrame(sfr& fr, int ins_idx ) const = 0 ;
         virtual std::string        descBase() const = 0 ; 
         virtual int                lookup_mtline(int mtindex) const = 0 ; 
         virtual std::string        desc_mt() const = 0 ; 
@@ -58,5 +58,4 @@ struct SYSRAP_API SGeo
         virtual ~SGeo(){};
 
 };
-
 

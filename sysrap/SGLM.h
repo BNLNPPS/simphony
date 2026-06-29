@@ -62,10 +62,10 @@ SGLM_test.{sh,cc}
    standalone test for a few SGLM methods
 
 SGLM_set_frame_test.{sh,cc}
-   loads sframe sets into SGLM and dumps
+   loads sfr into SGLM and dumps
 
 SGLM_frame_targetting_test.{sh,cc}
-   compares SGLM A,B from two different center_extent sframe a,b
+   compares SGLM A,B from two different center_extent frames a,b
 
 
 Review coordinate systems, following along the below description
@@ -152,8 +152,8 @@ Screen
 #include "SGLM_View.h"
 #include "SGLM_Arcball.h"
 
-#include "sfr.h"     // formerly sframe.h
-#include "SCE.h"     // moving from sframe to SCE
+#include "sfr.h"
+#include "SCE.h"
 
 #include "ssys.h"
 #include "sstr.h"
@@ -433,7 +433,7 @@ struct SYSRAP_API SGLM : public SCMD
 
 
     sfr moi_fr = {} ;
-    sfr fr = {} ;  // CAUTION: SEvt also holds an sframe used for input photon targetting
+    sfr fr = {} ;  // CAUTION: SEvt also holds a frame used for input photon targetting
 
     static constexpr const char* _DUMP = "SGLM__set_frame_DUMP" ;
     void set_frame();
@@ -1483,8 +1483,8 @@ Thats because changing CE is currently an initialization only thing.
 Called by SGLM::update.
 
 initModelMatrix_branch:1
-    used when the sframe transforms are not identity,
-    just take model2world and world2model from sframe m2w w2m
+    used when frame transforms are not identity,
+    just take model2world and world2model from frame m2w w2m
 
 initModelMatrix_branch:2
     used for rtp_tangential:true (not default)
@@ -1495,7 +1495,7 @@ initModelMatrix_branch:3
     form model2world and world2model matrices
     from fr.ce alone, ignoring the frame transforms
 
-    For consistency with the transforms from sframe.h
+    For consistency with the frame transforms
     the escale is not included into model2world/world2model,
     that is done in SGLM::initELU.
 
@@ -1507,13 +1507,6 @@ initModelMatrix_branch:3
 inline void SGLM::initModelMatrix()
 {
     initModelMatrix_branch = 0 ;
-
-    // NOTE THAT THESE SPECIAL CASES ARE THE ONLY NON-CE USES OF sframe.h
-    // SUGGESTS REMOVE sframe.h from SGLM passing instead normally the ce
-    // and the transforms in the special case where needed
-
-    //bool m2w_not_identity = fr.m2w.is_identity(sframe::EPSILON) == false ;
-    //bool w2m_not_identity = fr.w2m.is_identity(sframe::EPSILON) == false ;
 
     bool fr_has_transform = !fr.is_identity() ;
     if( fr_has_transform )
@@ -1640,7 +1633,7 @@ with geometry of any size.
 
 
 Q: Why not include extent scaling in the model2world matrix ?
-A: This is for consistency with sframe.h transforms which are used when
+A: This is for consistency with frame transforms which are used when
    non-identity transforms are provided with the frame.
 
 **/
@@ -3369,4 +3362,3 @@ inline void SGLM::renderloop_tail()
 {
     if( option.A || option.B ) time_bump();
 }
-

@@ -1,5 +1,5 @@
 #include "CheckGeo.hh"
-#include "sframe.h"
+#include "sfr.h"
 
 
 unsigned CheckGeo::getNumMeshes() const 
@@ -18,9 +18,9 @@ int CheckGeo::getMeshIndexWithName(const char* , bool ) const
 
 
 
-int CheckGeo::getFrame(sframe& fr, int ins_idx ) const 
+int CheckGeo::getFrame(sfr& fr, int ins_idx ) const
 {
-    fr.zero(); 
+    fr = {} ;
     return 0 ; 
 }
 
@@ -43,4 +43,3 @@ stree* CheckGeo::getTree() const
 {
     return nullptr ; 
 }
-

@@ -1,5 +1,5 @@
 #include "ssys.h"
-#include "sframe.h"
+#include "sfr.h"
 #include "SSim.hh"
 #include "OPTICKS_LOG.hh"
 #include "CSGFoundry.h"
@@ -19,20 +19,14 @@ int main(int argc, char** argv)
         ;
 
     if(VERBOSE) std::cout << "[ fd->getFrameE " << std::endl ;
-    sframe fr = fd->getFrameE() ;  // via INST, MOI, OPTICKS_INPUT_PHOTON_FRAME
+    sfr fr = fd->getFrameE() ;  // via INST, MOI, OPTICKS_INPUT_PHOTON_FRAME
     if(VERBOSE) std::cout << "] fd->getFrameE " << std::endl ;
 
     if(VERBOSE) std::cout << " [ fr.save " << std::endl ;
     fr.save("$FOLD");
     if(VERBOSE) std::cout << " ] fr.save " << std::endl ;
-    if(VERBOSE) std::cout << " [ fr.save_extras " << std::endl ;
-    fr.save_extras("$FOLD");
-    if(VERBOSE) std::cout << " ] fr.save_extras " << std::endl ;
-
-
     std::cout << fr << std::endl ;
 
 
     return 0 ;
 }
-

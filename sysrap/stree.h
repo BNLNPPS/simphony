@@ -242,9 +242,7 @@ When SSim not in use can also use::
 #include "snam.h"
 #include "SBnd.h"
 #include "SCenterExtentFrame.h"
-
-// transitional ?
-#include "sframe.h"
+#include "sfr.h"
 
 #include "sphoton.h"
 #include "sphotonlite.h"
@@ -524,11 +522,6 @@ struct stree
     int pick_lvid_ordinal_repeat_ordinal_inst_( int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
     int parse_spec(int& lvid, int& lvid_ordinal, int& repeat_ordinal, const char* q_spec ) const ;
     int pick_lvid_ordinal_repeat_ordinal_inst( const char* q_spec ) const ;
-
-
-   // transitional method for matching with CSGFoundry::getFrame
-    void get_frame_f4( sframe& fr, int idx ) const ;
-
 
     sfr  get_frame_moi() const ;
     sfr  get_frame(const char* q_spec ) const ;
@@ -2357,29 +2350,6 @@ inline int stree::pick_lvid_ordinal_repeat_ordinal_inst( const char* q_spec ) co
 
 
 /**
-stree::get_frame_f4
---------------------
-
-transitional method to match with CSGFoundry::getFrame
-
-See ~/o/notes/issues/sframe_dtor_double_free_from_CSGOptiX__initFrame.rst
-
-**/
-
-inline void stree::get_frame_f4( sframe& fr, int idx ) const
-{
-    typedef glm::tmat4x4<float> M44 ;
-
-    const M44* _m2w = get_inst_f4(idx);
-    const M44* _w2m = get_iinst_f4(idx);
-
-    assert( sizeof(M44) == sizeof(fr.m2w ) );
-    memcpy( fr.m2w.data(), _m2w , sizeof(M44) );
-    memcpy( fr.w2m.data(), _w2m , sizeof(M44) );
-}
-
-
-/**
 stree::get_frame_moi
 ---------------------
 
@@ -2720,8 +2690,8 @@ inline sfr stree::get_frame_nidx(int nidx) const
 stree::get_frame_inst
 ----------------------
 
-THIS NEEDS TO MATCH : CSGTarget::getFrame(sframe& fr, int inst_idx )
-CSGImport::importInst uses inst_f4 so can do it with better precision here
+CSGImport::importInst uses inst_f4, while this uses paired double precision
+transforms from stree.
 
 **/
 
@@ -8045,6 +8015,3 @@ inline NP* stree::create_photonlite_from_photon( const NP* photon ) const
     }
     return photonlite ;
 }
-
-
-
