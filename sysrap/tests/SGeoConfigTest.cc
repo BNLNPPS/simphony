@@ -8,7 +8,6 @@
 
 **/
 
-
 #include "ssys.h"
 #include "SGeoConfig.hh"
 #include "SName.h"

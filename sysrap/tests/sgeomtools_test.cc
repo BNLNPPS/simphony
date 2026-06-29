@@ -4,7 +4,6 @@
 
 **/
 
-
 #include "sgeomtools.h"
 #include "scuda_double.h"
 

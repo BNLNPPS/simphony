@@ -3,7 +3,6 @@ scurand_test
 
 **/
 
-
 #include <cstdio>
 
 #include "srngcpu.h"

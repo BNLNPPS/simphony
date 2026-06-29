@@ -1,5 +1,5 @@
 /**
-scerenkov_test.cc : CPU tests of scerenkov.h CUDA code using mocking 
+scerenkov_test.cc : CPU tests of scerenkov.h CUDA code using mocking
 ========================================================================
 
 Standalone compile and run with::

@@ -4,7 +4,6 @@ s_unique_test
 
 **/
 
-
 #include "s_unique.h"
 #include <iostream>
 

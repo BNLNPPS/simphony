@@ -33,22 +33,22 @@ qdebug.h contains miscellaneous used by fill_state testing
 
 qdebug* QDebug::MakeInstance()   // static
 {
-    qdebug* dbg = new qdebug ; 
+    qdebug* dbg = new qdebug;
 
-    float cosTheta = 0.5f ; 
-    dbg->wavelength = 500.f ; 
-    dbg->cosTheta = cosTheta ; 
-    qvals( dbg->normal , "DBG_NRM", "0,0,1" ); 
-    qvals( dbg->direction , "DBG_DIR", "0,0,-1" ); 
-    dbg->orient = 1.f ;  // orient -1.f flips the normal direction 
-    dbg->value = ssys::getenvfloat("DBG_VALUE", 0.2f)  ;  // eg sigma_alpha or polish 
+    float cosTheta = 0.5f;
+    dbg->wavelength = 500.f;
+    dbg->cosTheta = cosTheta;
+    qvals(dbg->normal, "DBG_NRM", "0,0,1");
+    qvals(dbg->direction, "DBG_DIR", "0,0,-1");
+    dbg->orient = 1.f;                                 // orient -1.f flips the normal direction
+    dbg->value = ssys::getenvfloat("DBG_VALUE", 0.2f); // eg sigma_alpha or polish
 
-    // qstate: mocking result of fill_state 
-    dbg->s = QState::Make(); 
+    // qstate: mocking result of fill_state
+    dbg->s = QState::Make();
 
-    // quad2: mocking prd per-ray-data result of optix trace calls 
-    dbg->prd = quad2::make_eprd() ;  // see eprd
-    
+    // quad2: mocking prd per-ray-data result of optix trace calls
+    dbg->prd = quad2::make_eprd(); // see eprd
+
     dbg->p.ephoton() ;   // sphoton::ephoton 
  
     sscint& scint_gs = dbg->scint_gs ; 

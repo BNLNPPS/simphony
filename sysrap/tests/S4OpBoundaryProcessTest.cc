@@ -62,16 +62,16 @@ void Chk::SmearNormal(int chk, double value)
     G4ThreeVector Momentum(0., 0., -1. ); 
     G4ThreeVector Normal(  0., 0.,  1. );
 
-    const int N = ssys::getenvint("NUM", 1000) ; 
-    int ni = N ; 
-    int nj = 4 ; 
+    const int N = ssys::getenvint("NUM", 1000);
+    int       ni = N;
+    int       nj = 4;
 
-    NP* a = NP::Make<double>( ni, nj ); 
-    double* aa = a->values<double>(); 
+    NP*     a = NP::Make<double>(ni, nj);
+    double* aa = a->values<double>();
 
-    a->set_meta<double>("value", value ); 
-    a->set_meta<std::string>("valuename", chk == 0 ? "sigma_alpha" : "polish" ); 
-    a->set_meta<std::string>("source", "S4OpBoundaryProcessTest") ;
+    a->set_meta<double>("value", value);
+    a->set_meta<std::string>("valuename", chk == 0 ? "sigma_alpha" : "polish");
+    a->set_meta<std::string>("source", "S4OpBoundaryProcessTest");
 
     for(int i=0 ; i < ni ; i++) 
     {

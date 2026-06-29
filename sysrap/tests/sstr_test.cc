@@ -840,5 +840,3 @@ int main(int argc, char** argv)
     return sstr_test::Main() ;
 }
 // sstr_test
-
-

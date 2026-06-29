@@ -7,8 +7,8 @@ Build and run::
     sboundary_test
 
 
-              
-           +-st-+ 
+
+           +-st-+
             \   :
              \  ct
               \ :

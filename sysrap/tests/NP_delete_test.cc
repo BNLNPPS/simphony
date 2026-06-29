@@ -212,4 +212,3 @@ int main()
 }
 
 // NP_delete_test
-

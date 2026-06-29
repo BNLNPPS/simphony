@@ -8,7 +8,6 @@ sframe_test.cc
 
 **/
 
-
 #include "sframe.h"
 
 void test_really_uninitialized_dtor()

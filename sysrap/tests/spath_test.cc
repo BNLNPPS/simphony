@@ -497,7 +497,7 @@ int spath_test::Exists2()
 {
     const char* base = "$OPTICKS_HOME/sysrap/tests" ;
 
-    std::vector<std::string> names = {"hello.cc", "spath_test.cc", "spath_test"} ;
+    std::vector<std::string> names = {"hello.cc", "spath_test.cc", "spath_test"};
     for(unsigned i=0 ; i < names.size() ; i++)
     {
         const char* name = names[i].c_str();

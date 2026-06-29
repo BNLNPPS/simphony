@@ -3,18 +3,18 @@ SOPTIX_Scene_test.cc : writes PPM image file with raytraced render of triangulat
 =============================================================================================
 
 ::
- 
+
     SOPTIX_Scene_test
     ~/o/sysrap/tests/SOPTIX_Scene_test.cc
 
 For an encapsulated version of this see::
 
     ~/o/sysrap/tests/SOPTIX_Scene_Encapsulated_test.cc
-    
+
 An enhanced version with OpenGL interactive control see::
 
     SGLFW_SOPTIX_Scene_test
-    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc  
+    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
 
 Other related tests::
 
@@ -42,14 +42,14 @@ Other related tests::
 
 int main()
 {
-    bool dump = false ; 
+    bool dump = false;
 
+    SScene* _scn = SScene::Load("$SCENE_FOLD");
+    if (dump)
+        std::cout << _scn->desc();
 
-    SScene* _scn = SScene::Load("$SCENE_FOLD") ; 
-    if(dump) std::cout << _scn->desc() ; 
- 
-    int FRAME = ssys::getenvint("FRAME", -1)  ; 
-    std::cout << "FRAME=" << FRAME << " SOPTIX_Scene_test run \n" ;
+    int FRAME = ssys::getenvint("FRAME", -1);
+    std::cout << "FRAME=" << FRAME << " SOPTIX_Scene_test run \n";
     sfr fr = _scn->getFrame(FRAME) ; 
 
     SGLM gm ; 

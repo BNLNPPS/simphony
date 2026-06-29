@@ -1,7 +1,7 @@
-#include <iostream>
-#include <iomanip>
-#include <vector>
 #include "stimer.h"
+#include <iomanip>
+#include <iostream>
+#include <vector>
 
 #include "NP.hh"
 

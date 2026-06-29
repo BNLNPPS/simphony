@@ -4,7 +4,6 @@ scuda_test
 
 **/
 
-
 #include "ssys.h"
 #include "scuda.h"
 

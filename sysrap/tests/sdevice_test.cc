@@ -6,7 +6,6 @@ See notes in sdevice_test
 
 **/
 
-
 #include "sdevice.h"
 
 int main(int argc, char** argv)

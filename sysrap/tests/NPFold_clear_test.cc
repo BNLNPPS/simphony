@@ -12,7 +12,6 @@ Without the NPFold::clear call get assert::
 
 **/
 
-
 #include "sprof.h"
 #include "ssys.h"
 #include "sstamp.h"
@@ -169,4 +168,3 @@ int main()
 }
 
 // NPFold_clear_test
-

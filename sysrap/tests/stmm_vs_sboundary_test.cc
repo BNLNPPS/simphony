@@ -7,16 +7,16 @@ stmm_vs_sboundary_test.cc
    stmm_vs_sboundary_test
 
 
-Specialize the stmm.h stack calc to 2 non-thin layers and compare with sboundary.h 
+Specialize the stmm.h stack calc to 2 non-thin layers and compare with sboundary.h
 
-Had to adapt the sboundary.h polarization calc as what is in junoPMTOpticalModel 
-looks clearly wrong. 
-sboundary.h is a riff on qsim:propagate_at_boundary which is based on G4OpBoundaryProcess. 
+Had to adapt the sboundary.h polarization calc as what is in junoPMTOpticalModel
+looks clearly wrong.
+sboundary.h is a riff on qsim:propagate_at_boundary which is based on G4OpBoundaryProcess.
 
-* But might be missing some subtlety ? 
+* But might be missing some subtlety ?
 
-BUT: can the leap be made for the mom and pol appropriate to the real usage 
-of a stack with 4 layers (2 thin in the middle) ? 
+BUT: can the leap be made for the mom and pol appropriate to the real usage
+of a stack with 4 layers (2 thin in the middle) ?
 
 
 :google:`refraction stack of layers`
@@ -27,7 +27,7 @@ of a stack with 4 layers (2 thin in the middle) ?
 
 Snell's Law::
 
-    n1 s1 = n2 s2 = n3 s3 = n4 s4 = n5 s5 
+    n1 s1 = n2 s2 = n3 s3 = n4 s4 = n5 s5
 
 To find the angle at which the ray emerges you only need to consider the 2
 mediums in which the ray enters and emerges. It does not matter what layers it
@@ -39,7 +39,7 @@ reflection at one of the interfaces between layers of material. In that case
 the ray will emerge from the face which it entered, or a side face if the slab
 of multi-layer material is not wide enough. To find out if this happens you
 need to trace the ray through the layers, checking what happens at each
-boundary. 
+boundary.
 
 
 
@@ -59,7 +59,7 @@ boundary.
 #include "stag.h"
 #include "sevent.h"
 #include "sctx.h"
-//#include "scurand.h"
+// #include "scurand.h"
 #include "sboundary.h"
 #include "stmm.h"
 

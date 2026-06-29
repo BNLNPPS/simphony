@@ -2391,7 +2391,7 @@ sgs SEvt::addGenstep(const NP* a)
 
     if( a == nullptr )
     {
-        LOG(error) << " a null : low level simtrace tests like CSGSimtraceTest can do this  " ;
+        LOG(error) << " a null : low level simtrace tests like CSGSimtraceTest can do this  ";
         return s ;
     }
 

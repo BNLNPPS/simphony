@@ -162,4 +162,3 @@ int main(int argc, char** argv)
     return smath_test::main();
 }
 // smath_test
-

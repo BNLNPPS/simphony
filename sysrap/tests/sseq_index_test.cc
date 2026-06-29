@@ -22,7 +22,6 @@ Requirements
 
 **/
 
-
 #include "NP.hh"
 #include "ssys.h"
 #include "sseq_index.h"
@@ -83,6 +82,3 @@ int main()
     return 0 ;
 }
 // sseq_index_test
-
-
-

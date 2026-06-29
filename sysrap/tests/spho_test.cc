@@ -1,6 +1,5 @@
 // ./spho_test
 
-
 #include <iostream>
 #include "spho.h"
 

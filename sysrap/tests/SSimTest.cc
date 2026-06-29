@@ -11,7 +11,6 @@ TEST=get_spmt_f       SSimTest
 
 **/
 
-
 #include "SSim.hh"
 #include "NPFold.h"
 #include "OPTICKS_LOG.hh"

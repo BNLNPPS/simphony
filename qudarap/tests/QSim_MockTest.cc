@@ -1,28 +1,28 @@
 /**
-QSim_MockTest.cc : CPU tests of QSim.hh/qsim.h CUDA code using MOCK_CURAND mocking 
+QSim_MockTest.cc : CPU tests of QSim.hh/qsim.h CUDA code using MOCK_CURAND mocking
 =======================================================================================
 
 Testing GPU code on CPU requires mocking of CUDA API including:
 
-1. tex2D lookups 
+1. tex2D lookups
 2. curand random generation
-3. erfcinvf : inverse complementary error function 
+3. erfcinvf : inverse complementary error function
 
-There are now lots of examples of curand mocking, 
+There are now lots of examples of curand mocking,
 search for MOCK_CURAND, MOCK_CUDA. See::
 
     sysrap/srngcpu.h
-    sysrap/scurand.h 
+    sysrap/scurand.h
 
 Mocking tex2D lookups is not so common. See::
 
-    sysrap/s_mock_texture.h 
-    sysrap/stexture.h 
+    sysrap/s_mock_texture.h
+    sysrap/stexture.h
 
-and search for MOCK_TEXTURE, MOCK_CUDA. 
+and search for MOCK_TEXTURE, MOCK_CUDA.
 
 
-HMM: QSim.hh not very amenable to standalone use because the boatload of 
+HMM: QSim.hh not very amenable to standalone use because the boatload of
 headers that come with it : so operating at lower level.
 
 Standalone compile and run with::
@@ -446,15 +446,15 @@ is similar to S4OpBoundaryProcessTest
 
 inline void QSim_MockTest::SmearNormal(int chk, float value)
 {
-    float3 direct = make_float3(0.f, 0.f, -1.f ); 
-    float3 normal = make_float3(0.f, 0.f,  1.f ); 
+    float3 direct = make_float3(0.f, 0.f, -1.f);
+    float3 normal = make_float3(0.f, 0.f, 1.f);
 
-    int ni = num ; 
-    int nj = 4 ; 
+    int ni = num;
+    int nj = 4;
 
-    a = NP::Make<float>( ni, nj );  
+    a = NP::Make<float>(ni, nj);
 
-    a->set_meta<std::string>("source", "QSim_MockTest" );
+    a->set_meta<std::string>("source", "QSim_MockTest");
     a->set_meta<std::string>("normal", scuda::serialize(normal) ); 
     a->set_meta<std::string>("direct", scuda::serialize(direct) ); 
     a->set_meta<float>("value", value );  

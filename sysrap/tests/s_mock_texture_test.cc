@@ -2,7 +2,7 @@
 s_mock_texture_test.cc
 ========================
 
-Aim is to be able to use QBnd.hh/qbnd.h in MOCK_CUDA manner on CPU. 
+Aim is to be able to use QBnd.hh/qbnd.h in MOCK_CUDA manner on CPU.
 
 ::
 

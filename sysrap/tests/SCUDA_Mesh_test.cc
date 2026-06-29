@@ -9,7 +9,6 @@ optix7.5 p28
 
 **/
 
-
 #include "scuda.h"
 
 
