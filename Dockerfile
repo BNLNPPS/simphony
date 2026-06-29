@@ -5,6 +5,7 @@ ARG CUDA_VERSION=13.0.3
 ARG OPTIX_VERSION=9.0.0
 ARG GEANT4_VERSION=11.4.2
 ARG CMAKE_VERSION=4.2.1
+ARG PYTHON_VERSION=3.13
 ARG SPACK_BUILDCACHE_MIRROR=oci://ghcr.io/bnlnpps/simphony-spack-buildcache
 ARG SPACK_TARGET=x86_64_v2
 
@@ -13,6 +14,7 @@ FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS base
 ARG OPTIX_VERSION
 ARG GEANT4_VERSION
 ARG CMAKE_VERSION
+ARG PYTHON_VERSION
 ARG CMAKE_BUILD_JOBS
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -52,6 +54,9 @@ RUN mkdir -p /opt/optix && curl -sL https://github.com/NVIDIA/optix-dev/archive/
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
 
+ENV UV_PYTHON=${PYTHON_VERSION}
+ENV UV_MANAGED_PYTHON=1
+
 SHELL ["/bin/bash", "-l", "-c"]
 
 # Set up non-interactive shells by sourcing all of the scripts in /etc/profile.d/
@@ -82,7 +87,7 @@ WORKDIR $SIMPHONY_HOME
 # Install Python dependencies
 COPY pyproject.toml uv.lock $SIMPHONY_HOME/
 COPY optiphy $SIMPHONY_HOME/optiphy
-RUN uv sync
+RUN uv sync --python "${PYTHON_VERSION}" --managed-python
 
 
 FROM base AS release
