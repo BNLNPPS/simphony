@@ -2,10 +2,10 @@
 SGLM_set_frame_test.cc
 =======================
 
-1. load sfr from $SFR_FOLD/sfr.npy
+1. load sframe from $SFRAME_FOLD/sframe.npy
 2. instanciate SGLM
 3. set the frame into SGLM 
-4. write SGLM description to $SFR_FOLD/SGLM_set_frame_test.log
+4. write SGLM description to $SFRAME_FOLD/SGLM_set_frame_test.log
 
 ::
 
@@ -17,9 +17,9 @@ SGLM_set_frame_test.cc
 
 int main(int argc, char** argv)
 {
-    sfr fr = sfr::Load("$SFR_FOLD") ;
+    sframe fr = sframe::Load("$SFRAME_FOLD") ;
 
-    std::cout << "//SGLM_set_frame_test.main load sfr from SFR_FOLD " << std::endl ;
+    std::cout << "//SGLM_set_frame_test.main load sframe from SFRAME_FOLD " << std::endl ;
 
     SGLM* sglm = new SGLM  ; 
 
@@ -29,9 +29,9 @@ int main(int argc, char** argv)
 
     sglm->addlog("CSGOptiX::render_snap", "from SGLM_set_frame_test.cc" );
 
-    sglm->writeDesc("$SFR_FOLD", "SGLM_set_frame_test", ".log" );
+    sglm->writeDesc("$SFRAME_FOLD", "SGLM_set_frame_test", ".log" );
 
-    std::cout << "//SGLM_set_frame_test.main write frame description to SFR_FOLD/SGLM_set_frame_test.log" << std::endl ;
+    std::cout << "//SGLM_set_frame_test.main write frame description to SFRAME_FOLD/SGLM_set_frame_test.log" << std::endl ;
 
     return 0 ; 
 } 

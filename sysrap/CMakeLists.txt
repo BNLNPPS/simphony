@@ -281,7 +281,7 @@ set(HEADERS
     sseq.h 
     sseq_index.h
 
-    sfr.h
+    sframe.h
     SCE.h 
 
     SPMT.h 

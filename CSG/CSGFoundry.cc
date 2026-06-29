@@ -36,7 +36,7 @@
 
 #include "scuda.h"
 #include "sqat4.h"
-#include "sfr.h"
+#include "sframe.h"
 #include "SLabel.h"
 #include "SScene.h"
 
@@ -3596,7 +3596,7 @@ Grab these from remote with::
 )" ;
 
 
-sfr CSGFoundry::getFrame() const
+sframe CSGFoundry::getFrame() const
 {
     const char* moi_or_iidx = ssys::getenvvar("MOI", "-1");
     return getFrame(moi_or_iidx);
@@ -3607,12 +3607,12 @@ CSGFoundry::getFrame
 --------------------
 
 Return the lightweight frame from stree. This keeps the historical CSGFoundry
-entrypoint while using the same sfr implementation as the rest of the current
+entrypoint while using the same sframe implementation as the rest of the current
 frame path.
 
 **/
 
-sfr CSGFoundry::getFrame(const char* q_spec) const
+sframe CSGFoundry::getFrame(const char* q_spec) const
 {
     const stree* tree = getTree();
     assert(tree);
@@ -3621,7 +3621,7 @@ sfr CSGFoundry::getFrame(const char* q_spec) const
     return tree->get_frame(spec);
 }
 
-int CSGFoundry::getFrame(sfr& fr, int inst_idx) const
+int CSGFoundry::getFrame(sframe& fr, int inst_idx) const
 {
     const stree* tree = getTree();
     assert(tree);
@@ -3650,13 +3650,13 @@ see CSGFoundry::getFrameE. Possible envvars include:
 
 
 The old frame path recorded metadata describing which environment variable
-selected the frame. That metadata is intentionally not preserved for sfr.
+selected the frame. That metadata is intentionally not preserved for sframe.
 
 **/
 
 
 
-sfr CSGFoundry::getFrameE() const
+sframe CSGFoundry::getFrameE() const
 {
     bool VERBOSE = ssys::getenvbool(getFrameE_VERBOSE) ;
     LOG(LEVEL) << "[" << getFrameE_VERBOSE << "] " << VERBOSE ;
@@ -3665,7 +3665,7 @@ sfr CSGFoundry::getFrameE() const
     {
         int INST = ssys::getenvint("INST", 0);
         LOG_IF(info, VERBOSE) << " INST " << INST ;
-        sfr fr = {} ;
+        sframe fr = {} ;
         getFrame(fr, INST ) ;
         return fr ;
     }

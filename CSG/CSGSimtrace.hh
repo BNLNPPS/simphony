@@ -18,7 +18,7 @@ TODO: avoid the runtime warning from SEvt::addGenstep
 #include "plog/Severity.h"
 #include <vector>
 
-#include "sfr.h"
+#include "sframe.h"
 
 struct CSGFoundry ;
 struct SEvt ;
@@ -42,7 +42,7 @@ struct CSG_API CSGSimtrace
     SEvt* sev ;
     const char* outdir ;
 
-    sfr fr = {} ;
+    sframe fr = {} ;
     CSGQuery* q ;
     CSGDraw* d ;
 

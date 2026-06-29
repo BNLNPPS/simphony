@@ -802,13 +802,13 @@ void CSGOptiX::setFrame(const char* frs)
     assert(tree);
 
     const char* spec = frs ? frs : "-1" ;
-    sfr fr = tree->get_frame(spec);
+    sframe fr = tree->get_frame(spec);
     setFrame(fr);
 
 }
 void CSGOptiX::setFrame(const float4& ce )
 {
-    sfr fr ;   // m2w w2m default to identity
+    sframe fr ;   // m2w w2m default to identity
 
     fr.ce.x = ce.x ;
     fr.ce.y = ce.y ;
@@ -822,8 +822,8 @@ void CSGOptiX::setFrame(const float4& ce )
 CSGOptiX::setFrame into the SGLM.h instance
 ----------------------------------------------
 
-Note that SEvt already holds an sfr used for input photon transformation,
-the sfr here is used for raytrace rendering.  Could perhaps rehome sglm
+Note that SEvt already holds an sframe used for input photon transformation,
+the sframe here is used for raytrace rendering.  Could perhaps rehome sglm
 into SEvt and use a single frame for both input photon transformation
 and rendering ? But SGLM is for viz, so that is out of place.
 
@@ -839,7 +839,7 @@ for the frame.
 
 **/
 
-void CSGOptiX::setFrame(const sfr& lfr )
+void CSGOptiX::setFrame(const sframe& lfr )
 {
     assert(sglm);
     sglm->set_frame(lfr);

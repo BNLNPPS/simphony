@@ -354,7 +354,7 @@ inline int stree_load_test::get_frame() const
     for(int i=0 ; i < num ; i++)
     {
         const std::string& spec = v_spec[i] ;
-        sfr fr = st->get_frame(spec.c_str());
+        sframe fr = st->get_frame(spec.c_str());
         std::cout << fr ;
     }
     return 0 ;
@@ -365,7 +365,7 @@ inline int stree_load_test::get_frame_MOI() const
     const char* MOI = ssys::getenvvar("MOI", nullptr);
     if(!MOI) return 1 ;
 
-    sfr mfr = st->get_frame(MOI);
+    sframe mfr = st->get_frame(MOI);
     std::cout << "stree_load_test::get_frame_MOI\n" <<  MOI << "\n" << mfr << "\n"  ;
     return 0 ;
 }
@@ -393,7 +393,7 @@ inline int stree_load_test::get_frame_scan_(const char* solid, int i0, int i1, i
 
         if(has_frame)
         {
-            sfr mfr = st->get_frame(moi);
+            sframe mfr = st->get_frame(moi);
             //std::cout <<  mfr << "\n" ;
             std::cout <<  mfr.desc_ce() << "\n" ;
         }

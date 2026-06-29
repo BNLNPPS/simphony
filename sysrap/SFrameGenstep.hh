@@ -42,7 +42,7 @@ struct SYSRAP_API SFrameGenstep
 
     static bool HasConfigEnv();
 
-    static NP* MakeCenterExtentGenstep_FromFrame(sfr& fr);
+    static NP* MakeCenterExtentGenstep_FromFrame(sframe& fr);
     static NP* MakeCenterExtentGenstep_From_CE_geotran(const float4& ce, const std::vector<int>& cegs, float gridscale, const Tran<double>* geotran, int prim);
 
     static void Maybe_Add_PRIOR_SIMTRACE_Genstep( std::vector<NP*>& gsl, int prim );

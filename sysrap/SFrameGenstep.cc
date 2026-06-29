@@ -5,7 +5,7 @@
 #include "sqat4.h"
 #include "stran.h"
 
-#include "sfr.h"
+#include "sframe.h"
 
 #include "sc4u.h"
 #include "ssincos.h"
@@ -205,7 +205,7 @@ simtrace stack::
 
 
 **/
-NP* SFrameGenstep::MakeCenterExtentGenstep_FromFrame(sfr& fr)  // static
+NP* SFrameGenstep::MakeCenterExtentGenstep_FromFrame(sframe& fr)  // static
 {
     float4 ce = make_float4( fr.ce.x, fr.ce.y, fr.ce.z, fr.ce.w );
     Tran<double>* geotran = fr.getTransform();

@@ -242,7 +242,7 @@ When SSim not in use can also use::
 #include "snam.h"
 #include "SBnd.h"
 #include "SCenterExtentFrame.h"
-#include "sfr.h"
+#include "sframe.h"
 
 #include "sphoton.h"
 #include "sphotonlite.h"
@@ -523,49 +523,49 @@ struct stree
     int parse_spec(int& lvid, int& lvid_ordinal, int& repeat_ordinal, const char* q_spec ) const ;
     int pick_lvid_ordinal_repeat_ordinal_inst( const char* q_spec ) const ;
 
-    sfr  get_frame_moi() const ;
-    sfr  get_frame(const char* q_spec ) const ;
+    sframe  get_frame_moi() const ;
+    sframe  get_frame(const char* q_spec ) const ;
 
-    sfr  get_frame_top() const ;
-    sfr  get_frame_extent(const char* s_extent ) const ;
-    sfr  get_frame_ce(const char* s_ce ) const ;
-    sfr  get_frame_ce(const float*  ce ) const ;
-    sfr  get_frame_te(const char* s_te ) const ;
-    sfr  get_frame_te(const float*  te ) const ;
-
-
-    sfr  get_frame_axis(const char* s_axis ) const ;
-    sfr  get_frame_prim(const char* s_prim ) const ;
-    sfr  get_frame_nidx(const char* s_nidx ) const ;
-    sfr  get_frame_inst(const char* s_inst ) const ;
-    sfr  get_frame_sid( const char* s_sid ) const ;
-    sfr  get_frame_sidx( const char* s_sidx ) const ;
-    sfr  get_frame_lvid_copyno( const char* s_lvid_copyno ) const ;
-
-    sfr  get_frame_prim(int prim ) const ;
-    sfr  get_frame_nidx(int nidx ) const ;
-    sfr  get_frame_inst(int inst ) const ;
-    sfr  get_frame_sid( int sid  ) const ;
-    sfr  get_frame_sidx( int sidx  ) const ;
-    sfr  get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src ) const ;
+    sframe  get_frame_top() const ;
+    sframe  get_frame_extent(const char* s_extent ) const ;
+    sframe  get_frame_ce(const char* s_ce ) const ;
+    sframe  get_frame_ce(const float*  ce ) const ;
+    sframe  get_frame_te(const char* s_te ) const ;
+    sframe  get_frame_te(const float*  te ) const ;
 
 
-    int  get_frame_from_npyfile(sfr& f, const char* q_spec ) const ;
-    int  get_frame_from_triplet(sfr& f, const char* q_spec ) const ;
-    int  get_frame_from_coords( sfr& f, const char* q_spec ) const ;
-    int  get_frame_from_transform( sfr& f, const char* q_spec ) const ;
+    sframe  get_frame_axis(const char* s_axis ) const ;
+    sframe  get_frame_prim(const char* s_prim ) const ;
+    sframe  get_frame_nidx(const char* s_nidx ) const ;
+    sframe  get_frame_inst(const char* s_inst ) const ;
+    sframe  get_frame_sid( const char* s_sid ) const ;
+    sframe  get_frame_sidx( const char* s_sidx ) const ;
+    sframe  get_frame_lvid_copyno( const char* s_lvid_copyno ) const ;
+
+    sframe  get_frame_prim(int prim ) const ;
+    sframe  get_frame_nidx(int nidx ) const ;
+    sframe  get_frame_inst(int inst ) const ;
+    sframe  get_frame_sid( int sid  ) const ;
+    sframe  get_frame_sidx( int sidx  ) const ;
+    sframe  get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src ) const ;
+
+
+    int  get_frame_from_npyfile(sframe& f, const char* q_spec ) const ;
+    int  get_frame_from_triplet(sframe& f, const char* q_spec ) const ;
+    int  get_frame_from_coords( sframe& f, const char* q_spec ) const ;
+    int  get_frame_from_transform( sframe& f, const char* q_spec ) const ;
 
     bool has_frame(const char* q_spec) const ;
 
 
-    int get_frame_instanced(  sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out = nullptr, VTR* t_stack = nullptr ) const ;
-    int get_frame_inst(sfr& f, int ii, std::ostream* out = nullptr, VTR* t_stack = nullptr ) const ;
+    int get_frame_instanced(  sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out = nullptr, VTR* t_stack = nullptr ) const ;
+    int get_frame_inst(sframe& f, int ii, std::ostream* out = nullptr, VTR* t_stack = nullptr ) const ;
 
 
-    int get_frame_remainder(  sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
-    int get_frame_triangulate(sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
-    int get_frame_global(     sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
-    int _get_frame_global(     sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type ) const ;
+    int get_frame_remainder(  sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
+    int get_frame_triangulate(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
+    int get_frame_global(     sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
+    int _get_frame_global(     sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type ) const ;
 
     static constexpr const char* stree__get_frame_global_LVID = "stree__get_frame_global_LVID" ;
     static constexpr const char* stree__get_node_bb_LVID      = "stree__get_node_bb_LVID" ;
@@ -2365,7 +2365,7 @@ Special cased MOI envvar starting "EXTENT:" normally MOI is of the below form::
 
 **/
 
-inline sfr stree::get_frame_moi() const
+inline sframe stree::get_frame_moi() const
 {
     return get_frame(MOI);
 }
@@ -2386,7 +2386,7 @@ TODO: AVOID DUPLICATION BETWEEN THIS AND CSGFoundry::getFrame
 
 **/
 
-inline sfr stree::get_frame(const char* q_spec ) const
+inline sframe stree::get_frame(const char* q_spec ) const
 {
     char delim = ',' ;
 
@@ -2406,7 +2406,7 @@ inline sfr stree::get_frame(const char* q_spec ) const
     bool is_COORDS = sstr::looks_like_list(q_spec, delim, 1, 4) ;
     bool is_TRANSFORM = sstr::looks_like_list(q_spec, delim, 16, 16) ;
 
-    sfr f = {} ;
+    sframe f = {} ;
     f.set_name(q_spec);
     f.set_treedir(loaddir);
 
@@ -2494,40 +2494,40 @@ stree::get_frame_top
 Contrast the simplicity of this with the contortions done in CSGFoundry::iasBB
 **/
 
-inline sfr stree::get_frame_top() const
+inline sframe stree::get_frame_top() const
 {
     return get_frame_nidx(0);
 }
 
 
-inline sfr stree::get_frame_extent(const char* s_extent ) const
+inline sframe stree::get_frame_extent(const char* s_extent ) const
 {
-    return sfr::MakeFromExtent<float>( s_extent );
+    return sframe::MakeFromExtent<float>( s_extent );
 }
 
-inline sfr stree::get_frame_ce(const char* s_ce ) const
+inline sframe stree::get_frame_ce(const char* s_ce ) const
 {
-    return sfr::MakeFromCE<float>( s_ce, ',' );
+    return sframe::MakeFromCE<float>( s_ce, ',' );
 }
-inline sfr stree::get_frame_ce(const float* _ce ) const
+inline sframe stree::get_frame_ce(const float* _ce ) const
 {
-    return sfr::MakeFromCE<float>( _ce );
-}
-
-inline sfr stree::get_frame_te(const char* s_te ) const
-{
-    return sfr::MakeFromTranslateExtent<float>( s_te, ',' );
-}
-inline sfr stree::get_frame_te(const float* _te ) const
-{
-    return sfr::MakeFromTranslateExtent<float>( _te );
+    return sframe::MakeFromCE<float>( _ce );
 }
 
-
-
-inline sfr stree::get_frame_axis(const char* s_axis ) const
+inline sframe stree::get_frame_te(const char* s_te ) const
 {
-    return sfr::MakeFromAxis<float>(s_axis, ',');
+    return sframe::MakeFromTranslateExtent<float>( s_te, ',' );
+}
+inline sframe stree::get_frame_te(const float* _te ) const
+{
+    return sframe::MakeFromTranslateExtent<float>( _te );
+}
+
+
+
+inline sframe stree::get_frame_axis(const char* s_axis ) const
+{
+    return sframe::MakeFromAxis<float>(s_axis, ',');
 }
 
 /**
@@ -2540,51 +2540,51 @@ stree::get_frame_prim
 
 **/
 
-inline sfr stree::get_frame_prim(const char* s_prim ) const
+inline sframe stree::get_frame_prim(const char* s_prim ) const
 {
     std::string name = PRIM_PFX ;
     name += s_prim ;
     int prim = sstr::AsInt(s_prim, -1);
-    sfr fr = get_frame_prim( prim );
+    sframe fr = get_frame_prim( prim );
     fr.set_name(name.c_str());
     return fr ;
 }
-inline sfr stree::get_frame_nidx(const char* s_nidx ) const
+inline sframe stree::get_frame_nidx(const char* s_nidx ) const
 {
     std::string name = NIDX_PFX ;
     name += s_nidx ;
     int nidx = sstr::AsInt(s_nidx, -1);
-    sfr fr = get_frame_nidx( nidx );
+    sframe fr = get_frame_nidx( nidx );
     fr.set_name(name.c_str());
     return fr ;
 }
 
-inline sfr stree::get_frame_inst(const char* s_inst ) const
+inline sframe stree::get_frame_inst(const char* s_inst ) const
 {
     std::string name = INST_PFX ;
     name += s_inst ;
     int ii = sstr::AsInt(s_inst, -1);
-    sfr fr = get_frame_inst( ii );
+    sframe fr = get_frame_inst( ii );
     fr.set_name(name.c_str());
     return fr ;
 }
 
-inline sfr stree::get_frame_sid(const char* s_sid ) const
+inline sframe stree::get_frame_sid(const char* s_sid ) const
 {
     std::string name = SID_PFX ;
     name += s_sid ;
     int sid = sstr::AsInt(s_sid, -1);
-    sfr fr = get_frame_sid( sid );
+    sframe fr = get_frame_sid( sid );
     fr.set_name(name.c_str());
     return fr ;
 }
 
-inline sfr stree::get_frame_sidx(const char* s_sidx ) const
+inline sframe stree::get_frame_sidx(const char* s_sidx ) const
 {
     std::string name = SIDX_PFX ;
     name += s_sidx ;
     int sidx = sstr::AsInt(s_sidx, -1);
-    sfr fr = get_frame_sidx( sidx );
+    sframe fr = get_frame_sidx( sidx );
     fr.set_name(name.c_str());
     return fr ;
 }
@@ -2601,7 +2601,7 @@ stree::get_frame_lvid_copyno
 **/
 
 
-inline sfr stree::get_frame_lvid_copyno(const char* s_lvid_copyno ) const
+inline sframe stree::get_frame_lvid_copyno(const char* s_lvid_copyno ) const
 {
     std::string name = LVID_COPYNO_PFX ;
     name += s_lvid_copyno ;
@@ -2637,7 +2637,7 @@ inline sfr stree::get_frame_lvid_copyno(const char* s_lvid_copyno ) const
     char src = s_src ? s_src[0] : 'N' ;
     assert( src == 'N' || src == 'R' || src == 'T' );
 
-    sfr fr = get_frame_lvid_copyno( lvid, copyno, src );
+    sframe fr = get_frame_lvid_copyno( lvid, copyno, src );
     fr.set_name(name.c_str());
     return fr ;
 }
@@ -2658,21 +2658,21 @@ use stree::get_frame_nidx
 **/
 
 
-inline sfr stree::get_frame_prim(int prim) const
+inline sframe stree::get_frame_prim(int prim) const
 {
     int nidx = get_nidx_for_prim(prim); // many nidx will havse same prim
-    sfr fr = get_frame_nidx(nidx);
+    sframe fr = get_frame_nidx(nidx);
     fr.set_prim(prim);
     return fr ;
 }
-inline sfr stree::get_frame_nidx(int nidx) const
+inline sframe stree::get_frame_nidx(int nidx) const
 {
     assert( nidx > -1 );
     const snode& node = nds[nidx];
     BB bb ;
     get_prim_aabb( bb.data(), node, nullptr, nullptr );
 
-    sfr f = {} ;
+    sframe f = {} ;
     f.m2w = m2w[nidx] ;
     f.w2m = w2m[nidx] ;
     s_bb::CenterExtent<double>( f.ce_data(), bb.data() );
@@ -2695,9 +2695,9 @@ transforms from stree.
 
 **/
 
-inline sfr stree::get_frame_inst(int ii) const
+inline sframe stree::get_frame_inst(int ii) const
 {
-    sfr f = {} ;
+    sframe f = {} ;
 
     std::ostream* out = nullptr ;
     VTR* t_stack = nullptr ;
@@ -2708,7 +2708,7 @@ inline sfr stree::get_frame_inst(int ii) const
 }
 
 
-inline sfr stree::get_frame_sid(int sid) const
+inline sframe stree::get_frame_sid(int sid) const
 {
     std::vector<snode> nodes ;
     find_nodes_with_sensor_id( nodes, sid );
@@ -2726,12 +2726,12 @@ inline sfr stree::get_frame_sid(int sid) const
            ;
         nidx = 0 ;
     }
-    sfr f = get_frame_nidx( nidx );
+    sframe f = get_frame_nidx( nidx );
     return f ;
 }
 
 
-inline sfr stree::get_frame_sidx(int sidx) const
+inline sframe stree::get_frame_sidx(int sidx) const
 {
     std::vector<snode> nodes ;
     find_nodes_with_sensor_index( nodes, sidx );
@@ -2749,11 +2749,11 @@ inline sfr stree::get_frame_sidx(int sidx) const
            ;
         nidx = 0 ;
     }
-    sfr f = get_frame_nidx( nidx );
+    sframe f = get_frame_nidx( nidx );
     return f ;
 }
 
-inline sfr stree::get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src) const
+inline sframe stree::get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src) const
 {
     std::vector<int> nodes ;
     find_lvid_copyno_nodes( nodes, q_lvid, q_copyno, q_src );
@@ -2775,7 +2775,7 @@ inline sfr stree::get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src) co
            ;
         nidx = 0 ;
     }
-    sfr f = get_frame_nidx( nidx );
+    sframe f = get_frame_nidx( nidx );
     return f ;
 }
 
@@ -2785,7 +2785,7 @@ inline sfr stree::get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src) co
 
 
 
-inline int stree::get_frame_from_npyfile(sfr& f, const char* q_spec ) const
+inline int stree::get_frame_from_npyfile(sframe& f, const char* q_spec ) const
 {
     NP* a = NP::Load(q_spec);
     if(!a) return 1 ;
@@ -2840,7 +2840,7 @@ repeat_ordinal:0,...
 **/
 
 
-inline int stree::get_frame_from_triplet(sfr& f, const char* q_spec ) const
+inline int stree::get_frame_from_triplet(sframe& f, const char* q_spec ) const
 {
     int lvid ;
     int lvid_ordinal ;
@@ -2884,7 +2884,7 @@ inline int stree::get_frame_from_triplet(sfr& f, const char* q_spec ) const
 stree::get_frame_from_coords
 ------------------------------
 
-HMM: perhaps move into sfr.h
+HMM: perhaps move into sframe.h
 
 This enables manual targetting some position::
 
@@ -2893,7 +2893,7 @@ This enables manual targetting some position::
 **/
 
 
-inline int stree::get_frame_from_coords(sfr& f, const char* q_spec ) const
+inline int stree::get_frame_from_coords(sframe& f, const char* q_spec ) const
 {
     char delim = ',' ;
     std::vector<double> elem ;
@@ -2938,7 +2938,7 @@ inline int stree::get_frame_from_coords(sfr& f, const char* q_spec ) const
 }
 
 
-inline int stree::get_frame_from_transform(sfr& f, const char* q_spec ) const
+inline int stree::get_frame_from_transform(sframe& f, const char* q_spec ) const
 {
     char delim = ',' ;
     std::vector<double> elem ;
@@ -3003,7 +3003,7 @@ inline bool stree::has_frame(const char* q_spec) const
         return false ;
     }
 
-    sfr f ;
+    sframe f ;
     f.set_name(q_spec);
 
     int get_rc = 0 ;
@@ -3049,7 +3049,7 @@ stree::get_frame_instanced
 
 **/
 
-inline int stree::get_frame_instanced(sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out, VTR* t_stack ) const
+inline int stree::get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out, VTR* t_stack ) const
 {
     int ii = pick_lvid_ordinal_repeat_ordinal_inst_( lvid, lvid_ordinal, repeat_ordinal );
     int nidx = inst_nidx[ii] ;
@@ -3083,7 +3083,7 @@ inline int stree::get_frame_instanced(sfr& f, int lvid, int lvid_ordinal, int re
 }
 
 
-inline int stree::get_frame_inst(sfr& f, int ii, std::ostream* out, VTR* t_stack) const
+inline int stree::get_frame_inst(sframe& f, int ii, std::ostream* out, VTR* t_stack) const
 {
     const glm::tmat4x4<double>* m2w = get_inst(ii);
     const glm::tmat4x4<double>* w2m = get_iinst(ii);
@@ -3152,15 +3152,15 @@ here at stree level.
 TODO: avoid the duplication in frame access impls
 
 **/
-inline int stree::get_frame_remainder(sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
+inline int stree::get_frame_remainder(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
 {
     return _get_frame_global( f, lvid, lvid_ordinal, repeat_ordinal, 'R' );
 }
-inline int stree::get_frame_triangulate(sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
+inline int stree::get_frame_triangulate(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
 {
     return _get_frame_global( f, lvid, lvid_ordinal, repeat_ordinal, 'T' );
 }
-inline int stree::get_frame_global(sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
+inline int stree::get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
 {
     return _get_frame_global( f, lvid, lvid_ordinal, repeat_ordinal, '?' );
 }
@@ -3208,7 +3208,7 @@ a former difference in the convention used.
 
 **/
 
-inline int stree::_get_frame_global(sfr& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type ) const
+inline int stree::_get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type ) const
 {
     assert( repeat_ordinal == -1 || repeat_ordinal == -2 || repeat_ordinal == -3 );
     const snode* _node = pick_lvid_ordinal_node( lvid, lvid_ordinal, ridx_type );

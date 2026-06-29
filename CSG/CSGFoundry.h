@@ -378,15 +378,15 @@ struct CSG_API CSGFoundry : public SGeo
     const char* getName(unsigned midx) const ;
 
     static const char* getFrame_NOTES ;
-    sfr getFrame() const ;
-    sfr getFrame(const char* moi_or_iidx) const ;
+    sframe getFrame() const ;
+    sframe getFrame(const char* moi_or_iidx) const ;
 
     static constexpr const char* getFrame_VERBOSE = "CSGFoundry__getFrame_VERBOSE" ;
 
-    int getFrame(sfr& fr, int ins_idx ) const ;
+    int getFrame(sframe& fr, int ins_idx ) const ;
 
     static constexpr const char* getFrameE_VERBOSE = "CSGFoundry__getFrameE_VERBOSE" ;
-    sfr getFrameE() const ;
+    sframe getFrameE() const ;
     static void AfterLoadOrCreate();
 
     // target

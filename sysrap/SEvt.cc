@@ -803,7 +803,7 @@ simtrace stack::
 **/
 
 
-void SEvt::setFr(const sfr& _fr )
+void SEvt::setFr(const sframe& _fr )
 {
     fr = _fr ;
     transformInputPhoton();
@@ -812,7 +812,7 @@ void SEvt::setFr(const sfr& _fr )
 
 void SEvt::setFramePlaceholder()
 {
-    sfr fr = sfr::MakeFromTranslateExtent<float>(0.f,0.f,0.f,1000.f);
+    sframe fr = sframe::MakeFromTranslateExtent<float>(0.f,0.f,0.f,1000.f);
     setFr(fr);
 }
 
@@ -1063,7 +1063,7 @@ const NP*   SEvt::GetFrameArray(int idx){ return Exists(idx) ? Get(idx)->getFram
 SEvt::setFrame_HostsideSimtrace
 ---------------------------------
 
-Called when sfr::is_hostside_simtrace, eg at behest of U4Simtrace
+Called when sframe::is_hostside_simtrace, eg at behest of U4Simtrace
 
 **/
 
@@ -1117,7 +1117,7 @@ This method requires SEvt::setSim to have provided stree access.
 void SEvt::setFrame(unsigned ins_idx)
 {
     assert(tree);
-    sfr f = tree->get_frame_inst( ins_idx );
+    sframe f = tree->get_frame_inst( ins_idx );
     setFr(f);
 }
 
@@ -1148,7 +1148,7 @@ SEvt* SEvt::CreateSimtraceEvent()  // static
     assert(prior);
     if(prior == nullptr ) return nullptr ;
 
-    sfr& pfr = prior->fr ;
+    sframe& pfr = prior->fr ;
     pfr.set_hostside_simtrace();
 
 
@@ -1405,7 +1405,7 @@ void SEvt::CreateOrReuse()
 
 
 
-void SEvt::SetFr(const sfr& fr )
+void SEvt::SetFr(const sframe& fr )
 {
     if(Exists(0)) Get(0)->setFr(fr);
     if(Exists(1)) Get(1)->setFr(fr);
@@ -4941,7 +4941,7 @@ void SEvt::getLocalPhoton(sphoton& lp, unsigned idx) const
 {
     getPhoton(lp, idx);
 
-    sfr fr ;
+    sframe fr ;
     getPhotonFrame(fr, lp);   // HMM: this is just using lp.iindex
     fr.transform_w2m(lp);
 
@@ -5004,7 +5004,7 @@ void SEvt::getLocalHit_LEAKY(sphit& ht, sphoton& lp, unsigned idx) const
 {
     getHit(lp, idx);   // copy *idx* hit from NP array into sphoton& lp struct
 
-    sfr fr = {} ;
+    sframe fr = {} ;
     getPhotonFrame(fr, lp);
     fr.transform_w2m(lp);
     ht.iindex = fr.get_inst() ;
@@ -5119,7 +5119,7 @@ Frame lookup is handled through the stree provided by SEvt::setSim.
 
 **/
 
-void SEvt::getPhotonFrame( sfr& fr, const sphoton& p ) const
+void SEvt::getPhotonFrame( sframe& fr, const sphoton& p ) const
 {
     assert(tree);
     fr = tree->get_frame_inst( p.iindex() );

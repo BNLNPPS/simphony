@@ -4,7 +4,7 @@
 #include "sqat4.h"
 
 
-#include "sfr.h"
+#include "sframe.h"
 #include "stree.h"
 
 #include "spath.h"
@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     CSGFoundry* fd = CSGFoundry::Load();
     const stree* tree = fd->getTree();
 
-    sfr fr = tree->get_frame_moi();
+    sframe fr = tree->get_frame_moi();
     NP* gs0 = SFrameGenstep::MakeCenterExtentGenstep_FromFrame(fr) ;
 
     SEvt::AddGenstep(gs0);

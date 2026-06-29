@@ -1,6 +1,6 @@
 #pragma once
 /**
-sfr.h
+sframe.h
 ======
 
 The frame is needed in almost all situations:
@@ -22,7 +22,7 @@ brings complexity without much utility. So live with two locations
 for the frame.
 
 
-sfr Layout
+sframe Layout
 -----------
 
 ::
@@ -77,9 +77,9 @@ sfr Layout
 #include "stran.h"
 #include "sphoton.h"
 
-struct sfr
+struct sframe
 {
-    static constexpr const char* NAME = "sfr" ;
+    static constexpr const char* NAME = "sframe" ;
     static constexpr const unsigned NUM_4x4 = 4 ;
     static constexpr const unsigned NUM_VALUES = NUM_4x4*4*4 ;  // 64
     static constexpr const double   EPSILON = 1e-5 ;
@@ -87,31 +87,31 @@ struct sfr
 
 
     template<typename T>
-    static sfr MakeFromCE(const char* ce, char delim=',');
+    static sframe MakeFromCE(const char* ce, char delim=',');
     template<typename T>
-    static sfr MakeFromCE(const T* ce);
+    static sframe MakeFromCE(const T* ce);
 
     template<typename T>
-    static sfr MakeFromExtent(const char* _extent);
+    static sframe MakeFromExtent(const char* _extent);
     template<typename T>
-    static sfr MakeFromExtent(T extent);
-
-
-    template<typename T>
-    static sfr MakeFromTranslateExtent(const char* s_te, char delim);
-    template<typename T>
-    static sfr MakeFromTranslateExtent(const T* _te);
-    template<typename T>
-    static sfr MakeFromTranslateExtent(T tx, T ty, T tz, T extent );
-
+    static sframe MakeFromExtent(T extent);
 
 
     template<typename T>
-    static sfr MakeFromAxis(const char* tpde, char delim=',');
+    static sframe MakeFromTranslateExtent(const char* s_te, char delim);
     template<typename T>
-    static sfr MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_distance_mm );
+    static sframe MakeFromTranslateExtent(const T* _te);
     template<typename T>
-    static sfr MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_distance_mm );
+    static sframe MakeFromTranslateExtent(T tx, T ty, T tz, T extent );
+
+
+
+    template<typename T>
+    static sframe MakeFromAxis(const char* tpde, char delim=',');
+    template<typename T>
+    static sframe MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_distance_mm );
+    template<typename T>
+    static sframe MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_distance_mm );
 
 
                                  //  nv   nv_offset
@@ -132,10 +132,10 @@ struct sfr
     std::string name ;
     std::string treedir ;
 
-    // bytewise comparison of sfr instances fails
+    // bytewise comparison of sframe instances fails
     // for 4 bytes at offset corresponding to the std::string name reference
 
-    sfr();
+    sframe();
 
     void set_propagate_epsilon(double eps);
     void set_gridscale(double gsc);
@@ -216,9 +216,9 @@ struct sfr
     NP* serialize() const ;
     void save(const char* dir, const char* stem=NAME) const ;
 
-    static sfr Import( const NP* a);
-    static sfr Load( const char* dir, const char* stem=NAME);
-    static sfr Load_(const char* path );
+    static sframe Import( const NP* a);
+    static sframe Load( const char* dir, const char* stem=NAME);
+    static sframe Load_(const char* path );
 
     void load(const char* dir, const char* stem=NAME) ;
     void load_(const char* path ) ;
@@ -238,7 +238,7 @@ struct sfr
 
 
 template<typename T>
-inline sfr sfr::MakeFromCE(const char* s_ce, char delim)
+inline sframe sframe::MakeFromCE(const char* s_ce, char delim)
 {
     std::vector<T> elem ;
     sstr::split<T>( elem, s_ce, delim );
@@ -255,9 +255,9 @@ inline sfr sfr::MakeFromCE(const char* s_ce, char delim)
 }
 
 template<typename T>
-inline sfr sfr::MakeFromCE(const T* _ce )
+inline sframe sframe::MakeFromCE(const T* _ce )
 {
-    sfr fr ;
+    sframe fr ;
     fr.set_ce(_ce);
     fr.set_name("MakeFromCE");
     return fr ;
@@ -268,16 +268,16 @@ inline sfr sfr::MakeFromCE(const T* _ce )
 
 
 template<typename T>
-inline sfr sfr::MakeFromExtent(const char* _ext)
+inline sframe sframe::MakeFromExtent(const char* _ext)
 {
     T _extent = sstr::To<T>( _ext ) ;
     return MakeFromExtent<T>(_extent);
 }
 
 template<typename T>
-inline sfr sfr::MakeFromExtent(T extent)
+inline sframe sframe::MakeFromExtent(T extent)
 {
-    sfr fr ;
+    sframe fr ;
     fr.set_extent(extent);
     fr.set_name("MakeFromExtent");
     return fr ;
@@ -291,7 +291,7 @@ inline sfr sfr::MakeFromExtent(T extent)
 
 
 template<typename T>
-inline sfr sfr::MakeFromTranslateExtent(const char* s_te, char delim)
+inline sframe sframe::MakeFromTranslateExtent(const char* s_te, char delim)
 {
     std::vector<T> elem ;
     sstr::split<T>( elem, s_te, delim );
@@ -308,17 +308,17 @@ inline sfr sfr::MakeFromTranslateExtent(const char* s_te, char delim)
 }
 
 template<typename T>
-inline sfr sfr::MakeFromTranslateExtent(const T* _te )
+inline sframe sframe::MakeFromTranslateExtent(const T* _te )
 {
     return MakeFromTranslateExtent(_te[0], _te[1], _te[2], _te[3]);
 }
 
 template<typename T>
-inline sfr sfr::MakeFromTranslateExtent(T tx, T ty, T tz, T extent )
+inline sframe sframe::MakeFromTranslateExtent(T tx, T ty, T tz, T extent )
 {
     T sc = 1. ;
     glm::tmat4x4<T> model2world = stra<T>::Translate(tx, ty, tz, sc );
-    sfr fr ;
+    sframe fr ;
     fr.set_m2w( glm::value_ptr(model2world) );
     fr.set_extent(extent);
     fr.set_name("MakeFromTranslateExtent");
@@ -342,7 +342,7 @@ inline sfr sfr::MakeFromTranslateExtent(T tx, T ty, T tz, T extent )
 
 
 /**
-sfr::MakeFromAxis
+sframe::MakeFromAxis
 ------------------
 
 ::
@@ -355,7 +355,7 @@ sfr::MakeFromAxis
 
 
 template<typename T>
-inline sfr sfr::MakeFromAxis(const char* tpde, char delim)
+inline sframe sframe::MakeFromAxis(const char* tpde, char delim)
 {
     std::vector<T> elem ;
     sstr::split<T>( elem, tpde, delim );
@@ -368,7 +368,7 @@ inline sfr sfr::MakeFromAxis(const char* tpde, char delim)
     T delta_dist_mm   = num_elem > 4 ? elem[4] : 0. ;
 
     if(0) std::cout
-        << "sfr::MakeFromAxis"
+        << "sframe::MakeFromAxis"
         << " tpde [" << ( tpde ? tpde : "-" ) << "]"
         << " num_elem " << num_elem
         << " elem " << sstr::desc<T>(elem)
@@ -379,7 +379,7 @@ inline sfr sfr::MakeFromAxis(const char* tpde, char delim)
 }
 
 /**
-sfr::MakeFromAxis
+sframe::MakeFromAxis
 ------------------
 
 Suspect this doesnt handle theta_deg = 0 when want to just move the
@@ -390,10 +390,10 @@ plane around in phi_deg.
 
 
 template<typename T>
-inline sfr sfr::MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_dist_mm )
+inline sframe sframe::MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_dist_mm )
 {
     std::cout
-        << "sfr::MakeFromAxis"
+        << "sframe::MakeFromAxis"
         << " theta_deg " << theta_deg
         << " phi_deg " << phi_deg
         << " ax_dist_mm " << ax_dist_mm
@@ -419,7 +419,7 @@ inline sfr sfr::MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, 
 
     glm::tmat4x4<T> model2world = stra<T>::Model2World(ax, up, translation );
 
-    sfr fr ;
+    sframe fr ;
     fr.set_m2w( glm::value_ptr(model2world) );
     fr.set_extent(extent_mm);
     fr.set_name("MakeFromAxis");
@@ -429,7 +429,7 @@ inline sfr sfr::MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, 
 
 
 /**
-sfr::MakeFromAxisQuat
+sframe::MakeFromAxisQuat
 ----------------------
 
 Quaternion version avoids having to deal the degeneracies::
@@ -442,7 +442,7 @@ Quaternion version avoids having to deal the degeneracies::
 
 
 template<typename T>
-inline sfr sfr::MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_dist_mm )
+inline sframe sframe::MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_dist_mm )
 {
     T theta = glm::radians(theta_deg);
     T phi = glm::radians(phi_deg);
@@ -470,7 +470,7 @@ inline sfr sfr::MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_
     // If stra::Model2World takes (z, y, pos), we pass (ax, up, translation)
     glm::tmat4x4<T> model2world = stra<T>::Model2World(ax, up, translation);
 
-    sfr fr;
+    sframe fr;
     fr.set_m2w(glm::value_ptr(model2world));
     fr.set_extent(extent_mm);
     fr.set_name("MakeFromAxisQuat");
@@ -490,7 +490,7 @@ inline sfr sfr::MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_
 
 
 
-inline sfr::sfr()
+inline sframe::sframe()
     :
     ce(0.,0.,0.,100.),
     aux0(0),
@@ -509,22 +509,22 @@ inline sfr::sfr()
 
 
 
-inline void sfr::set_propagate_epsilon(double eps){     ext0.x = eps ; }
-inline void sfr::set_gridscale(double gsc){             ext0.y = gsc ; }
-inline double sfr::get_propagate_epsilon() const   {  return ext0.x ; }
-inline double sfr::get_gridscale() const   {         return ext0.y ; }
+inline void sframe::set_propagate_epsilon(double eps){     ext0.x = eps ; }
+inline void sframe::set_gridscale(double gsc){             ext0.y = gsc ; }
+inline double sframe::get_propagate_epsilon() const   {  return ext0.x ; }
+inline double sframe::get_gridscale() const   {         return ext0.y ; }
 
-inline void   sfr::set_hostside_simtrace(){     aux1.x = 1 ; }   // hss
-inline void   sfr::set_gasix( int gasix ){      aux1.y = gasix ; }
-inline void   sfr::set_sensorid(  int senid ){  aux1.z = senid ; }
-inline void   sfr::set_sensorix(  int senix ){  aux1.w = senix ; }
+inline void   sframe::set_hostside_simtrace(){     aux1.x = 1 ; }   // hss
+inline void   sframe::set_gasix( int gasix ){      aux1.y = gasix ; }
+inline void   sframe::set_sensorid(  int senid ){  aux1.z = senid ; }
+inline void   sframe::set_sensorix(  int senix ){  aux1.w = senix ; }
 
-inline bool   sfr::is_hostside_simtrace() const { return aux1.x == 1 ; }  // hss
-inline int    sfr::get_gasix() const {            return aux1.y ; }
-inline int    sfr::get_sensorid() const {         return aux1.z ; }
-inline int    sfr::get_sensorix() const {         return aux1.w ; }
+inline bool   sframe::is_hostside_simtrace() const { return aux1.x == 1 ; }  // hss
+inline int    sframe::get_gasix() const {            return aux1.y ; }
+inline int    sframe::get_sensorid() const {         return aux1.z ; }
+inline int    sframe::get_sensorix() const {         return aux1.w ; }
 
-inline void   sfr::set_identity( int inst, int gasix, int sensorid, int sensorix )
+inline void   sframe::set_identity( int inst, int gasix, int sensorid, int sensorix )
 {
     set_inst(inst);
     set_gasix(gasix);
@@ -533,25 +533,23 @@ inline void   sfr::set_identity( int inst, int gasix, int sensorid, int sensorix
 }
 
 
-inline void sfr::set_lvid(int lvid){                  aux0.x = lvid ;   }
-inline void sfr::set_lvid_ordinal(int lvid_ordinal){  aux0.y = lvid_ordinal ;   }
+inline void sframe::set_lvid(int lvid){                  aux0.x = lvid ;   }
+inline void sframe::set_lvid_ordinal(int lvid_ordinal){  aux0.y = lvid_ordinal ;   }
 
-inline int  sfr::get_lvid() const  {         return aux0.x ; }
-inline int  sfr::get_lvid_ordinal() const  { return aux0.y ; }
-
-
-
-inline void sfr::set_inst(int ii){     aux2.x = ii ;   }
-inline void sfr::set_nidx(int nidx){   aux2.y = nidx ; }
-inline void sfr::set_prim(int prim){   aux2.z = prim ; }
-inline void sfr::set_idx(int idx) {    aux2.w = idx ; }
-
-inline int  sfr::get_inst() const  { return aux2.x ; }
-inline int  sfr::get_nidx() const  { return aux2.y ; }
-inline int  sfr::get_prim() const  { return aux2.z ; }
-inline int  sfr::get_idx() const  {  return aux2.w ; }
+inline int  sframe::get_lvid() const  {         return aux0.x ; }
+inline int  sframe::get_lvid_ordinal() const  { return aux0.y ; }
 
 
+
+inline void sframe::set_inst(int ii){     aux2.x = ii ;   }
+inline void sframe::set_nidx(int nidx){   aux2.y = nidx ; }
+inline void sframe::set_prim(int prim){   aux2.z = prim ; }
+inline void sframe::set_idx(int idx) {    aux2.w = idx ; }
+
+inline int  sframe::get_inst() const  { return aux2.x ; }
+inline int  sframe::get_nidx() const  { return aux2.y ; }
+inline int  sframe::get_prim() const  { return aux2.z ; }
+inline int  sframe::get_idx() const  {  return aux2.w ; }
 
 
 
@@ -560,7 +558,9 @@ inline int  sfr::get_idx() const  {  return aux2.w ; }
 
 
 
-inline bool sfr::is_zero() const
+
+
+inline bool sframe::is_zero() const
 {
     return ce.x == 0. && ce.y == 0. && ce.z == 0. && ce.w == 0. ;
 }
@@ -570,13 +570,13 @@ inline bool sfr::is_zero() const
 
 
 
-inline double* sfr::ce_data()
+inline double* sframe::ce_data()
 {
     return glm::value_ptr(ce);
 }
 
 template<typename T>
-inline void sfr::set_ce( const T* _ce )
+inline void sframe::set_ce( const T* _ce )
 {
     ce.x = _ce[0];
     ce.y = _ce[1];
@@ -587,13 +587,13 @@ inline void sfr::set_ce( const T* _ce )
 
 
 template<typename T>
-inline void sfr::set_extent( T _w )
+inline void sframe::set_extent( T _w )
 {
     ce.w = _w ;
 }
 
 template<typename T>
-inline void sfr::set_m2w( const T* vv, size_t nv )
+inline void sframe::set_m2w( const T* vv, size_t nv )
 {
     assert( nv == 16 );
     double* _m2w = glm::value_ptr(m2w) ;
@@ -603,7 +603,7 @@ inline void sfr::set_m2w( const T* vv, size_t nv )
 
 
 template<typename T>
-inline void sfr::set_bb( const T* bb )
+inline void sframe::set_bb( const T* bb )
 {
     bbmn.x = bb[0] ;
     bbmn.y = bb[1] ;
@@ -614,7 +614,7 @@ inline void sfr::set_bb( const T* bb )
 }
 
 template<typename T>
-inline int sfr::write_bb( T* bb ) const
+inline int sframe::write_bb( T* bb ) const
 {
     bb[0] = bbmn.x ;
     bb[1] = bbmn.y ;
@@ -632,19 +632,19 @@ inline int sfr::write_bb( T* bb ) const
 
 
 
-inline const glm::tmat4x4<double>& sfr::get_transform(bool inverse) const
+inline const glm::tmat4x4<double>& sframe::get_transform(bool inverse) const
 {
     return inverse ? w2m : m2w ;
 }
-inline void sfr::transform_w2m( sphoton& p, bool normalize ) const
+inline void sframe::transform_w2m( sphoton& p, bool normalize ) const
 {
     transform( p, normalize, true );
 }
-inline void sfr::transform_m2w( sphoton& p, bool normalize ) const
+inline void sframe::transform_m2w( sphoton& p, bool normalize ) const
 {
     transform( p, normalize, false );
 }
-inline void sfr::transform( sphoton& p, bool normalize, bool inverse ) const
+inline void sframe::transform( sphoton& p, bool normalize, bool inverse ) const
 {
     const glm::tmat4x4<double>& tr = get_transform(inverse);
     p.transform( tr, normalize );
@@ -658,7 +658,7 @@ inline void sfr::transform( sphoton& p, bool normalize, bool inverse ) const
 
 
 /**
-sfr::getTransform
+sframe::getTransform
 -------------------
 
 t:m2w
@@ -666,18 +666,18 @@ v:w2m
 
 **/
 
-inline Tran<double>* sfr::getTransform() const
+inline Tran<double>* sframe::getTransform() const
 {
     Tran<double>* geotran = new Tran<double>( m2w, w2m );   // ORDER ?
     return geotran ;
 }
 
-inline NP* sfr::transform_photon_m2w( const NP* ph, bool normalize ) const
+inline NP* sframe::transform_photon_m2w( const NP* ph, bool normalize ) const
 {
     bool inverse = false ; // false:m2w true:w2m
     return transform_photon(ph, normalize, inverse);
 }
-inline NP* sfr::transform_photon_w2m( const NP* ph, bool normalize ) const
+inline NP* sframe::transform_photon_w2m( const NP* ph, bool normalize ) const
 {
     bool inverse = true ; // false:m2w true:w2m
     return transform_photon(ph, normalize, inverse);
@@ -685,7 +685,7 @@ inline NP* sfr::transform_photon_w2m( const NP* ph, bool normalize ) const
 
 
 /**
-sfr::transform_photon
+sframe::transform_photon
 ----------------------
 
 Canonical call from::
@@ -700,7 +700,7 @@ That will be narrowed down to float prior to upload by QEvt::setInputPhoton
 
 **/
 
-inline NP* sfr::transform_photon( const NP* ph, bool normalize, bool inverse ) const
+inline NP* sframe::transform_photon( const NP* ph, bool normalize, bool inverse ) const
 {
     if( ph == nullptr ) return nullptr ;
     Tran<double>* tr = getTransform();
@@ -712,12 +712,12 @@ inline NP* sfr::transform_photon( const NP* ph, bool normalize, bool inverse ) c
 
 
 
-inline const std::string& sfr::get_name() const
+inline const std::string& sframe::get_name() const
 {
     return name ;
 }
 
-inline const char* sfr::get_id() const
+inline const char* sframe::get_id() const
 {
     return name.c_str() ;
 }
@@ -725,41 +725,41 @@ inline const char* sfr::get_id() const
 
 
 
-inline std::string sfr::get_key() const
+inline std::string sframe::get_key() const
 {
     return name.empty() ? "" : sstr::Replace( name.c_str(), ':', '_' ) ;
 }
 
-inline void sfr::set_name(const char* _n)
+inline void sframe::set_name(const char* _n)
 {
     if(_n) name = _n ;
 }
 
 
-inline void sfr::set_treedir(const char* _t)
+inline void sframe::set_treedir(const char* _t)
 {
     if(_t) treedir = _t ;
 }
-inline const std::string& sfr::get_treedir() const
+inline const std::string& sframe::get_treedir() const
 {
     return treedir ;
 }
 
 
 
-inline std::string sfr::desc_ce() const
+inline std::string sframe::desc_ce() const
 {
     std::stringstream ss ;
-    ss << "sfr::desc_ce " << stra<double>::Desc(ce) ;
+    ss << "sframe::desc_ce " << stra<double>::Desc(ce) ;
     std::string str = ss.str();
     return str ;
 }
 
-inline std::string sfr::desc() const
+inline std::string sframe::desc() const
 {
     std::stringstream ss ;
     ss
-       << "[sfr::desc name [" << name << "]\n"
+       << "[sframe::desc name [" << name << "]\n"
        << "ce\n"
        << stra<double>::Desc(ce)
        << "\n"
@@ -788,14 +788,14 @@ inline std::string sfr::desc() const
        << stra<double>::Desc(padd)
        << "\n"
        << "is_identity " << ( is_identity() ? "YES" : "NO " ) << "\n"
-       << "]sfr::desc\n"
+       << "]sframe::desc\n"
        ;
 
     std::string str = ss.str();
     return str ;
 }
 
-inline bool sfr::is_identity() const
+inline bool sframe::is_identity() const
 {
     bool m2w_identity = stra<double>::IsIdentity(m2w, EPSILON);
     bool w2m_identity = stra<double>::IsIdentity(w2m, EPSILON);
@@ -806,17 +806,17 @@ inline bool sfr::is_identity() const
 
 
 
-inline NP* sfr::serialize() const
+inline NP* sframe::serialize() const
 {
     NP* a = NP::Make<double>(NUM_4x4, 4, 4) ;
     write( a->values<double>(), NUM_4x4*4*4 ) ;
-    a->set_meta<std::string>("creator", "sfr::serialize");
+    a->set_meta<std::string>("creator", "sframe::serialize");
     if(!name.empty()) a->set_meta<std::string>("name",    name );
     if(!treedir.empty()) a->set_meta<std::string>("treedir",  treedir );
     return a ;
 }
 
-inline void sfr::save(const char* dir, const char* stem_ ) const
+inline void sframe::save(const char* dir, const char* stem_ ) const
 {
     std::string aname = U::form_name( stem_ , ".npy" ) ;
     NP* a = serialize() ;
@@ -829,45 +829,45 @@ inline void sfr::save(const char* dir, const char* stem_ ) const
 
 
 
-inline sfr sfr::Import( const NP* a) // static
+inline sframe sframe::Import( const NP* a) // static
 {
-    sfr fr ;
+    sframe fr ;
     fr.load(a);
     return fr ;
 }
 
-inline sfr sfr::Load(const char* dir, const char* name) // static
+inline sframe sframe::Load(const char* dir, const char* name) // static
 {
-    sfr fr ;
+    sframe fr ;
     fr.load(dir, name);
     return fr ;
 }
-inline sfr sfr::Load_(const char* path) // static
+inline sframe sframe::Load_(const char* path) // static
 {
-    sfr fr ;
+    sframe fr ;
     fr.load_(path);
     return fr ;
 }
 
 
-inline void sfr::load(const char* dir, const char* name_ )
+inline void sframe::load(const char* dir, const char* name_ )
 {
     std::string aname = U::form_name( name_ , ".npy" ) ;
     const NP* a = NP::Load(dir, aname.c_str() );
     load(a);
 }
-inline void sfr::load_(const char* path_)
+inline void sframe::load_(const char* path_)
 {
     const NP* a = NP::Load(path_);
     if(!a) std::cerr
-       << "sfr::load_ ERROR : non-existing"
+       << "sframe::load_ ERROR : non-existing"
        << " path_ " << path_
        << std::endl
        ;
     assert(a);
     load(a);
 }
-inline void sfr::load(const NP* a)
+inline void sframe::load(const NP* a)
 {
     read( a->cvalues<double>() , NUM_VALUES );
     std::string _name = a->get_meta<std::string>("name", "");
@@ -876,15 +876,15 @@ inline void sfr::load(const NP* a)
     if(!_treedir.empty()) treedir = _treedir ;
 }
 
-inline const double* sfr::cdata() const
+inline const double* sframe::cdata() const
 {
     return (const double*)&ce.x ;
 }
-inline double* sfr::data()
+inline double* sframe::data()
 {
     return (double*)&ce.x ;
 }
-inline void sfr::write( double* dst, unsigned num_values ) const
+inline void sframe::write( double* dst, unsigned num_values ) const
 {
     assert( num_values == NUM_VALUES );
     char* dst_bytes = (char*)dst ;
@@ -893,7 +893,7 @@ inline void sfr::write( double* dst, unsigned num_values ) const
     memcpy( dst_bytes, src_bytes, num_bytes );
 }
 
-inline void sfr::read( const double* src, unsigned num_values )
+inline void sframe::read( const double* src, unsigned num_values )
 {
     assert( num_values == NUM_VALUES );
     char* src_bytes = (char*)src ;
@@ -904,7 +904,7 @@ inline void sfr::read( const double* src, unsigned num_values )
 
 
 
-inline std::ostream& operator<<(std::ostream& os, const sfr& fr)
+inline std::ostream& operator<<(std::ostream& os, const sframe& fr)
 {
     os << fr.desc() ;
     return os;

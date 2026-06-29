@@ -12,7 +12,7 @@ CSG/tests/CSGFoundry_getFrame_Test.cc
 #include "squad.h"
 #include "sqat4.h"
 
-#include "sfr.h"
+#include "sframe.h"
 
 #include "ssys.h"
 #include "SSim.hh"
@@ -24,7 +24,7 @@ struct CSGFoundry_getFrame_Test
 {
     const CSGFoundry* fd ;
 
-    sfr fr = {} ;
+    sframe fr = {} ;
 
     CSGFoundry_getFrame_Test();
 

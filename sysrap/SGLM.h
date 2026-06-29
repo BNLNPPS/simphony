@@ -62,7 +62,7 @@ SGLM_test.{sh,cc}
    standalone test for a few SGLM methods
 
 SGLM_set_frame_test.{sh,cc}
-   loads sfr into SGLM and dumps
+   loads sframe into SGLM and dumps
 
 SGLM_frame_targetting_test.{sh,cc}
    compares SGLM A,B from two different center_extent frames a,b
@@ -152,7 +152,7 @@ Screen
 #include "SGLM_View.h"
 #include "SGLM_Arcball.h"
 
-#include "sfr.h"
+#include "sframe.h"
 #include "SCE.h"
 
 #include "ssys.h"
@@ -432,14 +432,14 @@ struct SYSRAP_API SGLM : public SCMD
     int command(const char* cmd);
 
 
-    sfr moi_fr = {} ;
-    sfr fr = {} ;  // CAUTION: SEvt also holds a frame used for input photon targetting
+    sframe moi_fr = {} ;
+    sframe fr = {} ;  // CAUTION: SEvt also holds a frame used for input photon targetting
 
     static constexpr const char* _DUMP = "SGLM__set_frame_DUMP" ;
     void set_frame();
     void set_frame( const char* q_spec );
     void set_frame( const float4& ce );
-    void set_frame( const sfr& fr );
+    void set_frame( const sframe& fr );
 
     int get_frame_idx() const ;
     bool has_frame_idx(int idx) const ;
@@ -950,7 +950,7 @@ inline void SGLM::handle_frame_hop(int wanted_frame_idx)
         else if( wanted_frame_idx >= 0 )
         {
             assert(scene);  // must setTreeScene before using handle_frame_hop
-            sfr wfr = scene->getFrame(wanted_frame_idx) ;
+            sframe wfr = scene->getFrame(wanted_frame_idx) ;
             set_frame(wfr);
         }
     }
@@ -1306,26 +1306,26 @@ SGLM::set_frame
 inline void SGLM::set_frame()
 {
     assert(tree && "MUST CALL SGLM::setTreeScene BEFORE SGLM::set_frame");
-    sfr f = tree->get_frame_moi();
+    sframe f = tree->get_frame_moi();
     set_frame(f);
 }
 
 inline void SGLM::set_frame( const char* q_spec )
 {
     assert(tree && "MUST CALL SGLM::setTreeScene BEFORE SGLM::set_frame");
-    sfr f = tree->get_frame(q_spec);
+    sframe f = tree->get_frame(q_spec);
     set_frame(f);
 }
 
 inline void SGLM::set_frame( const float4& ce )
 {
     assert(tree && "MUST CALL SGLM::setTreeScene BEFORE SGLM::set_frame");
-    sfr f = sfr::MakeFromCE<float>(&ce.x);
+    sframe f = sframe::MakeFromCE<float>(&ce.x);
     set_frame(f);
 }
 
 
-inline void SGLM::set_frame( const sfr& fr_ )
+inline void SGLM::set_frame( const sframe& fr_ )
 {
     fr = fr_ ;
     //std::cout << "SGLM::set_frame [" << fr.get_name() << "]\n";

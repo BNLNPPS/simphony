@@ -34,7 +34,7 @@ Check a few different iidx of midx 120::
 #include "scuda.h"
 #include "sqat4.h"
 #include "stran.h"
-#include "sfr.h"
+#include "sframe.h"
 #include "CSGFoundry.h"
 
 
@@ -191,7 +191,7 @@ int main(int argc, char** argv)
     }
     else if( strcmp(METHOD, "getFrame") == 0 )
     {
-        sfr fr = fd->getFrame() ;  // depends on MOI or its default -1
+        sframe fr = fd->getFrame() ;  // depends on MOI or its default -1
         Tran<double>* tr = fr.getTransform(); 
         std::cout << tr->desc() << std::endl ; 
     }

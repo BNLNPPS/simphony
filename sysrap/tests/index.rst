@@ -12,7 +12,7 @@ SGLM_test.{sh,cc}
    standalone test for a few SGLM methods
 
 SGLM_set_frame_test.{sh,cc}
-   loads sfr into SGLM and dumps
+   loads sframe into SGLM and dumps
 
 SGLM_frame_targetting_test.{sh,cc}
    compares SGLM A,B from two different center_extent frames a,b

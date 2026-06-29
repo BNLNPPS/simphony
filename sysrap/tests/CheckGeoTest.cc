@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include "CheckGeo.hh"
-#include "sfr.h"
+#include "sframe.h"
 
 int main(int argc, char** argv)
 {
@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 
 
      
-    sfr fr ;
+    sframe fr ;
     sg->getFrame(fr, 0); 
 
     std::cout << fr.desc() << std::endl ; 

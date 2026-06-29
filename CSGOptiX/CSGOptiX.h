@@ -14,7 +14,7 @@ CSGOptiX.h
 #include <optix.h>
 
 #include "plog/Severity.h"
-#include "sfr.h"
+#include "sframe.h"
 
 #include "CSGOPTIX_API_EXPORT.hh"
 
@@ -133,7 +133,7 @@ private:
     void setFrame();
     void setFrame(const char* moi);
     void setFrame(const float4& ce);
-    void setFrame(const sfr& fr_);
+    void setFrame(const sframe& fr_);
 
 
     static constexpr const char* _prepareParamRender_DEBUG = "CSGOptiX__prepareParamRender_DEBUG" ;

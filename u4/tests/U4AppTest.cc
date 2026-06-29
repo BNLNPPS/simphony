@@ -36,12 +36,12 @@ int main(int argc, char** argv)
 
     evt->random = rnd  ;  // so can use getFlatPrior within SEvt::addTag
 
-    sfr fr = sfr::Load_("$A_FOLD/sfr.npy");
+    sframe fr = sframe::Load_("$A_FOLD/sframe.npy");
     evt->setFr(fr);
 
 
     // NB: dependency on A_FOLD means that when changing GEOM it is necessary
-    // to run the A-side first before this B-side in order to write the $A_FOLD/sfr.npy
+    // to run the A-side first before this B-side in order to write the $A_FOLD/sframe.npy
     // The frame is needed for transforming input photons when using OPTICKS_INPUT_PHOTON_FRAME.
 
     if(U4App::PrimaryMode() == 'T') SEvt::AddTorchGenstep();

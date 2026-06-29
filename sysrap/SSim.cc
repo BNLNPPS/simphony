@@ -504,7 +504,7 @@ void SSim::afterLoadOrCreate()
     assert(tree);
 
 
-    sfr fr = tree->get_frame_moi() ;
+    sframe fr = tree->get_frame_moi() ;
     SEvt::SetFr(fr);
 }
 

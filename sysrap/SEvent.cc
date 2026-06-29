@@ -5,7 +5,7 @@
 #include "squad.h"
 #include "sqat4.h"
 #include "stran.h"
-#include "sfr.h"
+#include "sframe.h"
 
 #include "storch.h"
 #include "scerenkov.h"
@@ -88,7 +88,7 @@ NP* SEvent::MakeDemoGenstep(const char* config, int idx)
 
 
 
-NP* SEvent::MakeInputPhotonGenstep(const NP* input_photon, int gentype, const sfr* fr )
+NP* SEvent::MakeInputPhotonGenstep(const NP* input_photon, int gentype, const sframe* fr )
 {
     assert( gentype == OpticksGenstep_INPUT_PHOTON || gentype == OpticksGenstep_INPUT_PHOTON_SIMTRACE );
     std::vector<quad6> qgs(1) ;
@@ -114,7 +114,7 @@ HMM: is that actually used ? Because the frame is also persisted.
 
 **/
 
-quad6 SEvent::MakeInputPhotonGenstep_(const NP* input_photon, int gentype, const sfr* fr )
+quad6 SEvent::MakeInputPhotonGenstep_(const NP* input_photon, int gentype, const sframe* fr )
 {
     LOG(LEVEL) << " input_photon " << NP::Brief(input_photon) ;
 

@@ -31,7 +31,7 @@ TODO:
 #include "scuda.h"
 #include "sqat4.h"
 
-#include "sfr.h"
+#include "sframe.h"
 #include "stree.h"
 
 
@@ -63,13 +63,13 @@ int main(int argc, char** argv)
     CSGFoundry* fd = CSGFoundry::Load();
     stree* tree = fd->getTree();
 
-    sfr fr = tree->get_frame_moi();
+    sframe fr = tree->get_frame_moi();
     evt->setFr(fr);
 
 
     CSGOptiX* cx = CSGOptiX::Create(fd);
 
-    //sfr lfr = fr.spawn_lite();
+    //sframe lfr = fr.spawn_lite();
     //cx->setFrame(lfr);
 
 

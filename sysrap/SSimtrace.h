@@ -3,7 +3,7 @@
 SSimtrace : aiming to replace X4Simtrace
 =============================================
 
-SSimtrace.h is very local centric it populates a default sfr with ce
+SSimtrace.h is very local centric it populates a default sframe with ce
 from the G4VSolid.
 
 This is used from U4Tree::simtrace_scan (u4/test/U4SimtraceTest.sh)
@@ -40,7 +40,7 @@ That runs something like the below with ipython::
 #include <cstring>
 #include "plog/Severity.h"
 
-#include "sfr.h"
+#include "sframe.h"
 
 class G4VSolid ;
 struct SEvt ;
@@ -52,7 +52,7 @@ struct SSimtrace
 
     const G4VSolid* solid ;
     SEvt* sev ;
-    sfr fr = {} ;
+    sframe fr = {} ;
 
     SSimtrace();
     ~SSimtrace();

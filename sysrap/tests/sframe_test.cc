@@ -1,22 +1,14 @@
-/**
-
-sfr_test
-~/o/sysrap/tests/sfr_test.cc
-~/o/sfr_test.cc
-
-**/
-
 #include "ssys.h"
-#include "sfr.h"
+#include "sframe.h"
 
-struct sfr_test
+struct sframe_test
 {
     static int main();
     static int MakeFromAxis();
     static int roundtrip();
 };
 
-int sfr_test::main()
+int sframe_test::main()
 {
     //const char* test = "ALL" ;
     //const char* test = "MakeFromAxis" ;
@@ -29,13 +21,13 @@ int sfr_test::main()
     return rc ;
 }
 
-int sfr_test::MakeFromAxis()
+int sframe_test::MakeFromAxis()
 {
     const char* tpde = "45,45,0,1000" ;
-    sfr mf = sfr::MakeFromAxis<double>(tpde, ',');
+    sframe mf = sframe::MakeFromAxis<double>(tpde, ',');
 
     std::cout
-         << "sfr_test::MakeFromAxis"
+         << "sframe_test::MakeFromAxis"
          << " tpde " << tpde
          << "\n"
          << mf.desc()
@@ -44,10 +36,10 @@ int sfr_test::MakeFromAxis()
     return 0 ;
 }
 
-int sfr_test::roundtrip()
+int sframe_test::roundtrip()
 {
-    sfr a ;
-    a.set_name("sfr_test::roundtrip");
+    sframe a ;
+    a.set_name("sframe_test::roundtrip");
 
     a.aux0.x = 1 ;
     a.aux0.y = 2 ;
@@ -70,7 +62,7 @@ int sfr_test::roundtrip()
     std::cout << "A\n" << a.desc() << std::endl;
     a.save("$FOLD");
 
-    sfr b = sfr::Load("$FOLD");
+    sframe b = sframe::Load("$FOLD");
     std::cout << "B\n" << b.desc() << std::endl;
 
     return 0;
@@ -78,5 +70,5 @@ int sfr_test::roundtrip()
 
 int main()
 {
-    return sfr_test::main();
+    return sframe_test::main();
 }
