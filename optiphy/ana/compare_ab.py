@@ -9,6 +9,7 @@ Geant4-version-dependent mismatch indices.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -23,13 +24,36 @@ from optiphy.geant4_version import detect_geant4_version, geant4_series
 
 
 EXPECTED_DIFF = {
-    "11.3": [14, 22, 32, 34, 40, 81, 85],
-    "11.4+": [0, 30, 32, 34, 42, 69, 78, 85, 86],
+    "11.3": {
+        "default": [14, 22, 32, 34, 40, 81, 85],
+        "Release": [14, 16, 22, 32, 40, 67, 81],
+    },
+    "11.4+": {
+        "default": [0, 30, 32, 34, 42, 69, 78, 85, 86],
+    },
 }
 
 
-def expected_diff_for_version(version):
-    return EXPECTED_DIFF[geant4_series(version)]
+def detect_build_type(base):
+    build_type = os.environ.get("SIMPHONY_BUILD_TYPE") or os.environ.get("CMAKE_BUILD_TYPE")
+    if build_type:
+        return build_type
+
+    for path in (base, *base.parents):
+        cache_path = path / "CMakeCache.txt"
+        if not cache_path.is_file():
+            continue
+
+        for line in cache_path.read_text().splitlines():
+            if line.startswith("CMAKE_BUILD_TYPE:"):
+                return line.split("=", 1)[1].strip()
+
+    return "default"
+
+
+def expected_diff_for_version(version, build_type):
+    expected_by_build = EXPECTED_DIFF[geant4_series(version)]
+    return expected_by_build.get(build_type, expected_by_build["default"])
 
 
 def load_records(base, a_record, b_record):
@@ -77,7 +101,8 @@ def main():
 
     base = Path(args.base).resolve()
     geant4_version = detect_geant4_version()
-    expected_diff = expected_diff_for_version(geant4_version)
+    build_type = detect_build_type(base)
+    expected_diff = expected_diff_for_version(geant4_version, build_type)
 
     a, b = load_records(base, Path(args.a_record), Path(args.b_record))
     diff = compare_records(a, b)
@@ -86,6 +111,7 @@ def main():
     print(f"A_SHAPE={a.shape}")
     print(f"B_SHAPE={b.shape}")
     print(f"GEANT4_VERSION={geant4_version}")
+    print(f"BUILD_TYPE={build_type}")
     print(f"EXPECTED_DIFF={expected_diff}")
     print(f"ACTUAL_DIFF={diff}")
 

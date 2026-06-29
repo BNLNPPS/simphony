@@ -97,8 +97,8 @@ struct sctx
     SCTX_METHOD void zero();
 #endif
 
-#ifndef PRODUCTION
     SCTX_METHOD void point(int bounce);
+#ifndef PRODUCTION
     SCTX_METHOD void trace(int bounce);
     SCTX_METHOD void end();
 #endif
@@ -111,7 +111,6 @@ SCTX_METHOD void sctx::zero(){ *this = {} ; }
 #endif
 
 
-#ifndef PRODUCTION
 /**
 sctx::point : copy current sphoton p into (idx,bounce) entries of evt->record/rec/seq/aux
 -------------------------------------------------------------------------------------------
@@ -136,11 +135,14 @@ input bbox within target frame into a global frame bbox and use that ?
 SCTX_METHOD void sctx::point(int bounce)
 {
     if(evt->record && bounce < evt->max_record) evt->record[evt->max_record*idx+bounce] = p ;
+#ifndef PRODUCTION
     if(evt->rec    && bounce < evt->max_rec)    evt->add_rec( rec, idx, bounce, p );    // this copies into evt->rec array
     if(evt->seq)                                seq.add_nibble( bounce, p.flag(), p.boundary() );
     if(evt->aux    && bounce < evt->max_aux)    evt->aux[evt->max_aux*idx+bounce] = aux ;
+#endif
 }
 
+#ifndef PRODUCTION
 
 /**
 sctx::trace : copy current prd into (idx,bounce) entry of evt->prd

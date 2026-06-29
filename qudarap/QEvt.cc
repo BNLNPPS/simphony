@@ -831,6 +831,7 @@ NP* QEvt::gatherFlat() const
     return flat ;
 }
 
+#endif
 
 NP* QEvt::gatherRecord() const
 {
@@ -844,6 +845,8 @@ NP* QEvt::gatherRecord() const
     QU::copy_device_to_host<sphoton>( (sphoton*)r->bytes(), evt->record, evt->num_record );
     return r ;
 }
+
+#ifndef PRODUCTION
 
 NP* QEvt::gatherRec() const
 {
@@ -1379,9 +1382,9 @@ NP* QEvt::gatherComponent_(unsigned cmp) const
         case SCOMP_HITLITE:       a = gatherHitLite()           ; break ;
         case SCOMP_HITLITEMERGED: a = gatherHitLiteMerged()     ; break ;
         case SCOMP_HITMERGED:     a = gatherHitMerged()         ; break ;
+        case SCOMP_RECORD:        a = gatherRecord();             break;
 #ifndef PRODUCTION
         case SCOMP_DOMAIN:    a = gatherDomain()      ; break ;
-        case SCOMP_RECORD:    a = gatherRecord()   ; break ;
         case SCOMP_REC:       a = gatherRec()      ; break ;
         case SCOMP_SEQ:       a = gatherSeq()      ; break ;
         case SCOMP_PRD:       a = gatherPrd()      ; break ;
@@ -1507,11 +1510,13 @@ void QEvt::device_alloc_photon()
 
     assert( noalloc );
 
+    bool with_record = SEventConfig::GatherRecord() && evt->max_record > 0;
+
     evt->photon     = with_photon     ? QU::device_alloc_zero<sphoton>(     evt->max_slot, "QEvt::device_alloc_photon/max_slot*sizeof(sphoton)"     ) : nullptr ;
     evt->photonlite = with_photonlite ? QU::device_alloc_zero<sphotonlite>( evt->max_slot, "QEvt::device_alloc_photon/max_slot*sizeof(sphotonlite)" ) : nullptr ;
+    evt->record = with_record ? QU::device_alloc_zero<sphoton>(evt->max_slot * evt->max_record, "max_slot*max_record*sizeof(sphoton)") : nullptr;
 
 #ifndef PRODUCTION
-    evt->record  = evt->max_record > 0 ? QU::device_alloc_zero<sphoton>( evt->max_slot * evt->max_record, "max_slot*max_record*sizeof(sphoton)" ) : nullptr ;
     evt->rec     = evt->max_rec    > 0 ? QU::device_alloc_zero<srec>(    evt->max_slot * evt->max_rec   , "max_slot*max_rec*sizeof(srec)"    ) : nullptr ;
     evt->prd     = evt->max_prd    > 0 ? QU::device_alloc_zero<quad2>(   evt->max_slot * evt->max_prd   , "max_slot*max_prd*sizeof(quad2)"    ) : nullptr ;
     evt->seq     = evt->max_seq   == 1 ? QU::device_alloc_zero<sseq>(    evt->max_slot                  , "max_slot*sizeof(sseq)"    ) : nullptr ;
@@ -1597,5 +1602,3 @@ void QEvt::checkEvt()
     assert( d_evt );
     QEvt_checkEvt(numBlocks, threadsPerBlock, d_evt, width, height );
 }
-
-

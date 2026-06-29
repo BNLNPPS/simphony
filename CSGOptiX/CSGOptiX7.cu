@@ -442,9 +442,7 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
 
     int command = START ;
     int bounce = 0 ;
-#ifndef PRODUCTION
-    ctx.point(bounce);
-#endif
+    if(evt->record) ctx.point(bounce);
     while( bounce < evt->max_bounce && ctx.p.time < params.max_time )
     {
         float tmin = ( ctx.p.orient_boundary_flag & params.PropagateEpsilon0Mask ) ? params.tmin0 : params.tmin ;
@@ -473,9 +471,7 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
 #endif
         command = sim->propagate(bounce, rng, ctx);
         bounce++;
-#ifndef PRODUCTION
-        ctx.point(bounce) ;
-#endif
+        if(evt->record) ctx.point(bounce) ;
         if(command == BREAK) break ;
     }
 #ifndef PRODUCTION
