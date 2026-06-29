@@ -118,11 +118,12 @@ jobs:
           cache-from: |
             type=registry,ref=${{ env.BASE_CACHE_REF }}
             type=registry,ref=${{ env.CACHE_REF }}
-          push: ${{ matrix.target == 'develop' && github.event.pull_request.head.repo.full_name == github.repository }}
+          push: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 
-  test-develop-image:
+  test-image:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     needs: build-image
+    name: Test PR image (${{ matrix.target }}, ${{ matrix.config.os }}, ${{ matrix.config.cuda_version }}, ${{ matrix.config.optix_version }}, ${{ matrix.config.geant4_version }})
     runs-on: [gpu]
     permissions:
       contents: read
@@ -131,6 +132,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        target: [release, develop]
         config: *build_configs
         exclude:
           # The gpu runner driver does not support the ubuntu26.04/CUDA 13.3.0 image yet.
@@ -146,7 +148,7 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')-buildcache
           REF_SANITIZED=PR-${{ github.event.pull_request.number }}
-          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-develop-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
 
@@ -157,7 +159,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull develop image
+      - name: Pull PR image
         run: |
           docker pull ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
@@ -180,7 +182,7 @@ jobs:
 
   cleanup-pr-images:
     if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
-    needs: test-develop-image
+    needs: test-image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -188,6 +190,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        target: [release, develop]
         config: *build_configs
 
     steps:
@@ -195,7 +198,7 @@ jobs:
         run: |
           PACKAGE_NAME=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')-buildcache
           REF_SANITIZED=PR-${{ github.event.pull_request.number }}
-          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-develop-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo PACKAGE_NAME=${PACKAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
 
