@@ -123,10 +123,11 @@ quad6 SEvent::MakeInputPhotonGenstep_(const NP* input_photon, int gentype, const
     ipgs.set_gentype( gentype );
     ipgs.set_numphoton(  input_photon->shape[0]  );
 
-    assert(fr);
-    bool skip_col3 = true ;
-    ipgs.read_transform( glm::value_ptr(fr->m2w), skip_col3 );
-
+    if (fr)
+    {
+        bool skip_col3 = true;
+        ipgs.read_transform(glm::value_ptr(fr->m2w), skip_col3);
+    }
     return ipgs ;
 }
 
