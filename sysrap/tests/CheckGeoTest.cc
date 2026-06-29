@@ -19,12 +19,10 @@ int main(int argc, char** argv)
     assert(num_meshes_geo == num_meshes_sgeo);
 
     sframe fr;
-    sg->getFrame(fr, 0); 
+    sg->getFrame(fr, 0);
+    assert(fr.is_zero());
 
-    std::cout << fr.desc() << std::endl ; 
- 
+    std::cout << fr.desc() << std::endl;
 
-
-
-    return 0 ; 
-}  
+    return 0;
+}

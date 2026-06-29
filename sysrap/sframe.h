@@ -430,7 +430,7 @@ inline sframe sframe::MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T e
 }
 
 inline sframe::sframe() :
-    ce(0., 0., 0., 100.),
+    ce(0., 0., 0., 0.),
     aux0(0),
     aux1(0),
     aux2(0),
@@ -867,5 +867,4 @@ inline std::ostream& operator<<(std::ostream& os, const sframe& fr)
     os << fr.desc() ;
     return os;
 }
-
 

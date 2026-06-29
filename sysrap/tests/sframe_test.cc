@@ -1,9 +1,12 @@
+#include <cassert>
+
 #include "sframe.h"
 #include "ssys.h"
 
 struct sframe_test
 {
     static int main();
+    static int DefaultIsZero();
     static int MakeFromAxis();
     static int roundtrip();
 };
@@ -16,11 +19,20 @@ int sframe_test::main()
     const char* TEST = ssys::getenvvar("TEST", test);
     bool        ALL = strcmp(TEST, "ALL") == 0;
     int         rc = 0;
+    if (ALL || 0 == strcmp(TEST, "DefaultIsZero"))
+        rc += DefaultIsZero();
     if (ALL || 0 == strcmp(TEST, "roundtrip"))
         rc += roundtrip();
     if (ALL || 0 == strcmp(TEST, "MakeFromAxis"))
         rc += MakeFromAxis();
     return rc;
+}
+
+int sframe_test::DefaultIsZero()
+{
+    sframe fr = {};
+    assert(fr.is_zero());
+    return 0;
 }
 
 int sframe_test::MakeFromAxis()
