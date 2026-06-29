@@ -4,10 +4,9 @@ sframe_test.cc
 
 ::
 
-   ~/o/sysrap/tests/sframe_test.sh
+   sframe_test
 
 **/
-
 
 #include "sframe.h"
 

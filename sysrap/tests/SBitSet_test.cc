@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/SBitSet_test.sh
+// SBitSet_test
 
 #include "SBitSet.h"
 

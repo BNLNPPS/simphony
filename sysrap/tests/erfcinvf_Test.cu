@@ -1,4 +1,4 @@
-// ./erfcinvf_Test.sh
+// ./erfcinvf_Test
 
 
 #include <cstdlib>

@@ -1,5 +1,5 @@
 /**
-sysrap/tests/sseq_index_test.sh : C++ photon history comparison using seq.npy arrays
+sseq_index_test : C++ photon history comparison using seq.npy arrays
 =====================================================================================
 
 1. loads arrays a_seq and b_seq from $AFOLD/seq.npy and $BFOLD/seq.npy
@@ -10,7 +10,7 @@ sysrap/tests/sseq_index_test.sh : C++ photon history comparison using seq.npy ar
 
 ::
 
-    ~/opticks/sysrap/tests/sseq_index_test.sh
+    sseq_index_test
 
 
 Requirements
@@ -21,7 +21,6 @@ Requirements
 
 
 **/
-
 
 #include "NP.hh"
 #include "ssys.h"
@@ -82,7 +81,4 @@ int main()
 
     return 0 ;
 }
-// ~/opticks/sysrap/tests/sseq_index_test.sh
-
-
-
+// sseq_index_test

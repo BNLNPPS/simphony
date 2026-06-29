@@ -1,4 +1,4 @@
-// ./logTest.sh
+// ./logTest
 
 #include <cstdlib>
 #include <array>

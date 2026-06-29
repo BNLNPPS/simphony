@@ -4,7 +4,7 @@ QProp_test.cc : CPU version of the CUDA QPropTest.cc
 
 Usage::
 
-    ./QProp_test.sh 
+    ./QProp_test
 
 **/
 

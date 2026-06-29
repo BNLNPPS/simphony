@@ -1,9 +1,8 @@
 /**
 
-~/o/sysrap/tests/s_unique_test.sh
+s_unique_test
 
 **/
-
 
 #include "s_unique.h"
 #include <iostream>

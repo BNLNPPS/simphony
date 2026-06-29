@@ -60,14 +60,14 @@ tests
 SGLFW_SOPTIX_Scene_test.{sh,cc}
     interactive raytrace visualization of triangulated geometry::
 
-         sysrap/tests/SGLFW_SOPTIX_Scene_test.sh
+         SGLFW_SOPTIX_Scene_test
 
 SOPTIX_Scene_test.{sh,cc} SOPTIX_Scene_Encapsulated_test.cc
     ppm non-interactive raytrace render of triangulated geometry
     both non-encapsulated and encapsulated versions can be built
     and run with the script::
    
-         sysrap/tests/SOPTIX_Scene_test.sh
+         SOPTIX_Scene_test
 
 SOPTIX_Options_test.{sh,cc}
     TODO: CHECK

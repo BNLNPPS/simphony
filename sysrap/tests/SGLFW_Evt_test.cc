@@ -7,12 +7,12 @@ added OpenGL interop viz for interactive view and parameter changing.
 
 Usage and impl::
 
-    ~/o/sysrap/tests/SGLFW_Evt_test.sh
+    SGLFW_Evt_test
     ~/o/sysrap/tests/SGLFW_Evt_test.cc
 
 For a simpler non-encapsulated non-interactive OptiX only ppm render test, see::
 
-    ~/o/sysrap/tests/SOPTIX_Scene_test.sh
+    SOPTIX_Scene_test
     ~/o/sysrap/tests/SOPTIX_Scene_test.cc
 
 DONE: view maths for raytrace and rasterized now match each other quite closely

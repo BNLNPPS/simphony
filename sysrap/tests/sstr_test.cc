@@ -2,12 +2,12 @@
 sstr_test.cc
 ==============
 
-~/opticks/sysrap/tests/sstr_test.sh
+sstr_test
 
-TEST=Format ~/opticks/sysrap/tests/sstr_test.sh
-TEST=ParseIntSpecList32   ~/opticks/sysrap/tests/sstr_test.sh
-TEST=ParseIntSpecList64   ~/opticks/sysrap/tests/sstr_test.sh
-TEST=ParseIntSpecListDemo ~/opticks/sysrap/tests/sstr_test.sh
+TEST=Format sstr_test
+TEST=ParseIntSpecList32   sstr_test
+TEST=ParseIntSpecList64   sstr_test
+TEST=ParseIntSpecListDemo sstr_test
 
 **/
 
@@ -839,6 +839,4 @@ int main(int argc, char** argv)
 {
     return sstr_test::Main() ;
 }
-// ~/opticks/sysrap/tests/sstr_test.sh
-
-
+// sstr_test

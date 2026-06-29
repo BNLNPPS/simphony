@@ -1,5 +1,5 @@
 /**
-~/o/sysrap/tests/sstamp_test.sh
+sstamp_test
 **/
 
 #include <iostream>

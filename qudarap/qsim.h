@@ -204,8 +204,8 @@ qsim::RandGaussQ_shoot
 
 See::
 
-    sysrap/tests/erfcinvf_Test.sh
-    sysrap/tests/S4MTRandGaussQTest.sh
+    erfcinvf_Test
+    S4MTRandGaussQTest
 
     g4-cls RandGaussQ
     g4-cls G4MTRandGaussQ

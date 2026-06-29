@@ -4,12 +4,12 @@ SGLM_frame_targetting_test.cc
 
 ::
 
-    ~/o/sysrap/tests/SGLM_frame_targetting_test.sh info_build_run
+    SGLM_frame_targetting_test info_build_run
 
 
 1. fabricate frames A and B in code, with known simple relationhip like double the extent
 2. instanciate two correponding SGLM instances from the two frames
-3. write the two SGLM descriptions 
+3. write the two SGLM descriptions
 4. compare the two descriptions
 
 **/

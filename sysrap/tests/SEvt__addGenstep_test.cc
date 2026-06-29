@@ -1,5 +1,4 @@
-// ~/opticks/sysrap/tests/SEvt__addGenstep_test.sh
-
+// SEvt__addGenstep_test
 
 #include "scuda.h"
 #include "squad.h"

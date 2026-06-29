@@ -1,4 +1,4 @@
-// ./preprocessor_test.sh 
+// ./preprocessor_test
 #include <cstdio>
 
 int main(int argc, char** argv)

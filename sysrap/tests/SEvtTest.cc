@@ -1,4 +1,4 @@
-// ~/opticks/sysrap/tests/SEvtTest.sh
+// SEvtTest
 #include <csignal>
 
 #include "OPTICKS_LOG.hh"
@@ -414,4 +414,4 @@ int SEvtTest::Main(int argc, char** argv)
 
 int main(int argc, char** argv){ return SEvtTest::Main(argc, argv); }
 
-// ~/opticks/sysrap/tests/SEvtTest.sh
+// SEvtTest

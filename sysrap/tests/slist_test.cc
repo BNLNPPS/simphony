@@ -1,9 +1,8 @@
 /**
 
-  ~/o/sysrap/tests/slist_test.sh 
+  slist_test
 
 **/
-
 
 #include "ssys.h"
 #include "slist.h"

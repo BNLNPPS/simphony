@@ -4,8 +4,8 @@
 
 ::
 
-    ~/o/sysrap/tests/sn_test.sh
-    sn__level=5 ~/o/sysrap/tests/sn_test.sh
+    sn_test
+    sn__level=5 sn_test
 
 
 * https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes

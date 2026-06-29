@@ -4,22 +4,22 @@ spath_test.cc
 
 ::
 
-     ~/opticks/sysrap/tests/spath_test.sh
-     TEST=ResolveToken ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Resolve_null ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Resolve      ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Resolve3     ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Resolve_setenvvar ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Resolve_setenvmap ~/opticks/sysrap/tests/spath_test.sh
+     spath_test
+     TEST=ResolveToken spath_test
+     TEST=Resolve_null spath_test
+     TEST=Resolve      spath_test
+     TEST=Resolve3     spath_test
+     TEST=Resolve_setenvvar spath_test
+     TEST=Resolve_setenvmap spath_test
 
-     TEST=DefaultOutputPath ~/opticks/sysrap/tests/spath_test.sh
+     TEST=DefaultOutputPath spath_test
 
-     TEST=CFBaseFromGEOM ~/opticks/sysrap/tests/spath_test.sh
-     TEST=is_readable ~/opticks/sysrap/tests/spath_test.sh
-     TEST=GEOMSub ~/opticks/sysrap/tests/spath_test.sh
-     TEST=GDMLPathFromGEOM ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Dirname ~/opticks/sysrap/tests/spath_test.sh
-     TEST=Dirname0 ~/opticks/sysrap/tests/spath_test.sh
+     TEST=CFBaseFromGEOM spath_test
+     TEST=is_readable spath_test
+     TEST=GEOMSub spath_test
+     TEST=GDMLPathFromGEOM spath_test
+     TEST=Dirname spath_test
+     TEST=Dirname0 spath_test
 
 **/
 
@@ -497,7 +497,7 @@ int spath_test::Exists2()
 {
     const char* base = "$OPTICKS_HOME/sysrap/tests" ;
 
-    std::vector<std::string> names = {"hello.cc", "spath_test.cc", "spath_test.sh"} ;
+    std::vector<std::string> names = {"hello.cc", "spath_test.cc", "spath_test"};
     for(unsigned i=0 ; i < names.size() ; i++)
     {
         const char* name = names[i].c_str();

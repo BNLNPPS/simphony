@@ -15,7 +15,7 @@ Then obtain times and VM, RS with::
     rs = rp[:,2]/1e6                     # GB
     drm = (rp[1::2,2] - rp[0::2,2])/1e3  # MB between each pair
 
-See for example ~/opticks/sysrap/tests/sleak.py
+See for example ~/opticks/SProfTest
 
 **/
 

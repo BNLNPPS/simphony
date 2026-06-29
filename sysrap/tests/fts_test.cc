@@ -4,7 +4,7 @@ fts_test.cc
 
 ::
 
-    ./fts_test.sh 
+    ./fts_test
 
 
 * https://stackoverflow.com/questions/12609747/traversing-a-filesystem-with-fts3

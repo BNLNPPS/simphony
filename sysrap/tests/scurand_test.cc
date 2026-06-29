@@ -1,8 +1,7 @@
 /**
-~/o/sysrap/tests/scurand_test.sh 
+scurand_test
 
 **/
-
 
 #include <cstdio>
 

@@ -1,4 +1,4 @@
-// ./CSGFoundryTest.sh
+// ./CSGFoundryTest
 
 #include <iostream>
 #include <cassert>

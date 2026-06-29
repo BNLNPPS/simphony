@@ -1,5 +1,4 @@
-// ./SPlace_test.sh 
-
+// ./SPlace_test
 
 #include <cstdlib>
 #include "SPlace.h"

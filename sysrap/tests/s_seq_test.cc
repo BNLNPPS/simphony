@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/s_seq_test.sh
+// s_seq_test
 
 #include <iostream>
 #include "s_seq.h"
@@ -16,11 +16,10 @@ int main()
 
     // Returning to 0 continues the randoms in that stream (for a photon index)
     // they do not repeat unless the cursor is reset or cycled
-    r.setSequenceIndex(0) ;   
-    std::cout << r.demo(10) << std::endl ;  
+    r.setSequenceIndex(0);
+    std::cout << r.demo(10) << std::endl;
 
-    return 0 ; 
-}; 
+    return 0;
+};
 
-// ~/o/sysrap/tests/s_seq_test.sh
-
+// s_seq_test

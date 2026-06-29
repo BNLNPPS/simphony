@@ -4,9 +4,9 @@ sreport.cc : Summarize + Present SEvt/NPFold metadata time stamps
 
 ::
 
-    ~/opticks/sysrap/tests/sreport.sh
-    ~/opticks/sysrap/tests/sreport.sh grab
-    ~/opticks/sysrap/tests/sreport.sh ana
+    sreport
+    sreport grab
+    sreport ana
 
 
 Summarizes SEvt/NPFold metadata time stamps into substamp arrays

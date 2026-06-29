@@ -327,7 +327,7 @@ allowing dumping or access to the photons in any frame::
     sev->setFrame(39216);
     std::cout << sev->descFull() ;
 
-See CSG/tests/CSGFoundry_SGeo_SEvt_Test.sh
+See CSGFoundry_SGeo_SEvt_Test
 
 **/
 
@@ -2391,7 +2391,7 @@ sgs SEvt::addGenstep(const NP* a)
 
     if( a == nullptr )
     {
-        LOG(error) << " a null : low level simtrace tests like CSGSimtraceTest.sh can do this  " ;
+        LOG(error) << " a null : low level simtrace tests like CSGSimtraceTest can do this  ";
         return s ;
     }
 
@@ -4517,7 +4517,7 @@ Only when more control of the output is needed is it appropriate to use OPTICKS_
 |   /tmp/$USER/opticks/GEOM/$GEOM/SEvtTest   |   /tmp/blyth/opticks/GEOM/Pasta/SEvtTest/ALL              |
 +--------------------------------------------+-----------------------------------------------------------+
 
-* see tests/SEvtTest_saveDir.sh
+* see tests/SEvtTest_saveDir
 
 **/
 

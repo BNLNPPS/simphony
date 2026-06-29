@@ -1,4 +1,4 @@
-// ./stree_sensor_test.sh 
+// ./stree_sensor_test
 
 #include <cstdlib>
 #include <iostream>

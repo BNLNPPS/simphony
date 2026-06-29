@@ -1,5 +1,5 @@
 
-// ./G4VSolid_Test.sh 
+// ./G4VSolid_Test
 
 #include <iostream>
 #include <iomanip>

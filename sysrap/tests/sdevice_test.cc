@@ -2,10 +2,9 @@
 sdevice_test.cc
 ==================
 
-See notes in sdevice_test.sh
+See notes in sdevice_test
 
 **/
-
 
 #include "sdevice.h"
 

@@ -4,12 +4,12 @@ SGLM_set_frame_test.cc
 
 1. load sframe from $SFRAME_FOLD/sframe.npy
 2. instanciate SGLM
-3. set the frame into SGLM 
+3. set the frame into SGLM
 4. write SGLM description to $SFRAME_FOLD/SGLM_set_frame_test.log
 
 ::
 
-    ~/o/sysrap/tests/SGLM_set_frame_test.sh info_build_run_cat
+    SGLM_set_frame_test info_build_run_cat
 
 **/
 

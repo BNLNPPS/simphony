@@ -11,11 +11,11 @@ Categorize the test scripts.
 Working Scripts
 -----------------
 
-CSGPrimTest.sh
-CSGFoundryTest.sh
+CSGPrimTest
+CSGFoundryTest
 CSGNodeTest.sh
-CSGSolidTest.sh
-CSGScanTest.sh
+CSGSolidTest
+CSGScanTest
 qat4Test.sh
 AABBTest.sh
 

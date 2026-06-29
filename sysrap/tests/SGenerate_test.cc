@@ -1,6 +1,6 @@
 /**
 
-~/o/sysrap/tests/SGenerate_test.sh 
+SGenerate_test
 
 **/
 

@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/snode_test.sh
+// snode_test
 
 #include "snode.h"
 #include <cassert>

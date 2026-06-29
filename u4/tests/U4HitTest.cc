@@ -4,7 +4,7 @@ U4HitTest.cc
 
 ::
 
-    ~/o/u4/tests/U4HitTest.sh run_cat
+    U4HitTest run_cat
 
 
 **/

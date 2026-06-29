@@ -2,7 +2,7 @@
 salloc_test.cc
 ==============
 
-~/o/sysrap/tests/salloc_test.sh
+salloc_test
 
 **/
 

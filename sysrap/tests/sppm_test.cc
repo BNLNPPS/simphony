@@ -2,7 +2,7 @@
 sppm_test.cc
 =============
 
-~/o/sysrap/tests/sppm_test.sh
+sppm_test
 ~/o/sysrap/tests/sppm_test.cc
 
 

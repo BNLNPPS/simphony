@@ -1,9 +1,8 @@
 /**
 
-   ~/o/sysrap/tests/sgeomtools_test.sh 
+   sgeomtools_test
 
 **/
-
 
 #include "sgeomtools.h"
 #include "scuda_double.h"

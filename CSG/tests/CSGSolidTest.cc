@@ -1,4 +1,4 @@
-// ./CSGSolidTest.sh
+// ./CSGSolidTest
 #include <iostream>
 #include <csignal>
 

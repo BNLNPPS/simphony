@@ -1,4 +1,4 @@
-// ./s_pool_test.sh 
+// ./s_pool_test
 
 /**
 s_pool_test.cc

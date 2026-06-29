@@ -1,4 +1,4 @@
-// ./schrono_test.sh 
+// ./schrono_test
 
 #include <iostream>
 #include "schrono.h"

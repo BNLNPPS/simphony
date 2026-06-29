@@ -1,4 +1,4 @@
-// D=1.00001 ~/opticks/sysrap/tests/float_double_test.sh 
+// D=1.00001 float_double_test
 
 #include "ssys.h"
 #include <iostream>

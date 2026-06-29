@@ -674,7 +674,7 @@ Currently this uses std::filesystem which requires c++17 (as opposed to c++11)
 
 ::
 
-    TEST=SplitExt ~/o/sysrap/tests/spath_test.sh
+    TEST=SplitExt spath_test
 
 **/
 

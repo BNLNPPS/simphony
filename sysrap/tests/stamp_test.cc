@@ -1,4 +1,4 @@
-// ./stamp_test.sh 
+// ./stamp_test
 
 #include <chrono>
 #include <iostream>

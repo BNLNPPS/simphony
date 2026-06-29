@@ -4,7 +4,7 @@ QBnd_test.cc
 
 Canonically built standalone with::
 
-   ./QBnd_test.sh 
+   ./QBnd_test
 
 
 

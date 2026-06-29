@@ -1,4 +1,4 @@
-// ./SName_test.sh
+// ./SName_test
 #include <iostream>
 #include <iomanip>
 #include <cstring>

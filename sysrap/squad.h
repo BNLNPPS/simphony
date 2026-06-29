@@ -923,7 +923,7 @@ quad4::ephoton
 
 *ephoton* is used from qudarap/tests/QSimTest generate tests as the initial photon,
 which gets persisted to p0.npy
-The script qudarap/tests/ephoton.sh sets the envvars defining the photon
+The script ephoton sets the envvars defining the photon
 depending on the TEST envvar.
 
 **/

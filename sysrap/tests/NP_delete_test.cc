@@ -1,4 +1,4 @@
-// ~/opticks/sysrap/tests/NP_delete_test.sh
+// NP_delete_test
 
 #include "sprof.h"
 #include "sstr.h"
@@ -211,5 +211,4 @@ int main()
     return 0 ; 
 }
 
-// ~/opticks/sysrap/tests/NP_delete_test.sh
-
+// NP_delete_test

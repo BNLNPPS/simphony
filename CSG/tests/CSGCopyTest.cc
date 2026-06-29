@@ -52,12 +52,11 @@ int main(int argc, char** argv)
 
     if( elv == nullptr || elv->all() )
     {
-        LOG_IF(fatal, cf != 0 ) 
-            << " UNEXPECTED DIFFERENCE " 
-            << " DEBUG WITH :" 
-            << std::endl 
-            << " ~/opticks/CSG/tests/CSGCopyTest.sh ana "
-            ;  
+        LOG_IF(fatal, cf != 0)
+            << " UNEXPECTED DIFFERENCE "
+            << " DEBUG WITH :"
+            << std::endl
+            << " CSGCopyTest ana ";
 
         assert( cf == 0 ); 
     }

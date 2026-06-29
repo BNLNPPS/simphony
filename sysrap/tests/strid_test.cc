@@ -1,4 +1,4 @@
-// ./strid_test.sh 
+// ./strid_test
 
 #include <cassert>
 #include <iostream>

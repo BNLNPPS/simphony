@@ -820,13 +820,13 @@ configure the size of the universe volume. Note that this functionality can
 be used from the below script that creates the Geant4 geometry and then translates
 into an Opticks one which is persisted.
 
-    ~/o/g4cx/tests/G4CX_U4TreeCreateCSGFoundryTest.sh
+    G4CX_U4TreeCreateCSGFoundryTest
 
 Thence can use the below tools to visualize in various ways::
 
     cxr_min.sh  # ray trace render
     cxt_min.sh  # simtrace cross sections
-    ssst.sh     # triangulated SScene viz
+    ssst     # triangulated SScene viz
 
 
 Consider phicut applied to a shape, which results in

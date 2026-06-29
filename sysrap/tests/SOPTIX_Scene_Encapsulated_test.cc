@@ -1,20 +1,20 @@
 /**
-SOPTIX_Scene_Encapsulated_test.cc 
+SOPTIX_Scene_Encapsulated_test.cc
 ====================================
 
 ::
- 
-    ~/o/sysrap/tests/SOPTIX_Scene_test.sh 
+
+    SOPTIX_Scene_test
     ~/o/sysrap/tests/SOPTIX_Scene_test.cc
 
 For an enchancement of this with OpenGL interactive control see::
 
-    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.sh  
-    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc  
+    SGLFW_SOPTIX_Scene_test
+    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
 
 Other related tests::
 
-    ~/o/sysrap/tests/SCUDA_Mesh_test.sh
+    SCUDA_Mesh_test
     ~/o/sysrap/tests/SCUDA_Mesh_test.cc
 
 **/

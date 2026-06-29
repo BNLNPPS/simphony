@@ -1,10 +1,10 @@
 /**
-sysrap/tests/sseq_record_test.sh
+sseq_record_test
 =================================
 
 ::
 
-    ~/opticks/sysrap/tests/sseq_record_test.sh
+    sseq_record_test
 
 **/
 

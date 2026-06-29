@@ -18,7 +18,7 @@ This Initialize happens on instanciation of the first SEvt.
 
 ::
 
-   ~/o/sysrap/tests/scontext_test.sh
+   scontext_test
 
 
 **/

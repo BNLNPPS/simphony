@@ -165,7 +165,7 @@ void intersect_leaf_oldcylinder( bool& valid_isect, float4& isect, const quad& q
 
 #ifdef DEBUG_CYLINDER
         /*
-        // see CSG/sympy_cylinder.py 
+        // see the cylinder derivation notes
         const float& ox = ray_origin.x ; 
         const float& oy = ray_origin.y ; 
         const float& vx = ray_direction.x ; 
