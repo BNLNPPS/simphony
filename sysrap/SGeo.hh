@@ -28,10 +28,10 @@ Only a little usage from active code::
 
 **/
 
-#include "plog/Severity.h"
-#include <string>
 #include "SYSRAP_API_EXPORT.hh"
+#include "plog/Severity.h"
 #include "sframe.h"
+#include <string>
 struct stree ; 
 
 struct SYSRAP_API SGeo 

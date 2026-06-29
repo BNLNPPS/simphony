@@ -152,8 +152,8 @@ Screen
 #include "SGLM_View.h"
 #include "SGLM_Arcball.h"
 
-#include "sframe.h"
 #include "SCE.h"
+#include "sframe.h"
 
 #include "ssys.h"
 #include "sstr.h"
@@ -431,15 +431,14 @@ struct SYSRAP_API SGLM : public SCMD
     static void Command(const SGLM_Parse& parse, SGLM* gm, bool dump);
     int command(const char* cmd);
 
-
-    sframe moi_fr = {} ;
-    sframe fr = {} ;  // CAUTION: SEvt also holds a frame used for input photon targetting
+    sframe moi_fr = {};
+    sframe fr = {}; // CAUTION: SEvt also holds a frame used for input photon targetting
 
     static constexpr const char* _DUMP = "SGLM__set_frame_DUMP" ;
     void set_frame();
     void set_frame( const char* q_spec );
     void set_frame( const float4& ce );
-    void set_frame( const sframe& fr );
+    void set_frame(const sframe& fr);
 
     int get_frame_idx() const ;
     bool has_frame_idx(int idx) const ;
@@ -950,7 +949,7 @@ inline void SGLM::handle_frame_hop(int wanted_frame_idx)
         else if( wanted_frame_idx >= 0 )
         {
             assert(scene);  // must setTreeScene before using handle_frame_hop
-            sframe wfr = scene->getFrame(wanted_frame_idx) ;
+            sframe wfr = scene->getFrame(wanted_frame_idx);
             set_frame(wfr);
         }
     }
@@ -1324,8 +1323,7 @@ inline void SGLM::set_frame( const float4& ce )
     set_frame(f);
 }
 
-
-inline void SGLM::set_frame( const sframe& fr_ )
+inline void SGLM::set_frame(const sframe& fr_)
 {
     fr = fr_ ;
     //std::cout << "SGLM::set_frame [" << fr.get_name() << "]\n";
@@ -1470,8 +1468,6 @@ inline void SGLM::set_extent_scale(bool extent_scale_ )
     addlog("set_extent_scale", extent_scale );
 }
 
-
-
 /**
 SGLM::initModelMatrix   (formerly updateModelMatrix)
 ------------------------------------------------------
@@ -1605,8 +1601,6 @@ void SGLM::initView()
     view.LOOK = LOOK ;
     view.UP = UP ;
 }
-
-
 
 /**
 SGLM::initELU

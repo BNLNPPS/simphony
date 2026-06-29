@@ -802,8 +802,7 @@ simtrace stack::
 
 **/
 
-
-void SEvt::setFr(const sframe& _fr )
+void SEvt::setFr(const sframe& _fr)
 {
     fr = _fr ;
     transformInputPhoton();
@@ -812,7 +811,7 @@ void SEvt::setFr(const sframe& _fr )
 
 void SEvt::setFramePlaceholder()
 {
-    sframe fr = sframe::MakeFromTranslateExtent<float>(0.f,0.f,0.f,1000.f);
+    sframe fr = sframe::MakeFromTranslateExtent<float>(0.f, 0.f, 0.f, 1000.f);
     setFr(fr);
 }
 
@@ -861,9 +860,6 @@ void SEvt::transformInputPhoton()
         // and Opticks float precision
     }
 }
-
-
-
 
 /**
 SEvt::createInputGenstep_simtrace
@@ -1058,7 +1054,6 @@ const NP*   SEvt::getFrameArray() const
 const char* SEvt::GetFrameId(int idx){    return Exists(idx) ? Get(idx)->getFrameId() : nullptr ; }
 const NP*   SEvt::GetFrameArray(int idx){ return Exists(idx) ? Get(idx)->getFrameArray() : nullptr ; }
 
-
 /**
 SEvt::setFrame_HostsideSimtrace
 ---------------------------------
@@ -1089,8 +1084,6 @@ void SEvt::setFrame_HostsideSimtrace()
     SFrameGenstep::GenerateSimtracePhotons( simtrace, genstep );
 }
 
-
-
 /**
 SEvt::setSim
 -------------
@@ -1105,8 +1098,6 @@ void SEvt::setSim(const SSim* sim_)
     tree = sim->get_tree();
 }
 
-
-
 /**
 SEvt::setFrame
 -----------------
@@ -1117,13 +1108,12 @@ This method requires SEvt::setSim to have provided stree access.
 void SEvt::setFrame(unsigned ins_idx)
 {
     assert(tree);
-    sframe f = tree->get_frame_inst( ins_idx );
+    sframe f = tree->get_frame_inst(ins_idx);
     setFr(f);
 }
 
 
 //// below impl order matches decl order : KEEP IT THAT WAY
-
 
 /**
 SEvt::CreateSimtraceEvent
@@ -1148,7 +1138,7 @@ SEvt* SEvt::CreateSimtraceEvent()  // static
     assert(prior);
     if(prior == nullptr ) return nullptr ;
 
-    sframe& pfr = prior->fr ;
+    sframe& pfr = prior->fr;
     pfr.set_hostside_simtrace();
 
 
@@ -1158,8 +1148,7 @@ SEvt* SEvt::CreateSimtraceEvent()  // static
         LOG_IF(info, SIMTRACE)
             << " kludging frame extent, this happens with U4SimulateTest "
             << " as the CSGFoundry geometry is not available causing the "
-            << " SEvt frame to be default "
-            ;
+            << " SEvt frame to be default ";
     }
 
     // set_hostside_simtrace into frame which
@@ -1403,9 +1392,7 @@ void SEvt::CreateOrReuse()
     LOG(LEVEL) << DescINSTANCE()  ;
 }
 
-
-
-void SEvt::SetFr(const sframe& fr )
+void SEvt::SetFr(const sframe& fr)
 {
     if(Exists(0)) Get(0)->setFr(fr);
     if(Exists(1)) Get(1)->setFr(fr);
@@ -4963,8 +4950,6 @@ NP* SEvt::localize_photon(const NP* photon, bool consistency_check) const
     return tree ? tree->localize_photon(photon, consistency_check) : nullptr ;
 }
 
-
-
 /**
 SEvt::getLocalHit_LEAKY
 ------------------------
@@ -5099,12 +5084,6 @@ void SEvt::localize_photon_inplace( sphoton& p ) const
     assert(tree);
     tree->localize_photon_inplace(p);
 }
-
-
-
-
-
-
 
 /**
 SEvt::getPhotonFrame  (TODO: replace with "getInstanceFrame" with iindex integer argument)

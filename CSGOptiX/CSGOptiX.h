@@ -135,7 +135,6 @@ private:
     void setFrame(const float4& ce);
     void setFrame(const sframe& fr_);
 
-
     static constexpr const char* _prepareParamRender_DEBUG = "CSGOptiX__prepareParamRender_DEBUG" ;
     void prepareParamRender();
     void prepareParamSimulate();

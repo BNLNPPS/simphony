@@ -239,8 +239,7 @@ struct SYSRAP_API SEvt : public SCompProvider
     bool              is_loaded ;
     bool              is_loadfail ;
 
-    sframe               fr = {} ;
-
+    sframe fr = {};
 
     // comp vectors are populated from SEventConfig in SEvt::init
     std::vector<unsigned> gather_comp ;
@@ -382,9 +381,7 @@ public:
     NP* gatherG4State() const ;
     const NP* getG4State() const ;
 
-
-
-    void setFr(const sframe& _fr );
+    void setFr(const sframe& _fr);
     void setFramePlaceholder();
 
     static const bool transformInputPhoton_VERBOSE ;
@@ -437,8 +434,7 @@ public:
     static SEvt* CreateOrReuse_EGPU();
     static SEvt* CreateOrReuse_ECPU();
     static void CreateOrReuse();
-    static void SetFr(   const sframe& fr );
-
+    static void SetFr(const sframe& fr);
 
     bool isEGPU() const ;
     bool isECPU() const ;

@@ -15,12 +15,9 @@ int CheckGeo::getMeshIndexWithName(const char* , bool ) const
    return 0 ; 
 }
 
-
-
-
-int CheckGeo::getFrame(sframe& fr, int ins_idx ) const
+int CheckGeo::getFrame(sframe& fr, int ins_idx) const
 {
-    fr = {} ;
+    fr = {};
     return 0 ; 
 }
 

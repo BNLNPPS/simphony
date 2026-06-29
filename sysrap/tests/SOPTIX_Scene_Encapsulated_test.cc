@@ -26,15 +26,15 @@ Other related tests::
 
 int main()
 {
-    SScene* scene = SScene::Load("$SCENE_FOLD") ;
-    sframe fr = scene->getFrame(ssys::getenvint("FRAME", -1))  ;
+    SScene* scene = SScene::Load("$SCENE_FOLD");
+    sframe  fr = scene->getFrame(ssys::getenvint("FRAME", -1));
 
-    SGLM gm ;
+    SGLM gm;
     gm.set_frame(fr);
-    std::cout << gm.desc() ;
+    std::cout << gm.desc();
 
-    SOPTIX opx(scene, gm) ;
+    SOPTIX opx(scene, gm);
     opx.render_ppm("$PPM_PATH");
 
-    return 0 ;
+    return 0;
 }

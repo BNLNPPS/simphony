@@ -52,7 +52,7 @@ struct SSimtrace
 
     const G4VSolid* solid ;
     SEvt* sev ;
-    sframe fr = {} ;
+    sframe          fr = {};
 
     SSimtrace();
     ~SSimtrace();

@@ -489,7 +489,6 @@ void SSim::load_(const char* dir)
     LOG(LEVEL) << "]" ;
 }
 
-
 /**
 SSim::afterLoadOrCreate
 ------------------------
@@ -503,8 +502,7 @@ void SSim::afterLoadOrCreate()
     SEvt::CreateOrReuse() ;   // creates 1/2 SEvt depending on OPTICKS_INTEGRATION_MODE
     assert(tree);
 
-
-    sframe fr = tree->get_frame_moi() ;
+    sframe fr = tree->get_frame_moi();
     SEvt::SetFr(fr);
 }
 

@@ -96,7 +96,6 @@ queries. SEvt frame access has moved to SSim/stree.
 
 **/
 
-
 struct CSG_API CSGFoundry : public SGeo
 {
     static const plog::Severity LEVEL ;

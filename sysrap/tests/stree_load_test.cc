@@ -354,7 +354,7 @@ inline int stree_load_test::get_frame() const
     for(int i=0 ; i < num ; i++)
     {
         const std::string& spec = v_spec[i] ;
-        sframe fr = st->get_frame(spec.c_str());
+        sframe             fr = st->get_frame(spec.c_str());
         std::cout << fr ;
     }
     return 0 ;

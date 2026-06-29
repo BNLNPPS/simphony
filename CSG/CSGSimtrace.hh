@@ -42,7 +42,7 @@ struct CSG_API CSGSimtrace
     SEvt* sev ;
     const char* outdir ;
 
-    sframe fr = {} ;
+    sframe    fr = {};
     CSGQuery* q ;
     CSGDraw* d ;
 

@@ -71,7 +71,7 @@ struct SScene
 
     std::vector<const SMeshGroup*>    meshgroup ;
     std::vector<const SMesh*>         meshmerge ;
-    std::vector<sframe>                  frame ;
+    std::vector<sframe>               frame;
 
     std::vector<int4>                 inst_info ;  // compound solid level
 
@@ -137,9 +137,9 @@ struct SScene
     void load(const char* dir);
 
     void addFrames(const char* path, const stree* st);
-    void addFrame( const sframe& _f);
+    void addFrame(const sframe& _f);
 
-    sframe getFrame(int _idx=-1) const ;
+    sframe getFrame(int _idx = -1) const;
 
     static SScene* CopySelect( const SScene* src, const SBitSet* elv );
     SScene* copy(const SBitSet* elv=nullptr) const ;
@@ -751,7 +751,7 @@ inline NPFold* SScene::serialize_frame() const
     int num_frame = frame.size();
     for(int i=0 ; i < num_frame ; i++)
     {
-        const sframe& f  = frame[i] ;
+        const sframe& f = frame[i];
         std::string key = f.get_key() ;
         _frame->add( key.c_str(), f.serialize() );
     }
@@ -764,7 +764,7 @@ inline void SScene::import_frame(const NPFold* _frame )
     for(int i=0 ; i < num_frame ; i++)
     {
         const NP* a = _frame->get_array(i);
-        sframe f = sframe::Import(a) ;
+        sframe    f = sframe::Import(a);
         frame.push_back(f);
     }
 }
@@ -829,7 +829,6 @@ inline void SScene::load(const char* dir)
     NPFold* fold = NPFold::Load(dir, RELDIR);
     import_(fold);
 }
-
 
 /**
 SScene::addFrames
@@ -936,11 +935,9 @@ inline void SScene::addFrames(const char* path, const stree* st)
 
     // last frame that ensures always at least one
     const float* _ce = get_ce(0) ;
-    sframe f0 = sframe::MakeFromCE(_ce) ;
+    sframe       f0 = sframe::MakeFromCE(_ce);
     f0.set_name("MakeFromCE0");
     addFrame(f0);
-
-
 
     /**
     // this is wrong place to do this, need to do from main
@@ -953,16 +950,13 @@ inline void SScene::addFrames(const char* path, const stree* st)
         addFrame(fm);
     }
     **/
-
-
 }
 
-
-inline void SScene::addFrame( const sframe& _f)
+inline void SScene::addFrame(const sframe& _f)
 {
-   sframe f = _f ;
-   f.set_idx( frame.size() );
-   frame.push_back(f);
+    sframe f = _f;
+    f.set_idx(frame.size());
+    frame.push_back(f);
 }
 
 
@@ -993,8 +987,7 @@ inline sframe SScene::getFrame(int _idx) const
 
     assert( num_frame_expect );
 
-    const sframe& f = frame[idx] ;
-
+    const sframe& f = frame[idx];
 
     assert( f.get_idx() == idx );
     return f ;
@@ -1163,7 +1156,7 @@ inline int SScene::Compare(const SScene* a, const SScene* b) // static
     mismatch += svec<int4>::Compare( "inst_info", a->inst_info, b->inst_info, out );
     mismatch += svec<glm::tmat4x4<float>>::Compare( "inst_tran", a->inst_tran, b->inst_tran, out );
     mismatch += svec<glm::tvec4<int32_t>>::Compare( "inst_col3", a->inst_col3, b->inst_col3, out );
-    //mismatch += svec<sframe>::Compare( "frame", a->frame, b->frame, out );   // std::string name 4 bytes is bytewise discrepant
+    // mismatch += svec<sframe>::Compare( "frame", a->frame, b->frame, out );   // std::string name 4 bytes is bytewise discrepant
 
     if(dump) std::cout << "SScene::Compare mismatch "  << mismatch << "\n" ;
     if(out) std::cout << ss.str() << "\n" ;

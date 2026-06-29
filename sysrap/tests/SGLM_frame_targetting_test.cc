@@ -18,12 +18,12 @@ SGLM_frame_targetting_test.cc
 
 int main(int argc, char** argv)
 {
-    sframe a ;
+    sframe a;
     a.set_extent(100.f);
 
-    SGLM A ;
-    A.set_frame(a) ;
-    A.writeDesc("$FOLD", "A" );
+    SGLM A;
+    A.set_frame(a);
+    A.writeDesc("$FOLD", "A");
 
     std::cout
         << "A_MVP (aka world2clip) "
@@ -33,16 +33,14 @@ int main(int argc, char** argv)
         << "A.desc_MVP_ce_corners"
         << std::endl
         << A.desc_MVP_ce_corners()
-        << std::endl
-        ;
+        << std::endl;
 
-
-    sframe b ;
+    sframe b;
     b.set_extent(200.f);
 
-    SGLM B ;
-    B.set_frame(b) ;
-    B.writeDesc("$FOLD", "B" );
+    SGLM B;
+    B.set_frame(b);
+    B.writeDesc("$FOLD", "B");
 
     std::cout
         << "B_MVP (aka world2clip) "
@@ -52,8 +50,7 @@ int main(int argc, char** argv)
         << "B.desc_MVP_ce_corners"
         << std::endl
         << B.desc_MVP_ce_corners()
-        << std::endl
-        ;
+        << std::endl;
 
-    return 0 ;
+    return 0;
 }

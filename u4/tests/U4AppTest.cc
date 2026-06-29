@@ -39,7 +39,6 @@ int main(int argc, char** argv)
     sframe fr = sframe::Load_("$A_FOLD/sframe.npy");
     evt->setFr(fr);
 
-
     // NB: dependency on A_FOLD means that when changing GEOM it is necessary
     // to run the A-side first before this B-side in order to write the $A_FOLD/sframe.npy
     // The frame is needed for transforming input photons when using OPTICKS_INPUT_PHOTON_FRAME.

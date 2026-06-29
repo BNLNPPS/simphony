@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 
     bool ip = SEvt::HasInputPhoton(SEvt::EGPU) ;
 
-    sframe fr = sframe::MakeFromTranslateExtent<float>(0.f,0.f,1000.f,2000.f);
+    sframe fr = sframe::MakeFromTranslateExtent<float>(0.f, 0.f, 1000.f, 2000.f);
     evt->setFr(fr);
 
 

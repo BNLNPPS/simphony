@@ -523,49 +523,45 @@ struct stree
     int parse_spec(int& lvid, int& lvid_ordinal, int& repeat_ordinal, const char* q_spec ) const ;
     int pick_lvid_ordinal_repeat_ordinal_inst( const char* q_spec ) const ;
 
-    sframe  get_frame_moi() const ;
-    sframe  get_frame(const char* q_spec ) const ;
+    sframe get_frame_moi() const;
+    sframe get_frame(const char* q_spec) const;
 
-    sframe  get_frame_top() const ;
-    sframe  get_frame_extent(const char* s_extent ) const ;
-    sframe  get_frame_ce(const char* s_ce ) const ;
-    sframe  get_frame_ce(const float*  ce ) const ;
-    sframe  get_frame_te(const char* s_te ) const ;
-    sframe  get_frame_te(const float*  te ) const ;
+    sframe get_frame_top() const;
+    sframe get_frame_extent(const char* s_extent) const;
+    sframe get_frame_ce(const char* s_ce) const;
+    sframe get_frame_ce(const float* ce) const;
+    sframe get_frame_te(const char* s_te) const;
+    sframe get_frame_te(const float* te) const;
 
+    sframe get_frame_axis(const char* s_axis) const;
+    sframe get_frame_prim(const char* s_prim) const;
+    sframe get_frame_nidx(const char* s_nidx) const;
+    sframe get_frame_inst(const char* s_inst) const;
+    sframe get_frame_sid(const char* s_sid) const;
+    sframe get_frame_sidx(const char* s_sidx) const;
+    sframe get_frame_lvid_copyno(const char* s_lvid_copyno) const;
 
-    sframe  get_frame_axis(const char* s_axis ) const ;
-    sframe  get_frame_prim(const char* s_prim ) const ;
-    sframe  get_frame_nidx(const char* s_nidx ) const ;
-    sframe  get_frame_inst(const char* s_inst ) const ;
-    sframe  get_frame_sid( const char* s_sid ) const ;
-    sframe  get_frame_sidx( const char* s_sidx ) const ;
-    sframe  get_frame_lvid_copyno( const char* s_lvid_copyno ) const ;
+    sframe get_frame_prim(int prim) const;
+    sframe get_frame_nidx(int nidx) const;
+    sframe get_frame_inst(int inst) const;
+    sframe get_frame_sid(int sid) const;
+    sframe get_frame_sidx(int sidx) const;
+    sframe get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src) const;
 
-    sframe  get_frame_prim(int prim ) const ;
-    sframe  get_frame_nidx(int nidx ) const ;
-    sframe  get_frame_inst(int inst ) const ;
-    sframe  get_frame_sid( int sid  ) const ;
-    sframe  get_frame_sidx( int sidx  ) const ;
-    sframe  get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src ) const ;
-
-
-    int  get_frame_from_npyfile(sframe& f, const char* q_spec ) const ;
-    int  get_frame_from_triplet(sframe& f, const char* q_spec ) const ;
-    int  get_frame_from_coords( sframe& f, const char* q_spec ) const ;
-    int  get_frame_from_transform( sframe& f, const char* q_spec ) const ;
+    int get_frame_from_npyfile(sframe& f, const char* q_spec) const;
+    int get_frame_from_triplet(sframe& f, const char* q_spec) const;
+    int get_frame_from_coords(sframe& f, const char* q_spec) const;
+    int get_frame_from_transform(sframe& f, const char* q_spec) const;
 
     bool has_frame(const char* q_spec) const ;
 
+    int get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out = nullptr, VTR* t_stack = nullptr) const;
+    int get_frame_inst(sframe& f, int ii, std::ostream* out = nullptr, VTR* t_stack = nullptr) const;
 
-    int get_frame_instanced(  sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out = nullptr, VTR* t_stack = nullptr ) const ;
-    int get_frame_inst(sframe& f, int ii, std::ostream* out = nullptr, VTR* t_stack = nullptr ) const ;
-
-
-    int get_frame_remainder(  sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
-    int get_frame_triangulate(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
-    int get_frame_global(     sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const ;
-    int _get_frame_global(     sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type ) const ;
+    int get_frame_remainder(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal) const;
+    int get_frame_triangulate(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal) const;
+    int get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal) const;
+    int _get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type) const;
 
     static constexpr const char* stree__get_frame_global_LVID = "stree__get_frame_global_LVID" ;
     static constexpr const char* stree__get_node_bb_LVID      = "stree__get_node_bb_LVID" ;
@@ -2386,7 +2382,7 @@ TODO: AVOID DUPLICATION BETWEEN THIS AND CSGFoundry::getFrame
 
 **/
 
-inline sframe stree::get_frame(const char* q_spec ) const
+inline sframe stree::get_frame(const char* q_spec) const
 {
     char delim = ',' ;
 
@@ -2406,7 +2402,7 @@ inline sframe stree::get_frame(const char* q_spec ) const
     bool is_COORDS = sstr::looks_like_list(q_spec, delim, 1, 4) ;
     bool is_TRANSFORM = sstr::looks_like_list(q_spec, delim, 16, 16) ;
 
-    sframe f = {} ;
+    sframe f = {};
     f.set_name(q_spec);
     f.set_treedir(loaddir);
 
@@ -2499,33 +2495,30 @@ inline sframe stree::get_frame_top() const
     return get_frame_nidx(0);
 }
 
-
-inline sframe stree::get_frame_extent(const char* s_extent ) const
+inline sframe stree::get_frame_extent(const char* s_extent) const
 {
-    return sframe::MakeFromExtent<float>( s_extent );
+    return sframe::MakeFromExtent<float>(s_extent);
 }
 
-inline sframe stree::get_frame_ce(const char* s_ce ) const
+inline sframe stree::get_frame_ce(const char* s_ce) const
 {
-    return sframe::MakeFromCE<float>( s_ce, ',' );
+    return sframe::MakeFromCE<float>(s_ce, ',');
 }
-inline sframe stree::get_frame_ce(const float* _ce ) const
+inline sframe stree::get_frame_ce(const float* _ce) const
 {
-    return sframe::MakeFromCE<float>( _ce );
-}
-
-inline sframe stree::get_frame_te(const char* s_te ) const
-{
-    return sframe::MakeFromTranslateExtent<float>( s_te, ',' );
-}
-inline sframe stree::get_frame_te(const float* _te ) const
-{
-    return sframe::MakeFromTranslateExtent<float>( _te );
+    return sframe::MakeFromCE<float>(_ce);
 }
 
+inline sframe stree::get_frame_te(const char* s_te) const
+{
+    return sframe::MakeFromTranslateExtent<float>(s_te, ',');
+}
+inline sframe stree::get_frame_te(const float* _te) const
+{
+    return sframe::MakeFromTranslateExtent<float>(_te);
+}
 
-
-inline sframe stree::get_frame_axis(const char* s_axis ) const
+inline sframe stree::get_frame_axis(const char* s_axis) const
 {
     return sframe::MakeFromAxis<float>(s_axis, ',');
 }
@@ -2540,51 +2533,51 @@ stree::get_frame_prim
 
 **/
 
-inline sframe stree::get_frame_prim(const char* s_prim ) const
+inline sframe stree::get_frame_prim(const char* s_prim) const
 {
     std::string name = PRIM_PFX ;
     name += s_prim ;
     int prim = sstr::AsInt(s_prim, -1);
-    sframe fr = get_frame_prim( prim );
+    sframe fr = get_frame_prim(prim);
     fr.set_name(name.c_str());
     return fr ;
 }
-inline sframe stree::get_frame_nidx(const char* s_nidx ) const
+inline sframe stree::get_frame_nidx(const char* s_nidx) const
 {
     std::string name = NIDX_PFX ;
     name += s_nidx ;
     int nidx = sstr::AsInt(s_nidx, -1);
-    sframe fr = get_frame_nidx( nidx );
+    sframe fr = get_frame_nidx(nidx);
     fr.set_name(name.c_str());
     return fr ;
 }
 
-inline sframe stree::get_frame_inst(const char* s_inst ) const
+inline sframe stree::get_frame_inst(const char* s_inst) const
 {
     std::string name = INST_PFX ;
     name += s_inst ;
     int ii = sstr::AsInt(s_inst, -1);
-    sframe fr = get_frame_inst( ii );
+    sframe fr = get_frame_inst(ii);
     fr.set_name(name.c_str());
     return fr ;
 }
 
-inline sframe stree::get_frame_sid(const char* s_sid ) const
+inline sframe stree::get_frame_sid(const char* s_sid) const
 {
     std::string name = SID_PFX ;
     name += s_sid ;
     int sid = sstr::AsInt(s_sid, -1);
-    sframe fr = get_frame_sid( sid );
+    sframe fr = get_frame_sid(sid);
     fr.set_name(name.c_str());
     return fr ;
 }
 
-inline sframe stree::get_frame_sidx(const char* s_sidx ) const
+inline sframe stree::get_frame_sidx(const char* s_sidx) const
 {
     std::string name = SIDX_PFX ;
     name += s_sidx ;
     int sidx = sstr::AsInt(s_sidx, -1);
-    sframe fr = get_frame_sidx( sidx );
+    sframe fr = get_frame_sidx(sidx);
     fr.set_name(name.c_str());
     return fr ;
 }
@@ -2600,8 +2593,7 @@ stree::get_frame_lvid_copyno
 
 **/
 
-
-inline sframe stree::get_frame_lvid_copyno(const char* s_lvid_copyno ) const
+inline sframe stree::get_frame_lvid_copyno(const char* s_lvid_copyno) const
 {
     std::string name = LVID_COPYNO_PFX ;
     name += s_lvid_copyno ;
@@ -2637,7 +2629,7 @@ inline sframe stree::get_frame_lvid_copyno(const char* s_lvid_copyno ) const
     char src = s_src ? s_src[0] : 'N' ;
     assert( src == 'N' || src == 'R' || src == 'T' );
 
-    sframe fr = get_frame_lvid_copyno( lvid, copyno, src );
+    sframe fr = get_frame_lvid_copyno(lvid, copyno, src);
     fr.set_name(name.c_str());
     return fr ;
 }
@@ -2657,7 +2649,6 @@ use stree::get_frame_nidx
 
 **/
 
-
 inline sframe stree::get_frame_prim(int prim) const
 {
     int nidx = get_nidx_for_prim(prim); // many nidx will havse same prim
@@ -2672,7 +2663,7 @@ inline sframe stree::get_frame_nidx(int nidx) const
     BB bb ;
     get_prim_aabb( bb.data(), node, nullptr, nullptr );
 
-    sframe f = {} ;
+    sframe f = {};
     f.m2w = m2w[nidx] ;
     f.w2m = w2m[nidx] ;
     s_bb::CenterExtent<double>( f.ce_data(), bb.data() );
@@ -2685,7 +2676,6 @@ inline sframe stree::get_frame_nidx(int nidx) const
     return f ;
 }
 
-
 /**
 stree::get_frame_inst
 ----------------------
@@ -2697,7 +2687,7 @@ transforms from stree.
 
 inline sframe stree::get_frame_inst(int ii) const
 {
-    sframe f = {} ;
+    sframe f = {};
 
     std::ostream* out = nullptr ;
     VTR* t_stack = nullptr ;
@@ -2706,7 +2696,6 @@ inline sframe stree::get_frame_inst(int ii) const
 
     return f ;
 }
-
 
 inline sframe stree::get_frame_sid(int sid) const
 {
@@ -2726,10 +2715,9 @@ inline sframe stree::get_frame_sid(int sid) const
            ;
         nidx = 0 ;
     }
-    sframe f = get_frame_nidx( nidx );
+    sframe f = get_frame_nidx(nidx);
     return f ;
 }
-
 
 inline sframe stree::get_frame_sidx(int sidx) const
 {
@@ -2749,7 +2737,7 @@ inline sframe stree::get_frame_sidx(int sidx) const
            ;
         nidx = 0 ;
     }
-    sframe f = get_frame_nidx( nidx );
+    sframe f = get_frame_nidx(nidx);
     return f ;
 }
 
@@ -2775,17 +2763,11 @@ inline sframe stree::get_frame_lvid_copyno(int q_lvid, int q_copyno, char q_src)
            ;
         nidx = 0 ;
     }
-    sframe f = get_frame_nidx( nidx );
+    sframe f = get_frame_nidx(nidx);
     return f ;
 }
 
-
-
-
-
-
-
-inline int stree::get_frame_from_npyfile(sframe& f, const char* q_spec ) const
+inline int stree::get_frame_from_npyfile(sframe& f, const char* q_spec) const
 {
     NP* a = NP::Load(q_spec);
     if(!a) return 1 ;
@@ -2839,8 +2821,7 @@ repeat_ordinal:0,...
 
 **/
 
-
-inline int stree::get_frame_from_triplet(sframe& f, const char* q_spec ) const
+inline int stree::get_frame_from_triplet(sframe& f, const char* q_spec) const
 {
     int lvid ;
     int lvid_ordinal ;
@@ -2877,9 +2858,6 @@ inline int stree::get_frame_from_triplet(sframe& f, const char* q_spec ) const
     return get_rc ;
 }
 
-
-
-
 /**
 stree::get_frame_from_coords
 ------------------------------
@@ -2892,8 +2870,7 @@ This enables manual targetting some position::
 
 **/
 
-
-inline int stree::get_frame_from_coords(sframe& f, const char* q_spec ) const
+inline int stree::get_frame_from_coords(sframe& f, const char* q_spec) const
 {
     char delim = ',' ;
     std::vector<double> elem ;
@@ -2937,8 +2914,7 @@ inline int stree::get_frame_from_coords(sframe& f, const char* q_spec ) const
     return 0;
 }
 
-
-inline int stree::get_frame_from_transform(sframe& f, const char* q_spec ) const
+inline int stree::get_frame_from_transform(sframe& f, const char* q_spec) const
 {
     char delim = ',' ;
     std::vector<double> elem ;
@@ -3003,7 +2979,7 @@ inline bool stree::has_frame(const char* q_spec) const
         return false ;
     }
 
-    sframe f ;
+    sframe f;
     f.set_name(q_spec);
 
     int get_rc = 0 ;
@@ -3049,7 +3025,7 @@ stree::get_frame_instanced
 
 **/
 
-inline int stree::get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out, VTR* t_stack ) const
+inline int stree::get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out, VTR* t_stack) const
 {
     int ii = pick_lvid_ordinal_repeat_ordinal_inst_( lvid, lvid_ordinal, repeat_ordinal );
     int nidx = inst_nidx[ii] ;
@@ -3081,7 +3057,6 @@ inline int stree::get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int
         ;
     return get_frame_inst(f, ii, out, t_stack );
 }
-
 
 inline int stree::get_frame_inst(sframe& f, int ii, std::ostream* out, VTR* t_stack) const
 {
@@ -3152,15 +3127,15 @@ here at stree level.
 TODO: avoid the duplication in frame access impls
 
 **/
-inline int stree::get_frame_remainder(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
+inline int stree::get_frame_remainder(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal) const
 {
     return _get_frame_global( f, lvid, lvid_ordinal, repeat_ordinal, 'R' );
 }
-inline int stree::get_frame_triangulate(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
+inline int stree::get_frame_triangulate(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal) const
 {
     return _get_frame_global( f, lvid, lvid_ordinal, repeat_ordinal, 'T' );
 }
-inline int stree::get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal ) const
+inline int stree::get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal) const
 {
     return _get_frame_global( f, lvid, lvid_ordinal, repeat_ordinal, '?' );
 }
@@ -3208,7 +3183,7 @@ a former difference in the convention used.
 
 **/
 
-inline int stree::_get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type ) const
+inline int stree::_get_frame_global(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, char ridx_type) const
 {
     assert( repeat_ordinal == -1 || repeat_ordinal == -2 || repeat_ordinal == -3 );
     const snode* _node = pick_lvid_ordinal_node( lvid, lvid_ordinal, ridx_type );

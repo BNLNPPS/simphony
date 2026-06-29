@@ -34,8 +34,7 @@ struct CSGFoundry_getFrame_Test
     int main();
 };
 
-inline CSGFoundry_getFrame_Test::CSGFoundry_getFrame_Test()
-    :
+inline CSGFoundry_getFrame_Test::CSGFoundry_getFrame_Test() :
     fd(CSGFoundry::Load())
 {
     std::cout << " fd.brief " << fd->brief() << std::endl ;

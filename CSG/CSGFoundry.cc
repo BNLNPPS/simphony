@@ -3178,8 +3178,6 @@ CSGFoundry* CSGFoundry::Load() // static
     return dst ;
 }
 
-
-
 /**
 CSGFoundry::CopySelect
 -------------------------
@@ -3595,7 +3593,6 @@ Grab these from remote with::
 
 )" ;
 
-
 sframe CSGFoundry::getFrame() const
 {
     const char* moi_or_iidx = ssys::getenvvar("MOI", "-1");
@@ -3627,9 +3624,8 @@ int CSGFoundry::getFrame(sframe& fr, int inst_idx) const
     assert(tree);
 
     fr = tree->get_frame_inst(inst_idx);
-    return 0 ;
+    return 0;
 }
-
 
 /**
 CSGFoundry::getFrameE
@@ -3654,8 +3650,6 @@ selected the frame. That metadata is intentionally not preserved for sframe.
 
 **/
 
-
-
 sframe CSGFoundry::getFrameE() const
 {
     bool VERBOSE = ssys::getenvbool(getFrameE_VERBOSE) ;
@@ -3665,15 +3659,15 @@ sframe CSGFoundry::getFrameE() const
     {
         int INST = ssys::getenvint("INST", 0);
         LOG_IF(info, VERBOSE) << " INST " << INST ;
-        sframe fr = {} ;
+        sframe fr = {};
         getFrame(fr, INST ) ;
-        return fr ;
+        return fr;
     }
     else if(ssys::getenvbool("MOI"))
     {
         const char* MOI = ssys::getenvvar("MOI", nullptr) ;
         LOG_IF(info, VERBOSE) << " MOI " << MOI ;
-        return getFrame() ;
+        return getFrame();
     }
     else
     {
@@ -3683,8 +3677,6 @@ sframe CSGFoundry::getFrameE() const
         return getFrame(ipf);
     }
 }
-
-
 
 /**
 CSGFoundry::AfterLoadOrCreate

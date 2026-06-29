@@ -186,9 +186,6 @@ const char* CSGOptiX::desc() const
     return strdup(s.c_str());
 }
 
-
-
-
 /**
 CSGOptiX::InitEvt  TODO : THIS DOES NOT USE GPU : SO SHOULD BE ELSEWHERE
 --------------------------------------------------------------------------
@@ -801,19 +798,18 @@ void CSGOptiX::setFrame(const char* frs)
     const stree* tree = foundry->getTree();
     assert(tree);
 
-    const char* spec = frs ? frs : "-1" ;
-    sframe fr = tree->get_frame(spec);
+    const char* spec = frs ? frs : "-1";
+    sframe      fr = tree->get_frame(spec);
     setFrame(fr);
-
 }
 void CSGOptiX::setFrame(const float4& ce )
 {
-    sframe fr ;   // m2w w2m default to identity
+    sframe fr; // m2w w2m default to identity
 
-    fr.ce.x = ce.x ;
-    fr.ce.y = ce.y ;
-    fr.ce.z = ce.z ;
-    fr.ce.w = ce.w ;
+    fr.ce.x = ce.x;
+    fr.ce.y = ce.y;
+    fr.ce.z = ce.z;
+    fr.ce.w = ce.w;
 
     setFrame(fr);
 }
@@ -839,7 +835,7 @@ for the frame.
 
 **/
 
-void CSGOptiX::setFrame(const sframe& lfr )
+void CSGOptiX::setFrame(const sframe& lfr)
 {
     assert(sglm);
     sglm->set_frame(lfr);

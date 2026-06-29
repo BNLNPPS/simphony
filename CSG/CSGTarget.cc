@@ -244,9 +244,6 @@ int CSGTarget::getGlobalCenterExtent(float4& gce, int midx, int mord, int gord, 
 
     // TODO: could incorporate this identity into the frame ?
 
-
-
-
     const CSGPrim* lpr = foundry->getMeshPrim(midx, mord);
 
     CSGPrim gpr = {} ;

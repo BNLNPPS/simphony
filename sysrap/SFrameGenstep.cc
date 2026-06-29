@@ -149,10 +149,6 @@ std::string SFrameGenstep::GetGridConfig(std::vector<int>& cegs)
     return str ;
 }
 
-
-
-
-
 /**
 SFrameGenstep::MakeCenterExtentGensteps_FromFrame
 --------------------------------------------------
@@ -180,8 +176,6 @@ bool SFrameGenstep::HasConfigEnv()
 {
     return ssys::hasenv_("CEGS");
 }
-
-
 
 /**
 SFrameGenstep::MakeCenterExtentGenstep_FromFrame
