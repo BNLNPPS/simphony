@@ -7,7 +7,7 @@ This is included into qudarap/qrng.h
 
 Template specializations collecting details of the various curandState impls.  See::
 
-    ~/o/sysrap/tests/srng_test.sh 
+    srng_test
 
 
 https://stackoverflow.com/questions/8789867/c-template-class-specialization-why-do-common-methods-need-to-be-re-implement

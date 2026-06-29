@@ -1,4 +1,4 @@
-// ./U4Scint_test.sh 
+// ./U4Scint_test
 
 #include "U4Scint.h"
 

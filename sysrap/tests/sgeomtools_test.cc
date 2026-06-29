@@ -1,6 +1,6 @@
 /**
 
-   ~/o/sysrap/tests/sgeomtools_test.sh 
+   sgeomtools_test
 
 **/
 

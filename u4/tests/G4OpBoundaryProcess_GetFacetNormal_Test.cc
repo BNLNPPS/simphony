@@ -1,4 +1,4 @@
-// ./G4OpBoundaryProcess_GetFacetNormal_Test.sh 
+// ./G4OpBoundaryProcess_GetFacetNormal_Test
 
 #include <iostream>
 #include "G4ThreeVector.hh"

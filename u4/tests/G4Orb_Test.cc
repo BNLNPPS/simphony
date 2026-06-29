@@ -1,4 +1,4 @@
-// ./G4Orb_Test.sh 
+// ./G4Orb_Test
 
 #include <iostream>
 #include <iomanip>

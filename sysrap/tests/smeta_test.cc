@@ -1,4 +1,4 @@
-// ./smeta_test.sh
+// ./smeta_test
 
 #include "smeta.h"
 

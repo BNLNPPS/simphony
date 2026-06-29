@@ -18,7 +18,7 @@ and event rendering here.
     ./sysrap/SGLFW_Event_TO_BE_REMOVED.h
     ./sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
     ./sysrap/tests/SGLFW_Evt_test.cc
-    ./sysrap/tests/SGLFW_Evt_test.sh
+    SGLFW_Evt_test
     ./sysrap/SGLFW_Evt.h
 
 

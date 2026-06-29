@@ -1,4 +1,4 @@
-// ./sfreq_test.sh
+// ./sfreq_test
 
 #include <cstdlib>
 #include <iostream>

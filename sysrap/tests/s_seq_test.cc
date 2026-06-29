@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/s_seq_test.sh
+// s_seq_test
 
 #include <iostream>
 #include "s_seq.h"
@@ -22,5 +22,5 @@ int main()
     return 0 ; 
 }; 
 
-// ~/o/sysrap/tests/s_seq_test.sh
+// s_seq_test
 

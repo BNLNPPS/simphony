@@ -4,19 +4,19 @@ stree_load_test.cc
 
 ::
 
-    ~/o/sysrap/tests/stree_load_test.sh
+    stree_load_test
 
-    TEST=get_inst IIDX=100                      ~/o/sysrap/tests/stree_load_test.sh
-    TEST=pick_lvid_ordinal_node                 ~/o/sysrap/tests/stree_load_test.sh
-    TEST=find_inst_gas                          ~/o/sysrap/tests/stree_load_test.sh
+    TEST=get_inst IIDX=100                      stree_load_test
+    TEST=pick_lvid_ordinal_node                 stree_load_test
+    TEST=find_inst_gas                          stree_load_test
 
-    TEST=pick_lvid_ordinal_repeat_ordinal_inst_ ~/o/sysrap/tests/stree_load_test.sh
-    TEST=pick_lvid_ordinal_repeat_ordinal_inst  ~/o/sysrap/tests/stree_load_test.sh
-    TEST=get_frame                              ~/o/sysrap/tests/stree_load_test.sh
-    TEST=get_prim_aabb                          ~/o/sysrap/tests/stree_load_test.sh
+    TEST=pick_lvid_ordinal_repeat_ordinal_inst_ stree_load_test
+    TEST=pick_lvid_ordinal_repeat_ordinal_inst  stree_load_test
+    TEST=get_frame                              stree_load_test
+    TEST=get_prim_aabb                          stree_load_test
 
-    TEST=desc_factor_nodes FIDX=0               ~/o/sysrap/tests/stree_load_test.sh
-    TEST=desc_repeat_node RIDX=0 RORD=0         ~/o/sysrap/tests/stree_load_test.sh
+    TEST=desc_factor_nodes FIDX=0               stree_load_test
+    TEST=desc_repeat_node RIDX=0 RORD=0         stree_load_test
 
 **/
 
@@ -890,13 +890,13 @@ int main(int argc, char** argv)
 }
 
 /**
-    TEST=desc_solid LVID=43 ~/o/sysrap/tests/stree_load_test.sh  run
-    TEST=desc_solid LVID=124 ~/o/sysrap/tests/stree_load_test.sh  run
-    TEST=desc_solid LVID=32 ~/o/sysrap/tests/stree_load_test.sh
+    TEST=desc_solid LVID=43 stree_load_test  run
+    TEST=desc_solid LVID=124 stree_load_test  run
+    TEST=desc_solid LVID=32 stree_load_test
 
 
-    TEST=desc_node_ELVID ELVID=43,44,45,46 ~/o/sysrap/tests/stree_load_test.sh
-    TEST=desc_node_ECOPYNO ECOPYNO=52400   ~/o/sysrap/tests/stree_load_test.sh
-    TEST=desc_node_EBOUNDARY EBOUNDARY=303   ~/o/sysrap/tests/stree_load_test.sh
+    TEST=desc_node_ELVID ELVID=43,44,45,46 stree_load_test
+    TEST=desc_node_ECOPYNO ECOPYNO=52400   stree_load_test
+    TEST=desc_node_EBOUNDARY EBOUNDARY=303   stree_load_test
 **/
 

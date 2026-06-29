@@ -44,7 +44,7 @@ void intersect_leaf_cylinder( bool& valid_isect, float4& isect, const quad& q0, 
     const float& vz = ray_direction.z ; 
 
     const float r2 = r*r ; 
-    const float a = vx*vx + vy*vy ;     // see CSG/sympy_cylinder.py 
+    const float a = vx*vx + vy*vy ;     // see the cylinder derivation notes
     const float b = ox*vx + oy*vy ; 
     const float c = ox*ox + oy*oy - r2 ; 
 

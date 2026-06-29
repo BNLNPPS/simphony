@@ -866,7 +866,7 @@ CSGFoundry::descInstance
 
 ::
 
-    c ; IDX=0,10,100 METH=descInstance ./CSGTargetTest.sh remote
+    c ; IDX=0,10,100 METH=descInstance ./CSGTargetTest remote
 
 
 **/
@@ -2857,7 +2857,7 @@ You appear to be attempting to load a geometry folder that does not exist.
 Perhaps this is due to incorrect envvars or the folder really does not exist.
 Scripts that can create geometry folders include:
 
-* CSG/CSGMakerTest.sh
+* CSG/CSGMakerTest
 
 CSGMaker saves a CSGFoundry geometry that was authored directly in CSG.
 
@@ -2956,7 +2956,7 @@ what the geometry is that you want to create. Some of the scripts require
 export the GEOM envvar within $HOME/.opticks/GEOM/GEOM.sh to pick between
 different geometries.
 
-CSG/CSGMakerTest.sh
+CSG/CSGMakerTest
     CSG level creation of simple test CSGFoundry
 
 G4CX/G4CXTest.sh

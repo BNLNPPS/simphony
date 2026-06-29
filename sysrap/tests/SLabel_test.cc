@@ -1,4 +1,4 @@
-// ./SLabel_test.sh
+// ./SLabel_test
 #include <iostream>
 #include <iomanip>
 #include <cstring>

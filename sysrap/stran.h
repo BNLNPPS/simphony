@@ -686,7 +686,7 @@ Tran::PhotonTransform
 Test::
 
    cd ~/opticks/CSG/tests
-   ./CSGFoundry_getFrame_Test.sh
+   ./CSGFoundry_getFrame_Test
 
 Note that the returned transformed photon array is always in double precision.
 

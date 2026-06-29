@@ -4,11 +4,11 @@ sphoton_test.cc
 
 ::
 
-     ~/o/sysrap/tests/sphoton_test.sh
-     TEST=set_lpos ~/o/sysrap/tests/sphoton_test.sh
+     sphoton_test
+     TEST=set_lpos sphoton_test
 
-     OFFSET=100,100,100 ~/o/sysrap/tests/sphoton_test.sh
-     OFFSET=1000,1000,1000 ~/o/sysrap/tests/sphoton_test.sh
+     OFFSET=100,100,100 sphoton_test
+     OFFSET=1000,1000,1000 sphoton_test
 
 
 **/

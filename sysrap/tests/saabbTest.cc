@@ -1,5 +1,5 @@
 
-// ./saabbTest.sh 
+// ./saabbTest
 
 #include "scuda.h"
 #include "sqat4.h"

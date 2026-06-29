@@ -13,9 +13,9 @@ NB SMesh.h is used in two situtions
 
 ::
 
-    ~/o/sysrap/tests/SMesh_test.sh
-    ~/o/sysrap/tests/SScene_test.sh
-    ~/o/u4/tests/U4TreeCreateTest.sh
+    SMesh_test
+    SScene_test
+    U4TreeCreateTest
 
 **/
 

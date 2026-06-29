@@ -1,6 +1,6 @@
 /**
 
-~/opticks/sysrap/tests/s_locale_test.sh
+s_locale_test
 
 **/
 

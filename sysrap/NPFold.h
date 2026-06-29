@@ -2711,7 +2711,7 @@ loading with index and loading with fts.
 
 fts traverses the directory tree and invokes NPFold::load_array when
 meeting regular files or symbolic links.
-See "man fts" and tests/fts_test.sh for background.
+See "man fts" and tests/fts_test for background.
 
 This fts approach resulted in a single NPFold
 with keys containing slash.

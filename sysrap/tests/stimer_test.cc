@@ -231,7 +231,7 @@ Instead of such a hack, changed EpochCount to
 standardize on microsecond epoch counts.
 This makes the time stamps comparable modulo 7 hours time difference.
 
-N[blyth@localhost tests]$ ./stimer_test.sh
+N[blyth@localhost tests]$ ./stimer_test
  stimer::Format(1681469652582925) : Fri, 14.04.2023 18:54:12
  stimer::Format(1681467459953485) : Fri, 14.04.2023 18:17:39
  stimer::Format(1681467438445254) : Fri, 14.04.2023 18:17:18
@@ -239,7 +239,7 @@ N[blyth@localhost tests]$ date
 Fri Apr 14 18:54:19 CST 2023
 N[blyth@localhost tests]$
 
-epsilon:tests blyth$ ./stimer_test.sh
+epsilon:tests blyth$ ./stimer_test
  stimer::Format(1681469695498380) : Fri, 14.04.2023 11:54:55
  stimer::Format(1681467459953485) : Fri, 14.04.2023 11:17:39
  stimer::Format(1681467438445254) : Fri, 14.04.2023 11:17:18
@@ -303,7 +303,7 @@ void test_count()
 /**
 From BST (UTC+1) timezone the numpy presented times are corrected to UTC::
 
-    epsilon:tests blyth$ ./stimer_test.sh 
+    epsilon:tests blyth$ ./stimer_test
     stimer::desc status STOPPED _start 1681480063800788 start Fri, 14.04.2023 14:47:43 _stop 1681480064801308 stop Fri, 14.04.2023 14:47:44 duration 1.000520e+00
      stimer::Format(t0) Fri, 14.04.2023 14:47:43 t0 1681480063800788
      stimer::Format(t1) Fri, 14.04.2023 14:47:44 t1 1681480064801308
@@ -316,7 +316,7 @@ From BST (UTC+1) timezone the numpy presented times are corrected to UTC::
 
 From CST (UTC+8) timezone the numpy presented times also corrected to UTC::
 
-    N[blyth@localhost tests]$ ./stimer_test.sh 
+    N[blyth@localhost tests]$ ./stimer_test
     stimer::desc status STOPPED _start 1681480305503105 start Fri, 14.04.2023 21:51:45 _stop 1681480306505512 stop Fri, 14.04.2023 21:51:46 duration 1.002406e+00
      stimer::Format(t0) Fri, 14.04.2023 21:51:45 t0 1681480305503105
      stimer::Format(t1) Fri, 14.04.2023 21:51:46 t1 1681480306505512

@@ -244,10 +244,10 @@ For ekey with a comma such as "OPTICKS_ELV_SELECTION,ELV" the
 envvars are checked in order and the first to yield a value
 is returned.::
 
-    OPTICKS_ELV_SELECTION=greetings ELV=hello ./ssys_test.sh
+    OPTICKS_ELV_SELECTION=greetings ELV=hello ./ssys_test
     test_getenvvar ekey OPTICKS_ELV_SELECTION,ELV val greetings
 
-    OPTICKS_ELV_SELECTION_=greetings ELV=hello ./ssys_test.sh
+    OPTICKS_ELV_SELECTION_=greetings ELV=hello ./ssys_test
     test_getenvvar ekey OPTICKS_ELV_SELECTION,ELV val hello
 
 

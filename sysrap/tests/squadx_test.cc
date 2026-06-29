@@ -1,4 +1,4 @@
-// ./squadx_test.sh 
+// ./squadx_test
 
 #include <iostream>
 #include <iomanip>

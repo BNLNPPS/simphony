@@ -1,10 +1,10 @@
 /**
-stra_test.sh
+stra_test
 ==============
 
 ::
 
-    ~/o/sysrap/tests/stra_test.sh
+    stra_test
 
 
 **/

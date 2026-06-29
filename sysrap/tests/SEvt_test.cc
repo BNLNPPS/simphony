@@ -1,4 +1,4 @@
-// ~/opticks/sysrap/tests/SEvt_test.sh 
+// SEvt_test
 
 #include "OpticksGenstep.h"
 #include "ssys.h"
@@ -85,5 +85,5 @@ int main()
     return SEvt_test::Main(); 
 }
 
-// ~/opticks/sysrap/tests/SEvt_test.sh 
+// SEvt_test
 

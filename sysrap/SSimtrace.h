@@ -18,7 +18,7 @@ Quick Check of simtrace positions
 
 For a quick check of simtrace positions, run the below from an SEvt folder::
 
-    ~/opticks/sysrap/tests/SSimtrace_check.sh
+    SSimtrace_check
 
 That runs something like the below with ipython::
 

@@ -4,7 +4,7 @@ stmm_vs_sboundary_test.cc
 
 ::
 
-   ~/o/sysrap/tests/stmm_vs_sboundary_test.sh
+   stmm_vs_sboundary_test
 
 
 Specialize the stmm.h stack calc to 2 non-thin layers and compare with sboundary.h 

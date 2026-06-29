@@ -1,4 +1,4 @@
-// ./csg_intersect_leaf_templated_test.sh
+// ./csg_intersect_leaf_templated_test
 
 #include <cstdio>
 #include "scuda.h"

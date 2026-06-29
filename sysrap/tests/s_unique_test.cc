@@ -1,6 +1,6 @@
 /**
 
-~/o/sysrap/tests/s_unique_test.sh
+s_unique_test
 
 **/
 

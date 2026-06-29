@@ -1,4 +1,4 @@
-// ./sproplist_test.sh 
+// ./sproplist_test
 
 #include <iostream>
 #include <iomanip>

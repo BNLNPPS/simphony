@@ -4,7 +4,7 @@ SCE_test.cc
 
 ::
 
-    ~/o/sysrap/tests/SCE_test.sh 
+    SCE_test
 
 **/
 

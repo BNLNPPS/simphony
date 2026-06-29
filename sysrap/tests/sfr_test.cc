@@ -1,8 +1,8 @@
 /**
 
-~/o/sysrap/tests/sfr_test.sh
+sfr_test
 ~/o/sysrap/tests/sfr_test.cc
-~/o/sysrap/tests/sfr_test.py
+~/o/sfr_test.cc
 
 **/
 

@@ -1,4 +1,4 @@
-// ./sdomain_test.sh 
+// ./sdomain_test
 
 #include <iostream>
 #include "sdomain.h"

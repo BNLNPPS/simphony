@@ -1,4 +1,4 @@
-// ./stmm_test.sh
+// ./stmm_test
 
 #include <cstdlib>
 #include "stmm.h"

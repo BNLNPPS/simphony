@@ -132,11 +132,11 @@ cxr_geochain.sh
 
 
 
-cxr_pub.sh
+cxr_pub
     pub.py promotes from SRC_BASE=/tmp/$USER/opticks/CSGOptiX/CSGOptiXRender into presentation repo 
 
 cxr_rsync.sh
-    SUSPECT HAVE REPLACED USE OF THIS WITH THE MORE CONTROLLABLE pub.py APPROACH see cxr_pub.sh 
+    SUSPECT HAVE REPLACED USE OF THIS WITH THE MORE CONTROLLABLE pub.py APPROACH see cxr_pub
 
 
 
@@ -152,7 +152,7 @@ cxs.sh [run/ana/]
          invokes CSGOptiXSimulateTest executable
     *ana* 
          (local analysis mode, does not work remotely due to matplotlib/pyvista graphics)
-         invokes tests/CSGOptiXSimulateTest.py script
+         invokes CSGOptiXSimulateTest analysis helper
          which uses matplotlib and/or pyvista to create mostly 2D geometry
          plots of the positions of intersects onto geometry    
 
@@ -166,7 +166,7 @@ cxs_grab.sh
 cxsd.sh
     runs cxs.sh with GDB envvar defined to switch on gdb
 
-cxs_pub.sh
+cxs_pub
     pub.py promotes from the below SRC_BASE into presentation repo::
 
          $HOME/$opticks_keydir_grabbed/CSG_GGeo/CSGOptiXSimulateTest 
@@ -174,8 +174,8 @@ cxs_pub.sh
     Shell commands are emitted to stdout that copy images around. 
     Also s5 text is generated for copy/pasting into presentations::
 
-        ./cxs_pub.sh cp | grep uni_acrylic | sh 
-        ./cxs_pub.sh s5 | grep uni_acrylic  
+        ./cxs_pub cp | grep uni_acrylic | sh
+        ./cxs_pub s5 | grep uni_acrylic
 
 
 

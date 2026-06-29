@@ -1,4 +1,4 @@
-// ~/opticks/sysrap/tests/sseq_test.sh
+// sseq_test
 
 
 #include <iostream>
@@ -496,6 +496,6 @@ int main()
 
     return rc ;
 }
-// ~/opticks/sysrap/tests/sseq_test.sh
+// sseq_test
 
 

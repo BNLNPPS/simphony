@@ -2,7 +2,7 @@
 SRecord_test.cc
 ====================
 
-~/o/sysrap/tests/SRecord_test.sh
+SRecord_test
 
 
 **/

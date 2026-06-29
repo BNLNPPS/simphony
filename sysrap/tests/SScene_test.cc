@@ -22,9 +22,9 @@ Usage
 
 ::
 
-    TEST=CreateFromTree ~/o/sysrap/tests/SScene_test.sh 
-    TEST=Load ~/o/sysrap/tests/SScene_test.sh 
-   ~/o/sysrap/tests/SScene_test.sh 
+    TEST=CreateFromTree SScene_test
+    TEST=Load SScene_test
+   SScene_test
 
    ~/o/sysrap/tests/SScene_test.cc
 

@@ -58,7 +58,7 @@ Related developments
   * PMTAccessor::Load from "$HOME/.opticks/GEOM/$GEOM/CSGFoundry/SSim/extra/jpmt"
   * standalone CPU use of PMTAccessor to do the stack calc
 
-* qudarap/tests/QPMTTest.sh
+* QPMTTest
 
   * formerly used JPMT NP_PROP_BASE loading rindex and thickness, not qeshape and lcqs
   * DONE: add in SPMT.h rather than JPMT and extend to include qeshape and lcqs
@@ -534,7 +534,7 @@ OLD::
 
     SPMT::init_total SPMT_Total CD_LPMT: 17612 SPMT: 25600 WP:  2400 ALL: 45612
 
-SPMT_test.sh::
+SPMT_test::
 
     In [21]: s.jpmt.PMTSimParamData.pmtTotal
     Out[21]: array([17612, 25600,  2400,   348,     0,     5, 45965], dtype=int32)
@@ -789,7 +789,7 @@ PMTParamSvc::init_IDService_WP_ATM_LPMT
 PMTParamSvc::init_IDService_WP_WAL_PMT
 
 
-From SPMT_test.sh::
+From SPMT_test::
 
     In [16]: s.jpmt.PMTParamData.pmtCat[17612+25600+2400:17612+25600+2400+348]   ## WP_ATM_LPMT
     Out[16]:

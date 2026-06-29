@@ -1,4 +1,4 @@
-// ./scuda_double_test.sh 
+// ./scuda_double_test
 
 #include "scuda.h"
 #include "scuda_double.h"

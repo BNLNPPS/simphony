@@ -2,7 +2,7 @@
 sdirectory_test.cc
 ===================
 
-~/o/sysrap/tests/sdirectory_test.sh 
+sdirectory_test
 
 **/
 

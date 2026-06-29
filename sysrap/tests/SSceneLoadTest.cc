@@ -4,7 +4,7 @@ SceneLoadTest.cc
 
 ::
 
-    ~/o/sysrap/tests/SSceneLoadTest.sh
+    SSceneLoadTest
 
 **/
 

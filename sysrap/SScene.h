@@ -22,7 +22,7 @@ with OptiX ray trace and OpenGL rasterized.
 
 ::
 
-    ~/o/sysrap/tests/SScene_test.sh
+    SScene_test
 
 * OpenGL/CUDA interop-ing the triangle data is possible (but not straight off)
 
@@ -842,7 +842,7 @@ argument from envvar::
 
 Which is set for example from::
 
-    ~/o/sysrap/tests/SScene_test.sh
+    SScene_test
 
 Actions:
 
@@ -1148,7 +1148,7 @@ SScene::Compare
 ---------------
 
 Observed that this comparison does not notice
-exclusions of global LV, see tests/SSceneLoadTest.sh
+exclusions of global LV, see tests/SSceneLoadTest
 
 **/
 

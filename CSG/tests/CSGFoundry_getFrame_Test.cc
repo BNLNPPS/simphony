@@ -4,7 +4,7 @@ CSG/tests/CSGFoundry_getFrame_Test.cc
 
 ::
 
-   TEST=getFrameE ~/o/CSG/tests/CSGFoundry_getFrame_Test.sh
+   TEST=getFrameE CSGFoundry_getFrame_Test
 
 
 **/

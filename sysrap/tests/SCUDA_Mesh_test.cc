@@ -1,6 +1,6 @@
 /**
 
-~/o/sysrap/tests/SCUDA_Mesh_test.sh
+SCUDA_Mesh_test
 
 
 optix7.5 p28

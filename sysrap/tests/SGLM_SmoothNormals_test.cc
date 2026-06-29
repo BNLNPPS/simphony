@@ -4,7 +4,7 @@ SGLM_SmoothNormals_test.cc
 
 ::
 
-    ~/o/sysrap/tests/SGLM_SmoothNormals_test.sh
+    SGLM_SmoothNormals_test
 
 **/
 

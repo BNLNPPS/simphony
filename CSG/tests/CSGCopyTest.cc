@@ -56,7 +56,7 @@ int main(int argc, char** argv)
             << " UNEXPECTED DIFFERENCE " 
             << " DEBUG WITH :" 
             << std::endl 
-            << " ~/opticks/CSG/tests/CSGCopyTest.sh ana "
+            << " CSGCopyTest ana "
             ;  
 
         assert( cf == 0 ); 

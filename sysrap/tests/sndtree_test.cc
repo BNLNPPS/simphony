@@ -4,7 +4,7 @@ sndtree_test.cc
 
 ::
 
-   ./sndtree_test.sh 
+   ./sndtree_test
 
 **/
 

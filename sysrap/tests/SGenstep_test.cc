@@ -2,10 +2,10 @@
 SGenstep_test.cc
 ==================
 
-~/o/sysrap/tests/SGenstep_test.sh
+SGenstep_test
 
-TEST=Slices_3 ~/o/sysrap/tests/SGenstep_test.sh
-TEST=Slices_4 ~/o/sysrap/tests/SGenstep_test.sh
+TEST=Slices_3 SGenstep_test
+TEST=Slices_4 SGenstep_test
 
 
 **/

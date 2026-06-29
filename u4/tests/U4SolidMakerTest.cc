@@ -1,6 +1,6 @@
 /**
 
-~/o/u4/tests/U4SolidMakerTest.sh
+U4SolidMakerTest
 
 **/
 

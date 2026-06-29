@@ -9,7 +9,7 @@ SGLM_set_frame_test.cc
 
 ::
 
-    ~/o/sysrap/tests/SGLM_set_frame_test.sh info_build_run_cat
+    SGLM_set_frame_test info_build_run_cat
 
 **/
 

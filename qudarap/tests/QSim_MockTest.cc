@@ -27,7 +27,7 @@ headers that come with it : so operating at lower level.
 
 Standalone compile and run with::
 
-   ~/o/qudarap/tests/QSim_MockTest.sh 
+   QSim_MockTest
 
 **/
 
@@ -433,7 +433,7 @@ QSim_MockTest::SmearNormal
 ---------------------------
 
 This MOCK_CUDA test of qsim::SmearNormal_SigmaAlpha qsim::SmearNormal_Polish
-is similar to sysrap/tests/S4OpBoundaryProcessTest.sh 
+is similar to S4OpBoundaryProcessTest
 
 +------+-------------+
 | chk  |  value      |
@@ -454,7 +454,7 @@ inline void QSim_MockTest::SmearNormal(int chk, float value)
 
     a = NP::Make<float>( ni, nj );  
 
-    a->set_meta<std::string>("source", "QSim_MockTest.sh" ); 
+    a->set_meta<std::string>("source", "QSim_MockTest" );
     a->set_meta<std::string>("normal", scuda::serialize(normal) ); 
     a->set_meta<std::string>("direct", scuda::serialize(direct) ); 
     a->set_meta<float>("value", value );  

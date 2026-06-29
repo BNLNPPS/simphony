@@ -1,4 +1,4 @@
-// ./spho_test.sh
+// ./spho_test
 
 
 #include <iostream>

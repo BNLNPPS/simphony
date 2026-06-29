@@ -12,7 +12,7 @@ Note this provides only CSGOptiX ray trace rendering, there is no rasterized tog
 with "C" key to switch between CUDA and OpenGL rendering.
 For that functionality (but with triangulated geometry only) use:
 
-   ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.sh
+   SGLFW_SOPTIX_Scene_test
    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
 
 TODO:

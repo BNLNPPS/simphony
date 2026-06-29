@@ -71,7 +71,7 @@ void Chk::SmearNormal(int chk, double value)
 
     a->set_meta<double>("value", value ); 
     a->set_meta<std::string>("valuename", chk == 0 ? "sigma_alpha" : "polish" ); 
-    a->set_meta<std::string>("source", "S4OpBoundaryProcessTest.sh") ; 
+    a->set_meta<std::string>("source", "S4OpBoundaryProcessTest") ;
 
     for(int i=0 ; i < ni ; i++) 
     {

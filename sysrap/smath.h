@@ -154,10 +154,10 @@ Geant4 sigma_alpha ground surface smears normal using angle from::
 
 Tests while trying to do this on GPU::
 
-    sysrap/tests/S4MTRandGaussQTest.sh
-    sysrap/tests/erfcinvf_Test.sh
-    sysrap/tests/njuffa_erfcinvf_test.sh
-    sysrap/tests/smath_test.sh
+    S4MTRandGaussQTest
+    erfcinvf_Test
+    njuffa_erfcinvf_test
+    smath_test
 
 **/
 

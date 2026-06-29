@@ -741,7 +741,7 @@ High level API intending to be used from CSGOptiXService
 
 Thus is used from language crossing stack::
 
-    async def simulate(request: Request)  [CSGOptiX/tests/CSGOptiXService_FastAPI_test/main.py]
+    async def simulate(request: Request)  [the CSGOptiX service prototype]
     inline nb::ndarray<nb::numpy> _CSGOptiXService::simulate( nb::ndarray<nb::numpy> _gs, int eventID )
     inline NP* CSGOptiXService::simulate( NP* gs, int eventID )
     NP* CSGOptiX::simulate(const NP* gs, int eventID)

@@ -1,4 +1,4 @@
-// ~/o/CSG/tests/CSGScanTest.sh
+// CSGScanTest
 
 #include "OPTICKS_LOG.hh"
 

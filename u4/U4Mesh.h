@@ -507,7 +507,7 @@ Create pyvista PolyData from the fpd and vtx array with the below::
 
     pd = pv.PolyData(f.vtx, f.fpd)
 
-For use of that in context see u4/tests/U4Mesh_test.py
+For use of that in context see U4Mesh_test.cc
 
 **/
 inline void U4Mesh::init_fpd()

@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/smath_test.sh
+// smath_test
 
 #include <iostream>
 #include <iomanip>
@@ -161,5 +161,5 @@ int main(int argc, char** argv)
 {
     return smath_test::main();
 }
-// ~/o/sysrap/tests/smath_test.sh
+// smath_test
 

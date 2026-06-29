@@ -1,10 +1,10 @@
 /**
-NPFold_clear_test.sh
+NPFold_clear_test
 ======================
 
 ::
 
-    ~/opticks/sysrap/tests/NPFold_clear_test.sh
+    NPFold_clear_test
 
 Without the NPFold::clear call get assert::
 
@@ -168,5 +168,5 @@ int main()
     return 0 ; 
 }
 
-// ~/opticks/sysrap/tests/NPFold_clear_test.sh
+// NPFold_clear_test
 

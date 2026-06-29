@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/squad_test.sh 
+// squad_test
 
 #include "scuda.h"
 #include "squad.h"

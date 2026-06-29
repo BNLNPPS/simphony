@@ -113,7 +113,7 @@ with axis in z-direction with this expect to get half a cylinder::
 
 Set GEOM to "LocalPolyconeWithPhiCut" and do the conversion::
 
-    ~/o/g4cx/tests/G4CX_U4TreeCreateCSGFoundryTest.sh
+    G4CX_U4TreeCreateCSGFoundryTest
 
 Viewing that from different positions::
 
@@ -147,7 +147,7 @@ Tweaking, not much diff::
     NOXGEOM=1 EYE=1e-8,0,10 EXTENT_FUDGE=2 CAM=orthographic UP=0,1,0 cxr_min.sh   # UNEXPECTED FULL CYLINDER
     NOXGEOM=1 EYE=1,0,10 EXTENT_FUDGE=2 CAM=orthographic UP=0,1,0 cxr_min.sh   # expected half cylinder
 
-Proceed to CSG/tests/csg_intersect_prim_test.sh which so far has not reproduced the issue.
+Proceed to csg_intersect_prim_test which so far has not reproduced the issue.
 
 **/
 

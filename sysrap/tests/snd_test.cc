@@ -1,4 +1,4 @@
-// ./snd_test.sh
+// ./snd_test
 
 #include <iostream>
 

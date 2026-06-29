@@ -4,7 +4,7 @@ SOPTIX_Options_test.cc
 
 ::
 
-    ~/o/sysrap/tests/SOPTIX_Options_test.sh
+    SOPTIX_Options_test
     ~/o/sysrap/tests/SOPTIX_Options_test.cc
 
 **/

@@ -4,7 +4,7 @@ S4MaterialPropertyVector_test.cc
 
 ::
 
-   ~/o/sysrap/tests/S4MaterialPropertyVector_test.sh
+   S4MaterialPropertyVector_test
 
 
 

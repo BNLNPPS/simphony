@@ -1,4 +1,4 @@
-// ./sproc_test.sh 
+// ./sproc_test
 
 #include <iostream>
 #include <iomanip>

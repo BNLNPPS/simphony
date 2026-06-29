@@ -1,6 +1,6 @@
 /**
 
-~/o/sysrap/tests/srng_test.sh 
+srng_test
 
 **/
 

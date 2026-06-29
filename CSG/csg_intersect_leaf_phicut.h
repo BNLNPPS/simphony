@@ -53,7 +53,7 @@ intersect_leaf_phicut
 ------------------------
 
 Unbounded shape that cuts phi via two half-planes "attached" to the z-axis.
-See phicut.py for development and testing of intersect_node_phicut
+See the phi-cut prototype for development and testing of intersect_node_phicut
 The phicut planes go through the origin so the equation of the plane is::
 
     p.n = 0
@@ -136,7 +136,7 @@ Use conventional cross product sign convention  A ^ B =  (Ax By - Bx Ay ) k the 
    QR = Q ^ R = cosPhi1*d.y - d.x*sinPhi1
 
 Note that as R is not normalized the PR and QR cross products are only proportional to the sine of the angles.
-See CSG/tests/cross2D_angle_range_without_trig.py for exploration of 2D cross product
+See the cross-product derivation notes for exploration of 2D cross product
 
 Alternative way of looking at this is with the sine of angle subtraction identity::
 
@@ -545,7 +545,7 @@ Disqualify wrong side or too close
 intersect_leaf_phicut_simple
 -----------------------------
 
-Translation of phicut.py
+Translation of the phi-cut prototype
 
 The solid lines below denote the valid half planes.
 For the infinite plane intersection points [0] [1] (0) (1)

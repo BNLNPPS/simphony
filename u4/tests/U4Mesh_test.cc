@@ -4,9 +4,9 @@ U4Mesh_test.cc
 
 ::
 
-   ~/o/u4/tests/U4Mesh_test.sh
-   ~/o/u4/tests/U4Mesh_test.sh build_all
-   ~/o/u4/tests/U4Mesh_test.sh info
+   U4Mesh_test
+   U4Mesh_test build_all
+   U4Mesh_test info
 
 **/
 

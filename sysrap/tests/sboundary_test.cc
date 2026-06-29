@@ -4,7 +4,7 @@ sboundary_test.cc
 
 Build and run::
 
-    ~/o/sysrap/tests/sboundary_test.sh
+    sboundary_test
 
 
               

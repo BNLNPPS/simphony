@@ -2,9 +2,9 @@
 QRngTest.cc
 ============
 
-TEST=ctor ~/o/qudarap/tests/QRngTest.sh 
+TEST=ctor QRngTest
 
-OPTICKS_MAX_PHOTON=M4 ~/o/qudarap/tests/QRngTest.sh
+OPTICKS_MAX_PHOTON=M4 QRngTest
 
 
 **/

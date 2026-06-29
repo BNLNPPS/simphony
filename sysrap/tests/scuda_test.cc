@@ -1,6 +1,6 @@
 /**
 
-~/o/sysrap/tests/scuda_test.sh 
+scuda_test
 
 **/
 

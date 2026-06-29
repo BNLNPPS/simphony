@@ -527,7 +527,7 @@ void intersect_node_contiguous( bool& valid_isect, float4& isect, const CSGNode*
 
     // insertionSortIndirectSentinel : 
     // 4. order the enter indices so that they would make enter ascend 
-    // see sysrap/tests/sorting/insertionSortIndirect.sh to understand the sort 
+    // see insertionSortIndirect to understand the sort
     // ordering the idx (isub indices) to make the enter values ascend 
 
 #ifdef DEBUG

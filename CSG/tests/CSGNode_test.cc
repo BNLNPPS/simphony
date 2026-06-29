@@ -1,4 +1,4 @@
-// ./CSGNode_test.sh 
+// ./CSGNode_test
 
 #include <iostream>
 #include <vector>

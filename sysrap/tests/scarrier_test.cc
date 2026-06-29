@@ -4,7 +4,7 @@ scarrier_test.cc : CPU tests of scarrier.h CUDA code using mocking
 
 Standalone compile and run with::
 
-   ~/o/sysrap/tests/scarrier_test.sh 
+   scarrier_test
 
 **/
 #include <numeric>

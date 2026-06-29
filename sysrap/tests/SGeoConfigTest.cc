@@ -4,7 +4,7 @@
 
     EMM=0,63 SGeoConfigTest
 
-    TEST=ELVSelection ~/o/sysrap/tests/SGeoConfigTest.sh
+    TEST=ELVSelection SGeoConfigTest
 
 **/
 

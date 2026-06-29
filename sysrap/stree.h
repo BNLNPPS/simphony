@@ -13,7 +13,7 @@ This is exploring a minimal approach to geometry translation
 Example of stree.h population
 ------------------------------
 
-~/o/u4/tests/U4TreeCreateTest.sh
+U4TreeCreateTest
 
 
 Lifecycle
@@ -2918,7 +2918,7 @@ HMM: perhaps move into sfr.h
 
 This enables manual targetting some position::
 
-     MOI=3345.569,20623.73,21000,1000 ssst.sh
+     MOI=3345.569,20623.73,21000,1000 ssst
 
 **/
 
@@ -4724,7 +4724,7 @@ inline std::string stree::desc_solid(int lvid) const
 stree::make_trs
 -----------------
 
-This is used from U4Tree::simtrace_scan as the basis for u4/tests/U4SimtraceTest.sh
+This is used from U4Tree::simtrace_scan as the basis for U4SimtraceTest
  HMM: this is based on GTD: "GGeo Transform Debug" so it is not future safe
 
    * TODO: adopt the modern equivalent of GTD, or create one if non-existing
@@ -6202,11 +6202,11 @@ not handle the rem and tri nodes.
 
 ::
 
-   TEST=get_repeat_node ~/o/sysrap/tests/stree_load_test.sh
+   TEST=get_repeat_node stree_load_test
 
-   TEST=get_repeat_node RIDX=1 RORD=10 ~/o/sysrap/tests/stree_load_test.sh run
+   TEST=get_repeat_node RIDX=1 RORD=10 stree_load_test run
 
-   TEST=get_repeat_node RIDX=9 RORD=0 ~/o/sysrap/tests/stree_load_test.sh run
+   TEST=get_repeat_node RIDX=9 RORD=0 stree_load_test run
 
 **/
 
@@ -6228,7 +6228,7 @@ Dump structural volumes (snode) of the ordinal-th occurrence of q_repeat_index (
 collecting unique lvid from all nodes. Then for each unique lvid dump the csg nodes (sn).
 This enables for example the CSG shapes within a particular compound solid to be checked.::
 
-    TEST=get_repeat_node RIDX=9 ~/o/sysrap/tests/stree_load_test.sh
+    TEST=get_repeat_node RIDX=9 stree_load_test
 
 **/
 
@@ -6485,8 +6485,8 @@ inline NPFold* stree::get_global_aabb() const
 stree::get_global_aabb_sibling_overlaps
 -----------------------------------------
 
-TEST=get_global_aabb_sibling_overlaps ~/o/sysrap/tests/stree_load_test.sh
-TEST=get_global_aabb_sibling_overlaps ~/o/sysrap/tests/stree_load_test.sh pdb
+TEST=get_global_aabb_sibling_overlaps stree_load_test
+TEST=get_global_aabb_sibling_overlaps stree_load_test pdb
 
 **/
 
@@ -6568,7 +6568,7 @@ stree::desc_node_ELVID
 
 Dump snode that have lvid solids with index listed in the ELVID comma delimited envvar, eg::
 
-    TEST=desc_node_elvid ELVID=43,44,45,46,47,48 ~/o/sysrap/tests/stree_load_test.sh
+    TEST=desc_node_elvid ELVID=43,44,45,46,47,48 stree_load_test
 
 **/
 
