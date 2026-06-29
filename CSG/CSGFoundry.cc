@@ -3615,6 +3615,14 @@ sframe CSGFoundry::getFrame(const char* q_spec) const
     assert(tree);
 
     const char* spec = q_spec ? q_spec : "-1";
+
+    if (sstr::IsInteger(spec))
+    {
+        std::string inst_spec = stree::INST_PFX;
+        inst_spec += spec;
+        return tree->get_frame(inst_spec.c_str());
+    }
+
     return tree->get_frame(spec);
 }
 

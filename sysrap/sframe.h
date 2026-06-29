@@ -825,9 +825,32 @@ inline void sframe::load_(const char* path_)
     assert(a);
     load(a);
 }
+
 inline void sframe::load(const NP* a)
 {
-    read(a->cvalues<double>(), NUM_VALUES);
+    assert(a);
+    assert(a->uifc == 'f');
+    assert(a->num_values() == NUM_VALUES);
+    assert(a->ebyte == 8 || a->ebyte == 4);
+
+    if (a->ebyte == 8)
+    {
+        read(a->cvalues<double>(), NUM_VALUES);
+    }
+    else
+    {
+        const float* src = a->cvalues<float>();
+        set_ce(src);
+        set_m2w(src + 16);
+
+        double* _w2m = glm::value_ptr(w2m);
+
+        for (size_t i = 0; i < 16; i++)
+            _w2m[i] = double(src[32 + i]);
+
+        set_gridscale(src[11]);
+    }
+
     std::string _name = a->get_meta<std::string>("name", "");
     std::string _treedir = a->get_meta<std::string>("treedir", "");
     if (!_name.empty())
@@ -867,4 +890,3 @@ inline std::ostream& operator<<(std::ostream& os, const sframe& fr)
     os << fr.desc() ;
     return os;
 }
-
