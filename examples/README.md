@@ -20,8 +20,8 @@ example from `examples/simphox`:
 ```bash
 cmake -S . -B build
 cmake --build build
-./simphox
-./simphox --gpu
+./build/simphox --cpu
+./build/simphox --gpu
 ```
 
 It generates a configurable set of optical photons using the built-in torch
