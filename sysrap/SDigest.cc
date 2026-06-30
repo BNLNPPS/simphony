@@ -29,7 +29,7 @@
 
 #include "SLOG.hh"
 
-const plog::Severity SDigest::LEVEL = SLOG::EnvLevel("SDigest", "DEBUG") ;
+const plog::Severity SDigest::LEVEL = SLOG::EnvLevel("SDigest", "DEBUG");
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -270,7 +270,7 @@ std::string SDigest::DigestPathInByteRange(const char* path, int i0, int i1, uns
         beg += bytes ;   
     }
 
-    delete[] data ;
+    delete[] data;
 
     std::string sdig = FinalizeMD5String(dig.m_ctx);
     LOG(LEVEL) << " sdig " << sdig ; 
@@ -292,7 +292,7 @@ std::string SDigest::DigestPath(const char* path, unsigned bufsize)
     int bytes ; 
     while ((bytes = fread (data, 1, bufsize, fp)) != 0) dig.update(data, bytes);   
     // NB must update just with the bytes read, not the bufsize
-    delete[] data ;
+    delete[] data;
     return FinalizeMD5String(dig.m_ctx);
 }
 
@@ -328,10 +328,7 @@ std::string SDigest::DigestPath2(const char* path)
     return FinalizeMD5String(mdContext);
 }
 
-
-
-
-std::string SDigest::Buffer(const char *buffer, int length) 
+std::string SDigest::Buffer(const char* buffer, int length)
 {
     return StringMD5Digest(buffer, length);
 }
