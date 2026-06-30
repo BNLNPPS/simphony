@@ -1,0 +1,22 @@
+{
+  "name": "simphony (custom)",
+//"image": "ghcr.io/bnlnpps/simphony:cuda13.3.0-base-ubuntu26.04-optix9.1.0-geant411.4.2-cmake4.3.4",
+//"image": "ghcr.io/bnlnpps/simphony:cuda13.0.3-base-ubuntu24.04-optix9.0.0-geant411.4.2-cmake4.2.1",
+  "image": "ghcr.io/bnlnpps/simphony:cuda12.5.1-base-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3",
+//"image": "ghcr.io/bnlnpps/simphony:cuda12.1.1-base-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "remoteEnv": {
+    "CODEX_HOME": "${containerWorkspaceFolder}/.codex"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "openai.chatgpt"
+      ]
+    }
+  }
+}
