@@ -185,7 +185,7 @@ jobs:
 
       - name: Run tests
         run: |
-          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -lc 'ctest --test-dir "$SIMPHONY_BUILD" --output-on-failure'
+          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -lc 'ctest --test-dir "$SIMPHONY_BUILD"'
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPURaytrace.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_triangulated.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_triangulated_multi.sh
@@ -193,6 +193,10 @@ jobs:
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonSource_8x8SiPM.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_wavelength_shifting.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/g4trap_validation.sh
+
+      - name: Build and run external example
+        run: |
+          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -lc examples/simphox/run.sh
 
       - name: Cleanup local test image
         if: ${{ success() }}

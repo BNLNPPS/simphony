@@ -35,6 +35,7 @@ Techniques to implement the spirit of the old torch gensteps in much less code
 //#include "scurand.h"
 #include "smath.h"
 #include "sphoton.h"
+#include "squad.h"
 #include "srng_traits.h"
 #include "storchtype.h"
 
