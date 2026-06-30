@@ -201,14 +201,21 @@ inline const int* spho::cdata() const
 inline void spho::serialize( std::array<int, 4>& a ) const
 {
     assert( a.size() == N );
-    const int* ptr = cdata() ;
-    for(int i=0 ; i < N ; i++ ) a[i] = ptr[i] ;
+    a[0] = gs ;
+    a[1] = ix ;
+    a[2] = id ;
+    a[3] = static_cast<int>(uc4packed()) ;
 }
 inline void spho::load( const std::array<int, 4>& a )
 {
     assert( a.size() == N );
-    int* ptr = data() ;
-    for(int i=0 ; i < N ; i++ ) ptr[i] = a[i] ;
+    gs = a[0] ;
+    ix = a[1] ;
+    id = a[2] ;
+
+    spho_uuc4 uuc4 ;
+    uuc4.u = static_cast<unsigned>(a[3]) ;
+    uc4 = uuc4.uc4 ;
 }
 
 
@@ -219,6 +226,5 @@ inline std::ostream& operator<<(std::ostream& os, const spho& p)
     os << p.desc() ;
     return os;
 }
-
 
 

@@ -534,7 +534,7 @@ std::string SOpticksResource::Desc()
     for(unsigned i=0 ; i < keys.size() ; i++ ) 
     {
         const char* key = keys[i].c_str();
-        std::string lab = sstr::Format_("SOpticksResource::Get(\"%s\") ", key);
+        std::string lab = std::string("SOpticksResource::Get(\"") + key + "\") ";
         const char* val = Get(key); 
         ss 
             << std::setw(70) << lab.c_str() 
