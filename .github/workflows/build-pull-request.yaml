@@ -56,15 +56,15 @@ jobs:
       matrix:
         target: [release, develop]
         config: &build_configs
-          - os: ubuntu24.04
-            cuda_version: 13.2.0
+          - os: ubuntu26.04
+            cuda_version: 13.3.0
             optix_version: 9.1.0
-            geant4_version: 11.4.1
-            cmake_version: 4.3.1
+            geant4_version: 11.4.2
+            cmake_version: 4.3.4
           - os: ubuntu24.04
-            cuda_version: 13.0.2
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
           - os: ubuntu24.04
             cuda_version: 12.5.1
@@ -134,13 +134,13 @@ jobs:
         target: [release, develop]
         config: *build_configs
         exclude:
-          # The gpu runner driver does not support OptiX 9.1.0 yet
+          # The gpu runner driver does not support the ubuntu26.04/CUDA 13.3.0 image yet.
           - config:
-              os: ubuntu24.04
-              cuda_version: 13.2.0
+              os: ubuntu26.04
+              cuda_version: 13.3.0
               optix_version: 9.1.0
-              geant4_version: 11.4.1
-              cmake_version: 4.3.1
+              geant4_version: 11.4.2
+              cmake_version: 4.3.4
 
     steps:
       - name: Define environment variables

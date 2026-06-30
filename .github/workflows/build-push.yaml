@@ -4,7 +4,10 @@ on:
   push:
     branches:
       - main
-      - test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name || github.event_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -18,51 +21,40 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: release
-            os: ubuntu24.04
-            cuda_version: 13.2.0
+        target: [release, develop]
+        config:
+          - os: ubuntu26.04
+            cuda_version: 13.3.0
             optix_version: 9.1.0
-            geant4_version: 11.4.1
-            cmake_version: 4.3.1
-          - target: release
-            os: ubuntu24.04
-            cuda_version: 13.0.2
+            geant4_version: 11.4.2
+            cmake_version: 4.3.4
+            default_alias: false
+          - os: ubuntu24.04
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
-          - target: release
-            os: ubuntu22.04
-            cuda_version: 12.1.1
-            optix_version: 8.0.0
-            geant4_version: 11.3.2
-            cmake_version: 3.22.1
-          - target: develop
-            os: ubuntu24.04
-            cuda_version: 13.0.2
-            optix_version: 9.0.0
-            geant4_version: 11.4.1
-            cmake_version: 4.2.1
-          - target: develop
-            os: ubuntu24.04
+            default_alias: true
+          - os: ubuntu24.04
             cuda_version: 12.5.1
             optix_version: 9.0.0
             geant4_version: 11.4.1
             cmake_version: 3.28.3
-          - target: develop
-            os: ubuntu22.04
+            default_alias: false
+          - os: ubuntu22.04
             cuda_version: 12.1.1
             optix_version: 8.0.0
             geant4_version: 11.3.2
             cmake_version: 3.22.1
+            default_alias: false
 
     steps:
       - name: Define environment variables
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
           CACHE_IMAGE_NAME=${IMAGE_NAME}-buildcache
-          BASE_VARIANT=cuda${{ matrix.cuda_version }}-base-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          BASE_VARIANT=cuda${{ matrix.config.cuda_version }}-base-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${BUILD_VARIANT} >> $GITHUB_ENV
           echo BASE_CACHE_REF=${CACHE_IMAGE_NAME}:${BASE_VARIANT} >> $GITHUB_ENV
@@ -90,18 +82,18 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           target: ${{ matrix.target }}
           build-args: |
-            OS=${{ matrix.os }}
-            CUDA_VERSION=${{ matrix.cuda_version }}
-            OPTIX_VERSION=${{ matrix.optix_version }}
-            GEANT4_VERSION=${{ matrix.geant4_version }}
-            CMAKE_VERSION=${{ matrix.cmake_version }}
+            OS=${{ matrix.config.os }}
+            CUDA_VERSION=${{ matrix.config.cuda_version }}
+            OPTIX_VERSION=${{ matrix.config.optix_version }}
+            GEANT4_VERSION=${{ matrix.config.geant4_version }}
+            CMAKE_VERSION=${{ matrix.config.cmake_version }}
           cache-from: |
             type=registry,ref=${{ env.BASE_CACHE_REF }}
             type=registry,ref=${{ env.CACHE_REF }}
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
 
-      - name: Add devel alias tag for default CUDA
-        if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.os == 'ubuntu24.04' && matrix.cuda_version == '13.0.2' && matrix.optix_version == '9.0.0' && matrix.geant4_version == '11.4.1' && matrix.cmake_version == '4.2.1' }}
+      - name: Add alias tag for default configuration
+        if: ${{ github.ref_name == 'main' && matrix.target == 'develop' && matrix.config.default_alias }}
         run: |
           docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:develop ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
