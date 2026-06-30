@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - test
     paths:
       - Dockerfile
       - pyproject.toml
@@ -25,7 +26,6 @@ permissions:
 jobs:
 
   build-push-base:
-    if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -99,10 +99,9 @@ jobs:
           cache-from: |
             type=registry,ref=${{ env.CACHE_REF }}
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
-          no-cache-filters: ${{ github.event_name != 'push' && 'base' || '' }}
 
       - name: Add base alias tag for default CUDA
-        if: ${{ github.ref_name == 'main' && matrix.config.default_alias }}
+        if: ${{ (github.ref_name == 'main' || github.ref_name == 'test') && matrix.config.default_alias }}
         run: |
           docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:base ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
