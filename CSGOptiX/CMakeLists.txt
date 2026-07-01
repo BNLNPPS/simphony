@@ -31,6 +31,7 @@ set_target_properties(${OPTIX_PTX_TARGET} PROPERTIES CUDA_PTX_COMPILATION ON)
 target_include_directories(${OPTIX_PTX_TARGET} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/CSG>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/sysrap>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/third_party/optix-toolkit>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/qudarap>)
 target_compile_definitions(${OPTIX_PTX_TARGET}
     PUBLIC
