@@ -38,7 +38,7 @@ struct qbnd
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_TEXTURE) || defined(MOCK_CUDA)
     QBND_METHOD float4  boundary_lookup( unsigned ix, unsigned iy );
     QBND_METHOD float4  boundary_lookup( float nm, unsigned line, unsigned k );
-    QBND_METHOD void    fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx );
+    QBND_METHOD void fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx, unsigned carried_matline = 0u);
 #endif
 
 };
@@ -194,14 +194,30 @@ s.optical.x
 
 **/
 
-inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx  )
+inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wavelength, float cosTheta, unsigned long long idx, unsigned long long base_pidx, unsigned carried_matline)
 {
     const int line = boundary*_BOUNDARY_NUM_MATSUR ;      // now that are not signing boundary use 0-based
 
-    const int m1_line = cosTheta > 0.f ? line + IMAT : line + OMAT ;
+    int       m1_line = cosTheta > 0.f ? line + IMAT : line + OMAT;
     const int m2_line = cosTheta > 0.f ? line + OMAT : line + IMAT ;
     const int su_line = cosTheta > 0.f ? line + ISUR : line + OSUR ;
 
+    // F7 sibling-pair material override.
+    // GBndLib does not enumerate boundary entries for CSG sibling-pair faces
+    // (two daughters of one parent sharing a face), so OptiX may pick a boundary
+    // whose m1/m2 do not reference the photon's actual medium -> wrong material1.
+    // qsim::propagate passes the photon's carried matline (seeded from the
+    // genstep, updated each propagate_at_boundary); when it is valid we use it
+    // directly as m1 so absorption/scattering sample the true current medium.
+    // (material2 is left as the boundary's other side.)
+    // Guards: 0 = "no carry" (legacy callers); 0xFFFFFFFF = the lookup_mtline=-1
+    // sentinel from SEvt::setGenstep, not a valid table row; and the carried
+    // slot must be a material row (OMAT/IMAT), not a surface row (OSUR/ISUR).
+    const unsigned matline_slot = carried_matline & 0x3u;
+    if (carried_matline != 0u && carried_matline != 0xFFFFFFFFu && (matline_slot == unsigned(OMAT) || matline_slot == unsigned(IMAT)))
+    {
+        m1_line = int(carried_matline);
+    }
 
     s.material1 = boundary_lookup( wavelength, m1_line, 0);   // refractive_index, absorption_length, scattering_length, reemission_prob
     s.m1group2  = boundary_lookup( wavelength, m1_line, 1);   // x: material1 group_velocity, y: material2 group_velocity, z/w unused
@@ -211,7 +227,7 @@ inline QBND_METHOD void qbnd::fill_state(sstate& s, unsigned boundary, float wav
 
     s.optical = optical[su_line].u ;   // 1-based-surface-index-0-meaning-boundary/type/finish/value  (type,finish,value not used currently)
 
-    s.index.x = optical[m1_line].u.x ; // m1 index (1-based, see sstandard::make_optical)
+    s.index.x = optical[m1_line].u.x;  // m1 index (1-based, see sstandard::make_optical) -- reflects override if any
     s.index.y = optical[m2_line].u.x ; // m2 index (1-based, see sstandard::make_optical)
     s.index.z = optical[su_line].u.x ; // su index (1-based, see sstandard::make_optical)
     s.index.w = 0u ;                   // avoid undefined memory comparison issues
