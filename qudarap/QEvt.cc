@@ -718,10 +718,16 @@ NP* QEvt::gatherPhotonLite() const
     return l ;
 }
 
-
-
-
-
+/**
+ * Gensteps originate on host and are uploaded to device. Gathering from the
+ * device returns the currently uploaded launch slice.
+ */
+NP* QEvt::gatherGenstepFromDevice() const
+{
+    NP* a = NP::Make<float>(evt->num_genstep, 6, 4);
+    QU::copy_device_to_host<quad6>((quad6*)a->bytes(), evt->genstep, evt->num_genstep);
+    return a;
+}
 
 #ifndef PRODUCTION
 
@@ -736,23 +742,6 @@ NP* QEvt::gatherSeed() const
 }
 
 NP* QEvt::gatherDomain() const { return sev ? sev->gatherDomain() : nullptr ; }
-
-
-/**
-QEvt::gatherGenstepFromDevice
----------------------------------
-
-Gensteps originate on host and are uploaded to device, so downloading
-them from device is not usually done. It is for debugging only.
-
-**/
-
-NP* QEvt::gatherGenstepFromDevice() const
-{
-    NP* a = NP::Make<float>( evt->num_genstep, 6, 4 );
-    QU::copy_device_to_host<quad6>( (quad6*)a->bytes(), evt->genstep, evt->num_genstep );
-    return a ;
-}
 
 
 void QEvt::gatherSimtrace(NP* t) const
@@ -1383,6 +1372,9 @@ NP* QEvt::gatherComponent_(unsigned cmp) const
         case SCOMP_HITLITEMERGED: a = gatherHitLiteMerged()     ; break ;
         case SCOMP_HITMERGED:     a = gatherHitMerged()         ; break ;
         case SCOMP_RECORD:        a = gatherRecord();             break;
+        case SCOMP_GENSTEP:
+            a = gatherGenstepFromDevice();
+            break;
 #ifndef PRODUCTION
         case SCOMP_DOMAIN:    a = gatherDomain()      ; break ;
         case SCOMP_REC:       a = gatherRec()      ; break ;
@@ -1392,9 +1384,6 @@ NP* QEvt::gatherComponent_(unsigned cmp) const
         case SCOMP_SIMTRACE:  a = gatherSimtrace() ; break ;
         case SCOMP_TAG:       a = gatherTag()      ; break ;
         case SCOMP_FLAT:      a = gatherFlat()     ; break ;
-        case SCOMP_GENSTEP:   a = gatherGenstepFromDevice() ; break ;
-#else
-        case SCOMP_GENSTEP:   a = getGenstep()     ; break ;
 #endif
     }
     return a ;
