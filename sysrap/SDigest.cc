@@ -270,6 +270,7 @@ std::string SDigest::DigestPathInByteRange(const char* path, int i0, int i1, uns
         beg += bytes ;   
     }
 
+    fclose(fp);
     delete[] data;
 
     std::string sdig = FinalizeMD5String(dig.m_ctx);
@@ -292,6 +293,7 @@ std::string SDigest::DigestPath(const char* path, unsigned bufsize)
     int bytes ; 
     while ((bytes = fread (data, 1, bufsize, fp)) != 0) dig.update(data, bytes);   
     // NB must update just with the bytes read, not the bufsize
+    fclose(fp);
     delete[] data;
     return FinalizeMD5String(dig.m_ctx);
 }
