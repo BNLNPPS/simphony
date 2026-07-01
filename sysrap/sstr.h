@@ -15,6 +15,11 @@
 #include <charconv> // std::from_chars
 #include <type_traits>
 
+#if defined(__GNUC__) || defined(__clang__)
+#define SSTR_NOINLINE __attribute__((noinline))
+#else
+#define SSTR_NOINLINE
+#endif
 
 struct sstr
 {
@@ -91,6 +96,8 @@ struct sstr
     template<typename T>
     static std::string desc( const std::vector<T>& elem );
 
+    template <typename... Args>
+    static int FormatWrite_(char* dst, std::size_t size, const char* fmt, Args... args) SSTR_NOINLINE;
 
     template<typename ... Args>
     static std::string Format_( const char* fmt, Args ... args );
@@ -792,14 +799,26 @@ See sysrap/tests/StringFormatTest.cc
 
 **/
 
+template <typename... Args>
+int sstr::FormatWrite_(char* dst, std::size_t size, const char* fmt, Args... args)
+{
+    return std::snprintf(dst, size, fmt, args...);
+}
+
+#undef SSTR_NOINLINE
+
 template<typename ... Args>
 inline std::string sstr::Format_( const char* fmt, Args ... args )
 {
-    int sz = std::snprintf( nullptr, 0, fmt, args ... ) + 1 ; // +1 for null termination
-    assert( sz > 0 );
-    std::vector<char> buf(sz) ;
-    std::snprintf( buf.data(), sz, fmt, args ... );
-    return std::string( buf.begin(), buf.begin() + sz - 1 );  // exclude null termination
+    int len = std::snprintf(nullptr, 0, fmt, args...);
+    assert(len >= 0);
+    if (len < 0)
+        return std::string();
+
+    std::vector<char> buf(static_cast<std::size_t>(len) + 1u); // +1 for null termination
+    int               written = FormatWrite_(buf.data(), buf.size(), fmt, args...);
+    assert(written == len);
+    return std::string(buf.data(), static_cast<std::size_t>(len)); // exclude null termination
 }
 
 template std::string sstr::Format_( const char*, const char*, int, int );
