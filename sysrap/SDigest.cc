@@ -29,8 +29,132 @@
 
 #include "SLOG.hh"
 
-const plog::Severity SDigest::LEVEL = SLOG::EnvLevel("SDigest", "DEBUG") ; 
+const plog::Severity SDigest::LEVEL = SLOG::EnvLevel("SDigest", "DEBUG");
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+namespace
+{
+constexpr int MD5_DIGEST_LENGTH_BYTES = 16;
+constexpr int MD5_HEX_LENGTH = MD5_DIGEST_LENGTH_BYTES * 2;
+
+/**
+ * Format a 16-byte MD5 digest as a 32-character lowercase hex string.
+ *
+ * The caller must provide at least MD5_HEX_LENGTH + 1 bytes in `out`.
+ * Each byte is written with a three-byte snprintf window so fortified
+ * libc builds see the true remaining object size at the write location.
+ */
+void FormatMD5Hex(char* out, const unsigned char* digest)
+{
+    for (int n = 0; n < MD5_DIGEST_LENGTH_BYTES; ++n)
+        std::snprintf(&out[n * 2], 3, "%02x", (unsigned int)digest[n]);
+
+    out[MD5_HEX_LENGTH] = '\0';
+}
+
+/**
+ * Return a malloc-allocated lowercase hex string for a raw MD5 digest.
+ *
+ * This preserves the legacy SDigest::finalize/md5digest_ ownership
+ * contract: callers that receive this pointer are responsible for free().
+ */
+char* AllocMD5Hex(const unsigned char* digest)
+{
+    char* out = (char*)malloc(MD5_HEX_LENGTH + 1);
+    FormatMD5Hex(out, digest);
+    return out;
+}
+
+/**
+ * Return a std::string lowercase hex representation of a raw MD5 digest.
+ */
+std::string StringMD5Hex(const unsigned char* digest)
+{
+    char buf[MD5_HEX_LENGTH + 1];
+    FormatMD5Hex(buf, digest);
+    return std::string(buf, buf + MD5_HEX_LENGTH);
+}
+
+/**
+ * Feed a byte range into an existing MD5 context in fixed-size chunks.
+ *
+ * Chunking matches the historical implementation and keeps all MD5_Update
+ * calls on explicit byte counts instead of relying on null termination.
+ */
+void UpdateMD5(MD5_CTX& ctx, const char* buffer, int length)
+{
+    const int blocksize = 512;
+    while (length > 0)
+    {
+        const int chunk = length > blocksize ? blocksize : length;
+        MD5_Update(&ctx, buffer, chunk);
+        length -= chunk;
+        buffer += chunk;
+    }
+}
+
+/**
+ * Finalize an MD5 context and return the digest as a std::string.
+ *
+ * MD5_Final consumes/finalizes the supplied context, so callers must not
+ * update or finalize the same context again after calling this helper.
+ */
+std::string FinalizeMD5String(MD5_CTX& ctx)
+{
+    unsigned char digest[MD5_DIGEST_LENGTH_BYTES];
+    MD5_Final(digest, &ctx);
+
+    return StringMD5Hex(digest);
+}
+
+/**
+ * Finalize an MD5 context and return a malloc-allocated hex digest.
+ *
+ * This consumes/finalizes `ctx` and returns ownership to the caller.
+ */
+char* FinalizeMD5Hex(MD5_CTX& ctx)
+{
+    unsigned char digest[MD5_DIGEST_LENGTH_BYTES];
+    MD5_Final(digest, &ctx);
+
+    return AllocMD5Hex(digest);
+}
+
+/**
+ * Compute the MD5 digest of a byte range and return it as a std::string.
+ */
+std::string StringMD5Digest(const char* buffer, int length)
+{
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    UpdateMD5(ctx, buffer, length);
+
+    return FinalizeMD5String(ctx);
+}
+
+/**
+ * Compute the MD5 digest of a byte range as a malloc-allocated hex string.
+ *
+ * Used only by legacy APIs that return raw pointers; callers must free()
+ * the returned buffer.
+ */
+char* AllocMD5Digest(const char* buffer, int length)
+{
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    UpdateMD5(ctx, buffer, length);
+
+    return FinalizeMD5Hex(ctx);
+}
+} // namespace
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 /**
 
@@ -146,9 +270,10 @@ std::string SDigest::DigestPathInByteRange(const char* path, int i0, int i1, uns
         beg += bytes ;   
     }
 
-    delete[] data ; 
+    fclose(fp);
+    delete[] data;
 
-    std::string sdig =  dig.finalize();
+    std::string sdig = FinalizeMD5String(dig.m_ctx);
     LOG(LEVEL) << " sdig " << sdig ; 
     return sdig ; 
 }
@@ -168,8 +293,9 @@ std::string SDigest::DigestPath(const char* path, unsigned bufsize)
     int bytes ; 
     while ((bytes = fread (data, 1, bufsize, fp)) != 0) dig.update(data, bytes);   
     // NB must update just with the bytes read, not the bufsize
-    delete[] data ; 
-    return dig.finalize();
+    fclose(fp);
+    delete[] data;
+    return FinalizeMD5String(dig.m_ctx);
 }
 
 
@@ -185,7 +311,6 @@ std::string SDigest::DigestPath(const char* path, unsigned bufsize)
 
 std::string SDigest::DigestPath2(const char* path)
 {
-    int i;
     FILE* fp = fopen (path, "rb");
     MD5_CTX mdContext;
     int bytes;
@@ -201,116 +326,13 @@ std::string SDigest::DigestPath2(const char* path)
         MD5_Update (&mdContext, data, bytes);
 
     fclose (fp);
- 
-    constexpr int MD5_DIGEST_LENGTH = 16;
-    unsigned char digest[MD5_DIGEST_LENGTH];
-    MD5_Final (digest,&mdContext);
-    char *out = (char*)malloc(MD5_DIGEST_LENGTH*2+1);
-    for(i = 0; i < MD5_DIGEST_LENGTH; i++) snprintf(&(out[i*2]), MD5_DIGEST_LENGTH*2, "%02x", (unsigned int)digest[i]);
-    out[MD5_DIGEST_LENGTH*2] = '\0' ; 
- 
-    return out ;
+
+    return FinalizeMD5String(mdContext);
 }
 
-
-
-
-char* md5digest_str2md5_monolithic(const char *buffer, int length) 
+std::string SDigest::Buffer(const char* buffer, int length)
 {
-    // user should free the returned string digest 
-
-    MD5_CTX c;
-    MD5_Init(&c);
-
-    const int blocksize = 512 ; 
-    while (length > 0) 
-    {
-        if (length > blocksize) {
-            MD5_Update(&c, buffer, blocksize);
-        } else {
-            MD5_Update(&c, buffer, length);
-        }
-        length -= blocksize ;
-        buffer += blocksize ;
-    }
-
-    unsigned char digest[16];
-    MD5_Final(digest, &c);
-
-    // 16 binary bytes, into 32 char hex string
-    char *out = (char*)malloc(32+1);
-    for (int n = 0; n < 16; ++n) snprintf(&(out[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
-    out[32] = '\0' ;
-    return out;
-}
-
-
-std::string SDigest::Buffer(const char *buffer, int length) 
-{
-    MD5_CTX c;
-    MD5_Init(&c);
-
-    const int blocksize = 512 ; 
-    while (length > 0) 
-    {
-        if (length > blocksize) {
-            MD5_Update(&c, buffer, blocksize);
-        } else {
-            MD5_Update(&c, buffer, length);
-        }
-        length -= blocksize ;
-        buffer += blocksize ;
-    }
-
-    unsigned char digest[16];
-    MD5_Final(digest, &c);
-
-    // 16 binary bytes, into 32 char hex string
-
-    char buf[32+1] ; 
-    for (int n = 0; n < 16; ++n) std::snprintf( &buf[2*n], 32+1, "%02x", (unsigned int)digest[n]) ;
-    buf[32] = '\0' ; 
-
-    return std::string(buf, buf + 32); 
-}
-
-void md5digest_str2md5_update(MD5_CTX& ctx, char* buffer, int length) 
-{
-    const int blocksize = 512 ; 
-    while (length > 0) 
-    {
-        if (length > blocksize) {
-            MD5_Update(&ctx, buffer, blocksize);
-        } else {
-            MD5_Update(&ctx, buffer, length);
-        }
-        length -= blocksize ;
-        buffer += blocksize ;
-    }
-}
-
-char* md5digest_str2md5_finalize( MD5_CTX& ctx )
-{
-    unsigned char digest[16];
-    MD5_Final(digest, &ctx);
-
-    // 16 binary bytes, into 32 char hex string
-    char *out = (char*)malloc(32+1);
-    for (int n = 0; n < 16; ++n) snprintf(&(out[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
-    out[32] = '\0' ;
-    return out;
-}
-
-char* md5digest_str2md5(char* buffer, int length) 
-{
-    // user should free the returned string digest 
-
-    MD5_CTX ctx;
-    MD5_Init(&ctx);
-
-    md5digest_str2md5_update(ctx, buffer, length );
-
-    return md5digest_str2md5_finalize(ctx);
+    return StringMD5Digest(buffer, length);
 }
 
 
@@ -360,33 +382,30 @@ void SDigest::update(const std::string& str)
 
 void SDigest::update(char* buffer, int length)
 {
-    md5digest_str2md5_update(m_ctx, buffer, length );
+    UpdateMD5(m_ctx, buffer, length);
 }
 
 void SDigest::update_str(const char* str )
 {
-    md5digest_str2md5_update(m_ctx, (char*)str, strlen(str) );
+    UpdateMD5(m_ctx, str, strlen(str));
 }
 
 
 char* SDigest::finalize()
 {
-    return md5digest_str2md5_finalize(m_ctx);  
+    return FinalizeMD5Hex(m_ctx);
 }
 
 
 
 std::string SDigest::md5digest( const char* buffer, int len )
 {
-    char* out = md5digest_str2md5_monolithic(buffer, len);
-    std::string digest(out);
-    free(out);
-    return digest;
+    return StringMD5Digest(buffer, len);
 }
 
 const char* SDigest::md5digest_( const char* buffer, int len )
 {
-    return md5digest_str2md5_monolithic(buffer, len);
+    return AllocMD5Digest(buffer, len);
 }
 
 
@@ -394,14 +413,14 @@ std::string SDigest::digest( void* buffer, int len )
 {
     SDigest dig ; 
     dig.update( (char*)buffer, len );
-    return dig.finalize();
+    return FinalizeMD5String(dig.m_ctx);
 }
 
 std::string SDigest::digest( std::vector<std::string>& ss)
 {
     SDigest dig ; 
     for(unsigned i=0 ; i < ss.size() ; i++) dig.update( ss[i] ) ;
-    return dig.finalize();
+    return FinalizeMD5String(dig.m_ctx);
 }
 
 
@@ -413,5 +432,5 @@ std::string SDigest::digest_skipdupe( std::vector<std::string>& ss)
         if( i > 0 && ss[i].compare(ss[i-1].c_str()) == 0 ) continue ;    
         dig.update( ss[i] ) ;
     }
-    return dig.finalize();
+    return FinalizeMD5String(dig.m_ctx);
 }
