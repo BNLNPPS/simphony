@@ -184,7 +184,7 @@ jobs:
 
 
   cleanup-pr-images:
-    if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository }}
     needs: test-image
     runs-on: ubuntu-latest
     permissions:
