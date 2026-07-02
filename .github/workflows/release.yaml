@@ -5,6 +5,10 @@ on:
     tags:
       - '[0-9]*'
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   packages: write
@@ -16,13 +20,14 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          - target: release
-            os: ubuntu24.04
-            cuda_version: 13.0.2
+        target: [release]
+        config:
+          - os: ubuntu24.04
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
+            default_alias: true
 
     steps:
       - name: Define environment variables
@@ -30,8 +35,8 @@ jobs:
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
           CACHE_IMAGE_NAME=${IMAGE_NAME}-buildcache
           REF_SANITIZED=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
-          BASE_VARIANT=cuda${{ matrix.cuda_version }}-base-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          BASE_VARIANT=cuda${{ matrix.config.cuda_version }}-base-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
           echo IMAGE_TAG_SHORT=${REF_SANITIZED} >> $GITHUB_ENV
@@ -58,19 +63,23 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }}
-            ${{ env.IMAGE_NAME }}:latest
           target: ${{ matrix.target }}
           build-args: |
-            OS=${{ matrix.os }}
-            CUDA_VERSION=${{ matrix.cuda_version }}
-            OPTIX_VERSION=${{ matrix.optix_version }}
-            GEANT4_VERSION=${{ matrix.geant4_version }}
-            CMAKE_VERSION=${{ matrix.cmake_version }}
+            OS=${{ matrix.config.os }}
+            CUDA_VERSION=${{ matrix.config.cuda_version }}
+            OPTIX_VERSION=${{ matrix.config.optix_version }}
+            GEANT4_VERSION=${{ matrix.config.geant4_version }}
+            CMAKE_VERSION=${{ matrix.config.cmake_version }}
           cache-from: |
             type=registry,ref=${{ env.BASE_CACHE_REF }}
             type=registry,ref=${{ env.CACHE_REF }}
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
+
+      - name: Add alias tag for default configuration
+        if: ${{ matrix.target == 'release' && matrix.config.default_alias }}
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker buildx imagetools create -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG_SHORT }} ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   cleanup:
     runs-on: ubuntu-latest
