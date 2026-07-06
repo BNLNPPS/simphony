@@ -497,10 +497,12 @@ target_include_directories( ${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../third_party>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../third_party/optix-toolkit>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party/optix-toolkit>
 )
 
 
@@ -551,6 +553,18 @@ target_compile_definitions( ${name}
 )
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
+install(
+    FILES
+        ../third_party/optix-toolkit/README.md
+        ../third_party/optix-toolkit/LICENSE.txt
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party/optix-toolkit
+)
+install(
+    FILES
+        ../third_party/optix-toolkit/OptiXToolkit/ShaderUtil/vec_math.h
+        ../third_party/optix-toolkit/OptiXToolkit/ShaderUtil/Preprocessor.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party/optix-toolkit/OptiXToolkit/ShaderUtil
+)
 
 install(TARGETS ${name}
         EXPORT ${PROJECT_NAME}Targets
