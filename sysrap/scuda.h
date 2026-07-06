@@ -49,6 +49,25 @@
 // an otk:: qualifier.
 using namespace otk;
 
+#if CUDART_VERSION < 13000
+// CUDA 12 needs these legacy scuda overloads because the upstream compatibility
+// guard hides the adjacent OptiX Toolkit definitions with CUDA 13-only types.
+SUTIL_INLINE SUTIL_HOSTDEVICE float2 make_float2(const float3& v)
+{
+    return ::make_float2(v.x, v.y);
+}
+
+SUTIL_INLINE SUTIL_HOSTDEVICE float2 make_float2(const float4& v)
+{
+    return ::make_float2(v.x, v.y);
+}
+
+SUTIL_INLINE SUTIL_HOSTDEVICE float3 make_float3(const float4& v)
+{
+    return ::make_float3(v.x, v.y, v.z);
+}
+#endif
+
 SUTIL_INLINE SUTIL_HOSTDEVICE float normalize_cost(const float3& v)
 {
     return v.z / sqrtf(dot(v, v));
