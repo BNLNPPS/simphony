@@ -58,7 +58,6 @@ set(TEST_SOURCES
 
    SSetTest.cc
    STimeTest.cc
-   SPPMTest.cc
    SColorTest.cc
    SPackTest.cc 
    SBitTest.cc

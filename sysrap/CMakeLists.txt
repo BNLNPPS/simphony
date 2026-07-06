@@ -27,7 +27,6 @@ set(SOURCES
     SAr.cc
     SArr.cc
     SArgs.cc
-    SPPM.cc
     SVec.cc
     SNameVec.cc
     SMap.cc
@@ -48,7 +47,6 @@ set(SOURCES
     SSortKV.cc
     SPairVec.cc
     ../third_party/solarmd5/md5.c
-    SPPM.cc
     SColor.cc
     SId.cc
     SGDML.cc
@@ -235,7 +233,6 @@ set(HEADERS
     STime.hh
     s_time.h
 
-    SPPM.hh
     sppm.h 
 
     SColor.hh
