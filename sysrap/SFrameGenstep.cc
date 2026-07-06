@@ -8,7 +8,7 @@
 #include "sframe.h"
 
 #include "sc4u.h"
-#include "ssincos.h"
+#include "smath.h"
 #include "ssys.h"
 
 #include "SLOG.hh"
@@ -993,21 +993,15 @@ void SFrameGenstep::GenerateCenterExtentGenstepPhotons( std::vector<quad4>& pp, 
 
         assert(expect);
 
-        //std::cout << " i " << i << " num_photons " << num_photons << std::endl ;
-
         double u0, u1 ;
-        double phi, sinPhi,   cosPhi ;
         double sinTheta, cosTheta ;
-
-
 
         for(unsigned j=0 ; j < num_photons ; j++)
         {
             u0 = num_photons_ < 0 ? double(j)/double(num_photons-1) : rng() ;
 
-            phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
-            ssincos(phi,sinPhi,cosPhi);
-
+            const double phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
+            const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
             // cosTheta sinTheta are only used for 3D (not 2D planar gensteps)
             u1 = rng();
@@ -1095,18 +1089,16 @@ void SFrameGenstep::GenerateSimtracePhotons( std::vector<quad4>& simtrace, const
             << " OpticksGenstep_::Name " << OpticksGenstep_::Name(gencode) ;
 
         assert(expect);
-        //std::cout << " i " << i << " num_photons " << num_photons << std::endl ;
 
         double u0, u1 ;
-        double phi, sinPhi,   cosPhi ;
         double sinTheta, cosTheta ;
 
         for(unsigned j=0 ; j < num_photons ; j++)
         {
             u0 = num_photons_ < 0 ? double(j)/double(num_photons-1) : rng() ;
 
-            phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
-            ssincos(phi,sinPhi,cosPhi);
+            const double phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
+            const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
             // cosTheta sinTheta are only used for 3D (not 2D planar gensteps)
             u1 = rng();

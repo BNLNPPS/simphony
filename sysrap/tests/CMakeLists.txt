@@ -115,6 +115,7 @@ set(TEST_SOURCES
    SProfTest.cc
 
    SEvt_test.cc
+   smath_test.cc
    sseq_index_test.cc
 
    ssys_test.cc

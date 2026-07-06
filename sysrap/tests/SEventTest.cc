@@ -16,7 +16,6 @@ TEST=MakeCountGenstep SEventTest
 #include "squad.h"
 #include "sqat4.h"
 #include "stran.h"
-#include "ssincos.h"
 
 #include "SEvent.hh"
 #include "SFrameGenstep.hh"
@@ -243,5 +242,3 @@ int main(int argc, char** argv)
     OPTICKS_LOG(argc, argv);
     return SEventTest::Main() ;
 }
-
-
