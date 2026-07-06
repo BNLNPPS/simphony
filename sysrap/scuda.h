@@ -45,13 +45,19 @@
 #define M_SQRT2f 1.4142135623730951f
 #endif
 
-// Preserve the previous scuda.h contract: callers use vec_math helpers without
-// an otk:: qualifier.
+// Preserve the previous scuda.h contract by default: callers can use vec_math
+// helpers without an otk:: qualifier. New code can define
+// SCUDA_NO_GLOBAL_OTK_USING before including this header to avoid importing the
+// full OptiX Toolkit namespace into global scope.
+#ifndef SCUDA_NO_GLOBAL_OTK_USING
 using namespace otk;
+#endif
 
-#if CUDART_VERSION < 13000
+#if CUDART_VERSION < 13000 || defined(SCUDA_NO_GLOBAL_OTK_USING)
 // CUDA 12 needs these legacy scuda overloads because the upstream compatibility
 // guard hides the adjacent OptiX Toolkit definitions with CUDA 13-only types.
+// The opt-out mode also keeps this narrow legacy surface available without
+// importing every otk symbol.
 SUTIL_INLINE SUTIL_HOSTDEVICE float2 make_float2(const float3& v)
 {
     return ::make_float2(v.x, v.y);
@@ -70,7 +76,7 @@ SUTIL_INLINE SUTIL_HOSTDEVICE float3 make_float3(const float4& v)
 
 SUTIL_INLINE SUTIL_HOSTDEVICE float normalize_cost(const float3& v)
 {
-    return v.z / sqrtf(dot(v, v));
+    return v.z / sqrtf(otk::dot(v, v));
 }
 
 SUTIL_INLINE SUTIL_HOSTDEVICE float normalize_fphi(const float3& v)
@@ -166,7 +172,7 @@ inline float3 scuda::efloat3(const char* ekey, const char* fallback, char delim)
 {
     std::vector<float> fv;
     evec(fv, ekey, fallback, delim);
-    return make_float3(
+    return ::make_float3(
         fv.size() > 0 ? fv[0] : 0.f,
         fv.size() > 1 ? fv[1] : 0.f,
         fv.size() > 2 ? fv[2] : 0.f);
@@ -176,7 +182,7 @@ inline float4 scuda::efloat4(const char* ekey, const char* fallback, char delim)
 {
     std::vector<float> fv;
     evec(fv, ekey, fallback, delim);
-    return make_float4(
+    return ::make_float4(
         fv.size() > 0 ? fv[0] : 0.f,
         fv.size() > 1 ? fv[1] : 0.f,
         fv.size() > 2 ? fv[2] : 0.f,
@@ -186,7 +192,7 @@ inline float4 scuda::efloat4(const char* ekey, const char* fallback, char delim)
 inline float3 scuda::efloat3n(const char* ekey, const char* fallback, char delim)
 {
     float3 v = efloat3(ekey, fallback, delim);
-    return normalize(v);
+    return otk::normalize(v);
 }
 
 inline std::string scuda::serialize(const float2& v)
@@ -212,11 +218,11 @@ inline std::string scuda::serialize(const float4& v)
 
 inline float4 scuda::center_extent_(const float* mn, const float* mx)
 {
-    float3 center = make_float3((mn[0] + mx[0]) / 2.f, (mn[1] + mx[1]) / 2.f, (mn[2] + mx[2]) / 2.f);
-    float3 mx_rel = make_float3(mx[0], mx[1], mx[2]) - center;
-    float3 mn_rel = center - make_float3(mn[0], mn[1], mn[2]);
-    float  extent = fmaxf(fmaxf(mx_rel), fmaxf(mn_rel));
-    return make_float4(center, extent);
+    float3 center = ::make_float3((mn[0] + mx[0]) / 2.f, (mn[1] + mx[1]) / 2.f, (mn[2] + mx[2]) / 2.f);
+    float3 mx_rel = ::make_float3(mx[0], mx[1], mx[2]) - center;
+    float3 mn_rel = center - ::make_float3(mn[0], mn[1], mn[2]);
+    float  extent = fmaxf(otk::fmaxf(mx_rel), otk::fmaxf(mn_rel));
+    return otk::make_float4(center, extent);
 }
 
 inline float4 scuda::center_extent(const float3& mn, const float3& mx)
