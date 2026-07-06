@@ -1000,7 +1000,7 @@ void SFrameGenstep::GenerateCenterExtentGenstepPhotons( std::vector<quad4>& pp, 
         {
             u0 = num_photons_ < 0 ? double(j)/double(num_photons-1) : rng() ;
 
-            const double phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
+            const double phi = 2. * M_PIf * u0; // azimuthal 0->2pi
             const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
             // cosTheta sinTheta are only used for 3D (not 2D planar gensteps)
@@ -1097,7 +1097,7 @@ void SFrameGenstep::GenerateSimtracePhotons( std::vector<quad4>& simtrace, const
         {
             u0 = num_photons_ < 0 ? double(j)/double(num_photons-1) : rng() ;
 
-            const double phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
+            const double phi = 2. * M_PIf * u0; // azimuthal 0->2pi
             const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
             // cosTheta sinTheta are only used for 3D (not 2D planar gensteps)

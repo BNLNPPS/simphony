@@ -17,9 +17,9 @@ Compare intersects onto two implementations of a CSGNode
 #include <map>
 
 #include "scuda.h"
-#include "squad.h"
-#include "sqat4.h"
 #include "smath.h"
+#include "sqat4.h"
+#include "squad.h"
 
 #include "SSys.hh"
 #include "SRng.hh"
@@ -618,8 +618,8 @@ void CSGIntersectComparisonTest::random2D_ray_origin()
 }
 void CSGIntersectComparisonTest::random2D_ray_direction()
 {
-    double u2 = rng() ; 
-    const double phi = 2.*M_PIf*u2 ;     // azimuthal 0->2pi
+    double       u2 = rng();
+    const double phi = 2. * M_PIf * u2; // azimuthal 0->2pi
     const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
     vv[h] = cosPhi ; 
@@ -671,7 +671,7 @@ void CSGIntersectComparisonTest::random3D_ray_direction()
     cosTheta = u3 ; 
     sinTheta = sqrtf(1.0-cosTheta*cosTheta);
 
-    const double phi = 2.*M_PIf*u4 ;     // azimuthal 0->2pi
+    const double phi = 2. * M_PIf * u4; // azimuthal 0->2pi
     const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
     vv[X] = sinTheta * cosPhi  ; 
