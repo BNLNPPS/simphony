@@ -233,8 +233,6 @@ set(HEADERS
     STime.hh
     s_time.h
 
-    sppm.h 
-
     SColor.hh
     SId.hh
     SGDML.hh

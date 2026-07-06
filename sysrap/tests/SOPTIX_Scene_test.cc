@@ -1,5 +1,5 @@
 /**
-SOPTIX_Scene_test.cc : writes PPM image file with raytraced render of triangulated geometry
+SOPTIX_Scene_test.cc : writes NPY pixel array with raytraced render of triangulated geometry
 =============================================================================================
 
 ::
@@ -23,10 +23,10 @@ Other related tests::
 
 **/
 
-#include "ssys.h"
-#include "spath.h"
+#include "NP.hh"
 #include "scuda.h"
-#include "sppm.h"
+#include "spath.h"
+#include "ssys.h"
 
 #include "SGLM.h"
 #include "SScene.h"
@@ -127,10 +127,8 @@ int main()
     CUDA_SYNC_CHECK();
     CUDA_CHECK( cudaMemcpy( pixels, reinterpret_cast<void*>(d_pixels), pixel_bytes, cudaMemcpyDeviceToHost ));
 
-    const char* ppm_path = getenv("PPM_PATH");
-    bool        yflip = true;
-    int         ncomp = 4;
-    sppm::Write(ppm_path, gm.Width(), gm.Height(), ncomp, (unsigned char*)pixels, yflip);
+    const char* npy_path = getenv("NPY_PATH");
+    NP::Write(npy_path, (unsigned char*)pixels, gm.Height(), gm.Width(), 4);
 
     return 0;
 }
