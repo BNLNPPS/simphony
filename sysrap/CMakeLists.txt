@@ -314,7 +314,6 @@ set(HEADERS
     SPlaceCylinder.h
     SPlaceCircle.h
 
-    ssincos.h
     sxyz.h
     sc4u.h
     stag.h 
