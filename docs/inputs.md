@@ -1,43 +1,8 @@
-# Physics and simulation inputs
+# Simulation inputs
 
-This guide collects the Geant4 optical-surface notes, Simphony source
-configuration, and the input requirements that were previously documented in
-the top-level README.
-
-## Optical surface models in Geant4
-
-In Geant4, optical surface properties such as `finish`, `model`, and `type`
-are defined using enums in the `G4OpticalSurface` and `G4SurfaceProperty`
-header files:
-
-- [`G4OpticalSurface.hh`](https://github.com/Geant4/geant4/blob/geant4-11.3-release/source/materials/include/G4OpticalSurface.hh#L52-L113)
-- [`G4SurfaceProperty.hh`](https://github.com/Geant4/geant4/blob/geant4-11.3-release/source/materials/include/G4SurfaceProperty.hh#L58-L68)
-
-These enums allow users to configure how optical photons interact with
-surfaces, controlling behaviors like reflection, transmission, and absorption
-based on physical models and surface qualities. The string values
-corresponding to these enums, such as `ground`, `glisur`, and
-`dielectric_dielectric`, can also be used directly in GDML files when defining
-`<opticalsurface>` elements for geometry. Geant4 parses these attributes and
-applies the corresponding surface behavior.
-
-For a physics-motivated explanation of how Geant4 handles optical photon
-boundary interactions, refer to the [Geant4 Application Developer Guide -
-Boundary
-Process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#boundary-process).
-
-```gdml
-<gdml>
-  ...
-  <solids>
-    <opticalsurface finish="ground" model="glisur" name="medium_surface" type="dielectric_dielectric" value="1">
-      <property name="EFFICIENCY" ref="EFFICIENCY_DEF"/>
-      <property name="REFLECTIVITY" ref="REFLECTIVITY_DEF"/>
-    </opticalsurface>
-  </solids>
-  ...
-</gdml>
-```
+This guide collects the runtime configuration, application entry points, and
+GDML requirements that were previously documented in the top-level README. For
+the optical-surface physics implemented by Simphony, see [Physics](physics.md).
 
 ## Torch configuration
 
@@ -53,7 +18,7 @@ from a JSON config file, by default `config/dev.json`.
 | `numphoton` | Number of photons to generate |
 | `wavelength` | Photon wavelength (nm) |
 
-## Code differences
+## Application input modes
 
 | Feature | GPUCerenkov | GPURaytrace | GPUPhotonSource | GPUPhotonSourceMinimal | GPUPhotonFileSource |
 |---------|-------------|-------------|-----------------|------------------------|---------------------|
@@ -75,7 +40,7 @@ entirely to show the minimal GPU-only path. `GPUPhotonFileSource` reads
 photons from a user-provided text file, enabling custom photon distributions
 without code changes.
 
-## GDML scintillation properties for Geant4 11.x and Simphony
+## GDML scintillation properties
 
 For scintillation to work with both Geant4 11.x and Simphony GPU simulation,
 the GDML must define properties using the correct syntax.
@@ -109,9 +74,7 @@ the GDML must define properties using the correct syntax.
 See `tests/geom/8x8SiPM_w_CSI_optial_grease.gdml` for a complete working
 example.
 
-## User and developer defined inputs
-
-### Defining primary particles
+## Defining primary particles
 
 There are several inputs that the user or developer has to define. In
 `src/GPUCerenkov`, which imports `src/GPUCerenkov.h`, the code provides a
@@ -136,7 +99,7 @@ photons are returned in the `EndOfRunAction` function. If more photons are
 simulated than can fit in GPU RAM, the execution of a GPU call should be moved
 to `EndOfEventAction` together with retrieving the hits.
 
-### Loading geometry into Simphony
+## Loading geometry into Simphony
 
 Simphony can import geometries in GDML format automatically. About ten
 primitives are supported now, for example `G4Box`. `G4Trd` and `G4Trap` are
@@ -144,11 +107,18 @@ not supported yet. `GPUCerenkov` takes GDML files through command line
 arguments, for example `GPUCerenkov -g mygdml.gdml`.
 
 The GDML must define all optical properties of surfaces and materials,
-including:
+including the properties used by the standard GPU path:
 
 - Efficiency, used by Simphony to specify detection efficiency and assign
   sensitive surfaces
-- Refractive index
-- Group velocity
-- Reflectivity
-- Additional material and surface optical properties as required by the model
+- Material refractive index, used for optical boundary transmission and
+  reflection
+- Material group velocity
+- Reflectivity, used for non-sensor specular or diffuse explicit surfaces
+- Additional Geant4 material and surface optical properties needed for CPU-side
+  Geant4 validation, noting that not all of them are used by Simphony's
+  standard GPU propagation
+
+See [Physics](physics.md) for the current standard-GPU interpretation of GDML
+optical-surface properties such as `model`, `finish`, `type`, `EFFICIENCY`,
+and `REFLECTIVITY`.

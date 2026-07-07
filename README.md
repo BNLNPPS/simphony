@@ -73,6 +73,7 @@ while `release.yaml` publishes the `latest` alias on tagged releases. Tag entrie
 ## Documentation
 
 - [Getting started](docs/getting-started.md)
-- [Physics and simulation inputs](docs/physics-and-inputs.md)
+- [Physics](docs/physics.md)
+- [Simulation inputs](docs/inputs.md)
 - [Performance and debugging](docs/performance-and-debugging.md)
 - [Examples](examples/README.md)
