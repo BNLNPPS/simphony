@@ -790,15 +790,6 @@ inline bool sstr::prefix_suffix( char** pfx, char** sfx, const char* start_sfx, 
 
 
 
-/**
-sstr::Format_
----------------
-
-See sysrap/tests/StringFormatTest.cc
-
-
-**/
-
 template <typename... Args>
 int sstr::FormatWrite_(char* dst, std::size_t size, const char* fmt, Args... args)
 {

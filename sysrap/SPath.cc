@@ -378,14 +378,6 @@ bool SPath::LooksLikePath(const char* path)
     return path[0] == '/' || path[0] == '$' ; 
 }
 
-/**
-SPath::MakeDirs
-----------------
-
-See sysrap/tests/mkdirp.cc
-
-**/
-
 int SPath::MakeDirs( const char* path_, int mode_ )
 {
     mode_t default_mode = S_IRWXU | S_IRGRP |  S_IXGRP | S_IROTH | S_IXOTH ;
@@ -696,4 +688,3 @@ const char* SPath::Join( Args ... args )
 template const char* SPath::Join( const char*, const char* ); 
 template const char* SPath::Join( const char*, const char*, const char* ); 
 template const char* SPath::Join( const char*, const char*, const char*, const char* ); 
-

@@ -501,7 +501,6 @@ Disqualify wrong side or too close
 
    * all comparisons with nan always returns false
      but that does not kill the entire short circuit OR
-     (see sysrap/tests/signbitTest.cc)
 
 3. at first glance may think could make the disqualification based only
    x or y of intersect BUT that will nor work for all phi0 phi1 angles.
@@ -751,6 +750,5 @@ void intersect_leaf_phicut_lucas(bool& valid_isect, float4& isect, const quad& a
         isect.w = t_cand;
     }
 }
-
 
 
