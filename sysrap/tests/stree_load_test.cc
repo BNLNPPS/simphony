@@ -54,6 +54,9 @@ struct stree_load_test
     void init(int argc, char** argv);
     void init();
 
+    bool has_soname_start(const char* q_soname) const;
+    bool has_spec_soname(const char* spec) const;
+
     int get_combined_transform(int LVID, int NDID  );
     int get_inst(int idx) const ;
     int pick_lvid_ordinal_node() const ;
@@ -168,6 +171,22 @@ inline void stree_load_test::init()
     std::cout << "]stree_load_test::init\n" ;
 }
 
+inline bool stree_load_test::has_soname_start(const char* q_soname) const
+{
+    return st && q_soname && st->find_lvid(q_soname, true) > -1;
+}
+
+inline bool stree_load_test::has_spec_soname(const char* spec) const
+{
+    if (spec == nullptr)
+        return false;
+
+    std::string            s(spec);
+    std::string::size_type pos = s.find(':');
+    std::string            q_soname = pos == std::string::npos ? s : s.substr(0, pos);
+
+    return has_soname_start(q_soname.c_str());
+}
 
 inline int stree_load_test::get_combined_transform( int LVID, int NDID )
 {
@@ -380,19 +399,18 @@ inline int stree_load_test::pick_lvid_ordinal_repeat_ordinal_inst() const
     int num = v_spec.size();
     for(int i=0 ; i < num ; i++)
     {
-        const std::string& spec = v_spec[i] ;
+        const std::string& spec = v_spec[i];
+
+        if (!has_spec_soname(spec.c_str()))
+        {
+            std::cout << "stree_load_test::pick_lvid_ordinal_repeat_ordinal_inst SKIP missing soname for spec "
+                      << std::setw(4) << i << " " << std::setw(50) << spec << "\n";
+            continue;
+        }
+
         int inst_idx = st->pick_lvid_ordinal_repeat_ordinal_inst( spec.c_str() );
 
-        std::cout
-            << "("
-            << std::setw(4) << i
-            << " "
-            << std::setw(50) << spec
-            << " "
-            << std::setw(7) << inst_idx
-            << ") "
-            << "\n"
-            ;
+        std::cout << std::setw(4) << i << " " << std::setw(50) << spec << " " << std::setw(7) << inst_idx << "\n";
     }
     return 0 ;
 }
@@ -418,6 +436,12 @@ inline int stree_load_test::get_frame() const
     for(int i=0 ; i < num ; i++)
     {
         const std::string& spec = v_spec[i] ;
+        if (!has_spec_soname(spec.c_str()))
+        {
+            std::cout << "stree_load_test::get_frame SKIP missing soname for spec "
+                      << std::setw(4) << i << " " << std::setw(50) << spec << "\n";
+            continue;
+        }
         sframe             fr = st->get_frame(spec.c_str());
         std::cout << fr ;
     }
@@ -427,7 +451,11 @@ inline int stree_load_test::get_frame() const
 inline int stree_load_test::get_frame_MOI() const
 {
     const char* MOI = ssys::getenvvar("MOI", nullptr);
-    if(!MOI) return 1 ;
+    if (!MOI)
+    {
+        std::cout << "stree_load_test::get_frame_MOI SKIP no MOI envvar\n";
+        return 0;
+    }
 
     sframe mfr = st->get_frame(MOI);
     std::cout << "stree_load_test::get_frame_MOI\n" <<  MOI << "\n" << mfr << "\n"  ;
@@ -446,6 +474,16 @@ inline int stree_load_test::get_frame_scan_(const char* solid, int i0, int i1, i
         << " j0 " << j0 << " j1 " << j1
         << "\n"
         ;
+
+    if (!has_soname_start(solid))
+    {
+        std::cout
+            << "stree_load_test::get_frame_scan_"
+            << " SKIP missing soname for solid "
+            << (solid ? solid : "-")
+            << "\n";
+        return 0;
+    }
 
     for(int i=i0 ; i < i1 ; i++)
     for(int j=j0 ; j <= j1 ; j++)
@@ -489,6 +527,8 @@ inline int stree_load_test::get_prim_aabb() const
         }
 
         std::cout << label << " " << num_nd << std::endl ;
+        if (num_nd == 0)
+            continue;
 
         for(int j=0 ; j < 3 ; j++)
         {
@@ -509,6 +549,9 @@ inline int stree_load_test::get_prim_aabb() const
                 k0 = num_nd - 20   ;
                 k1 = num_nd ;
             }
+
+            k0 = std::max(0, std::min(k0, num_nd));
+            k1 = std::max(k0, std::min(k1, num_nd));
 
             for(int k=k0 ; k < k1 ; k++)
             {
@@ -604,10 +647,14 @@ inline int stree_load_test::desc_repeat_index() const
 
 inline int stree_load_test::get_global_aabb() const
 {
+    const char* tmpfold = ssys::getenvvar("TMPFOLD", "/tmp/stree_load_test");
+    std::string path = std::string(tmpfold) + "/get_global_aabb";
+
     std::cout << "[stree_load_test::get_global_aabb \n" ;
+    std::cout << " save to " << path << "\n";
 
     NPFold* f = st->get_global_aabb();
-    f->save("$TMPFOLD/get_global_aabb");
+    f->save(path.c_str());
 
     std::cout << "]stree_load_test::get_global_aabb \n" ;
     return 0 ;
@@ -624,9 +671,29 @@ This approach yields too many overlaps to wade thru
 
 inline int stree_load_test::get_global_aabb_check() const
 {
-    NPFold* f = NPFold::Load("$TMPFOLD/get_global_aabb");
+    const char* tmpfold = ssys::getenvvar("TMPFOLD", "/tmp/stree_load_test");
+    std::string path = std::string(tmpfold) + "/get_global_aabb";
+
+    NPFold* f = NPFold::Load(path.c_str());
+    if (f == nullptr)
+    {
+        std::cout
+            << "[stree_load_test::get_global_aabb_check\n"
+            << " load failed path " << path << "\n"
+            << "]stree_load_test::get_global_aabb_check\n";
+        return 0;
+    }
+
     const NP* bb = f->get("bb");
     const NP* ii = f->get("ii");
+    if (bb == nullptr || ii == nullptr)
+    {
+        std::cout
+            << "[stree_load_test::get_global_aabb_check\n"
+            << " missing arrays from path " << path << "\n"
+            << "]stree_load_test::get_global_aabb_check\n";
+        return 0;
+    }
 
     const double* bbv = bb->cvalues<double>();
     const size_t* iiv = ii->cvalues<size_t>();
@@ -672,39 +739,43 @@ inline int stree_load_test::get_global_aabb_check() const
 
 inline int stree_load_test::get_global_aabb_sibling_overlaps() const
 {
+    const char* tmpfold = ssys::getenvvar("TMPFOLD", "/tmp/stree_load_test");
+    std::string path = std::string(tmpfold) + "/get_global_aabb_sibling_overlaps";
+
     std::cout << "[stree_load_test::get_global_aabb_sibling_overlaps \n" ;
+    std::cout << " save to " << path << "\n";
 
     NPFold* f = st->get_global_aabb_sibling_overlaps();
-    f->save("$TMPFOLD/get_global_aabb_sibling_overlaps");
+    f->save(path.c_str());
 
     std::cout << "]stree_load_test::get_global_aabb_sibling_overlaps \n" ;
     return 0 ;
 }
 
-
-
-
-
-
-
 inline int stree_load_test::desc_factor_nodes(int fidx) const
 {
+    int num_factor = st ? st->get_num_factor() : 0;
+    if (fidx < 0 || fidx >= num_factor)
+    {
+        std::cout << "stree_load_test::desc_factor_nodes SKIP invalid factor index " << fidx
+                  << " num_factor " << num_factor << "\n";
+        return 0;
+    }
     std::cout << st->desc_factor_nodes(fidx) << "\n" ;
-    return 0 ;
+    return 0;
 }
-
 
 inline int stree_load_test::desc_repeat_node(int ridx, int rord) const
 {
     std::cout << st->desc_repeat_node(ridx, rord) << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_repeat_nodes() const
 {
     std::cout << st->desc_repeat_nodes() << "\n" ;
     return 0 ;
 }
-
 
 inline int stree_load_test::desc_nds() const
 {
@@ -716,11 +787,13 @@ inline int stree_load_test::desc_rem() const
     std::cout << st->desc_rem() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_tri() const
 {
     std::cout << st->desc_tri() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_NRT() const
 {
     std::cout << st->desc_NRT() << "\n" ;
