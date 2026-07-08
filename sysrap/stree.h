@@ -2179,28 +2179,19 @@ inline int stree::find_lvid_node( const char* q_spec ) const
     return nidx ;
 }
 
-
-
-
-
-
-
-
-
-
-
 /**
 stree::pick_lvid_ordinal_node
 -------------------------------
 
-For ridx_type '?' look for the frame first using rem 'R' nodes and then tri 'T' nodes
+For ridx_type '?' look for the frame first using rem 'R' nodes and then tri 'T' nodes.
+For ridx_type 'N' search the full nds vector.
 
 **/
 inline const snode* stree::pick_lvid_ordinal_node( int lvid, int lvid_ordinal, char ridx_type  ) const
 {
     const snode* _node = nullptr ;
-    assert( ridx_type == 'R' || ridx_type == 'T' || ridx_type == '?' );
-    if( ridx_type == 'R' || ridx_type == 'T' )  // remainder OR triangulated
+    assert(ridx_type == 'N' || ridx_type == 'R' || ridx_type == 'T' || ridx_type == '?');
+    if (ridx_type == 'N' || ridx_type == 'R' || ridx_type == 'T') // full, remainder OR triangulated
     {
         _node = _pick_lvid_ordinal_node(lvid, lvid_ordinal, ridx_type );
     }
