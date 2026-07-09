@@ -319,7 +319,6 @@ struct SteppingAction : G4UserSteppingAction
             return;
 
         const G4Track *track = step->GetTrack();
-        G4VPhysicalVolume *pv = track->GetVolume();
         const G4VTouchable *touch = track->GetTouchable();
 
         spho ulabel = {};
