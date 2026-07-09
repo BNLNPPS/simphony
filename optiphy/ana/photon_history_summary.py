@@ -3,11 +3,12 @@
 photon_history_summary.py : Debug analysis of opticks GPU simulation output
 =================================================================
 
-Reads photon.npy, hit.npy, inphoton.npy, record.npy, seq.npy from
-an opticks event folder and prints summary tables for debugging.
+Reads photon.npy plus optional hit.npy, inphoton.npy, record.npy, and
+seq.npy from an opticks event folder and prints summary tables for debugging.
 
-Requires OPTICKS_EVENT_MODE=HitPhoton (or DebugLite/DebugHeavy) so
-that photon and record arrays are actually saved to disk.
+Use OPTICKS_EVENT_MODE=HitPhoton for photon/hit summaries, HitPhotonSeq
+when seq.npy is needed without full records, or DebugLite/DebugHeavy when
+record.npy step traces are needed.
 
 Usage::
 
@@ -549,13 +550,14 @@ def print_output_path_help():
 
 def check_event_mode():
     """Check that OPTICKS_EVENT_MODE is set to a mode that saves output arrays."""
-    valid_modes = ("HitPhoton", "DebugLite", "DebugHeavy")
+    valid_modes = ("HitPhoton", "HitPhotonSeq", "DebugLite", "DebugHeavy")
     mode = os.environ.get("OPTICKS_EVENT_MODE")
     if mode is None:
         print("ERROR: OPTICKS_EVENT_MODE environment variable is not set.")
         print()
-        print("This script requires photon/record arrays that are only saved")
-        print("when OPTICKS_EVENT_MODE is set to one of:")
+        print("This script requires saved photon arrays. Use DebugLite or")
+        print("DebugHeavy when record.npy step traces are needed.")
+        print("Set OPTICKS_EVENT_MODE to one of:")
         print()
         for m in valid_modes:
             print(f"    export OPTICKS_EVENT_MODE={m}")
@@ -565,19 +567,19 @@ def check_event_mode():
         print()
         print("Set the variable before running the simulation, e.g.:")
         print()
-        print("    OPTICKS_EVENT_MODE=HitPhoton GPUPhotonSourceMinimal -g geo.gdml -c cfg -m run.mac")
+        print("    OPTICKS_EVENT_MODE=DebugLite GPUPhotonSourceMinimal -g geo.gdml -c cfg -m run.mac")
         print()
         print_output_path_help()
         sys.exit(1)
     if mode not in valid_modes:
-        print(f"ERROR: OPTICKS_EVENT_MODE={mode} does not save full output arrays.")
+        print(f"ERROR: OPTICKS_EVENT_MODE={mode} may not save photon output arrays.")
         print()
-        print("This script requires OPTICKS_EVENT_MODE set to one of:")
+        print("Use one of:")
         print()
         for m in valid_modes:
             print(f"    export OPTICKS_EVENT_MODE={m}")
         print()
-        print(f"Current value '{mode}' may not save photon.npy or record.npy.")
+        print(f"Current value '{mode}' may not save photon.npy, seq.npy, or record.npy.")
         print()
         print_output_path_help()
         sys.exit(1)
@@ -607,8 +609,9 @@ def main():
     if not os.path.exists(os.path.join(path, "photon.npy")):
         print(f"Error: photon.npy not found in {path}")
         print()
-        print("Make sure the simulation was run with OPTICKS_EVENT_MODE=HitPhoton")
-        print("(or DebugLite/DebugHeavy) so that output arrays are saved to disk.")
+        print("Make sure the simulation was run with OPTICKS_EVENT_MODE=HitPhoton,")
+        print("HitPhotonSeq, DebugLite, or DebugHeavy so photon.npy is saved.")
+        print("Use DebugLite or DebugHeavy when record.npy traces are needed.")
         print()
         print_output_path_help()
         sys.exit(1)
