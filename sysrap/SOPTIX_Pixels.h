@@ -3,6 +3,7 @@
 #include <cstring>
 #include <vector>
 
+#include "CUDA_CHECK.h"
 #include "NP.hh"
 
 struct SOPTIX_Pixels
@@ -41,6 +42,9 @@ inline void SOPTIX_Pixels::download()
 }
 inline void SOPTIX_Pixels::save_npy(const char* path)
 {
+    if (path == nullptr || path[0] == '\0')
+        return;
+
     const int                  width = gm.Width();
     const int                  height = gm.Height();
     const int                  ncomp = 4;

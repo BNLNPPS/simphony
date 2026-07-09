@@ -148,9 +148,26 @@ inline void SOPTIX::render(uchar4* d_pixels)
 
 inline void SOPTIX::render_npy(const char* _path)
 {
+    if (_path == nullptr)
+    {
+        std::cout << "SOPTIX::render_npy SKIP null path\n";
+        return;
+    }
+
     const char* path = spath::Resolve(_path);
+    bool        unresolved = path == nullptr || path[0] == '\0' || spath::LooksUnresolved(path, _path);
 
     std::cout << "SOPTIX::render_npy [" << (path ? path : "-") << "]\n";
+
+    if (unresolved)
+    {
+        std::cout
+            << "SOPTIX::render_npy SKIP unresolved path"
+            << " _path [" << (_path ? _path : "-") << "]"
+            << " path [" << (path ? path : "-") << "]"
+            << "\n";
+        return;
+    }
 
     if(!pix) pix = new SOPTIX_Pixels(gm) ;
     render(pix->d_pixels);
