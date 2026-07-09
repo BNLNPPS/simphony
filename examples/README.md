@@ -12,6 +12,29 @@ Simphony provides several examples demonstrating GPU-accelerated optical photon 
 | `GPUPhotonFileSource` | Optical photons (text file) | Any GDML | GPU-only, user-defined photons from file |
 | WLS test | Wavelength shifting | WLS sphere + detector shell | Validate GPU WLS physics |
 
+### Application capabilities
+
+The example applications differ mainly in where photons originate and whether
+Geant4 optical-photon tracking is also run for validation.
+
+| Feature | GPUCerenkov | GPURaytrace | GPUPhotonSource | GPUPhotonSourceMinimal | GPUPhotonFileSource |
+|---------|-------------|-------------|-----------------|------------------------|---------------------|
+| Cerenkov genstep collection | Yes | Yes | No | No | No |
+| Scintillation genstep collection | No | Yes | No | No | No |
+| Wavelength shifting (WLS) | Yes | Yes | Yes | Yes | Yes |
+| Torch photon generation | No | No | Yes | Yes | No |
+| Photon input from text file | No | No | No | No | Yes |
+| G4 optical photon tracking | Yes | Yes | Yes | No | No |
+| GPU simulation (Simphony) | Yes | Yes | Yes | Yes | Yes |
+| Multi-threaded | Yes | Yes | No | No | No |
+
+`GPUCerenkov` and `GPURaytrace` collect gensteps from charged-particle
+interactions and pass them to Simphony for GPU photon generation and tracing.
+`GPUPhotonSource` and `GPUPhotonSourceMinimal` generate photons directly from
+a torch configuration. `GPUPhotonSource` runs both G4 and GPU tracking for
+validation, while `GPUPhotonSourceMinimal` keeps only the GPU path.
+`GPUPhotonFileSource` reads user-defined photons from a text file.
+
 ### Example 1: simphox (External build smoke test)
 
 Assuming Simphony is properly installed on the system, compile and run this

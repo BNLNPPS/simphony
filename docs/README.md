@@ -7,6 +7,6 @@ Simphony.
 
 - [Getting started](getting-started.md)
 - [Physics](physics.md)
-- [Simulation inputs](inputs.md)
+- [Simulation inputs and outputs](inputs-outputs.md)
 - [Performance and debugging](performance-and-debugging.md)
 - [Examples](../examples/README.md)
