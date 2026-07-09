@@ -12,20 +12,20 @@ SOPTIX__HANDLE
 
 **/
 
-#include "ssys.h"
-#include "config.h"
+#include "SOPTIX_Accel.h"
 #include "SOPTIX_Context.h"
 #include "SOPTIX_Desc.h"
 #include "SOPTIX_MeshGroup.h"
-#include "SOPTIX_Accel.h"
-#include "SOPTIX_Scene.h"
 #include "SOPTIX_Module.h"
-#include "SOPTIX_Pipeline.h"
-#include "SOPTIX_SBT.h"
-#include "SOPTIX_Params.h"
-#include "SOPTIX_Pixels.h"
 #include "SOPTIX_Options.h"
-
+#include "SOPTIX_Params.h"
+#include "SOPTIX_Pipeline.h"
+#include "SOPTIX_Pixels.h"
+#include "SOPTIX_SBT.h"
+#include "SOPTIX_Scene.h"
+#include "config.h"
+#include "spath.h"
+#include "ssys.h"
 
 struct SOPTIX
 {
@@ -58,7 +58,7 @@ struct SOPTIX
 
     void set_param(uchar4* d_pixels);
     void render(uchar4* d_pixels);
-    void render_ppm(const char* _path);
+    void render_npy(const char* _path);
 
     std::string desc() const ;
 };
@@ -146,19 +146,35 @@ inline void SOPTIX::render(uchar4* d_pixels)
     CUDA_SYNC_CHECK();
 }
 
-
-inline void SOPTIX::render_ppm(const char* _path)
+inline void SOPTIX::render_npy(const char* _path)
 {
-    const char* path = spath::Resolve(_path);
+    if (_path == nullptr)
+    {
+        std::cout << "SOPTIX::render_npy SKIP null path\n";
+        return;
+    }
 
-    std::cout << "SOPTIX::render_ppm [" << ( path ? path : "-" ) << "]\n" ;
+    const char* path = spath::Resolve(_path);
+    bool        unresolved = path == nullptr || path[0] == '\0' || spath::LooksUnresolved(path, _path);
+
+    std::cout << "SOPTIX::render_npy [" << (path ? path : "-") << "]\n";
+
+    if (unresolved)
+    {
+        std::cout
+            << "SOPTIX::render_npy SKIP unresolved path"
+            << " _path [" << (_path ? _path : "-") << "]"
+            << " path [" << (path ? path : "-") << "]"
+            << "\n";
+        return;
+    }
 
     if(!pix) pix = new SOPTIX_Pixels(gm) ;
     render(pix->d_pixels);
 
     pix->download();
 
-    pix->save_ppm(path);
+    pix->save_npy(path);
 }
 
 
@@ -174,4 +190,3 @@ inline std::string SOPTIX::desc() const
     std::string str = ss.str() ;
     return str ;
 }
-

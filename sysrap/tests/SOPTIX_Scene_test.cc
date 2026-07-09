@@ -1,5 +1,5 @@
 /**
-SOPTIX_Scene_test.cc : writes PPM image file with raytraced render of triangulated geometry
+SOPTIX_Scene_test.cc : writes NPY pixel array with raytraced render of triangulated geometry
 =============================================================================================
 
 ::
@@ -23,10 +23,10 @@ Other related tests::
 
 **/
 
-#include "ssys.h"
-#include "spath.h"
+#include "NP.hh"
 #include "scuda.h"
-#include "sppm.h"
+#include "spath.h"
+#include "ssys.h"
 
 #include "SGLM.h"
 #include "SScene.h"
@@ -34,11 +34,12 @@ Other related tests::
 #include "SOPTIX_Context.h"
 #include "SOPTIX_Desc.h"
 #include "SOPTIX_MeshGroup.h"
-#include "SOPTIX_Scene.h"
 #include "SOPTIX_Module.h"
-#include "SOPTIX_Pipeline.h"
-#include "SOPTIX_SBT.h"
 #include "SOPTIX_Params.h"
+#include "SOPTIX_Pipeline.h"
+#include "SOPTIX_Pixels.h"
+#include "SOPTIX_SBT.h"
+#include "SOPTIX_Scene.h"
 
 int main()
 {
@@ -83,11 +84,7 @@ int main()
     int                    HANDLE = ssys::getenvint("HANDLE", -1);
     OptixTraversableHandle handle = scn.getHandle(HANDLE) ;
 
-    uchar4* d_pixels = nullptr ;
-    size_t  num_pixel = gm.Width() * gm.Height();
-    size_t  pixel_bytes = num_pixel * sizeof(uchar4);
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&d_pixels), pixel_bytes));
-    uchar4* pixels = new uchar4[num_pixel];
+    SOPTIX_Pixels pix(gm);
 
     SOPTIX_Params* d_param = SOPTIX_Params::DeviceAlloc();
     SOPTIX_Params  par;
@@ -95,7 +92,7 @@ int main()
 
     par.width = gm.Width();
     par.height = gm.Height();
-    par.pixels = d_pixels;
+    par.pixels = pix.d_pixels;
     par.tmin = gm.get_near_abs();
     par.tmax = gm.get_far_abs();
     par.cameratype = gm.cam;
@@ -125,12 +122,10 @@ int main()
                  ) );
 
     CUDA_SYNC_CHECK();
-    CUDA_CHECK( cudaMemcpy( pixels, reinterpret_cast<void*>(d_pixels), pixel_bytes, cudaMemcpyDeviceToHost ));
+    pix.download();
 
-    const char* ppm_path = getenv("PPM_PATH");
-    bool        yflip = true;
-    int         ncomp = 4;
-    sppm::Write(ppm_path, gm.Width(), gm.Height(), ncomp, (unsigned char*)pixels, yflip);
+    const char* npy_path = getenv("NPY_PATH");
+    pix.save_npy(npy_path);
 
     return 0;
 }

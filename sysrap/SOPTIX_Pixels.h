@@ -1,6 +1,10 @@
 #pragma once
 
-#include "sppm.h"
+#include <cstring>
+#include <vector>
+
+#include "CUDA_CHECK.h"
+#include "NP.hh"
 
 struct SOPTIX_Pixels
 {
@@ -8,13 +12,13 @@ struct SOPTIX_Pixels
     size_t num_pixel ; 
     size_t num_bytes ; 
     uchar4* d_pixels ;
-    uchar4* pixels ; 
+    uchar4*     pixels;
 
-    SOPTIX_Pixels(const SGLM& gm ); 
-    void init(); 
+    SOPTIX_Pixels(const SGLM& gm);
+    void init();
 
-    void download(); 
-    void save_ppm(const char* path); 
+    void download();
+    void save_npy(const char* path);
 };
 
 inline SOPTIX_Pixels::SOPTIX_Pixels(const SGLM& _gm )
@@ -35,11 +39,24 @@ inline void SOPTIX_Pixels::init()
 inline void SOPTIX_Pixels::download() 
 {
     CUDA_CHECK( cudaMemcpy( pixels, reinterpret_cast<void*>(d_pixels), num_bytes, cudaMemcpyDeviceToHost ));
-}    
-inline void SOPTIX_Pixels::save_ppm(const char* path)
-{
-    bool yflip = true ; 
-    int ncomp = 4 ; 
-    sppm::Write(path, gm.Width(), gm.Height(), ncomp, (unsigned char*)pixels, yflip );  
 }
+inline void SOPTIX_Pixels::save_npy(const char* path)
+{
+    if (path == nullptr || path[0] == '\0')
+        return;
 
+    const int                  width = gm.Width();
+    const int                  height = gm.Height();
+    const int                  ncomp = 4;
+    const size_t               row_bytes = size_t(width) * size_t(ncomp);
+    const unsigned char*       src = reinterpret_cast<const unsigned char*>(pixels);
+    std::vector<unsigned char> data(num_bytes);
+
+    for (int h = 0; h < height; h++)
+    {
+        int y = height - 1 - h;
+        std::memcpy(data.data() + size_t(y) * row_bytes, src + size_t(h) * row_bytes, row_bytes);
+    }
+
+    NP::Write(path, data.data(), height, width, ncomp);
+}

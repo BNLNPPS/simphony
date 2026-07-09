@@ -34,7 +34,7 @@ int main()
     std::cout << gm.desc();
 
     SOPTIX opx(scene, gm);
-    opx.render_ppm("$PPM_PATH");
+    opx.render_npy("$NPY_PATH");
 
     return 0;
 }
