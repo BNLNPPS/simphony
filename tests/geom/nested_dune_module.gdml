@@ -98,15 +98,18 @@
       <property name="ABSLENGTH" ref="ABSLENGTH_lAr"/>
       <property name="SCINTILLATIONCOMPONENT1" ref="SCINTCOMP_lAr"/>
       <property name="SCINTILLATIONCOMPONENT2" ref="SCINTCOMP_lAr"/>
-      <property name="FASTCOMPONENT" ref="SCINTCOMP_lAr"/>
-      <property name="SLOWCOMPONENT" ref="SCINTCOMP_lAr"/>
-      <property name="REEMISSIONPROB" ref="REEMPROB_lAr"/>
       <property name="SCINTILLATIONYIELD" ref="SCINTYIELD"/>
       <property name="RESOLUTIONSCALE" ref="RESSCALE"/>
       <property name="SCINTILLATIONTIMECONSTANT1" ref="SCINTTIMECONST1"/>
       <property name="SCINTILLATIONTIMECONSTANT2" ref="SCINTTIMECONST2"/>
       <property name="SCINTILLATIONYIELD1" ref="SCINTYIELD1"/>
       <property name="SCINTILLATIONYIELD2" ref="SCINTYIELD2"/>
+      <property name="FASTCOMPONENT" ref="SCINTCOMP_lAr"/>
+      <property name="SLOWCOMPONENT" ref="SCINTCOMP_lAr"/>
+      <property name="FASTTIMECONSTANT" ref="SCINTTIMECONST1"/>
+      <property name="SLOWTIMECONSTANT" ref="SCINTTIMECONST2"/>
+      <property name="YIELDRATIO" ref="SCINTYIELD1"/>
+      <property name="REEMISSIONPROB" ref="REEMPROB_lAr"/>
       <T unit="K" value="293.15"/>
       <MEE unit="eV" value="188"/>
       <D unit="g/cm3" value="1.396"/>
