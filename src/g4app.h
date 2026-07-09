@@ -349,8 +349,14 @@ struct SteppingAction : G4UserSteppingAction
         assert(label && label->isDefined() && "all photons are expected to be labelled");
         spho ulabel = *label;
 
-        const G4StepPoint* pre = step->GetPreStepPoint();
-        const G4StepPoint* post = step->GetPostStepPoint();
+        const G4StepPoint *pre = step->GetPreStepPoint();
+        const G4StepPoint *post = step->GetPostStepPoint();
+        G4VPhysicalVolume *post_pv = post->GetPhysicalVolume();
+        G4VPhysicalVolume *pre_pv = pre->GetPhysicalVolume();
+        bool post_is_sensitive =
+            post_pv && post_pv->GetLogicalVolume() && post_pv->GetLogicalVolume()->GetSensitiveDetector();
+        bool pre_is_sensitive =
+            pre_pv && pre_pv->GetLogicalVolume() && pre_pv->GetLogicalVolume()->GetSensitiveDetector();
 
         sev->checkPhotonLineage(ulabel);
 
@@ -364,7 +370,16 @@ struct SteppingAction : G4UserSteppingAction
 
         bool     tir;
         unsigned flag = U4StepPoint::Flag<G4OpBoundaryProcess>(post, true, tir);
-        bool     is_detect_flag = OpticksPhoton::IsSurfaceDetectFlag(flag);
+        bool is_sensitive_detect = post_is_sensitive && flag == SURFACE_SREFLECT;
+        bool is_sensitive_nan_abort = pre_is_sensitive && flag == NAN_ABORT && track->GetTrackStatus() == fStopAndKill;
+
+        if (is_sensitive_nan_abort && current_photon.flag() == SURFACE_DETECT)
+            return;
+
+        if (is_sensitive_detect || is_sensitive_nan_abort)
+            flag = SURFACE_DETECT;
+
+        bool is_detect_flag = OpticksPhoton::IsSurfaceDetectFlag(flag);
 
         const int touch_depth = touch ? touch->GetHistoryDepth() : 0;
         current_photon.hitcount_iindex =
@@ -374,6 +389,15 @@ struct SteppingAction : G4UserSteppingAction
                 : 0;
 
         U4StepPoint::Update(current_photon, post);
+
+        if (is_sensitive_detect)
+        {
+            const G4ThreeVector &mom = pre->GetMomentumDirection();
+            const G4ThreeVector &pol = pre->GetPolarization();
+
+            current_photon.mom = {static_cast<float>(mom.x()), static_cast<float>(mom.y()), static_cast<float>(mom.z())};
+            current_photon.pol = {static_cast<float>(pol.x()), static_cast<float>(pol.y()), static_cast<float>(pol.z())};
+        }
 
         current_photon.set_flag(flag);
 
