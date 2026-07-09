@@ -73,14 +73,9 @@ def compare_records(a, b):
     if a.shape != b.shape:
         raise AssertionError(f"Shape mismatch: {a.shape} != {b.shape}")
 
-    # Geant4 and Opticks record one-step-shifted sequences for this geometry,
-    # so compare aligned slices directly, including time.
-    a_cmp = a[:, 1:]
-    b_cmp = b[:, :-1]
-
     return [
         index
-        for index, (a_row, b_row) in enumerate(zip(a_cmp, b_cmp))
+        for index, (a_row, b_row) in enumerate(zip(a, b))
         if not np.allclose(a_row, b_row, rtol=0.0, atol=1e-5)
     ]
 
