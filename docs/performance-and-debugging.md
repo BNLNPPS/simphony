@@ -35,7 +35,7 @@ energy conservation behaved as expected.
 
 For the authoritative event folder layout, file schemas, `record.npy`
 quad layout, `q3` bit packing, `seq.npy` nibble encoding, and hitmask rules,
-see [Simulation inputs and outputs](inputs_outputs.md#output-protocol).
+see [Simulation inputs and outputs](inputs-outputs.md#output-protocol).
 
 ### Prerequisites
 
@@ -68,15 +68,13 @@ OPTICKS_EVENT_MODE=DebugLite GPUPhotonSourceMinimal -g tests/geom/wls_test.gdml 
 
 ### Output file location
 
-With the default output layout, GPU event arrays are written under:
+GPU event arrays are written under the configured output base (`event.output_dir` / `OPTICKS_OUT_FOLD`):
 
-```text
-$TMP/GEOM/$GEOM/<ExecutableName>/ALL0_no_opticks_event_name/A000/
-```
+    <output_base>/ALL0_no_opticks_event_name/A000/
 
 The script also accepts the parent folder and auto-selects `A000` when it
 contains the GPU event. The exact path construction and configurable segments
-are defined in the [output protocol](inputs_outputs.md#event-directory).
+are defined in the [output protocol](inputs-outputs.md#event-directory).
 
 ### Running the analysis
 

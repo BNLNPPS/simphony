@@ -3,7 +3,7 @@
 This guide describes the optical-photon physics behavior relevant to
 Simphony's GPU propagation. For runtime configuration, GDML syntax
 requirements, application input modes, and persisted event output schemas, see
-[Simulation inputs and outputs](inputs_outputs.md).
+[Simulation inputs and outputs](inputs-outputs.md).
 
 ## Optical surface models in Geant4
 
