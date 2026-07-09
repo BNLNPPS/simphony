@@ -19,6 +19,8 @@
 #include "G4ThreeVector.hh"
 #include "G4Track.hh"
 #include "G4TrackStatus.hh"
+#include "G4TrackVector.hh"
+#include "G4TrackingManager.hh"
 #include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
@@ -349,11 +351,11 @@ struct SteppingAction : G4UserSteppingAction
         assert(label && label->isDefined() && "all photons are expected to be labelled");
         spho ulabel = *label;
 
-        const G4StepPoint *pre = step->GetPreStepPoint();
-        const G4StepPoint *post = step->GetPostStepPoint();
-        G4VPhysicalVolume *post_pv = post->GetPhysicalVolume();
-        G4VPhysicalVolume *pre_pv = pre->GetPhysicalVolume();
-        bool post_is_sensitive =
+        const G4StepPoint* pre = step->GetPreStepPoint();
+        const G4StepPoint* post = step->GetPostStepPoint();
+        G4VPhysicalVolume* post_pv = post->GetPhysicalVolume();
+        G4VPhysicalVolume* pre_pv = pre->GetPhysicalVolume();
+        bool               post_is_sensitive =
             post_pv && post_pv->GetLogicalVolume() && post_pv->GetLogicalVolume()->GetSensitiveDetector();
         bool pre_is_sensitive =
             pre_pv && pre_pv->GetLogicalVolume() && pre_pv->GetLogicalVolume()->GetSensitiveDetector();
@@ -370,8 +372,8 @@ struct SteppingAction : G4UserSteppingAction
 
         bool     tir;
         unsigned flag = U4StepPoint::Flag<G4OpBoundaryProcess>(post, true, tir);
-        bool is_sensitive_detect = post_is_sensitive && flag == SURFACE_SREFLECT;
-        bool is_sensitive_nan_abort = pre_is_sensitive && flag == NAN_ABORT && track->GetTrackStatus() == fStopAndKill;
+        bool     is_sensitive_detect = post_is_sensitive && flag == SURFACE_SREFLECT;
+        bool     is_sensitive_nan_abort = pre_is_sensitive && flag == NAN_ABORT && track->GetTrackStatus() == fStopAndKill;
 
         if (is_sensitive_nan_abort && current_photon.flag() == SURFACE_DETECT)
             return;
@@ -392,8 +394,8 @@ struct SteppingAction : G4UserSteppingAction
 
         if (is_sensitive_detect)
         {
-            const G4ThreeVector &mom = pre->GetMomentumDirection();
-            const G4ThreeVector &pol = pre->GetPolarization();
+            const G4ThreeVector& mom = pre->GetMomentumDirection();
+            const G4ThreeVector& pol = pre->GetPolarization();
 
             current_photon.mom = {static_cast<float>(mom.x()), static_cast<float>(mom.y()), static_cast<float>(mom.z())};
             current_photon.pol = {static_cast<float>(pol.x()), static_cast<float>(pol.y()), static_cast<float>(pol.z())};
@@ -420,6 +422,23 @@ struct TrackingAction : G4UserTrackingAction
         U4Track::SetFabricatedLabel(track);
         spho* label = STrackInfo::GetRef(track);
         assert(label);
+    }
+
+    void LabelOpticalSecondaries(const spho& parent_label)
+    {
+        G4TrackVector* secondaries = fpTrackingManager ? fpTrackingManager->GimmeSecondaries() : nullptr;
+        if (secondaries == nullptr)
+            return;
+
+        spho child_label = parent_label.make_nextgen();
+        for (G4Track* secondary : *secondaries)
+        {
+            if (secondary == nullptr || secondary->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
+                continue;
+
+            if (STrackInfo::GetRef(secondary) == nullptr)
+                STrackInfo::Set(secondary, child_label);
+        }
     }
 
     void PreUserTrackingAction(const G4Track* track) override
@@ -472,6 +491,8 @@ struct TrackingAction : G4UserTrackingAction
         const spho* label = STrackInfo::GetRef(track);
         assert(label && label->isDefined() && "all photons are expected to be labelled");
         spho ulabel = *label;
+
+        LabelOpticalSecondaries(ulabel);
 
         if (is_stop_and_kill)
         {
