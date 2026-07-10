@@ -97,12 +97,8 @@ For example with mmlabel.txt::
     VIZMASK=5 ~/o/sysrap/tests/ssst1.sh run   # just 1:sStrutBallhead 
     VIZMASK=6 ~/o/sysrap/tests/ssst1.sh run   # just 1:uni1
     VIZMASK=7 ~/o/sysrap/tests/ssst1.sh run   # just 1:base_steel
-    VIZMASK=8 ~/o/sysrap/tests/ssst1.sh run   # just 1:uni_acrylic1 OpenGL, blank with OptiX
-    VIZMASK=9 ~/o/sysrap/tests/ssst1.sh run   # just 130:sPanel OpenGL, blank with OptiX
-
-
-NB currently the OptiX render and the OpenGL render do not match for
-VIZMASK=7,8,9 because OptiX has the 8 bit limitation but OpenGL does not. 
+    VIZMASK=8 ~/o/sysrap/tests/ssst1.sh run   # just 1:uni_acrylic1
+    VIZMASK=9 ~/o/sysrap/tests/ssst1.sh run   # just 130:sPanel
 
 **/
 
@@ -191,5 +187,4 @@ inline std::string SOPTIX_Properties::desc() const
     std::string str = ss.str(); 
     return str ; 
 }
-
 

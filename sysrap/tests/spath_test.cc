@@ -99,7 +99,7 @@ int spath_test::Resolve_null()
 
 int spath_test::Resolve_name()
 {
-    const char* name_ = "${SGLFW_Evt__shader_name:-rec_flying_point_persist}" ;
+    const char* name_ = "${SPATH_TEST_NAME:-default_name}" ;
     const char* name = spath::Resolve(name_);
     std::cout
         << " name_ [" << name_ << "]" << std::endl
@@ -855,5 +855,4 @@ int main(int argc, char** argv)
 {
     return spath_test::Main();
 }
-
 

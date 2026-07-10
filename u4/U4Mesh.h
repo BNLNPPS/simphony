@@ -21,7 +21,7 @@ allowing 3D visualization with quads as well as triangles.
 | (NP*)tpd   |  flat vtx index array : funny pyvista using all triangles              | same as tri, pv useful             |
 +------------+------------------------------------------------------------------------+------------------------------------+
 
-For use with OpenGL rendering its natural to use "vtx" and "tri".
+The "vtx" and "tri" arrays provide the conventional indexed-triangle form.
 
 **/
 
@@ -747,5 +747,4 @@ inline void U4Mesh::init_tpd()
     }
     tpd = NPX::Make<int>(_tpd);
 }
-
 

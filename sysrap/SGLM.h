@@ -900,11 +900,7 @@ inline void SGLM::init()
 SGLM::setTreeScene
 -------------------
 
-This is invoked during initialization of some test executables,
-such as from::
-
-   CSGOptiXRenderInteractiveTest::init
-   sysrap/tests/SGLFW_SOPTIX_Scene_test.cc:main
+Associates the camera state with geometry and scene data during initialization.
 
 **/
 
@@ -1024,7 +1020,7 @@ void SGLM::cursor_moved_action( const glm::vec2& a, const glm::vec2& b, unsigned
 SGLM::key_pressed_action
 -------------------------
 
-Currently only from SGLFW::key_repeated
+Applies keyboard-style navigation modifiers supplied by a client.
 
 **/
 
@@ -1186,14 +1182,10 @@ void SGLM::Command(const SGLM_Parse& parse, SGLM* gm, bool dump)  // static
 SGLM::command
 --------------
 
-The objective of this method is to provide a generic method
-to control view parameters without requiring tight coupling between
-this struct which handles view maths and various rendering systems.
-For example key callbacks into SGLFW yield control strings that
-can be passed here to change the view, where SGLFW need only know
-the SCMD interface that this method fulfils.
-Similarly UDP commands from remote commandlines picked up
-by async listeners can similarly change the view.
+The objective of this method is to provide a generic way to control view
+parameters without tightly coupling this struct to a rendering system.
+Interactive or remote clients can pass control strings through the SCMD
+interface to change the view.
 
 From old opticks see::
 
@@ -1401,7 +1393,7 @@ updateNearFar
 updateProjection
 
 updateComposite
-    putting together the composite transforms that OpenGL uses
+    putting together the world-to-clip composite transforms
 
 
 **/
@@ -1935,7 +1927,7 @@ std::string SGLM::descNearFar() const
 SGLM::updateTitle
 ------------------
 
-The *title* is set as the cxr_min.sh OpenGL window title by SGLFW::renderloop_tail
+Updates the descriptive title string exposed to clients.
 
 **/
 
@@ -2291,7 +2283,7 @@ void SGLM::increment_spin()
 SGLM::updateComposite
 ----------------------
 
-Putting together the composite transforms that OpenGL needs
+Putting together the world-to-clip composite transforms.
 
 * contrast with old Opticks ~/o/optickscore/Composition.cc Composition::update
 
@@ -2318,7 +2310,7 @@ void SGLM::updateComposite()
     IMV = _iworldspin * camera2world * look2eye * _ilookrot * eye2look * _ieyerot  * _ieyeshift  ;
     //IMV = glm::inverse( MV );
 
-    MVP = projection * MV ;    // MVP aka world2clip (needed by OpenGL shader pipeline)
+    MVP = projection * MV ;    // MVP aka world2clip
 }
 
 
@@ -3218,11 +3210,8 @@ inline void SGLM::reset_time()
 SGLM::reset_time_TT
 --------------------
 
-SGLFW.h invokes this from renderloop when press shift+T
-causing time to be reset to value of TT envvar (default 0.f)
-and the animation to be disabled.
-
-Resume animation with alt+T
+Resets time to the value of the TT environment variable (default 0.f)
+and disables animation.
 
 **/
 
@@ -3344,8 +3333,6 @@ inline void SGLM::renderloop_head()
 /**
 SGLM::renderloop_tail
 ----------------------
-
-Invoked from SGLFW::renderloop_tail
 
 At each call the simulation time is bumped until the
 time exceeds t1 at which point it is returned to t0.

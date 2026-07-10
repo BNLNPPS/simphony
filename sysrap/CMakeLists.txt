@@ -3,8 +3,6 @@ set(desc "System Level Utilities depending")
 
 find_package(nlohmann_json REQUIRED)
 find_package(plog REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
@@ -338,29 +336,9 @@ set(HEADERS
     SGLM_Modifiers.h
     SGLM_Arcball.h
 
-    GL_CHECK.h
-
     SScene.h 
     SMesh.h
     SMeshGroup.h
-
-    SGLFW.h
-    SGLFW_Keys.h
-    SGLFW_check.h
-    SGLFW_Buffer.h
-    SGLFW_VAO.h
-    SGLFW_Attrib.h
-    SGLFW_Program.h
-    SGLFW_Mesh.h
-    SGLFW_Scene.h
-    SGLFW_Record.h
-    SGLFW_Gen.h
-    SGLFW_Evt.h
-    SGLFW_GLEQ.h
-
-    SGLDisplay.h
-    SCUDA_OutputBuffer.h 
-    SGLFW_CUDA.h
 
     SCUDA_Mesh.h 
     SCU_BufferView.h 
@@ -390,8 +368,6 @@ set(HEADERS
     SOPTIX_BuildInput_CPA.h
     SOPTIX_BuildInput_IA.h
     
-    gleq.h
-
     SDir.h
     SRG.h
     SCAM.h
@@ -482,8 +458,6 @@ target_link_libraries(${name}
     plog::plog
     nlohmann_json::nlohmann_json
     CUDA::cudart
-    GLEW::GLEW
-    glfw
     glm::glm
 )
 

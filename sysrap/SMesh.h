@@ -34,10 +34,6 @@ struct SMesh
     static constexpr const bool DUMP = false ;
     static constexpr const int LIMIT = 50 ;
     static constexpr const char* NAME = "SMesh" ;
-    static constexpr const char* VTX_SPEC = "3,GL_FLOAT,GL_FALSE,12,0,false" ;  // 12=3*sizeof(float)
-    static constexpr const char* NRM_SPEC = "3,GL_FLOAT,GL_FALSE,12,0,false" ;
-    static constexpr const char* MATROW_SPEC = "4,GL_FLOAT,GL_FALSE,64,0,false" ; // 64=4*4*sizeof(float)
-
     static constexpr const bool  NRM_SMOOTH = true ;
     // 3:vec3, 12:byte_stride 0:byte_offet
 
@@ -1006,5 +1002,4 @@ inline NP* SMesh::MakeNormals( const NP* a_vtx, const NP* a_tri, bool smooth, st
 
     return a_nrm ;
 }
-
 

@@ -1289,14 +1289,7 @@ void CSGOptiX::render_save_(const char* stem_, bool inverted)
 CSGOptiX::snap : Download frame pixels and write to file as NPY.
 ------------------------------------------------------------------
 
-WIP: contrast this with SGLFW::snap_local and consider if more consolidation is possible
-
-
-SGLFW::snap_local
-    Uses OpenGL glReadPixels to download pixels and write them to file
-
-CSGOptiX::snap
-    OptiX/CUDA level download ray traced pixels and write to file
+Downloads ray-traced pixels at the OptiX/CUDA level and writes them to a file.
 
 **/
 

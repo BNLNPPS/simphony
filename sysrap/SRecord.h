@@ -3,7 +3,7 @@
 SRecord.h
 ==============
 
-Used from SGLFW_Evt.h
+Loads and summarizes photon record arrays.
 
 **/
 
@@ -22,7 +22,6 @@ Used from SGLFW_Evt.h
 struct SRecord
 {
     static constexpr const char* NAME = "record.npy" ;
-    static constexpr const char* RPOS_SPEC = "4,GL_FLOAT,GL_FALSE,64,0,false";
     static constexpr const char* _level = "SRecord__level" ;
     static int level ;
 
@@ -419,5 +418,4 @@ inline NP* SRecord::getSimtraceAtTime( const char* iprt ) const
     NP* qq = num_qq > 0 ?  NPX::ArrayFromVec<float,quad4>(vqq, 4, 4 ) : nullptr ;
     return qq ;
 }
-
 

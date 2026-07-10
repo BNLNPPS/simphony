@@ -11,11 +11,6 @@ For an encapsulated version of this see::
 
     ~/o/sysrap/tests/SOPTIX_Scene_Encapsulated_test.cc
 
-An enhanced version with OpenGL interactive control see::
-
-    SGLFW_SOPTIX_Scene_test
-    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
-
 Other related tests::
 
     SCUDA_Mesh_test
