@@ -1,8 +1,8 @@
 {
   "event": {
-    "max_bounce": 100000,
+    "max_bounce": 10000,
     "max_genstep": 10000000,
-    "maxslot": 200000000,
+    "maxslot": 1000000,
     "mode": "HitPhoton",
     "mode_lite": "Unspecified",
     "mode_merge": "Unspecified",
