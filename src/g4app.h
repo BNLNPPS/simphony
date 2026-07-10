@@ -318,13 +318,7 @@ struct SteppingAction : G4UserSteppingAction
         if (step->GetTrack()->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
 
-        const G4VProcess *process = step->GetPreStepPoint()->GetProcessDefinedStep();
-
-        if (process == nullptr)
-            return;
-
         const G4Track *track = step->GetTrack();
-        G4VPhysicalVolume *pv = track->GetVolume();
         const G4VTouchable *touch = track->GetTouchable();
 
         spho ulabel = {};
