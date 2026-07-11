@@ -43,7 +43,6 @@ inline unsigned SOPTIX_Properties::visibilityMask_FULL() const
     return ( 0x1 << limitNumBitsInstanceVisibilityMask ) - 1 ;  
 }
 
-
 /**
 SOPTIX_Properties::visibilityMask
 ------------------------------------
@@ -51,34 +50,34 @@ SOPTIX_Properties::visibilityMask
     +----------+--------------------------------------+
     |  idx     |   visibilityMask(idx)                |
     +==========+======================================+
-    |   0      |   0x1 << std::min(0, 7) = 0x1 << 0   | 
-    |   1      |   0x1 << std::min(1, 7) = 0x1 << 1   | 
-    |   2      |   0x1 << std::min(2, 7) = 0x1 << 2   | 
-    |   3      |   0x1 << std::min(3, 7) = 0x1 << 3   | 
-    |   4      |   0x1 << std::min(4, 7) = 0x1 << 4   | 
-    |   5      |   0x1 << std::min(5, 7) = 0x1 << 5   | 
-    |   6      |   0x1 << std::min(6, 7) = 0x1 << 6   | 
+    |   0      |   0x1 << std::min(0, 7) = 0x1 << 0   |
+    |   1      |   0x1 << std::min(1, 7) = 0x1 << 1   |
+    |   2      |   0x1 << std::min(2, 7) = 0x1 << 2   |
+    |   3      |   0x1 << std::min(3, 7) = 0x1 << 3   |
+    |   4      |   0x1 << std::min(4, 7) = 0x1 << 4   |
+    |   5      |   0x1 << std::min(5, 7) = 0x1 << 5   |
+    |   6      |   0x1 << std::min(6, 7) = 0x1 << 6   |
     +----------+--------------------------------------+
-    |   7      |   0x1 << std::min(7, 7) = 0x1 << 7   | 
-    |   8      |   0x1 << std::min(8, 7) = 0x1 << 7   | 
-    |   9      |   0x1 << std::min(9, 7) = 0x1 << 7   | 
-    |  10      |   0x1 << std::min(10,7) = 0x1 << 7   | 
+    |   7      |   0x1 << std::min(7, 7) = 0x1 << 7   |
+    |   8      |   0x1 << std::min(8, 7) = 0x1 << 7   |
+    |   9      |   0x1 << std::min(9, 7) = 0x1 << 7   |
+    |  10      |   0x1 << std::min(10,7) = 0x1 << 7   |
     +----------+--------------------------------------+
 
 
 For idx of 7 or more visibilityMask does not change, reflecting
-the limited number of bits of the mask. 
+the limited number of bits of the mask.
 
-This means that visibility of geometry with the first seven idx 
-(0,1,2,3,4,5,6) can be individually controlled but all the rest 
-of the geometry with higher idx can only be controlled 
-all together. 
+This means that visibility of geometry with the first seven idx
+(0,1,2,3,4,5,6) can be individually controlled but all the rest
+of the geometry with higher idx can only be controlled
+all together.
 
 For example with mmlabel.txt::
- 
+
   +-----+----------------------------------------+
   | idx | mmlable                                |
-  +=====+========================================+ 
+  +=====+========================================+
   |  0  | 3218:sWorld                            |
   |  1  | 5:PMT_3inch_pmt_solid                  |
   |  2  | 9:NNVTMCPPMTsMask_virtual              |
@@ -94,7 +93,7 @@ For example with mmlabel.txt::
 
 ::
 
-    VIZMASK=5 ~/o/sysrap/tests/ssst1.sh run   # just 1:sStrutBallhead 
+    VIZMASK=5 ~/o/sysrap/tests/ssst1.sh run   # just 1:sStrutBallhead
     VIZMASK=6 ~/o/sysrap/tests/ssst1.sh run   # just 1:uni1
     VIZMASK=7 ~/o/sysrap/tests/ssst1.sh run   # just 1:base_steel
     VIZMASK=8 ~/o/sysrap/tests/ssst1.sh run   # just 1:uni_acrylic1

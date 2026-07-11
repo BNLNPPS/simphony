@@ -164,7 +164,6 @@ inline SScene* SScene::Load_(const char* _base)
     return src ;
 }
 
-
 /**
 SScene::Load
 --------------

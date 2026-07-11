@@ -904,7 +904,6 @@ Associates the camera state with geometry and scene data during initialization.
 
 **/
 
-
 inline void SGLM::setTreeScene( stree* _tree, SScene* _scene )
 {
     tree = _tree ;
@@ -1014,7 +1013,6 @@ void SGLM::cursor_moved_action( const glm::vec2& a, const glm::vec2& b, unsigned
         //key_pressed_action(modifiers);
     }
 }
-
 
 /**
 SGLM::key_pressed_action
@@ -1176,7 +1174,6 @@ void SGLM::Command(const SGLM_Parse& parse, SGLM* gm, bool dump)  // static
         }
     }
 }
-
 
 /**
 SGLM::command
@@ -1397,7 +1394,6 @@ updateComposite
 
 
 **/
-
 
 inline void SGLM::update()
 {
@@ -1922,7 +1918,6 @@ std::string SGLM::descNearFar() const
     return s ;
 }
 
-
 /**
 SGLM::updateTitle
 ------------------
@@ -1930,8 +1925,6 @@ SGLM::updateTitle
 Updates the descriptive title string exposed to clients.
 
 **/
-
-
 
 void SGLM::updateTitle()
 {
@@ -2278,7 +2271,6 @@ void SGLM::increment_spin()
     //q_spin = q_spin * step_spin ;      // Local spin (relative to current view)
 }
 
-
 /**
 SGLM::updateComposite
 ----------------------
@@ -2310,7 +2302,7 @@ void SGLM::updateComposite()
     IMV = _iworldspin * camera2world * look2eye * _ilookrot * eye2look * _ieyerot  * _ieyeshift  ;
     //IMV = glm::inverse( MV );
 
-    MVP = projection * MV ;    // MVP aka world2clip
+    MVP = projection * MV; // MVP aka world2clip
 }
 
 

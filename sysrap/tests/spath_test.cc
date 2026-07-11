@@ -99,7 +99,7 @@ int spath_test::Resolve_null()
 
 int spath_test::Resolve_name()
 {
-    const char* name_ = "${SPATH_TEST_NAME:-default_name}" ;
+    const char* name_ = "${SPATH_TEST_NAME:-default_name}";
     const char* name = spath::Resolve(name_);
     std::cout
         << " name_ [" << name_ << "]" << std::endl
