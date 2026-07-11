@@ -41,6 +41,10 @@ jobs:
           load: true
           target: spack-base
           tags: ${{ env.SPACK_BASE_IMAGE }}
+          # Keep this on the newest Geant4 version currently declared by
+          # spack/spack-packages. The Dockerfile default can move ahead of Spack.
+          build-args: |
+            GEANT4_VERSION=11.4.1
           cache-from: type=gha,scope=${{ env.SPACK_BASE_CACHE_SCOPE }}
           cache-to: type=gha,mode=max,scope=${{ env.SPACK_BASE_CACHE_SCOPE }}
 
