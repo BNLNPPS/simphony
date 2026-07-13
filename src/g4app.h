@@ -1,4 +1,6 @@
+#include <cstring>
 #include <filesystem>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -68,15 +70,17 @@ struct PhotonHit : public G4VHit
 
 using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
 
+// NumPy hit arrays use the sphoton (4, 4) float layout.
+static_assert(sizeof(sphoton) == 16 * sizeof(float));
+static_assert(std::is_trivially_copyable_v<sphoton>);
+
 struct PhotonSD : public G4VSensitiveDetector
 {
-    simphony::Config      cfg;
     PhotonHitsCollection* photon_hit_collection{nullptr};
     G4int                 fHCID;
 
-    PhotonSD(const simphony::Config& cfg, G4String name) :
+    PhotonSD(G4String name) :
         G4VSensitiveDetector(name),
-        cfg(cfg),
         fHCID(-1)
     {
         G4String HCname = name + "_HC";
@@ -118,29 +122,15 @@ struct PhotonSD : public G4VSensitiveDetector
     {
         G4int num_g4_hits = photon_hit_collection->entries();
         G4cout << "PhotonSD::EndOfEvent: number of Geant4 hits: " << num_g4_hits << G4endl;
-
-        NP* hits = NP::Make<float>(num_g4_hits, 4, 4);
-        int i = 0;
-
-        for (PhotonHit* hit : *photon_hit_collection->GetVector())
-        {
-            float* photon_data = reinterpret_cast<float*>(&hit->photon);
-            std::copy(photon_data, photon_data + 16, hits->values<float>() + (i++) * 16);
-        }
-
-        hits->save(cfg.output_dir.string().c_str(), "g_hits.npy");
-        delete hits;
     }
 };
 
 struct DetectorConstruction : G4VUserDetectorConstruction
 {
-    simphony::Config      cfg;
     std::filesystem::path gdml_file_;
     G4GDMLParser          parser_;
 
-    DetectorConstruction(const simphony::Config& cfg, std::filesystem::path gdml_file) :
-        cfg(cfg),
+    DetectorConstruction(std::filesystem::path gdml_file) :
         gdml_file_(std::move(gdml_file))
     {
     }
@@ -168,7 +158,7 @@ struct DetectorConstruction : G4VUserDetectorConstruction
                 {
                     G4cout << "DetectorConstruction::ConstructSDandField: Attach sensitive detector to logical volume: " << logVol->GetName() << G4endl;
                     G4String  name = logVol->GetName() + "_PhotonDetector";
-                    PhotonSD* aPhotonSD = new PhotonSD(cfg, name);
+                    PhotonSD* aPhotonSD = new PhotonSD(name);
                     SDman->AddNewDetector(aPhotonSD);
                     logVol->SetSensitiveDetector(aPhotonSD);
                 }
@@ -224,10 +214,10 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
 struct EventAction : G4UserEventAction
 {
-    simphony::Config cfg;
-    SEvt*            sev;
-    G4int            total_g4_hits{0};
-    size_t           total_gpu_hits{0};
+    simphony::Config     cfg;
+    SEvt*                sev;
+    std::vector<sphoton> g4_hits;
+    std::vector<sphoton> gpu_hits;
 
     EventAction(const simphony::Config& cfg, SEvt* sev) :
         cfg(cfg),
@@ -238,6 +228,73 @@ struct EventAction : G4UserEventAction
     void BeginOfEventAction(const G4Event* event) override
     {
         sev->beginOfEvent(event->GetEventID());
+    }
+
+    void ClearHits()
+    {
+        g4_hits.clear();
+        gpu_hits.clear();
+    }
+
+    size_t CollectGPUHits(SEvt* sev_gpu)
+    {
+        const size_t num_gpu_hits = sev_gpu->getNumHit();
+        const size_t offset = gpu_hits.size();
+        gpu_hits.resize(offset + num_gpu_hits);
+
+        for (size_t idx = 0; idx < num_gpu_hits; idx++)
+            sev_gpu->getHit(gpu_hits[offset + idx], idx);
+
+        return num_gpu_hits;
+    }
+
+    size_t CollectG4Hits(const G4Event* event)
+    {
+        G4HCofThisEvent* hce = event->GetHCofThisEvent();
+        size_t           num_g4_hits = 0;
+
+        if (hce)
+        {
+            for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
+            {
+                PhotonHitsCollection* hc = dynamic_cast<PhotonHitsCollection*>(hce->GetHC(i));
+                if (hc)
+                    num_g4_hits += static_cast<size_t>(hc->entries());
+            }
+        }
+
+        g4_hits.reserve(g4_hits.size() + num_g4_hits);
+
+        if (hce)
+        {
+            for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
+            {
+                PhotonHitsCollection* hc = dynamic_cast<PhotonHitsCollection*>(hce->GetHC(i));
+                if (!hc)
+                    continue;
+
+                for (PhotonHit* hit : *hc->GetVector())
+                    g4_hits.push_back(hit->photon);
+            }
+        }
+
+        return num_g4_hits;
+    }
+
+    void SaveHits(const std::vector<sphoton>& source, const char* name) const
+    {
+        NP* hits = NP::Make<float>(source.size(), 4, 4);
+        if (!source.empty())
+            std::memcpy(hits->bytes(), source.data(), source.size() * sizeof(sphoton));
+
+        hits->save(cfg.output_dir.string().c_str(), name);
+        delete hits;
+    }
+
+    void SaveRunHits() const
+    {
+        SaveHits(gpu_hits, "s_hits.npy");
+        SaveHits(g4_hits, "g_hits.npy");
     }
 
     void EndOfEventAction(const G4Event* event) override
@@ -260,31 +317,14 @@ struct EventAction : G4UserEventAction
         G4cout << "EventAction::EndOfEventAction: GPU hits:  " << num_hits_gpu << G4endl;
         G4cout << "EventAction::EndOfEventAction: CPU hits:  " << num_hits_cpu << G4endl;
 
-        total_gpu_hits += num_hits_gpu;
-
-        NP* hits = NP::Make<float>(num_hits_gpu, 4, 4);
-
-        for (size_t idx = 0; idx < num_hits_gpu; idx++)
-        {
-            sphoton* photon = reinterpret_cast<sphoton*>(hits->values<float>() + idx * 16);
-            sev_gpu->getHit(*photon, idx);
-        }
-
-        hits->save(cfg.output_dir.string().c_str(), "s_hits.npy");
-        delete hits;
+        // Append the event-wide GPU buffer and all Geant4 hit collections to
+        // run-scoped buffers before the event data is reset by either backend.
+        size_t collected_gpu_hits = CollectGPUHits(sev_gpu);
+        size_t collected_g4_hits = CollectG4Hits(event);
+        G4cout << "EventAction::EndOfEventAction: Collected GPU hits: " << collected_gpu_hits << G4endl;
+        G4cout << "EventAction::EndOfEventAction: Collected G4  hits: " << collected_g4_hits << G4endl;
 
         gx->reset(eventID);
-
-        G4HCofThisEvent* hce = event->GetHCofThisEvent();
-        if (hce)
-        {
-            for (G4int i = 0; i < hce->GetNumberOfCollections(); i++)
-            {
-                PhotonHitsCollection* hc = dynamic_cast<PhotonHitsCollection*>(hce->GetHC(i));
-                if (hc)
-                    total_g4_hits += hc->entries();
-            }
-        }
     }
 };
 
@@ -429,14 +469,14 @@ struct RunAction : G4UserRunAction
 
     void BeginOfRunAction(const G4Run*) override
     {
-        event_action->total_g4_hits = 0;
-        event_action->total_gpu_hits = 0;
+        event_action->ClearHits();
     }
 
     void EndOfRunAction(const G4Run*) override
     {
-        G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << event_action->total_gpu_hits << G4endl;
-        G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << event_action->total_g4_hits << G4endl;
+        event_action->SaveRunHits();
+        G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << event_action->gpu_hits.size() << G4endl;
+        G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << event_action->g4_hits.size() << G4endl;
     }
 };
 
@@ -444,7 +484,7 @@ struct G4App
 {
     G4App(const simphony::Config& cfg, std::filesystem::path gdml_file) :
         sev(SEvt::CreateOrReuse_ECPU()),
-        det_cons_(new DetectorConstruction(cfg, gdml_file)),
+        det_cons_(new DetectorConstruction(gdml_file)),
         prim_gen_(new PrimaryGenerator(cfg, sev)),
         event_act_(new EventAction(cfg, sev)),
         run_act_(new RunAction(event_act_)),
