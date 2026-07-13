@@ -1,5 +1,6 @@
 #include <cstring>
 #include <filesystem>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -71,6 +72,7 @@ using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
 
 // NumPy hit arrays use the sphoton (4, 4) float layout.
 static_assert(sizeof(sphoton) == 16 * sizeof(float));
+static_assert(std::is_trivially_copyable_v<sphoton>);
 
 struct PhotonSD : public G4VSensitiveDetector
 {
@@ -212,10 +214,10 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
 struct EventAction : G4UserEventAction
 {
-    simphony::Config cfg;
-    SEvt*            sev;
-    size_t           total_g4_hits{0};
-    size_t           total_gpu_hits{0};
+    simphony::Config     cfg;
+    SEvt*                sev;
+    std::vector<sphoton> g4_hits;
+    std::vector<sphoton> gpu_hits;
 
     EventAction(const simphony::Config& cfg, SEvt* sev) :
         cfg(cfg),
@@ -228,26 +230,25 @@ struct EventAction : G4UserEventAction
         sev->beginOfEvent(event->GetEventID());
     }
 
-    size_t SaveGPUHits(SEvt* sev_gpu)
+    void ClearHits()
+    {
+        g4_hits.clear();
+        gpu_hits.clear();
+    }
+
+    size_t CollectGPUHits(SEvt* sev_gpu)
     {
         const size_t num_gpu_hits = sev_gpu->getNumHit();
-        NP*          hits = NP::Make<float>(num_gpu_hits, 4, 4);
+        const size_t offset = gpu_hits.size();
+        gpu_hits.resize(offset + num_gpu_hits);
 
         for (size_t idx = 0; idx < num_gpu_hits; idx++)
-        {
-            sphoton photon;
-            sev_gpu->getHit(photon, idx);
-            std::memcpy(hits->bytes() + idx * sizeof(sphoton), &photon, sizeof(photon));
-        }
-
-        const char* outdir = sev && sev->getSaveDir() ? sev->getSaveDir() : cfg.output_dir.c_str();
-        hits->save(outdir, "s_hits.npy");
-        delete hits;
+            sev_gpu->getHit(gpu_hits[offset + idx], idx);
 
         return num_gpu_hits;
     }
 
-    size_t SaveG4Hits(const G4Event* event)
+    size_t CollectG4Hits(const G4Event* event)
     {
         G4HCofThisEvent* hce = event->GetHCofThisEvent();
         size_t           num_g4_hits = 0;
@@ -262,8 +263,7 @@ struct EventAction : G4UserEventAction
             }
         }
 
-        NP*    hits = NP::Make<float>(num_g4_hits, 4, 4);
-        size_t hit_index = 0;
+        g4_hits.reserve(g4_hits.size() + num_g4_hits);
 
         if (hce)
         {
@@ -274,18 +274,27 @@ struct EventAction : G4UserEventAction
                     continue;
 
                 for (PhotonHit* hit : *hc->GetVector())
-                {
-                    std::memcpy(hits->bytes() + hit_index * sizeof(sphoton), &hit->photon, sizeof(hit->photon));
-                    hit_index++;
-                }
+                    g4_hits.push_back(hit->photon);
             }
         }
 
-        const char* outdir = sev && sev->getSaveDir() ? sev->getSaveDir() : cfg.output_dir.c_str();
-        hits->save(outdir, "g_hits.npy");
-        delete hits;
-
         return num_g4_hits;
+    }
+
+    void SaveHits(const std::vector<sphoton>& source, const char* name) const
+    {
+        NP* hits = NP::Make<float>(source.size(), 4, 4);
+        if (!source.empty())
+            std::memcpy(hits->bytes(), source.data(), source.size() * sizeof(sphoton));
+
+        hits->save(cfg.output_dir.string().c_str(), name);
+        delete hits;
+    }
+
+    void SaveRunHits() const
+    {
+        SaveHits(gpu_hits, "s_hits.npy");
+        SaveHits(g4_hits, "g_hits.npy");
     }
 
     void EndOfEventAction(const G4Event* event) override
@@ -308,10 +317,12 @@ struct EventAction : G4UserEventAction
         G4cout << "EventAction::EndOfEventAction: GPU hits:  " << num_hits_gpu << G4endl;
         G4cout << "EventAction::EndOfEventAction: CPU hits:  " << num_hits_cpu << G4endl;
 
-        // The EGPU event owns one event-wide GPU hit buffer, so this is the
-        // GPU counterpart to flattening all Geant4 hit collections below.
-        total_gpu_hits += SaveGPUHits(sev_gpu);
-        total_g4_hits += SaveG4Hits(event);
+        // Append the event-wide GPU buffer and all Geant4 hit collections to
+        // run-scoped buffers before the event data is reset by either backend.
+        size_t collected_gpu_hits = CollectGPUHits(sev_gpu);
+        size_t collected_g4_hits = CollectG4Hits(event);
+        G4cout << "EventAction::EndOfEventAction: Collected GPU hits: " << collected_gpu_hits << G4endl;
+        G4cout << "EventAction::EndOfEventAction: Collected G4  hits: " << collected_g4_hits << G4endl;
 
         gx->reset(eventID);
     }
@@ -458,14 +469,14 @@ struct RunAction : G4UserRunAction
 
     void BeginOfRunAction(const G4Run*) override
     {
-        event_action->total_g4_hits = 0;
-        event_action->total_gpu_hits = 0;
+        event_action->ClearHits();
     }
 
     void EndOfRunAction(const G4Run*) override
     {
-        G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << event_action->total_gpu_hits << G4endl;
-        G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << event_action->total_g4_hits << G4endl;
+        event_action->SaveRunHits();
+        G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << event_action->gpu_hits.size() << G4endl;
+        G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << event_action->g4_hits.size() << G4endl;
     }
 };
 

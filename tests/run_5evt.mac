@@ -1,0 +1,5 @@
+# Five-event batch run used by the simg4ox hit-aggregation regression test.
+/run/verbose 1
+/process/optical/boundary/setInvokeSD true
+/run/initialize
+/run/beamOn 5
