@@ -33,11 +33,11 @@ TODO:
 #include "OpticksGenstep.h"
 #include "OpticksPhoton.h"
 
-#include "sflow.h"
-#include "sqat4.h"
+#include "FlowAction.h"
 #include "sc4u.h"
-#include "sxyz.h"
 #include "sphoton.h"
+#include "sqat4.h"
+#include "sxyz.h"
 
 #include "storch.h"
 #include "scarrier.h"
@@ -105,21 +105,19 @@ struct qsim
     QSIM_METHOD static void lambertian_direction(float3* dir, const float3* normal, float orient, RNG& rng, sctx& ctx );
     QSIM_METHOD static void random_direction_marsaglia(float3* dir, RNG& rng, sctx& ctx );
     QSIM_METHOD void rayleigh_scatter(RNG& rng, sctx& ctx );
-    QSIM_METHOD int     propagate_to_boundary( unsigned& flag, RNG& rng, sctx& ctx );
-#endif
+    QSIM_METHOD FlowAction propagate_to_boundary(unsigned& flag, RNG& rng, sctx& ctx);
 
-#if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
-    QSIM_METHOD int     propagate_at_boundary(        unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance=-1.f ) const ;
-    QSIM_METHOD int     propagate_at_boundary_with_T( unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance ) const ;
+    QSIM_METHOD FlowAction propagate_at_boundary(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance = -1.f) const;
+    QSIM_METHOD FlowAction propagate_at_boundary_with_T(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance) const;
 #endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-    QSIM_METHOD int     propagate_at_surface_MultiFilm(unsigned& flag, RNG& rng, sctx& ctx );
+    QSIM_METHOD FlowAction propagate_at_surface_MultiFilm(unsigned& flag, RNG& rng, sctx& ctx);
 #endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
-    QSIM_METHOD int     propagate_at_surface(           unsigned& flag, RNG& rng, sctx& ctx );
-    QSIM_METHOD int     propagate_at_surface_Detect(    unsigned& flag, RNG& rng, sctx& ctx ) const ;
+    QSIM_METHOD FlowAction propagate_at_surface(unsigned& flag, RNG& rng, sctx& ctx);
+    QSIM_METHOD FlowAction propagate_at_surface_Detect(unsigned& flag, RNG& rng, sctx& ctx) const;
 #endif
 
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
@@ -127,7 +125,7 @@ struct qsim
     QSIM_METHOD void    reflect_specular(                      RNG& rng, sctx& ctx );
 
     QSIM_METHOD void    fake_propagate( sphoton& p, const quad2* mock_prd, RNG& rng, unsigned long long idx );
-    QSIM_FORCEINLINE_METHOD int propagate(const int bounce, RNG& rng, sctx& ctx);
+    QSIM_FORCEINLINE_METHOD FlowAction propagate(const int bounce, RNG& rng, sctx& ctx);
 
     QSIM_METHOD void    hemisphere_polarized( unsigned polz, bool inwards, RNG& rng, sctx& ctx );
     QSIM_METHOD void    generate_photon_simtrace(         quad4&   p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
@@ -711,9 +709,7 @@ TODO:
 
 **/
 
-
-
-inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sctx& ctx)
+inline QSIM_METHOD FlowAction qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sctx& ctx)
 {
     sphoton& p = ctx.p ;
     const sstate& s = ctx.s ;
@@ -806,7 +802,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
         {
             // Failed energy conservation after 100 attempts — absorb without re-emission
             flag = BULK_ABSORB;
-            return BREAK;
+            return FlowAction::Break;
         }
 
         p.wavelength = new_wavelength;
@@ -846,7 +842,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
         }
 
         flag = BULK_REEMIT;
-        return CONTINUE;
+        return FlowAction::Continue;
     }
     else if (absorption_distance <= scattering_distance)
     {
@@ -879,7 +875,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
                 if (scint == nullptr)
                 {
                     flag = BULK_ABSORB;
-                    return BREAK;
+                    return FlowAction::Break;
                 }
 
                 float u_re_wavelength = curand_uniform(&rng);
@@ -901,12 +897,12 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 #endif
 
                 flag = BULK_REEMIT ;
-                return CONTINUE;
+                return FlowAction::Continue;
             }
             else
             {
                 flag = BULK_ABSORB ;
-                return BREAK;
+                return FlowAction::Break;
             }
         }
         //  otherwise sail to boundary
@@ -922,7 +918,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
 
             flag = BULK_SCATTER;
 
-            return CONTINUE;
+            return FlowAction::Continue;
         }
           //  otherwise sail to boundary
     }     // if scattering_distance < absorption_distance
@@ -938,7 +934,7 @@ inline QSIM_METHOD int qsim::propagate_to_boundary(unsigned& flag, RNG& rng, sct
           ctx.pidx, p.pos.x, p.pos.y, p.pos.z, p.time, sail_time_delta  );
 #endif
 
-    return BOUNDARY ;
+    return FlowAction::Boundary;
 }
 #endif
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined( MOCK_CURAND ) || defined(MOCK_CUDA)
@@ -1073,7 +1069,7 @@ incidence.
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance ) const
+inline QSIM_METHOD FlowAction qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance) const
 {
 #if !defined(PRODUCTION) && defined(DEBUG_PIDX)
     if(ctx.pidx == base->pidx)
@@ -1281,7 +1277,7 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
     }
 #endif
 
-    return CONTINUE ;
+    return FlowAction::Continue;
 }
 /**
 qsim::propagate_at_boundary_with_T
@@ -1300,7 +1296,7 @@ and leave this just for testing.
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_boundary_with_T(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance ) const
+inline QSIM_METHOD FlowAction qsim::propagate_at_boundary_with_T(unsigned& flag, RNG& rng, sctx& ctx, float theTransmittance) const
 {
     sphoton& p = ctx.p ;
     const sstate& s = ctx.s ;
@@ -1374,8 +1370,7 @@ inline QSIM_METHOD int qsim::propagate_at_boundary_with_T(unsigned& flag, RNG& r
 
     flag = reflect ? BOUNDARY_REFLECT : BOUNDARY_TRANSMIT ;
 
-
-    return CONTINUE ;
+    return FlowAction::Continue;
 }
 
 #endif
@@ -1614,7 +1609,7 @@ TODO:
 */
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-inline QSIM_METHOD int qsim::propagate_at_surface_MultiFilm(unsigned& flag, RNG& rng, sctx& ctx )
+inline QSIM_METHOD FlowAction qsim::propagate_at_surface_MultiFilm(unsigned& flag, RNG& rng, sctx& ctx)
 {
 
 	const float one = 1.0f;
@@ -1665,9 +1660,9 @@ inline QSIM_METHOD int qsim::propagate_at_surface_MultiFilm(unsigned& flag, RNG&
     const float& theEfficiency = _qe/An;
 
     float u_theAbsorption = curand_uniform(&rng);
-    int action = u_theAbsorption < theAbsorption  ? BREAK : CONTINUE ;
+    FlowAction action = u_theAbsorption < theAbsorption ? FlowAction::Break : FlowAction::Continue;
 
-    if( action == BREAK )
+    if (action == FlowAction::Break)
     {
         float u_theEfficiency = curand_uniform(&rng) ;
         flag = u_theEfficiency < theEfficiency ? SURFACE_DETECT : SURFACE_ABSORB ;
@@ -1753,7 +1748,7 @@ The s.surface float4 is filled by qbnd::fill_state via::
 
 **/
 
-inline QSIM_METHOD int qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx& ctx)
+inline QSIM_METHOD FlowAction qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx& ctx)
 {
     const sstate& s = ctx.s ;
     const float& detect = s.surface.x ;
@@ -1770,10 +1765,9 @@ inline QSIM_METHOD int qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx
     tagr.add( stag_sf_burn,       u_surface_burn);
 #endif
 
+    FlowAction action = u_surface < absorb + detect ? FlowAction::Break : FlowAction::Continue;
 
-    int action = u_surface < absorb + detect ? BREAK : CONTINUE  ;
-
-    if( action == BREAK )
+    if (action == FlowAction::Break)
     {
         flag = u_surface < absorb ?
                                       SURFACE_ABSORB
@@ -1802,12 +1796,11 @@ inline QSIM_METHOD int qsim::propagate_at_surface(unsigned& flag, RNG& rng, sctx
     return action ;
 }
 
-
-inline QSIM_METHOD int qsim::propagate_at_surface_Detect(unsigned& flag, RNG& rng, sctx& ctx) const
+inline QSIM_METHOD FlowAction qsim::propagate_at_surface_Detect(unsigned& flag, RNG& rng, sctx& ctx) const
 {
     float u_surface_burn = curand_uniform(&rng);  // for random alignment
     flag = SURFACE_DETECT ;
-    return BREAK ;
+    return FlowAction::Break;
 }
 
 #endif
@@ -2046,7 +2039,7 @@ inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd,
     ctx.evt = evt ;
     ctx.pidx = idx ;
 
-    int command = START ;
+    FlowAction command = FlowAction::Start;
     int bounce = 0 ;
 #ifndef PRODUCTION
     ctx.point(bounce);
@@ -2070,7 +2063,8 @@ inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd,
 #ifndef PRODUCTION
         ctx.point(bounce);
 #endif
-        if(command == BREAK) break ;
+        if (command == FlowAction::Break)
+            break;
     }
 #ifndef PRODUCTION
     ctx.end();
@@ -2123,7 +2117,7 @@ Prior to supporting special surfaces, within the command == BOUNDARY used::
 
 **/
 
-QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx)
+QSIM_FORCEINLINE_METHOD FlowAction qsim::propagate(const int bounce, RNG& rng, sctx& ctx)
 {
     const unsigned boundary = ctx.prd->boundary() ;
     const unsigned identity = ctx.prd->identity() ; // sensor_identifier+1, 0:not-a-sensor
@@ -2171,7 +2165,7 @@ QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ct
 
     unsigned flag = 0 ;
 
-    int command = propagate_to_boundary( flag, rng, ctx );
+    FlowAction command = propagate_to_boundary(flag, rng, ctx);
     /**
     command possibilities:
 
@@ -2187,7 +2181,7 @@ QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ct
           ctx.pidx, bounce, command, flag, ctx.s.optical.x, ctx.s.optical.y );
 #endif
 
-    if( command == BOUNDARY )
+    if (command == FlowAction::Boundary)
     {
         const int& ems = ctx.s.optical.y ;
 

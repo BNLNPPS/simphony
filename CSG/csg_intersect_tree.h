@@ -22,13 +22,13 @@ Flip off the dumpxyz code without changing DEBUG_PIDXYZ with vim replace::
 using std::signbit ; 
 #endif
 
-#include "sflow.h"
-#include "csg_error.h"
-#include "csg_tranche.h"
-#include "csg_stack.h"
-#include "csg_postorder.h"
-#include "csg_pack.h"
+#include "FlowAction.h"
 #include "csg_classify.h"
+#include "csg_error.h"
+#include "csg_pack.h"
+#include "csg_postorder.h"
+#include "csg_stack.h"
+#include "csg_tranche.h"
 
 #include "f4_stack.h"
 
@@ -547,8 +547,7 @@ void intersect_tree( bool& valid_isect, float4& isect, const CSGNode* node, cons
                 }
 #endif
 
-
-                unsigned act = UNDEFINED ; 
+                FlowAction act = FlowAction::Undefined;
 
                 if(ctrl < CTRL_LOOP_A) // non-looping : CTRL_RETURN_MISS/CTRL_RETURN_A/CTRL_RETURN_B/CTRL_RETURN_FLIP_B "returning" with a push 
                 {
@@ -566,7 +565,7 @@ void intersect_tree( bool& valid_isect, float4& isect, const CSGNode* node, cons
                     ierr = csg_pop0(csg); if(ierr) break ;
                     ierr = csg_push(csg, result, nodeIdx );  if(ierr) break ;
 
-                    act = CONTINUE ;  
+                    act = FlowAction::Continue;
 
 #ifdef DEBUG_RECORD
                     if(CSGRecord::ENABLED)
@@ -625,20 +624,23 @@ void intersect_tree( bool& valid_isect, float4& isect, const CSGNode* node, cons
                    // push the tranche from here to endTree before pushing the backtracking tranche so known how to proceed after backtracking done
                    // (hmm: using tmin onwards to endTree looks a bit funny, maybe it should be advanced?)
 
-                    ierr = tranche_push( tr, endTree,  tmin );         if(ierr) break ;   
-                    ierr = tranche_push( tr, loopTree, tminAdvanced ); if(ierr) break ; 
+                    ierr = tranche_push(tr, endTree, tmin);
+                    if (ierr)
+                        break;
+                    ierr = tranche_push(tr, loopTree, tminAdvanced);
+                    if (ierr)
+                        break;
 
-                    act = BREAK  ;  
+                    act = FlowAction::Break;
 
 #ifdef DEBUG_RECORD
                     if(CSGRecord::ENABLED) 
                     printf("// %3d : looping :  act BREAK \n", nodeIdx ); 
 #endif
 
-                }                      // "return" or "recursive call" 
+                } // "return" or "recursive call"
 
-
-                if(act == BREAK) 
+                if (act == FlowAction::Break)
                 {
 #ifdef DEBUG_RECORD
                      if(CSGRecord::ENABLED) 
@@ -739,5 +741,3 @@ float distance_prim( const float3& global_position, const CSGNode* node, const f
     }
     return distance ; 
 }
-
-

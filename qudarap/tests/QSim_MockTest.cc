@@ -33,17 +33,17 @@ Standalone compile and run with::
 
 #include "NPFold.h"
 
-#include "ssys.h"
-#include "spath.h"
+#include "FlowAction.h"
+#include "scerenkov.h"
 #include "scuda.h"
-#include "smath.h"    // includes s_mock_erfinvf.h when MOCK_CUDA is defined
+#include "smath.h" // includes s_mock_erfinvf.h when MOCK_CUDA is defined
+#include "spath.h"
+#include "sphoton.h"
 #include "squad.h"
 #include "srec.h"
-#include "stag.h"
-#include "sflow.h"
-#include "sphoton.h"
 #include "sstate.h"
-#include "scerenkov.h"
+#include "ssys.h"
+#include "stag.h"
 
 #include "srngcpu.h"
 using RNG = srngcpu ; 
@@ -275,27 +275,26 @@ inline int QSim_MockTest::propagate_at_boundary_manual()
     std::vector<sphoton> pp(N*2) ; 
 
     for(int i=0 ; i < N ; i++)
-    {   
-        float frac_twopi = float(i)/float(N)  ;   
+    {
+        float frac_twopi = float(i) / float(N);
 
-        p.mom = mom ; 
-        p.set_polarization(frac_twopi) ;  
+        p.mom = mom;
+        p.set_polarization(frac_twopi);
 
-        sphoton p0(p) ;  
-        int ctrl = sim->propagate_at_boundary(flag, rng, ctx) ; 
+        sphoton    p0(p);
+        FlowAction ctrl = sim->propagate_at_boundary(flag, rng, ctx);
 
-        pp[i*2+0 ] = p0 ; 
-        pp[i*2+1 ] = p ; 
+        pp[i * 2 + 0] = p0;
+        pp[i * 2 + 1] = p;
 
-        std::cout 
-            << " flag " << OpticksPhoton::Flag(flag) 
-            << " ctrl " <<  sflow::desc(ctrl) 
+        std::cout
+            << " flag " << OpticksPhoton::Flag(flag)
+            << " ctrl " << flow_action_name(ctrl)
             << std::endl
             << " p0 " << p0.descDir()
             << std::endl
-            << " p  " << p.descDir() 
-            << std::endl
-            ; 
+            << " p  " << p.descDir()
+            << std::endl;
     }
 
     NP* a = NP::Make<float>(N,2,4,4) ; 
@@ -328,15 +327,13 @@ inline int QSim_MockTest::propagate_at_boundary()
 
     sim->bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.idx );
 
+    unsigned   flag = 0;
+    FlowAction ctrl = sim->propagate_at_boundary(flag, rng, ctx);
 
-    unsigned flag = 0 ;  
-    int ctrl = sim->propagate_at_boundary(flag, rng, ctx) ; 
-
-    std::cout 
-        << " flag " << OpticksPhoton::Flag(flag) 
-        << " ctrl " <<  sflow::desc(ctrl) 
-        << std::endl
-        ;
+    std::cout
+        << " flag " << OpticksPhoton::Flag(flag)
+        << " ctrl " << flow_action_name(ctrl)
+        << std::endl;
 
     std::cout << "p1 " << p << std::endl ; 
  
