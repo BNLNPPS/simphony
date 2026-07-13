@@ -1,4 +1,4 @@
-#include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <utility>
 #include <vector>
@@ -68,6 +68,9 @@ struct PhotonHit : public G4VHit
 };
 
 using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
+
+// NumPy hit arrays use the sphoton (4, 4) float layout.
+static_assert(sizeof(sphoton) == 16 * sizeof(float));
 
 struct PhotonSD : public G4VSensitiveDetector
 {
@@ -232,8 +235,9 @@ struct EventAction : G4UserEventAction
 
         for (size_t idx = 0; idx < num_gpu_hits; idx++)
         {
-            sphoton* photon = reinterpret_cast<sphoton*>(hits->values<float>() + idx * 16);
-            sev_gpu->getHit(*photon, idx);
+            sphoton photon;
+            sev_gpu->getHit(photon, idx);
+            std::memcpy(hits->bytes() + idx * sizeof(sphoton), &photon, sizeof(photon));
         }
 
         hits->save(cfg.output_dir.string().c_str(), "s_hits.npy");
@@ -270,8 +274,7 @@ struct EventAction : G4UserEventAction
 
                 for (PhotonHit* hit : *hc->GetVector())
                 {
-                    const float* photon_data = reinterpret_cast<const float*>(&hit->photon);
-                    std::copy(photon_data, photon_data + 16, hits->values<float>() + hit_index * 16);
+                    std::memcpy(hits->bytes() + hit_index * sizeof(sphoton), &hit->photon, sizeof(hit->photon));
                     hit_index++;
                 }
             }
