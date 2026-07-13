@@ -66,6 +66,7 @@ TODO:
 #include "qrng.h"
 #include "qscint.h"
 #include "qwls.h"
+#include "qgxs.h"
 #include "tcomplex.h"
 
 struct qcerenkov ;
@@ -81,6 +82,7 @@ struct qsim
     qscint*             scint ;
     qwls *wls;
     qpmt<float>*        pmt ;
+    qgxs*               gxs ;   // non-null switches propagate to gamma (soft X-ray) mode, see QSim::setGXS
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #else
@@ -128,6 +130,7 @@ struct qsim
 
     QSIM_METHOD void    fake_propagate( sphoton& p, const quad2* mock_prd, RNG& rng, unsigned long long idx );
     QSIM_FORCEINLINE_METHOD int propagate(const int bounce, RNG& rng, sctx& ctx);
+    QSIM_METHOD int     propagate_gamma(const int bounce, RNG& rng, sctx& ctx);
 
     QSIM_METHOD void    hemisphere_polarized( unsigned polz, bool inwards, RNG& rng, sctx& ctx );
     QSIM_METHOD void    generate_photon_simtrace(         quad4&   p, RNG& rng, const quad6& gs, unsigned long long photon_id, unsigned genstep_id ) const ;
@@ -149,7 +152,8 @@ inline qsim::qsim() // instanciated on CPU (see QSim::init_sim) and copied to de
     cerenkov(nullptr),
     scint(nullptr),
     wls(nullptr),
-    pmt(nullptr)
+    pmt(nullptr),
+    gxs(nullptr)
 {
 }
 #endif
@@ -2125,6 +2129,8 @@ Prior to supporting special surfaces, within the command == BOUNDARY used::
 
 QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ctx)
 {
+    if( gxs ) return propagate_gamma(bounce, rng, ctx);   // gamma (soft X-ray) mode, see qgxs.h
+
     const unsigned boundary = ctx.prd->boundary() ;
     const unsigned identity = ctx.prd->identity() ; // sensor_identifier+1, 0:not-a-sensor
     const unsigned iindex = ctx.prd->iindex() ;
@@ -2225,6 +2231,61 @@ QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ct
 
     return command ;
 }
+
+/**
+qsim::propagate_gamma : one bounce of the gamma (soft X-ray) transport mode
+----------------------------------------------------------------------------
+
+Active when qsim::gxs is non-null (see QSim::setGXS). The photon energy lives
+in the wavelength slot, in keV. X-rays fly at c through the vacuum and
+interact only AT the boundary: qgxs::boundary_reflect3 either reflects
+(BOUNDARY_REFLECT, CONTINUE) or kills the photon at the surface
+(BULK_ABSORB, BREAK) -- the reflect-or-absorb model of the SynradG4
+benchmark reference (see qgxs.h). Absorbed photons are scored at the boundary
+contact point, so wall hits are selected with hitmask "AB".
+**/
+
+QSIM_METHOD int qsim::propagate_gamma(const int bounce, RNG& rng, sctx& ctx)
+{
+    const unsigned boundary = ctx.prd->boundary() ;
+    const unsigned identity = ctx.prd->identity() ;
+    const unsigned iindex = ctx.prd->iindex() ;
+    float3 nrm = *ctx.prd->normal() ;
+    float cosTheta = dot(ctx.p.mom, nrm ) ;
+    const float distance_to_boundary = ctx.prd->distance() ;
+
+    if( cosTheta < 0.f )
+    {
+        // Reflect-or-absorb photons never leave the vacuum, so a backfacing hit
+        // can only be the traversal tie-breaking a shared-edge hit onto the
+        // wrong twin facet (systematic for grazing rays on triangulated
+        // walls). Reinterpret as the frontface.
+        nrm = -1.f*nrm ;
+        cosTheta = -cosTheta ;
+    }
+
+    ctx.p.set_prd(boundary, identity, cosTheta, iindex );
+
+    ctx.p.pos  += distance_to_boundary*ctx.p.mom ;
+    ctx.p.time += distance_to_boundary/qgxs::SPEED_OF_LIGHT ;
+
+    unsigned flag ;
+    int command ;
+    if( gxs->boundary_reflect3( rng, ctx.p, nrm, cosTheta ) )
+    {
+        ctx.p.pos += qgxs::PUSH*(-1.f*nrm) ;   // push off along the vacuum-side normal
+        flag = BOUNDARY_REFLECT ;
+        command = CONTINUE ;
+    }
+    else
+    {
+        flag = BULK_ABSORB ;   // killed AT the surface, incl. the cap planes
+        command = BREAK ;
+    }
+    ctx.p.set_flag(flag);
+    return command ;
+}
+
 /**
 Q: Where does ctx.s.optical come from ?
 A: Populated in qbnd::fill_state based on boundary and cosTheta sign to get the

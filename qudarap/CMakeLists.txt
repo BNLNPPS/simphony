@@ -43,6 +43,8 @@ set(SOURCES
     QScint.cc
     QScint.cu
 
+    QGXS.cc
+
     QWls.cc
 
     QCerenkovIntegral.cc
@@ -109,6 +111,10 @@ SET(HEADERS
 
     QScint.hh
     qscint.h
+
+    QGXS.hh
+    qgxs.h
+    qgxs_synradg4.h
 
     QWls.hh
     qwls.h

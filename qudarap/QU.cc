@@ -166,6 +166,7 @@ template qbnd*          QU::UploadArray<qbnd>(const qbnd* array, unsigned num_it
 template sevent*        QU::UploadArray<sevent>(const sevent* array, unsigned num_items, const char* label) ;
 template qdebug*        QU::UploadArray<qdebug>(const qdebug* array, unsigned num_items, const char* label) ;
 template qscint*        QU::UploadArray<qscint>(const qscint* array, unsigned num_items, const char* label) ;
+template qgxs*          QU::UploadArray<qgxs>(const qgxs* array, unsigned num_items, const char* label) ;
 template qwls *QU::UploadArray<qwls>(const qwls *array, unsigned num_items, const char *label);
 template qcerenkov*     QU::UploadArray<qcerenkov>(const qcerenkov* array, unsigned num_items, const char* label) ;
 template qbase*         QU::UploadArray<qbase>(const qbase* array, unsigned num_items, const char* label) ;
@@ -578,6 +579,7 @@ template void QU::copy_host_to_device<sphotonlite>(  sphotonlite* d,  const spho
 template void QU::copy_host_to_device<quad6>(    quad6* d,    const quad6* h, unsigned num_items);
 template void QU::copy_host_to_device<quad2>(    quad2* d,    const quad2* h, unsigned num_items);
 template void QU::copy_host_to_device<Philox>(   Philox* d,   const Philox* h,   unsigned num_items);
+template void QU::copy_host_to_device<qsim>(     qsim* d,     const qsim* h,     unsigned num_items);
 
 /**
 QU::NumItems

@@ -403,6 +403,24 @@ void QSim::setLauncher(SSimulator* cx_ )
     cx = cx_ ;
 }
 
+/**
+QSim::setGXS
+-------------
+
+Late hook switching qsim::propagate into gamma (soft X-ray) mode by setting
+the device qgxs pointer and re-uploading the qsim struct. Late so callers can
+enable the mode any time after QSim instanciation at geometry translation
+time. See QGXS.hh / qgxs.h.
+
+**/
+void QSim::setGXS(qgxs* d_gxs)
+{
+    assert( sim && d_sim );
+    sim->gxs = d_gxs ;
+    QU::copy_host_to_device<qsim>( d_sim, sim, 1 );
+    LOG(LEVEL) << " enabled gamma (soft X-ray) propagate mode, d_gxs " << d_gxs ;
+}
+
 
 /**
 QSim::post_launch

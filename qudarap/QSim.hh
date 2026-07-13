@@ -33,6 +33,7 @@ template <typename T> struct QProp ;
 template <typename T> struct QPMT ;
 
 struct qsim ;
+struct qgxs ;
 
 struct QBase ;
 struct QEvt ;
@@ -120,6 +121,7 @@ private:
 
 public:
     void setLauncher(SSimulator* cx_ );
+    void setGXS(qgxs* d_gxs);   // late hook enabling gamma (soft X-ray) propagate mode, see QGXS.hh
 
     static constexpr const char* QSim__simulate_KEEP_SUBFOLD = "QSim__simulate_KEEP_SUBFOLD" ;
     static bool KEEP_SUBFOLD ;
