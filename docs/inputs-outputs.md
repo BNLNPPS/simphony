@@ -128,7 +128,7 @@ and `sup.npy` are lower-level diagnostics.
 
 ### Event directory
 
-For applications that construct `gphox::Config`, the event output base is
+For applications that construct `simphony::Config`, the event output base is
 `Config::output_dir`, read from the JSON key `event.output_dir` and applied to
 the lower-level event system by `Config::Apply`. With the default event
 relative directory, GPU event arrays are written below:

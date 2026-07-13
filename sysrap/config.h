@@ -6,7 +6,7 @@
 
 #include "torch.h"
 
-namespace gphox
+namespace simphony
 {
 
 enum class EventMode
@@ -60,6 +60,7 @@ class Config
   public:
     Config(std::string config_name = "dev");
 
+    /// Resolve a PTX file from SIMPHONY_PTX_DIR or configured search paths.
     static std::string PtxPath(const std::string& ptx_name = "CSGOptiX7.ptx");
 
     /// A unique name associated with this Config
@@ -103,4 +104,4 @@ class Config
     void Apply() const;
 };
 
-} // namespace gphox
+} // namespace simphony

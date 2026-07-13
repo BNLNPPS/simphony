@@ -75,7 +75,7 @@ inline SOPTIX::SOPTIX(SGLM& _gm)
     :
     irc(Initialize()),
     gm(_gm),
-    optixpath(gphox::Config::PtxPath("SOPTIX.ptx")),
+    optixpath(simphony::Config::PtxPath("SOPTIX.ptx")),
     mod(ctx.context, opt, optixpath.c_str()),
     pip(ctx.context, mod.module, opt ),
     scn(&ctx, gm.scene ),

@@ -20,12 +20,13 @@
 #include "config.h"
 #include "config_path.h"
 
-namespace gphox
+namespace simphony
 {
 
 using namespace std;
 
-constexpr const char* GPHOX_PTX_PATH_ENV = "CSGOptiX__optixpath";
+constexpr const char* PTX_DIR_ENV = "SIMPHONY_PTX_DIR";
+constexpr const char* CONFIG_DIR_ENV = "SIMPHONY_CONFIG_DIR";
 
 namespace
 {
@@ -217,12 +218,15 @@ Config::Config(std::string config_name) :
 
 std::string Config::PtxPath(const std::string& ptx_name)
 {
-    const char* env_path = std::getenv(GPHOX_PTX_PATH_ENV);
-    if (env_path && FileExists(env_path))
-        return env_path;
+    std::vector<std::string> search_paths;
+    if (const char* env_dir = std::getenv(PTX_DIR_ENV); env_dir && *env_dir)
+        search_paths.emplace_back(env_dir);
+
+    const auto configured_paths = SplitSearchPaths(SIMPHONY_PTX_SEARCH_PATHS);
+    search_paths.insert(search_paths.end(), configured_paths.begin(), configured_paths.end());
 
     std::vector<std::string> candidates;
-    for (const auto& dir : SplitSearchPaths(GPHOX_PTX_SEARCH_PATHS))
+    for (const auto& dir : search_paths)
     {
         if (dir.empty())
             continue;
@@ -236,7 +240,7 @@ std::string Config::PtxPath(const std::string& ptx_name)
     std::stringstream errmsg;
     errmsg << "Could not resolve PTX file \"" << ptx_name << "\".\n"
            << "Expected one of:\n"
-           << "  - " << GPHOX_PTX_PATH_ENV << "=<path-to-ptx>\n";
+           << "  - " << PTX_DIR_ENV << "=<directory containing " << ptx_name << ">\n";
     for (const auto& candidate : candidates)
         errmsg << "  - " << candidate << "\n";
     throw std::runtime_error(errmsg.str());
@@ -246,11 +250,12 @@ std::string Config::Locate(std::string filename) const
 {
     std::vector<std::string> search_paths;
 
-    const std::string user_dir{std::getenv("GPHOX_CONFIG_DIR") ? std::getenv("GPHOX_CONFIG_DIR") : ""};
+    const char* config_dir = std::getenv(CONFIG_DIR_ENV);
+    const std::string user_dir{config_dir ? config_dir : ""};
 
     if (user_dir.empty())
     {
-        search_paths = SplitSearchPaths(GPHOX_CONFIG_SEARCH_PATHS);
+        search_paths = SplitSearchPaths(SIMPHONY_CONFIG_SEARCH_PATHS);
     }
     else
     {
@@ -273,6 +278,7 @@ std::string Config::Locate(std::string filename) const
     {
         std::string errmsg{"Could not find config file \"" + filename + "\" in "};
         for (std::string path : search_paths) errmsg += (path + ":");
+        errmsg += "\nSet " + std::string{CONFIG_DIR_ENV} + " to override the config search directory.";
         throw std::runtime_error(errmsg);
     }
 
@@ -358,4 +364,4 @@ void Config::Apply() const
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
 }
 
-} // namespace gphox
+} // namespace simphony

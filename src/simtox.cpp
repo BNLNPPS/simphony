@@ -18,7 +18,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    gphox::Config config("dev");
+    simphony::Config config("dev");
 
     cout << config.torch.desc() << endl;
 

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    gphox::Config cfg(config_name);
+    simphony::Config cfg(config_name);
 
     // Configure Geant4
     // The physics list must be instantiated before other user actions

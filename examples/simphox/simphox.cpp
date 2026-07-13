@@ -44,7 +44,7 @@ int main(int argc, char** argv)
         }
     }
 
-    gphox::Config config("dev");
+    simphony::Config config("dev");
 
     cout << config.torch.desc() << endl;
     cout << "backend " << (use_gpu ? "gpu" : "cpu") << endl;

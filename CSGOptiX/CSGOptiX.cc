@@ -379,8 +379,7 @@ CSGOptiX::CSGOptiX(const CSGFoundry* foundry_)
     flight(SGeoConfig::FlightConfig()),
     foundry(foundry_),
     outdir(SEventConfig::OutFold()),
-    _optixpath(std::getenv("CSGOptiX__optixpath")),
-    optixpath(spath::Resolve(gphox::Config::PtxPath("CSGOptiX7.ptx").c_str())),
+    optixpath(spath::Resolve(simphony::Config::PtxPath("CSGOptiX7.ptx").c_str())),
     tmin_model(ssys::getenvfloat("TMIN",0.1)),    // CAUTION: tmin very different in rendering and simulation
     kernel_count(0),
     raygenmode(SEventConfig::RGMode()),
@@ -412,7 +411,6 @@ void CSGOptiX::init()
 
     assert( outdir && "expecting OUTDIR envvar " );
 
-    LOG(LEVEL) << " _optixpath " << _optixpath  ;
     LOG(LEVEL) << " optixpath " << optixpath  ;
 
     initMeta();
