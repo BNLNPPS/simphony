@@ -517,7 +517,16 @@ void QEvt::setInputPhotonAndUpload()
 {
     LOG_IF(info, LIFECYCLE) ;
     LOG(LEVEL);
-    input_photon = sev->gatherInputPhoton();
+    // For float32 (4-byte) input photons gatherInputPhoton's fresh-copy contract
+    // costs an O(N) host copy that dominates large launches; the upload below
+    // only reads the array synchronously, so use the SEvt-owned array directly.
+    // Keep the copy when the INPHOTON component is gathered into the NPFold
+    // (which takes ownership and deletes it) and for float64 input, which needs
+    // the narrowing-to-float32 pass.
+    NP* ip = sev->getInputPhoton();
+    bool fold_owns = ( SEventConfig::GatherComp() & SCOMP_INPHOTON ) != 0 ;
+    bool passthrough = ip != nullptr && ip->ebyte == 4 && !fold_owns ;
+    input_photon = passthrough ? ip : sev->gatherInputPhoton();
     checkInputPhoton();
 
     int numph = input_photon->shape[0] ;
