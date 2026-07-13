@@ -42,7 +42,7 @@ export OPTICKS_MAX_SLOT=100000
 
 # Override USER/GEOM so opticks writes to a deterministic, test-only path
 # regardless of the developer's environment. Matches the convention used
-# by tests/test_GPURaytrace.sh and tests/test_GPUPhotonSource_8x8SiPM.sh.
+# by tests/test_GPURaytrace.sh and tests/test_simg4ox.sh.
 export USER=fakeuser
 export GEOM=fakegeom
 

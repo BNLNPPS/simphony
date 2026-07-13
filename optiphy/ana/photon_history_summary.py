@@ -541,7 +541,7 @@ def print_output_path_help():
     print()
     print("For common executables, the expected paths are:")
     print()
-    for exe in ("GPUPhotonSourceMinimal", "GPUPhotonSource", "GPUPhotonFileSource"):
+    for exe in ("GPUPhotonSourceMinimal", "GPUPhotonFileSource"):
         p = expected_output_path(exe)
         print(f"    {exe}:")
         print(f"        {p}")
