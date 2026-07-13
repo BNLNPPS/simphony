@@ -240,7 +240,8 @@ struct EventAction : G4UserEventAction
             std::memcpy(hits->bytes() + idx * sizeof(sphoton), &photon, sizeof(photon));
         }
 
-        hits->save(cfg.output_dir.string().c_str(), "s_hits.npy");
+        const char* outdir = sev && sev->getSaveDir() ? sev->getSaveDir() : cfg.output_dir.c_str();
+        hits->save(outdir, "s_hits.npy");
         delete hits;
 
         return num_gpu_hits;
@@ -280,7 +281,8 @@ struct EventAction : G4UserEventAction
             }
         }
 
-        hits->save(cfg.output_dir.string().c_str(), "g_hits.npy");
+        const char* outdir = sev && sev->getSaveDir() ? sev->getSaveDir() : cfg.output_dir.c_str();
+        hits->save(outdir, "g_hits.npy");
         delete hits;
 
         return num_g4_hits;
