@@ -70,11 +70,11 @@ using PhotonHitsCollection = G4THitsCollection<PhotonHit>;
 
 struct PhotonSD : public G4VSensitiveDetector
 {
-    gphox::Config         cfg;
+    simphony::Config      cfg;
     PhotonHitsCollection* photon_hit_collection{nullptr};
     G4int                 fHCID;
 
-    PhotonSD(const gphox::Config& cfg, G4String name) :
+    PhotonSD(const simphony::Config& cfg, G4String name) :
         G4VSensitiveDetector(name),
         cfg(cfg),
         fHCID(-1)
@@ -135,11 +135,11 @@ struct PhotonSD : public G4VSensitiveDetector
 
 struct DetectorConstruction : G4VUserDetectorConstruction
 {
-    gphox::Config         cfg;
+    simphony::Config      cfg;
     std::filesystem::path gdml_file_;
     G4GDMLParser          parser_;
 
-    DetectorConstruction(const gphox::Config& cfg, std::filesystem::path gdml_file) :
+    DetectorConstruction(const simphony::Config& cfg, std::filesystem::path gdml_file) :
         cfg(cfg),
         gdml_file_(std::move(gdml_file))
     {
@@ -179,10 +179,10 @@ struct DetectorConstruction : G4VUserDetectorConstruction
 
 struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
-    gphox::Config cfg;
-    SEvt*         sev;
+    simphony::Config cfg;
+    SEvt*            sev;
 
-    PrimaryGenerator(const gphox::Config& cfg, SEvt* sev) :
+    PrimaryGenerator(const simphony::Config& cfg, SEvt* sev) :
         cfg(cfg),
         sev(sev)
     {
@@ -224,12 +224,12 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
 struct EventAction : G4UserEventAction
 {
-    gphox::Config cfg;
-    SEvt*         sev;
-    G4int         total_g4_hits{0};
-    size_t        total_gpu_hits{0};
+    simphony::Config cfg;
+    SEvt*            sev;
+    G4int            total_g4_hits{0};
+    size_t           total_gpu_hits{0};
 
-    EventAction(const gphox::Config& cfg, SEvt* sev) :
+    EventAction(const simphony::Config& cfg, SEvt* sev) :
         cfg(cfg),
         sev(sev)
     {
@@ -442,7 +442,7 @@ struct RunAction : G4UserRunAction
 
 struct G4App
 {
-    G4App(const gphox::Config& cfg, std::filesystem::path gdml_file) :
+    G4App(const simphony::Config& cfg, std::filesystem::path gdml_file) :
         sev(SEvt::CreateOrReuse_ECPU()),
         det_cons_(new DetectorConstruction(cfg, gdml_file)),
         prim_gen_(new PrimaryGenerator(cfg, sev)),

@@ -36,7 +36,7 @@ using plog::info;
 
 namespace
 {
-inline constexpr char testGeomFile[] = GPHOX_TEST_GEOM_DIR "/sphere_phicut_quarter_shell.gdml";
+inline constexpr char testGeomFile[] = SIMPHONY_TEST_GEOM_DIR "/sphere_phicut_quarter_shell.gdml";
 
 enum ConvertOutcome
 {

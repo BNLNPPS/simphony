@@ -60,9 +60,9 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
 target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
 
 get_filename_component(ptx_stem "${OPTIX_PTX_SRC}" NAME_WE)
-set(ptx_output "${GPHOX_BUILD_PTX_DIR}/${ptx_stem}.ptx")
+set(ptx_output "${SIMPHONY_BUILD_PTX_DIR}/${ptx_stem}.ptx")
 add_custom_target(csgoptix_ptx
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${GPHOX_BUILD_PTX_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SIMPHONY_BUILD_PTX_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_OBJECTS:${OPTIX_PTX_TARGET}>" "${ptx_output}"
     BYPRODUCTS "${ptx_output}"
     VERBATIM

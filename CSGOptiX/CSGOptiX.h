@@ -70,7 +70,6 @@ struct CSGOPTIX_API CSGOptiX : public SSimulator
     const char*       flight ;
     const CSGFoundry* foundry ;
     const char*       outdir ;
-    const char*       _optixpath ;
     const char*       optixpath ;
     float             tmin_model ;
     plog::Severity    level = plog::debug ;   // quell prolific logging using level instead of LEVEL
