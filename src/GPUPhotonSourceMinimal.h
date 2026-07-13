@@ -50,7 +50,9 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
     simphony::Config cfg;
     SEvt *sev;
 
-    PrimaryGenerator(const simphony::Config &cfg, SEvt *sev) : cfg(cfg), sev(sev)
+    PrimaryGenerator(const simphony::Config& cfg, SEvt* sev) :
+        cfg(cfg),
+        sev(sev)
     {
     }
 
@@ -172,10 +174,12 @@ struct RunAction : G4UserRunAction
 
 struct G4App
 {
-    G4App(const simphony::Config &cfg, std::filesystem::path gdml_file)
-        : sev(SEvt::CreateOrReuse_ECPU()), det_cons_(new DetectorConstruction(gdml_file)),
-          prim_gen_(new PrimaryGenerator(cfg, sev)), event_act_(new EventAction(sev)),
-          run_act_(new RunAction(event_act_))
+    G4App(const simphony::Config& cfg, std::filesystem::path gdml_file) :
+        sev(SEvt::CreateOrReuse_ECPU()),
+        det_cons_(new DetectorConstruction(gdml_file)),
+        prim_gen_(new PrimaryGenerator(cfg, sev)),
+        event_act_(new EventAction(sev)),
+        run_act_(new RunAction(event_act_))
     {
     }
 

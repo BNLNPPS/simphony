@@ -250,7 +250,7 @@ std::string Config::Locate(std::string filename) const
 {
     std::vector<std::string> search_paths;
 
-    const char* config_dir = std::getenv(CONFIG_DIR_ENV);
+    const char*       config_dir = std::getenv(CONFIG_DIR_ENV);
     const std::string user_dir{config_dir ? config_dir : ""};
 
     if (user_dir.empty())

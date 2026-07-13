@@ -70,16 +70,14 @@ inline int SOPTIX::Initialize()
     return 0 ;
 }
 
-
-inline SOPTIX::SOPTIX(SGLM& _gm)
-    :
+inline SOPTIX::SOPTIX(SGLM& _gm) :
     irc(Initialize()),
     gm(_gm),
     optixpath(simphony::Config::PtxPath("SOPTIX.ptx")),
     mod(ctx.context, opt, optixpath.c_str()),
-    pip(ctx.context, mod.module, opt ),
-    scn(&ctx, gm.scene ),
-    sbt(pip, scn ),
+    pip(ctx.context, mod.module, opt),
+    scn(&ctx, gm.scene),
+    sbt(pip, scn),
     d_param(SOPTIX_Params::DeviceAlloc()),
     HANDLE(ssys::getenvint(__HANDLE, -1)),
     handle(scn.getHandle(HANDLE)),

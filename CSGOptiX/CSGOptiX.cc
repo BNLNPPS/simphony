@@ -372,18 +372,16 @@ Instanciated at near to main level in both running modes:
 
 **/
 
-
-CSGOptiX::CSGOptiX(const CSGFoundry* foundry_)
-    :
+CSGOptiX::CSGOptiX(const CSGFoundry* foundry_) :
     sglm(SGLM::Get()),
     flight(SGeoConfig::FlightConfig()),
     foundry(foundry_),
     outdir(SEventConfig::OutFold()),
     optixpath(spath::Resolve(simphony::Config::PtxPath("CSGOptiX7.ptx").c_str())),
-    tmin_model(ssys::getenvfloat("TMIN",0.1)),    // CAUTION: tmin very different in rendering and simulation
+    tmin_model(ssys::getenvfloat("TMIN", 0.1)), // CAUTION: tmin very different in rendering and simulation
     kernel_count(0),
     raygenmode(SEventConfig::RGMode()),
-    params(InitParams(raygenmode,sglm)),
+    params(InitParams(raygenmode, sglm)),
     ctx(nullptr),
     pip(nullptr),
     sbt(nullptr),
@@ -392,7 +390,7 @@ CSGOptiX::CSGOptiX(const CSGFoundry* foundry_)
     kernel_dt(0.),
     sctx(nullptr),
     sim(QSim::Get()),
-    qev(sim == nullptr  ? nullptr : sim->qev)   // QEvt
+    qev(sim == nullptr ? nullptr : sim->qev) // QEvt
 {
     init();
 }
