@@ -34,12 +34,10 @@ TODO:
 #include "sframe.h"
 #include "stree.h"
 
-
-#include "SSim.hh"
-#include "SOpticks.hh"
+#include "SEventConfig.hh"
 #include "SEvt.hh"
 #include "SFrameGenstep.hh"
-#include "SEventConfig.hh"
+#include "SSim.hh"
 
 #include "OPTICKS_LOG.hh"
 #include "CSGFoundry.h"
@@ -55,8 +53,6 @@ int main(int argc, char** argv)
     SEventConfig::SetGatherComp(comp);
     SEventConfig::SetSaveComp(comp);
     // TODO: this config is automated now,  check that and remove
-
-    SOpticks::WriteOutputDirScript() ; // writes CSGOptiXSimtraceTest_OUTPUT_DIR.sh in PWD
 
     SEvt* evt = SEvt::Create(SEvt::EGPU) ;
 

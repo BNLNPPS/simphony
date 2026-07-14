@@ -3215,14 +3215,12 @@ CSGFoundry* CSGFoundry::CopySelect(const CSGFoundry* src, const SBitSet* elv )
     return dst ;
 }
 
-
-
 /**
 CSGFoundry::ResolveCFBase
 ---------------------------
 
 When GEOM and "GEOM"_CFBaseFromGEOM are defined that directory is used
-The former use of CFBASE envvar with SOpticksResource::CFBase is removed.
+The CFBASE envvar is used directly.
 
 **/
 

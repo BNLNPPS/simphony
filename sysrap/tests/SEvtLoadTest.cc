@@ -1,12 +1,3 @@
-/**
-
-    epsilon:tests blyth$ GEOM=hamaLogicalPMT SOpticksResource_ExecutableName=OverrideExecutableName SEvtLoadTest 
-    U::DirList path /tmp/blyth/opticks/GEOM/hamaLogicalPMT/OverrideExecutableName/ALL ext - NO ENTRIES FOUND 
-    sevent::descMax    
-
-
-**/
-
 #include "OPTICKS_LOG.hh"
 #include <iostream>
 #include "SEvt.hh"
@@ -29,9 +20,7 @@ int main(int argc, char** argv)
     else
     {   
         evt = SEvt::LoadRelative(reldir) ;
-        //evt->clear_except("g4state");  // clear loaded evt but keep g4state 
     }   
-
 
     if(evt == nullptr) return 0 ; 
     LOG(info) << evt->desc() ; 
@@ -39,7 +28,6 @@ int main(int argc, char** argv)
 
     const NP* g4state = evt->getG4State(); 
     LOG(info) << " SEvt::getG4State " << ( g4state ? g4state->sstr() : "-" ); 
-
 
     if(SEventConfig::_G4StateRerun > -1) 
     {
@@ -54,10 +42,8 @@ int main(int argc, char** argv)
     if(evt->is_loaded)
     {
         SEventConfig::SetEventReldir("SEvtLoadTest"); 
-        //evt->clear_except("g4state"); 
         evt->save(); 
     }
-
 
     return 0 ; 
 }

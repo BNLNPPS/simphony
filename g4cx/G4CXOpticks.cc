@@ -18,7 +18,6 @@ A: WIP: moving the QSim methods to be called via CSGOptiX
 
 #include "SEvt.hh"
 #include "SSim.hh"
-#include "SOpticksResource.hh"
 
 #include "U4VolumeMaker.hh"
 #include "U4Recorder.hh"
@@ -260,7 +259,7 @@ void G4CXOpticks::setGeometry()
         LOG(LEVEL) << " GEOM/U4VolumeMaker::PV " ;
         setGeometry( U4VolumeMaker::PV() );
     }
-    else if(SOpticksResource::CFBaseFromGEOM())
+    else if (spath::has_CFBaseFromGEOM())
     {
         LOG(LEVEL) << "[ CSGFoundry::Load " ;
         CSGFoundry* cf = CSGFoundry::Load() ;
