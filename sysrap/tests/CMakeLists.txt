@@ -65,10 +65,6 @@ set(TEST_SOURCES
    SEnabledTest.cc
    SBitFromStringTest.cc
    SRandTest.cc
-   SOpticksTest.cc
-   SOpticksKeyTest.cc
-
-
    CheckGeoTest.cc
 
    SGLMTest.cc
@@ -129,7 +125,6 @@ set(REPORT_SOURCES
 )
 
 set(BASH_RUN_TEST_SOURCES
-    SOpticksResourceTest.cc
     SEnvTest_PASS.cc
     SSimTest.cc
     SBndTest.cc

@@ -74,9 +74,6 @@ set(SOURCES
     SEvent.cc
     SFrameGenstep.cc
 
-    SOpticks.cc
-    SOpticksResource.cc
-    SOpticksKey.cc
     SThetaCut.cc 
     SPhiCut.cc 
 
@@ -319,12 +316,9 @@ set(HEADERS
     iexpand.h 
 
 
-    SOpticks.hh
     sdomain.h
 
     SDBG.h
-
-    SOpticksResource.hh
 
     SCMD.h
 
@@ -375,7 +369,6 @@ set(HEADERS
 
     SEvt.hh 
 
-    SOpticksKey.hh
     SMath.hh
 
     SEvent.hh

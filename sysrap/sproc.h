@@ -1,39 +1,4 @@
 #pragma once
-/**
-sproc.h
-===========
-
-Implementations of VirtualMemoryUsageMB of a process.
-Migrated from former SProc.hh.  
-
-Survey usage, mostly ExecutableName::
-
-    epsilon:opticks blyth$ opticks-fl sproc.h
-    ./CSGOptiX/CSGOptiX.cc    ## ExecutableName
-    ./CSG/CSGFoundry.cc       ## NOT USED : REMOVED
-    ./sysrap/sproc.h
-    ./sysrap/spath.h          ## spath::_ResolveToken replaces $ExecutableName  
-
-
-    ./sysrap/SProc.hh
-    ./sysrap/SOpticksResource.cc  ## ExecutableName 
-
-    ./sysrap/CMakeLists.txt
-    ./sysrap/tests/reallocTest.cc
-    ./sysrap/tests/sproc_test.cc
-
-    ./sysrap/SOpticks.cc       ## ExecutableName
-
-    ./sysrap/SLOG.cc           ## ExecutableName
-    ./sysrap/smeta.h           ## ExecutableName
-    ./sysrap/SPMT.h            ## ExecutableName 
-    ./sysrap/SGeo.cc           ## NOT USED : COMMENTED
-    ./qudarap/QPMT.hh          ## ExecutableName
-
-    epsilon:opticks blyth$ 
-
-
-**/
 
 #include <cstddef>
 #include <cassert>
@@ -43,8 +8,9 @@ Survey usage, mostly ExecutableName::
 #include <limits.h>
 #include <unistd.h>
 
-
-
+/**
+ * Implementations of VirtualMemoryUsageMB of a process.
+ */
 struct sproc 
 {
     static constexpr const int32_t K = 1000 ;   // 1024?
@@ -192,4 +158,3 @@ inline char* sproc::ExecutableName()
     char* exe = ( is_python && script ) ? script : exe0 ; 
     return exe ; 
 }
-

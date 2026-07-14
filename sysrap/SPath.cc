@@ -37,9 +37,9 @@
 
 #include <iomanip>
 
-#include "SPath.hh"
-#include "SOpticksResource.hh"
 #include "SLOG.hh"
+#include "SPath.hh"
+#include "spath.h"
 
 const plog::Severity SPath::LEVEL = SLOG::EnvLevel("SPath", "DEBUG");
 
@@ -60,6 +60,12 @@ std::string FormatFixedReal(const T value, int w, int p, char fill = '0')
     std::stringstream ss;
     ss << std::fixed << std::setfill(fill) << std::setw(w) << std::setprecision(p) << value;
     return ss.str();
+}
+
+const char* ResolveTokenWithUserTmpFallback(const char* token)
+{
+    const char* path = spath::Resolve(token);
+    return spath::LooksUnresolved(path, token) ? SPath::UserTmpDir() : path;
 }
 } // namespace
 
@@ -158,16 +164,11 @@ const char* SPath::Resolve(int create_dirs)
 SPath::Resolve
 ---------------
 
-Resolves tokenized paths such as "$TOKEN/name.ext" or "$TOKEN" 
-where the TOKEN string is passed to SOpticksResource::Get("TOKEN") 
-for resolution. TOKEN strings matching standard keys : IDPath, CFBase, ... 
-yield the standard directories that are derived from the OPTICKS_KEY.  
-However these defaults may be overridden by setting envvars with keys 
-matching the standard keys. 
+Resolves tokenized paths such as "$TOKEN/name.ext" or "$TOKEN" using
+spath's environment and standard-token resolution.
 
-When the SOpticksResource resolution does not yield a value a 
-default of the standard $TMP dir of form "/tmp/username/opticks" 
-is used for the prefix directory. 
+When token resolution does not yield a value, the standard $TMP directory
+of form "/tmp/username/opticks" is used for the prefix directory.
 
 **/
 
@@ -199,15 +200,15 @@ const char* SPath::Resolve(const char* spec_, int create_dirs)
     std::stringstream ss ; 
     if(tok_rel)
     {
-        *spec_sep = '\0' ;                 // temporarily null terminate at the first slash  
-        const char* pfx = SOpticksResource::Get(spec+1);      // start one past the dollar terminated at first slash  
+        *spec_sep = '\0'; // temporarily null terminate at the first slash
+        const char* pfx = ResolveTokenWithUserTmpFallback(spec);
         *spec_sep = sep ;                  // put back the separator
         const char* prefix = pfx ? pfx : UserTmpDir() ; 
         ss << prefix << spec_sep ; 
     }
     else if(tok_only)
     {
-        const char* pfx = SOpticksResource::Get(spec+1); 
+        const char* pfx = ResolveTokenWithUserTmpFallback(spec);
         const char* prefix = pfx ? pfx : UserTmpDir() ;
         ss << prefix ; 
     }

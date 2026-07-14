@@ -942,16 +942,12 @@ void U4Material::LoadOri()
 
 }
 
-
-
 /**
 U4Material::LoadBnd from $CFBase/CSGFoundry/SSim/bnd.npy so must have already saved it
 ----------------------------------------------------------------------------------------
 
 SSim::Load loads from $CFBase/CSGFoundry/SSim where "$CFBase" is an
-internal envvar that yield the result of SOpticksResource::CFBase()
-The OPTICKS_KEY derived CSG_GGeo directory is returned unless
-the CFBASE envvar is defined.
+CFBASE envvar identifying the persisted CSGFoundry directory.
 
 HMM: if the material exists already then need to change its
 properties, not scrub the pre-existing material.

@@ -170,7 +170,6 @@ $TMP
 $HOME/hello
 $NON_EXISTING_EVAR/elsewhere
 $DefaultOutputDir
-$RNGDir
 )LIT";
     std::stringstream ss(lines); 
     std::string line ;
@@ -216,9 +215,7 @@ $NON_EXISTING_EVAR/elsewhere/sub.txt
 stem.ext
 /
 $
-$RNGDir
 $CFBaseFromGEOM/GGeo
-$UserGEOMDir/origin.gdml
 )LIT";
     std::stringstream ss(lines); 
     std::string line ;
