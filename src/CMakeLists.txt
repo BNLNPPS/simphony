@@ -37,13 +37,6 @@ target_include_directories(GPURaytrace PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
-# GPUPhotonSource - optical photon input via SetInputPhoton with Opticks GPU simulation
-add_executable(GPUPhotonSource GPUPhotonSource.cpp GPUPhotonSource.h)
-target_link_libraries(GPUPhotonSource SysRap simphony_g4_deps simphony_argparse)
-target_include_directories(GPUPhotonSource PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
-)
-
 # GPUPhotonSourceMinimal - GPU-only ray tracing (no G4 optical photon tracking)
 add_executable(GPUPhotonSourceMinimal GPUPhotonSourceMinimal.cpp GPUPhotonSourceMinimal.h)
 target_link_libraries(GPUPhotonSourceMinimal SysRap simphony_g4_deps simphony_argparse)
@@ -67,7 +60,7 @@ target_include_directories(simtox PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
-install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSource GPUPhotonSourceMinimal GPUPhotonFileSource simtox simphony_g4_deps
+install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSourceMinimal GPUPhotonFileSource simtox simphony_g4_deps
     EXPORT ${PROJECT_NAME}Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

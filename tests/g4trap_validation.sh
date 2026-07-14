@@ -15,19 +15,21 @@
 #   ./tests/g4trap_validation.sh scintillation_trap       # scint+Cherenkov trap only
 #   ./tests/g4trap_validation.sh scintillation_trd        # scint+Cherenkov trd only
 #
-# Pre-requisites: GPUPhotonSource and GPURaytrace on PATH (any standard
+# Pre-requisites: simg4ox and GPURaytrace on PATH (any standard
 # install of simphony puts them in the chosen install prefix's `bin/`,
 # which is added to PATH in the Dockerfile and devcontainer).
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR=${REPO_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}
 GEOM_DIR="${SCRIPT_DIR}/geom"
 OUT_DIR=${OUT_DIR:-/tmp/g4trap_validation}
+PYTHON=${PYTHON:-python3}
 
 mkdir -p "${OUT_DIR}"
 
-COMPARE_PY="${SCRIPT_DIR}/g4trap_compare.py"
+COMPARE_PY="${REPO_DIR}/optiphy/ana/compare_ab.py"
 
 # ------------------------------------------------------------------
 # run helpers
@@ -38,8 +40,8 @@ G4_MACRO_5EVT="${SCRIPT_DIR}/run_validate_5evt_1t.mac"
 run_torch_test () {
     local case=$1; local gdml=$2; local cfg=$3; local seed=${4:-42}
     local outd="${OUT_DIR}/${case}"
-    mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
-    GPUPhotonSource -g "${gdml}" -c "${cfg}" -m "${G4_MACRO}" -s ${seed} > run.log 2>&1
+    mkdir -p "${outd}"; cd "${outd}"; rm -f g_hits.npy s_hits.npy
+    simg4ox -g "${gdml}" -c "${cfg}" -m "${G4_MACRO}" -s "${seed}" > run.log 2>&1
 }
 
 # ------------------------------------------------------------------
@@ -53,14 +55,16 @@ test_trap_iso () {
     echo
     echo "----- Test: trap, isotropic source (probes slanted walls) -----"
     run_torch_test trap_iso "${GEOM_DIR}/test_trap.gdml" trap_iso
-    python3 "${COMPARE_PY}" "${OUT_DIR}/trap_iso/g4_hits_output.txt" "${OUT_DIR}/trap_iso/opticks_hits_output.txt" "trap iso"
+    "${PYTHON}" "${COMPARE_PY}" hits "${OUT_DIR}/trap_iso/g_hits.npy" "${OUT_DIR}/trap_iso/s_hits.npy" \
+        --count-relative-tolerance 5 --chi2-ndf-tolerance 5
 }
 
 test_trd_iso () {
     echo
     echo "----- Test: trd, isotropic source -----"
     run_torch_test trd_iso "${GEOM_DIR}/test_trd.gdml" trap_iso
-    python3 "${COMPARE_PY}" "${OUT_DIR}/trd_iso/g4_hits_output.txt" "${OUT_DIR}/trd_iso/opticks_hits_output.txt" "trd iso"
+    "${PYTHON}" "${COMPARE_PY}" hits "${OUT_DIR}/trd_iso/g_hits.npy" "${OUT_DIR}/trd_iso/s_hits.npy" \
+        --count-relative-tolerance 5 --chi2-ndf-tolerance 5
 }
 
 # (2) Full-physics test: 5 GeV electrons in synthetic-scintillator Quartz
@@ -74,7 +78,8 @@ test_scintillation_trap () {
     local outd="${OUT_DIR}/scintillation_trap"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
     GPURaytrace -g "${GEOM_DIR}/test_trap_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
-    python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation trap" 10 50
+    "${PYTHON}" "${COMPARE_PY}" hits "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" \
+        --count-relative-tolerance 10 --chi2-ndf-tolerance 50
 }
 
 test_scintillation_trd () {
@@ -83,7 +88,8 @@ test_scintillation_trd () {
     local outd="${OUT_DIR}/scintillation_trd"
     mkdir -p "${outd}"; cd "${outd}"; rm -f *_hits_output.txt
     GPURaytrace -g "${GEOM_DIR}/test_trd_scint.gdml" -m "${G4_MACRO_5EVT}" -s 42 > run.log 2>&1
-    python3 "${COMPARE_PY}" "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" "scintillation trd" 10 50
+    "${PYTHON}" "${COMPARE_PY}" hits "${outd}/g4_hits_output.txt" "${outd}/opticks_hits_output.txt" \
+        --count-relative-tolerance 10 --chi2-ndf-tolerance 50
 }
 
 # ------------------------------------------------------------------

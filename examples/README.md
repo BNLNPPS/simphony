@@ -7,7 +7,7 @@ Simphony provides several examples demonstrating GPU-accelerated optical photon 
 | `simphox` | Optical photons (torch) | None | External project build and CPU/GPU photon generation smoke test |
 | `GPUCerenkov` | Cerenkov only | Simple nested boxes (raindrop) | Basic Cerenkov testing |
 | `GPURaytrace` | Cerenkov + Scintillation | 8x8 CsI crystal + SiPM array | Realistic detector simulation |
-| `GPUPhotonSource` | Optical photons (torch) | Any GDML | G4 + GPU side-by-side validation |
+| `simg4ox` | Optical photons (torch) | Any GDML | G4 + GPU side-by-side validation |
 | `GPUPhotonSourceMinimal` | Optical photons (torch) | Any GDML | GPU-only test |
 | `GPUPhotonFileSource` | Optical photons (text file) | Any GDML | GPU-only, user-defined photons from file |
 | WLS test | Wavelength shifting | WLS sphere + detector shell | Validate GPU WLS physics |
@@ -17,7 +17,7 @@ Simphony provides several examples demonstrating GPU-accelerated optical photon 
 The example applications differ mainly in where photons originate and whether
 Geant4 optical-photon tracking is also run for validation.
 
-| Feature | GPUCerenkov | GPURaytrace | GPUPhotonSource | GPUPhotonSourceMinimal | GPUPhotonFileSource |
+| Feature | GPUCerenkov | GPURaytrace | simg4ox | GPUPhotonSourceMinimal | GPUPhotonFileSource |
 |---------|-------------|-------------|-----------------|------------------------|---------------------|
 | Cerenkov genstep collection | Yes | Yes | No | No | No |
 | Scintillation genstep collection | No | Yes | No | No | No |
@@ -30,8 +30,8 @@ Geant4 optical-photon tracking is also run for validation.
 
 `GPUCerenkov` and `GPURaytrace` collect gensteps from charged-particle
 interactions and pass them to Simphony for GPU photon generation and tracing.
-`GPUPhotonSource` and `GPUPhotonSourceMinimal` generate photons directly from
-a torch configuration. `GPUPhotonSource` runs both G4 and GPU tracking for
+`simg4ox` and `GPUPhotonSourceMinimal` generate photons directly from
+a torch configuration. `simg4ox` runs both G4 and GPU tracking for
 validation, while `GPUPhotonSourceMinimal` keeps only the GPU path.
 `GPUPhotonFileSource` reads user-defined photons from a text file.
 
@@ -107,9 +107,9 @@ grep -c "CreationProcessID=1" opticks_hits_output.txt  # Scintillation
 
 **Source files:** `src/GPURaytrace.cpp`, `src/GPURaytrace.h`
 
-### Example 4: GPUPhotonSource (G4 + GPU Validation)
+### Example 4: simg4ox (G4 + GPU Validation)
 
-`GPUPhotonSource` generates optical photons from a configurable torch source and runs
+`simg4ox` generates optical photons from a configurable torch source and runs
 both Geant4 and Simphony GPU simulation in parallel on the same input photons. This
 enables direct comparison of hit counts and positions between the two engines.
 
@@ -123,23 +123,24 @@ the optical surface, matching how Simphony detects photons on the GPU.
 | `-c, --config` | Config file name (without `.json`) | `dev` |
 | `-m, --macro` | Path to G4 macro | `run.mac` |
 | `-i, --interactive` | Open interactive viewer | off |
-| `-s, --seed` | Fixed random seed | time-based |
+| `-s, --seed` | Fixed random seed | Geant4 default |
 
 ```bash
-GPUPhotonSource -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 42
+simg4ox -g tests/geom/opticks_raindrop.gdml -c dev -m run.mac -s 42
 ```
 
 **Output:**
-- `opticks_hits_output.txt` — Simphony GPU hits, one line per hit
-- `g4_hits_output.txt` — Geant4 hits in the same format
+- `s_hits.npy` — Simphony GPU hits
+- `g_hits.npy` — Geant4 hits
 
-Hit format (both files): `time wavelength (pos_x, pos_y, pos_z) (mom_x, mom_y, mom_z) (pol_x, pol_y, pol_z)`
+Both arrays use the `sphoton` layout and are written under the configured
+`event.output_dir`.
 
-**Source files:** `src/GPUPhotonSource.cpp`, `src/GPUPhotonSource.h`
+**Source files:** `src/simg4ox.cpp`, `src/g4app.h`
 
 ### Example 5: GPUPhotonSourceMinimal (GPU-Only)
 
-`GPUPhotonSourceMinimal` is a stripped-down version of `GPUPhotonSource` that runs
+`GPUPhotonSourceMinimal` is a stripped-down version of `simg4ox` that runs
 **only** Simphony GPU simulation. All G4 optical photon tracking infrastructure
 (sensitive detectors, stepping actions, tracking actions) is removed. Geant4 is used
 solely for geometry loading and hosting the event loop.

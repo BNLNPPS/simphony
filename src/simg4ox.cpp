@@ -4,6 +4,7 @@
 
 #include "FTFP_BERT.hh"
 #include "G4OpticalPhysics.hh"
+#include "Randomize.hh"
 #include "G4RunManager.hh"
 #include "G4VModularPhysicsList.hh"
 
@@ -50,6 +51,8 @@ int main(int argc, char** argv)
         .flag()
         .store_into(interactive);
 
+    program.add_argument("-s", "--seed").help("fixed random seed").scan<'i', long>();
+
     try
     {
         program.parse_args(argc, argv);
@@ -62,6 +65,13 @@ int main(int argc, char** argv)
     }
 
     simphony::Config cfg(config_name);
+
+    if (program.is_used("--seed"))
+    {
+        const long seed = program.get<long>("--seed");
+        CLHEP::HepRandom::setTheSeed(seed);
+        G4cout << "Random seed set to: " << seed << G4endl;
+    }
 
     // Configure Geant4
     // The physics list must be instantiated before other user actions
