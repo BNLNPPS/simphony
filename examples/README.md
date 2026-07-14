@@ -11,6 +11,7 @@ Simphony provides several examples demonstrating GPU-accelerated optical photon 
 | `GPUPhotonSourceMinimal` | Optical photons (torch) | Any GDML | GPU-only test |
 | `GPUPhotonFileSource` | Optical photons (text file) | Any GDML | GPU-only, user-defined photons from file |
 | WLS test | Wavelength shifting | WLS sphere + detector shell | Validate GPU WLS physics |
+| `synrad` | Soft X-rays, grazing-incidence Cu reflect-or-absorb | Tessellated SR beam chamber | GPU X-ray transport on tessellated geometry |
 
 ### Application capabilities
 
@@ -243,3 +244,35 @@ Unlike scintillation properties, WLS property names are the same in both Geant4
 
 **Test files:** `tests/geom/wls_test.gdml`, `config/wls_test.json`
 **Implementation docs:** `docs/WLS_IMPLEMENTATION.md`
+
+### Example 8: synrad (Soft X-ray SR transport, GPU-Only)
+
+The `synrad` example transports soft X-rays through the vacuum of a
+synchrotron-radiation beam chamber: photons fly at c through the vacuum and
+reflect-or-absorb at every vacuum→wall contact with tabulated grazing-incidence
+Cu reflectivity (a port of the SynradG4 benchmark `GammaReflectionProcess`,
+https://github.com/eicorg/SynradBenchmark). Photon energy is carried in the
+`sphoton` wavelength slot, in keV.
+
+Two bundled GDMLs describe the same 50 m benchmark tunnel
+(drift + 10 mrad arc + drift, ONE closed `G4TessellatedSolid`):
+`synrad_bench.gdml` (1252 facets, equivalent to the analytic benchmark
+chamber) and `synrad_bench_tess.gdml` (~25k facets, CAD-like). Tessellated
+solids are routed to the triangulated geometry path
+(`stree__force_triangulate_solid`).
+
+```bash
+# build against an installed simphony and run both geometries
+SIMPHONY_PREFIX=/path/to/install examples/synrad/run.sh
+
+# or directly: pencil beam grazing the arc wall, 1M photons
+synrad -g examples/synrad/synrad_bench.gdml -n 1000000
+```
+
+**Output:** `synrad_hits.npy` — (N,4,4) float32 sphoton rows of the
+wall-absorbed photons, plus a one-line summary (wall-absorbed /
+reflected-at-least-once / on-cap counts, transport time).
+
+**Source files:** `examples/synrad/synrad.cpp`, physics in `qudarap/qgxs.h`
+(tables `qudarap/qgxs_synradg4.h`), dispatch `qsim::propagate_gamma`.
+**Details:** `examples/synrad/README.md`
