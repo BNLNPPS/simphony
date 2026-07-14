@@ -40,6 +40,7 @@ HIT_TEXT_PATTERN = re.compile(
 
 
 def detect_build_type(base):
+    """Return the configured CMake build type, using the environment or a cache."""
     build_type = os.environ.get("SIMPHONY_BUILD_TYPE") or os.environ.get("CMAKE_BUILD_TYPE")
     if build_type:
         return build_type
@@ -57,11 +58,13 @@ def detect_build_type(base):
 
 
 def expected_diff_for_version(version, build_type):
+    """Return expected record mismatch indices for a Geant4 version and build type."""
     expected_by_build = EXPECTED_DIFF[geant4_series(version)]
     return expected_by_build.get(build_type, expected_by_build["default"])
 
 
 def load_records(base, a_record, b_record):
+    """Load the paired A-side and B-side record arrays below ``base``."""
     a_path = base / a_record
     b_path = base / b_record
 
@@ -74,6 +77,7 @@ def load_records(base, a_record, b_record):
 
 
 def compare_records(a, b):
+    """Return row indices whose record values differ beyond the fixed tolerance."""
     if a.shape != b.shape:
         raise AssertionError(f"Shape mismatch: {a.shape} != {b.shape}")
 
@@ -85,6 +89,7 @@ def compare_records(a, b):
 
 
 def record_parser():
+    """Build the command-line parser for paired record comparison."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default=".", help="directory containing the A/B event outputs")
     parser.add_argument(
@@ -101,6 +106,7 @@ def record_parser():
 
 
 def compare_records_main(args):
+    """Run record validation and fail unless its mismatch indices are expected."""
     base = Path(args.base).resolve()
     geant4_version = detect_geant4_version()
     build_type = detect_build_type(base)
@@ -122,6 +128,7 @@ def compare_records_main(args):
 
 
 def load_hits(path):
+    """Load NPY or legacy-text hits as time, wavelength, position, and direction columns."""
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"Missing hit file: {path}")
@@ -151,6 +158,7 @@ def load_hits(path):
 
 
 def chi2_1d(a, b, bins):
+    """Return the two-sample binned chi-squared statistic and populated-bin count."""
     a_histogram, _ = np.histogram(a, bins=bins)
     b_histogram, _ = np.histogram(b, bins=bins)
     populated = (a_histogram + b_histogram) > 0
@@ -162,15 +170,18 @@ def chi2_1d(a, b, bins):
 
 
 def hit_label(g4_path, gpu_path):
+    """Return a display label based on the common parent of both hit files."""
     common_parent = hit_output_dir(g4_path, gpu_path)
     return common_parent.name or str(common_parent)
 
 
 def hit_output_dir(g4_path, gpu_path):
+    """Return the nearest shared directory containing the Geant4 and GPU hit files."""
     return Path(os.path.commonpath((Path(g4_path).resolve().parent, Path(gpu_path).resolve().parent)))
 
 
 def hit_parser():
+    """Build the command-line parser for Geant4/GPU hit comparison."""
     parser = argparse.ArgumentParser(description="Compare Geant4 and GPU hit files.")
     parser.add_argument("g4_hits", help="Geant4 hit file (.npy or legacy text)")
     parser.add_argument("gpu_hits", help="GPU hit file (.npy or legacy text)")
@@ -197,6 +208,7 @@ def hit_parser():
 
 
 def distribution_bins(g4_values, gpu_values):
+    """Return 30 shared bins spanning both value arrays, including constant data."""
     lower = min(g4_values.min(), gpu_values.min())
     upper = max(g4_values.max(), gpu_values.max())
     if lower == upper:
@@ -207,6 +219,12 @@ def distribution_bins(g4_values, gpu_values):
 
 
 def compare_hits(args):
+    """Compare Geant4 and GPU hits by count and spatial/directional distributions.
+
+    Each input is reduced to hit position (x, y) and direction (dx, dy, dz).
+    The comparison checks the total hit count, then uses binned chi-squared
+    tests for the x/y position and dx/dy/dz direction distributions.
+    """
     if args.count_relative_tolerance < 0:
         raise ValueError("--count-relative-tolerance must be non-negative")
     if args.count_nsigma is not None and args.count_nsigma <= 0:
@@ -270,6 +288,7 @@ def compare_hits(args):
 
 
 def main():
+    """Dispatch the requested record or hit comparison command."""
     if len(sys.argv) > 1 and sys.argv[1] == "hits":
         return compare_hits(hit_parser().parse_args(sys.argv[2:]))
 
