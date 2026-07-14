@@ -73,27 +73,48 @@ comparison.
 `-g tess` swaps the two straight drifts for closed `G4TessellatedSolid`
 meshes generated in code (rectangular rings every ~15 mm: 2668 and 21332
 facets, CAD-like density) while the arc stays analytic — the standard
-CPU-side way to run a meshed chamber. Caveat, measured on Geant4 11.4:
-continuing a reflected track in place across a `G4TessellatedSolid` boundary
-silently loses the track above a grazing-angle threshold between 10 and
-20 mrad (the relocated on-facet point fails to re-enter the solid and the
-photon free-flies to the world boundary with no warning; analytic solids are
-robust at all angles, and ultra-grazing fans below ~2 mrad have a small
-geometric escape tail on any solid). Synchrotron-radiation illumination
-stays below the bend angle (10 mrad here) by construction, so the tess mode
-is exercised with its native workload, the `-e` electron mode: stock
-`G4SynchrotronRadiation` in the dipole field, a 30 eV stacking cut, and
-`--killphotons` (SR gammas stack-killed at birth) for the Delta timing
-method — `LOST` stays 0 there. Pencil beams steered above the threshold
-onto tessellated walls are outside the in-place idiom's validity domain.
+CPU-side way to run a meshed chamber. The tess mode is exercised with its
+native workload, the `-e` electron mode: stock `G4SynchrotronRadiation` in
+the dipole field, a 30 eV stacking cut, and `--killphotons` (SR gammas
+stack-killed at birth) for the Delta timing method — `LOST` stays 0. The
+tess solids extend 1 µm into the analytic arc so that entry does not cross
+an exactly coincident junction face.
 
-The two arms are compared statistically in CI
+The two modes are compared statistically in CI
 (`tests/test_synrad_example.sh` → `optiphy/ana/synrad_test.py`) with a pure
-7 mrad pencil (no angular fan, for which LOST
-is exactly 0 across 1.57M reflections): at 500k photons both arms absorb
-all 500k, the reflected-at-least-once fractions agree at 0.1 sigma and the
+7 mrad pencil (no angular fan, for which LOST is exactly 0 across 1.57M
+reflections): at 500k photons both modes absorb all 500k, the
+reflected-at-least-once fractions agree at 0.1 sigma and the
 z / x / y absorption marginals and the reflected-energy spectrum give
 chi2/ndf = 1.31 / 1.24 / 1.11 / 0.36.
+
+## Speedup demonstration
+
+```
+SIMPHONY_PREFIX=/path/to/install ./speedup.sh [nphoton] [seed]
+```
+
+times the photon transport four ways — the Geant4 reference mode on its
+analytic CSG solids (pencil beam) and on the CAD-like meshed drifts (its
+native SR-electron workload, Delta method), and the GPU on the coarse and
+fine fused envelopes — and prints end-to-end and transport-only times with
+the two ratios. Measured at the 500k scale on an RTX 4090 host,
+single CPU core:
+
+| | µs/photon | GPU | speedup |
+|---|---|---|---|
+| G4 analytic CSG (pencil) | 8.40 | 0.075 (coarse) | **112×** production comparison |
+| G4 meshed drifts (SR e⁻, Δ) | 157 | 0.079 (fine) | **~1980×** CAD layout |
+
+The production-comparison row is the like-for-like number: each engine runs the
+geometry it is built for, on the same photons, with no overhead on
+the Geant4 side. The CAD row is the meshed-geometry case: Geant4 navigation pays
+18.7× for the ~24k-facet drifts while the GPU triangle intersection is flat
+across mesh fidelity (1.06×), so the gap grows with geometric precision (the
+two runs carry different but comparably grazing illuminations). End-to-end
+the GPU process is bounded by its ~0.6–1.2 s CUDA/OptiX/geometry init, which
+the transport ratio does not see; at production photon counts the init
+amortizes away.
 
 ## Output
 

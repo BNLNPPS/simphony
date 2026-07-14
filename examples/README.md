@@ -278,8 +278,10 @@ instead — the benchmark's analytic CSG geometry and its reflect-or-absorb
 process continued in place, same Cu table, double precision, native CLHEP
 smearing; `-g tess` swaps the drifts for CAD-like meshes and `-e` drives
 them with stock `G4SynchrotronRadiation` electrons —
-`tests/test_synrad_example.sh` runs both arms on the same pencil beam and
-compares them statistically (`optiphy/ana/synrad_test.py`).
+`tests/test_synrad_example.sh` runs both modes on the same pencil beam and
+compares them statistically (`optiphy/ana/synrad_test.py`), and
+`examples/synrad/speedup.sh` prints end-to-end and transport-only timings
+for the Geant4 reference runs and the GPU side by side.
 
 **Source files:** `examples/synrad/synrad.cpp` (GPU mode),
 `examples/synrad/synrad_g4.cpp` (Geant4 reference mode),
