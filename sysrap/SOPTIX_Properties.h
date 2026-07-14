@@ -76,7 +76,7 @@ all together.
 For example with mmlabel.txt::
 
   +-----+----------------------------------------+
-  | idx | mmlable                                |
+  | idx | mmlabel                                |
   +=====+========================================+
   |  0  | 3218:sWorld                            |
   |  1  | 5:PMT_3inch_pmt_solid                  |
