@@ -245,7 +245,7 @@ Unlike scintillation properties, WLS property names are the same in both Geant4
 **Test files:** `tests/geom/wls_test.gdml`, `config/wls_test.json`
 **Implementation docs:** `docs/WLS_IMPLEMENTATION.md`
 
-### Example 8: synrad (Soft X-ray SR transport, GPU-Only)
+### Example 8: synrad (Soft X-ray SR transport)
 
 The `synrad` example transports soft X-rays through the vacuum of a
 synchrotron-radiation beam chamber: photons fly at c through the vacuum and
@@ -273,6 +273,14 @@ synrad -g examples/synrad/synrad_bench.gdml -n 1000000
 wall-absorbed photons, plus a one-line summary (wall-absorbed /
 reflected-at-least-once / on-cap counts, transport time).
 
-**Source files:** `examples/synrad/synrad.cpp`, physics in `qudarap/qgxs.h`
+`synrad_g4` transports the same photons with a plain Geant4 application
+instead — the benchmark's analytic CSG geometry and its reflect-or-absorb
+process continued in place, same Cu table, double precision, native CLHEP
+smearing; `-g tess` swaps the drifts for CAD-like meshes and `-e` drives
+them with stock `G4SynchrotronRadiation` electrons.
+
+**Source files:** `examples/synrad/synrad.cpp` (GPU mode),
+`examples/synrad/synrad_g4.cpp` (Geant4 reference mode),
+`examples/synrad/synrad_gun.h` (shared gun); physics in `qudarap/qgxs.h`
 (tables `qudarap/qgxs_synradg4.h`), dispatch `qsim::propagate_gamma`.
 **Details:** `examples/synrad/README.md`

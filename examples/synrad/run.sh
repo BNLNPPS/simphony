@@ -34,3 +34,7 @@ test -f "$run_dir/synrad_hits.npy"
 # fine CAD-like tessellation of the same chamber (25k facets)
 "$prefix/bin/synrad" -g "$script_dir/synrad_bench_tess.gdml" -n 100000 -o "$run_dir"
 test -f "$run_dir/synrad_hits.npy"
+
+# Geant4 reference mode, same photons (see synrad_g4.cpp)
+"$prefix/bin/synrad_g4" -g analytic -n 100000 -o "$run_dir"
+test -f "$run_dir/synrad_g4_hits.npy"

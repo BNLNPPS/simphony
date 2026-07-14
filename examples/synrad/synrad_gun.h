@@ -1,4 +1,7 @@
-// synrad_gun.h — photon gun and hit I/O of the synrad example.
+// synrad_gun.h — photon gun and hit I/O shared by the two synrad modes
+// (synrad.cpp GPU transport, synrad_g4.cpp Geant4 reference mode): the same
+// mt19937 stream from the same seed gives bit-identical input photons, so
+// the two wall-absorption records are statistically comparable.
 #pragma once
 
 #include <cmath>

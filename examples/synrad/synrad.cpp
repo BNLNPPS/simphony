@@ -15,6 +15,11 @@
 // at the wall are the hits: sphoton rows (pos+time | mom | pol | E_keV in
 // the wavelength slot) saved to synrad_hits.npy.
 //
+// The Geant4 reference mode lives in synrad_g4.cpp: the same photons (same
+// seed, same gun in synrad_gun.h) transported by a plain Geant4 build of
+// the same chamber, compared statistically by tests/test_synrad_example.sh
+// and optiphy/ana/synrad_test.py.
+//
 // Usage:
 //   synrad -g synrad_bench.gdml [-n N] [-s SEED]
 //          [-r SIGMA_NM] [-T T_UM] [-U ZLO,ZHI]
@@ -145,7 +150,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        ip = GeneratePhotons(n, seed, I, fan_mrad);   // same seed -> identical photons in both arms
+        ip = GeneratePhotons(n, seed, I, fan_mrad);   // same seed -> identical photons in both modes
     }
 
     double sigma_mm = sigma_nm*1e-6 ;
