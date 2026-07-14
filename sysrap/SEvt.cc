@@ -3593,13 +3593,11 @@ NP* SEvt::makePhotonLite() const
 NP* SEvt::makeRecord() const
 {
     NP* r = NP::Make<float>( evt->num_photon, evt->max_record, 4, 4 );
-    r->set_meta<std::string>("rpos", "4,GL_FLOAT,GL_FALSE,64,0,false" );  // eg used by examples/UseGeometryShader
     return r ;
 }
 NP* SEvt::makeRec() const
 {
     NP* r = NP::Make<short>( evt->num_photon, evt->max_rec, 2, 4);   // stride:  sizeof(short)*2*4 = 2*2*4 = 16
-    r->set_meta<std::string>("rpos", "4,GL_SHORT,GL_TRUE,16,0,false" );  // eg used by examples/UseGeometryShader
     return r ;
 }
 NP* SEvt::makeAux() const

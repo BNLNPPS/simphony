@@ -8,9 +8,8 @@ OptixShaderBindingTable binds together geometry, "shader" programs, records with
 Used for example from::
 
    sysrap/tests/SOPTIX_Scene_test.cc
-   sysrap/tests/SGLFW_SOPTIX_Scene_test.cc
 
-Good general explanatiom of SBT Shader Binding Table
+Good general explanation of SBT Shader Binding Table
 
 * https://www.willusher.io/graphics/2019/11/20/the-sbt-three-ways
 
@@ -255,5 +254,4 @@ inline std::string SOPTIX_SBT::Desc(const OptixShaderBindingTable& sbt)  // stat
     std::string str = ss.str();
     return str ;
 }
-
 

@@ -3,9 +3,6 @@
 SOPTIX_Scene.h : top level, holds vectors of SCUDA_MeshGroup SOPTIX_MeshGroup and OptixInstance
 =================================================================================================
 
-HMM: maybe SOPTIX_Geom.h so can rename SOPTIX.h to SOPTIX_Scene.h for parallel with SGLFW_Scene.h ?
-
-
 HMM: in tri/ana integrated running this is probably not needed as most the geometry will
 be analytic
 
@@ -268,5 +265,4 @@ inline OptixTraversableHandle SOPTIX_Scene::getHandle(int idx) const
     assert( idx < int(meshgas.size())) ;
     return idx == -1 ? ias->handle : meshgas[idx]->handle ;
 }
-
 

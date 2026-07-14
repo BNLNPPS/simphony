@@ -17,14 +17,11 @@ call stack::
 
 
 To some extent the SScene acts as a minimal sub-selection of the
-full stree.h info needed to do triangulated rendering both
-with OptiX ray trace and OpenGL rasterized.
+full stree.h info needed to do triangulated OptiX ray tracing.
 
 ::
 
     SScene_test
-
-* OpenGL/CUDA interop-ing the triangle data is possible (but not straight off)
 
 * TODO: solid selection via ELV envvar eg skipping virtuals so can see PMT shapes
 
@@ -167,16 +164,14 @@ inline SScene* SScene::Load_(const char* _base)
     return src ;
 }
 
-
 /**
 SScene::Load
 --------------
 
 HMM cf CSGFoundry::Load which uses SSim::set_override_scene
 
-Dependency on SGeoConfig.cc (ie library functionality, not just header only)
-is inconvenient for examples/UseShaderSGLFW_SScene. Workaraound is to
-use lowerlevel SScene::Load_ without the ELV functionality.
+Dependency on SGeoConfig.cc means callers needing only header-level loading
+should use lower-level SScene::Load_ without the ELV functionality.
 
 **/
 
@@ -367,7 +362,7 @@ meshgroup
     (used by triangulated OptiX?)
 
 meshmerge
-    concatenated SMesh used by OpenGL
+    concatenated SMesh representation
     HMM: the concatenation could be deferred or redone following
     lvid based sub-selection applied to mg->subs
 
@@ -882,9 +877,8 @@ The file needs to contain frame specification triplet lines, comments starting #
     sSurftube_38V1_1:0:-1
     solidXJfixture:27:-1     ## near bottom of CD
 
-These framespec lines are used to provide navigation bookmarks in the visualization GUI
-which are accessed by number keys 0-9 with and without modifier keys ALT, SHIFT, ALT+SHIFT.
-So it only makes sense to have up to 40 lines in the file. See SGLFW::HELP for details.
+These framespec lines provide named navigation bookmarks. Clients can map the
+first 40 entries to number keys 0-9 with modifier combinations if desired.
 The framespec lines are converted into sframe.h instances by stree::get_frame.
 
 
@@ -1163,7 +1157,6 @@ inline int SScene::Compare(const SScene* a, const SScene* b) // static
 
     return mismatch ;
 }
-
 
 
 
