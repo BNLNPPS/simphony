@@ -277,7 +277,9 @@ reflected-at-least-once / on-cap counts, transport time).
 instead — the benchmark's analytic CSG geometry and its reflect-or-absorb
 process continued in place, same Cu table, double precision, native CLHEP
 smearing; `-g tess` swaps the drifts for CAD-like meshes and `-e` drives
-them with stock `G4SynchrotronRadiation` electrons.
+them with stock `G4SynchrotronRadiation` electrons —
+`tests/test_synrad_example.sh` runs both arms on the same pencil beam and
+compares them statistically (`optiphy/ana/synrad_test.py`).
 
 **Source files:** `examples/synrad/synrad.cpp` (GPU mode),
 `examples/synrad/synrad_g4.cpp` (Geant4 reference mode),

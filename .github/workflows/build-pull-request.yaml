@@ -172,6 +172,7 @@ jobs:
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonSource_8x8SiPM.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_wavelength_shifting.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/g4trap_validation.sh
+          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_synrad_example.sh
 
       - name: Build and run external example
         run: |

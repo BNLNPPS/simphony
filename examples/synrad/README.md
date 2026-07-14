@@ -87,6 +87,14 @@ is exercised with its native workload, the `-e` electron mode: stock
 method — `LOST` stays 0 there. Pencil beams steered above the threshold
 onto tessellated walls are outside the in-place idiom's validity domain.
 
+The two arms are compared statistically in CI
+(`tests/test_synrad_example.sh` → `optiphy/ana/synrad_test.py`) with a pure
+7 mrad pencil (no angular fan, for which LOST
+is exactly 0 across 1.57M reflections): at 500k photons both arms absorb
+all 500k, the reflected-at-least-once fractions agree at 0.1 sigma and the
+z / x / y absorption marginals and the reflected-energy spectrum give
+chi2/ndf = 1.31 / 1.24 / 1.11 / 0.36.
+
 ## Output
 
 `synrad_hits.npy` / `synrad_g4_hits.npy` — (N_hit,4,4) float32 sphoton rows
