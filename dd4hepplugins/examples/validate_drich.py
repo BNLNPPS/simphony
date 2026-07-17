@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Run GPU and CPU with simplified dRICH geometry (no non-optical PDU components)."""
+"""Run GPU and CPU with the bundled single-sector dRICH geometry."""
 import math, os, sys, numpy as np
 
-_SCRIPT_DIR = "/tmp/simphony/dd4hepplugins/examples"
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _GEOM_DIR = os.path.join(_SCRIPT_DIR, "geometry")
 sys.path.insert(0, _SCRIPT_DIR)
 
@@ -17,9 +17,9 @@ def setup_kernel(mode):
     cppyy.include("G4OpticalParameters.hh")
     from cppyy.gbl import G4OpticalParameters
 
-    compact = os.path.join(_GEOM_DIR, "epic_drich_simple.xml")
-    if "DRICH_SIMPLE_XML" not in os.environ:
-        os.environ["DRICH_SIMPLE_XML"] = os.path.join(_GEOM_DIR, "drich_1sector_simple.xml")
+    compact = os.path.join(_GEOM_DIR, "epic_drich_1sector.xml")
+    if "DRICH_1SECTOR_XML" not in os.environ:
+        os.environ["DRICH_1SECTOR_XML"] = os.path.join(_GEOM_DIR, "drich_1sector.xml")
 
     if mode == "gpu":
         os.environ["OPTICKS_EVENT_MODE"] = "Minimal"
