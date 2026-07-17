@@ -1267,13 +1267,15 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
     // boundary knows the photon's actual medium even when that boundary doesn't
     // reference it (the sibling-pair case). _c1 = -dot(p.mom,normal) here, so
     // _c1 < 0 maps to cosTheta > 0 in qbnd::fill_state (m1=IMAT, m2=OMAT).
+    // Only transmit changes medium: on reflect the carry is left untouched,
+    // preserving any sibling override fill_state applied (recomputing m1 from
+    // this boundary's own lines would clobber it with the wrong medium).
+    if (!reflect)
     {
         const unsigned bnd_idx = ctx.prd->boundary();
         const unsigned imat_line = bnd_idx * _BOUNDARY_NUM_MATSUR + IMAT;
         const unsigned omat_line = bnd_idx * _BOUNDARY_NUM_MATSUR + OMAT;
-        const unsigned this_m1_line = (_c1 < 0.f) ? imat_line : omat_line;
-        const unsigned this_m2_line = (_c1 < 0.f) ? omat_line : imat_line;
-        ctx.current_matline = reflect ? this_m1_line : this_m2_line;
+        ctx.current_matline = (_c1 < 0.f) ? omat_line : imat_line; // the m2 (entered-medium) line
     }
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
