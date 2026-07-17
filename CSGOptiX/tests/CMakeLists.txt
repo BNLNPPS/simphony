@@ -24,11 +24,6 @@ set(SINGLE_SOURCES
 
 )
 
-set(VIZ_SOURCES
-    CSGOptiXRenderInteractiveTest.cc
-)
-
-
 set(TEST_SOURCES
     CSGOptiXVersion.cc
     CSGOptiXVersionTest.cc
@@ -42,22 +37,6 @@ foreach(SRC ${SINGLE_SOURCES})
     target_link_libraries(${TGT} CSGOptiX CUDA::cudart)
 endforeach()
 
-
-find_package(GLEW)
-find_package(glfw3)
-find_package(OpenGL)
-
-foreach(SRC ${VIZ_SOURCES})
-    get_filename_component(TGT ${SRC} NAME_WE)
-    add_executable(${TGT} ${SRC})
-    target_link_libraries(${TGT}
-          CSGOptiX
-          OpenGL::GL
-          GLEW::GLEW
-          glfw
-          CUDA::cudart
-         )
-endforeach()
 
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)

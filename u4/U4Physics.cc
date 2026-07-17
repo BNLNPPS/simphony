@@ -194,11 +194,6 @@ std::string U4Physics::Switches()  // static
 {
     std::stringstream ss ;
     ss << "U4Physics::Switches" << std::endl ;
-#if defined(WITH_PMTSIM)
-    ss << "WITH_PMTSIM" << std::endl ;
-#else
-    ss << "NOT:WITH_PMTSIM" << std::endl ;
-#endif
 #if defined(DEBUG_TAG)
     ss << "DEBUG_TAG" << std::endl ;
 #else

@@ -28,10 +28,6 @@
 #include "U4GDML.h"
 #include "U4ThreeVector.h"
 
-#ifdef WITH_PMTSIM
-#include "PMTSim.hh"
-#endif
-
 
 
 const plog::Severity U4VolumeMaker::LEVEL = SLOG::EnvLevel("U4VolumeMaker", "DEBUG");
@@ -44,11 +40,6 @@ std::string U4VolumeMaker::Desc() // static
     ss << "U4VolumeMaker::Desc" ;
     ss << " GEOM " << ( GEOM ? GEOM : "-" ) ;
     ss << " METH " << ( METH ? METH : "-" ) ;
-#ifdef WITH_PMTSIM
-    ss << " WITH_PMTSIM " ;
-#else
-    ss << " not-WITH_PMTSIM " ;
-#endif
     std::string s = ss.str();
     return s ;
 }
@@ -81,8 +72,6 @@ PVS_
     Small number of special cased geometries created locally, eg RaindropRockAirWater
 PVG_
     load geometry from a gdmlpath using spath::GDMLPathFromGEOM method
-PVP_
-    PMTSim getter, requiring WITH_PMTSIM macro to be set meaning that PMTSim pkg was found by CMake
 PVL_
     For names starting with List, multiple volumes are created and arranged eg into a grid.
     The names to create are extracted using the name argument as a comma delimited list
@@ -100,7 +89,6 @@ const G4VPhysicalVolume* U4VolumeMaker::PV(const char* name)
     const G4VPhysicalVolume* pv = nullptr ;
     if(pv == nullptr) pv = PVS_(name);
     if(pv == nullptr) pv = PVG_(name);
-    if(pv == nullptr) pv = PVP_(name);
     if(pv == nullptr) pv = PVL_(name);
     if(pv == nullptr) pv = PV1_(name);
     LOG_IF(error, pv == nullptr) << "returning nullptr for name [" << name << "]" ;
@@ -182,74 +170,6 @@ const G4VPhysicalVolume* U4VolumeMaker::PVG_(const char* name)
 
 
 /**
-U4VolumeMaker::PVP_ : Get PMTSim PV
-------------------------------------
-
-PMTSim::HasManagerPrefix
-    returns true for names starting with one of: hama, nnvt, hmsk, nmsk, lchi
-
-PMTSim::GetLV PMTSim::GetPV
-     these methods act as go betweens to the underlying managers with prefixes
-     that identify the managers offset
-
-
-TODO: need to generalize the wrapping
-
-**/
-
-const G4VPhysicalVolume* U4VolumeMaker::PVP_(const char* name)
-{
-    METH = "PVP_" ;
-    const G4VPhysicalVolume* pv = nullptr ;
-#ifdef WITH_PMTSIM
-    const char* geomlist = spath::GEOMList(name);   // consult envvar name_GEOMList
-    std::vector<std::string> names ;
-    if( geomlist == nullptr )
-    {
-        names.push_back(name);
-    }
-    else
-    {
-        sstr::Split(geomlist, ',', names );
-    }
-    int num_names = names.size();
-
-    LOG(LEVEL)
-         << "[ WITH_PMTSIM"
-         << " geomlist [" << ( geomlist ? geomlist : "-" ) << "] "
-         << " name [" << name << "] "
-         << " num_names " << num_names
-         ;
-
-    std::vector<G4LogicalVolume*> lvs ; ;
-
-    for(int i=0 ; i < num_names ; i++)
-    {
-        const char* n = names[i].c_str();
-        bool has_manager_prefix = PMTSim::HasManagerPrefix(n) ;
-        LOG(LEVEL) << "[ WITH_PMTSIM n [" << n << "] has_manager_prefix " << has_manager_prefix ;
-
-        if(!has_manager_prefix) return nullptr ;
-        //assert( has_manager_prefix );
-
-        G4LogicalVolume* lv = PMTSim::GetLV(n) ;
-        LOG_IF(fatal, lv == nullptr ) << "PMTSim::GetLV returned nullptr for n [" << n << "]" ;
-        assert( lv );
-
-        lvs.push_back(lv);
-    }
-
-    pv = Wrap( name, lvs ) ;
-
-    LOG(LEVEL) << "]" ;
-#else
-    LOG(info) << " not-WITH_PMTSIM name [" << name << "]" ;
-#endif
-    return pv ;
-}
-
-
-/**
 U4VolumeMaker::PVS_
 ----------------------
 
@@ -321,8 +241,6 @@ Note the generality:
 
 * U4SolidMaker::Make can create many different solid shapes based on the start of the name
 * U4Material::FindMaterialName extracts the material name by looking for material names within *name*
-
-HMM: maybe provide PMTSim LV this way too ? Based on some prefix ?
 
 **/
 
@@ -902,13 +820,13 @@ configure the size of the universe volume. Note that this functionality can
 be used from the below script that creates the Geant4 geometry and then translates
 into an Opticks one which is persisted.
 
-    ~/o/g4cx/tests/G4CX_U4TreeCreateCSGFoundryTest.sh
+    G4CX_U4TreeCreateCSGFoundryTest
 
 Thence can use the below tools to visualize in various ways::
 
     cxr_min.sh  # ray trace render
     cxt_min.sh  # simtrace cross sections
-    ssst.sh     # triangulated SScene viz
+    ssst     # triangulated SScene viz
 
 
 Consider phicut applied to a shape, which results in
@@ -1496,4 +1414,3 @@ void U4VolumeMaker::WrapAround( const char* prefix, const NP* trs, std::vector<G
 
     }
 }
-

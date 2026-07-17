@@ -1,4 +1,4 @@
-// ~/opticks/sysrap/tests/ssys_test.sh
+// ssys_test
 
 #include <string>
 #include <iostream>
@@ -631,5 +631,4 @@ int main(int argc, char** argv)
     return rc ;
 }
 
-// ~/opticks/sysrap/tests/ssys_test.sh
-
+// ssys_test

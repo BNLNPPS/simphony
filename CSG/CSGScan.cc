@@ -43,30 +43,31 @@ c
 
 **/
 
-
-CSGScan::CSGScan( const CSGFoundry* fd_, const CSGSolid* so_, const char* opts_  ) 
-    :
+CSGScan::CSGScan(const CSGFoundry* fd_, const CSGSolid* so_, const char* opts_, bool device) :
     fd(fd_),
     prim0(fd->getPrim(0)),
     node0(fd->getNode(0)),
     so(so_),
     primIdx0(so->primOffset),
-    primIdx1(so->primOffset+so->numPrim),
-    primIdx(primIdx0),   // 
+    primIdx1(so->primOffset + so->numPrim),
+    primIdx(primIdx0), //
     prim(prim0 + primIdx),
     nodeOffset(prim->nodeOffset()),
     node(node0 + nodeOffset),
-    h(new CSGParams {}),
-    d(new CSGParams {}),   
+    h(new CSGParams{}),
+    d(new CSGParams{}),
     d_d(nullptr),
-    c(new CSGParams {})
+    c(new CSGParams{})
 {
-    initGeom_h(); 
-    initRays_h(opts_); 
+    initGeom_h();
+    initRays_h(opts_);
 
-    initGeom_d(); 
-    initRays_d(); 
-    initParams_d(); 
+    if (device)
+    {
+        initGeom_d();
+        initRays_d();
+        initParams_d();
+    }
 }
 
 void CSGScan::initGeom_h()
@@ -269,12 +270,13 @@ void CSGScan::intersect_h()
     }
 }
 
-
-
 extern void CSGScan_intersect( dim3 numBlocks, dim3 threadsPerBlock, CSGParams* d ); 
 
 void CSGScan::intersect_d()
 {
+    if (d_d == nullptr)
+        return;
+
     dim3 numBlocks ; 
     dim3 threadsPerBlock ; 
     CU::ConfigureLaunch1D( numBlocks, threadsPerBlock, d->num, 512u );

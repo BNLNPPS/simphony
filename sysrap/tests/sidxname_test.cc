@@ -1,4 +1,4 @@
-// ./sidxname_test.sh
+// ./sidxname_test
 
 #include "sidxname.h"
 #include <iostream>

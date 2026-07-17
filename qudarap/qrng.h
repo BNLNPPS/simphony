@@ -3,9 +3,7 @@
 qrng.h
 =======
 
-Despite differences between template specializations regarding *uploaded_states*
-all specializations have the same init_with_skipahead signature.
-The ctor is only compiled on CPU, as the instance get instanciated on CPU
+The ctor is only compiled on CPU, as the instance get instantiated on CPU
 before being uploaded to GPU.
 
 changes
@@ -18,12 +16,7 @@ changes
 init_with_skipahead
 ---------------------
 
-1. With XORWOW copy the *photon_idx* element of uploaded_states array
-   to the curandState reference argument, with others curand_init is cheap,
-   so is used directly.  For XORWOW the curand_init is done in separate
-   launches creating the chunked states files with QCurandState.cu
-
-   * hence only qrng<XORWOW> template specialization has *uploaded_states* member
+1. Initialize the Philox state with photon_idx as the curand subsequence.
 
 2. skipahead the curandState by skipahead_event_offset*event_idx
    The offset can be configured using the OPTICKS_EVENT_SKIPAHEAD envvar.
@@ -65,47 +58,6 @@ using ULL = unsigned long long ;
 
 template<typename T> struct qrng {} ;
 
-template<>
-struct qrng<XORWOW>
-{
-    ULL  seed ;
-    ULL  offset ;
-    ULL  skipahead_event_offset ;
-
-
-#if defined(__CUDACC__) || defined(__CUDABE__)
-    XORWOW*   uploaded_states ;
-#else
-    void*     uploaded_states ;
-#endif
-
-
-#if defined(__CUDACC__) || defined(__CUDABE__)
-    QRNG_METHOD void init(XORWOW& rng, unsigned long long event_idx, unsigned long long photon_idx )
-    {
-        rng = uploaded_states[photon_idx] ;
-        ULL skipahead_ = skipahead_event_offset*event_idx ;
-        skipahead( skipahead_, &rng );
-    }
-#else
-    qrng(ULL seed_, ULL offset_, ULL skipahead_event_offset_ )
-        :
-        seed(seed_),
-        offset(offset_),
-        skipahead_event_offset(skipahead_event_offset_),
-        uploaded_states(nullptr)
-    {
-    }
-
-    void set_uploaded_states( void*  uploaded_states_ )
-    {
-        uploaded_states = uploaded_states_ ;
-    }
-
-#endif
-};
-
-
 /**
 qrng<Philox>
 -------------
@@ -143,6 +95,5 @@ struct qrng<Philox>
         skipahead_event_offset(skipahead_event_offset_)
     {
     }
-    void set_uploaded_states( void* ){}
 #endif
 };

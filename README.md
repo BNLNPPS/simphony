@@ -51,15 +51,21 @@ and development-environment details.
 
 ## Supported Images
 
-The `build-push.yaml` workflow publishes the versioned container tags below to GHCR on pushes to `main`, while `release.yaml` publishes the `latest` alias on tagged releases. Tag entries link to the
+The `build-push-base.yaml` workflow publishes reusable `base` images for development environments and Docker build
+cache warmup. The `build-push.yaml` workflow publishes the versioned container tags below to GHCR on pushes to `main`,
+while `release.yaml` publishes the `latest` alias on tagged releases. Tag entries link to the
 [Simphony package page](https://github.com/BNLNPPS/simphony/pkgs/container/simphony).
 
 | Target | OS | CUDA | OptiX | Geant4 | Alias | Tag |
 |---|---|---:|---:|---:|---|---|
-| `release` | `ubuntu24.04` | `13.2.0` | `9.1.0` | `11.4.1` | | [cuda13.2.0-release-ubuntu24.04-optix9.1.0-geant411.4.1-cmake4.3.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `release` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `latest` | [cuda13.0.2-release-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `base` | `ubuntu26.04` | `13.3.0` | `9.1.0` | `11.4.2` | | [cuda13.3.0-base-ubuntu26.04-optix9.1.0-geant411.4.2-cmake4.3.4](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `base` | `ubuntu24.04` | `13.0.3` | `9.0.0` | `11.4.2` | `base` | [cuda13.0.3-base-ubuntu24.04-optix9.0.0-geant411.4.2-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `base` | `ubuntu24.04` | `12.5.1` | `9.0.0` | `11.4.1` | | [cuda12.5.1-base-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `base` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-base-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `release` | `ubuntu26.04` | `13.3.0` | `9.1.0` | `11.4.2` | | [cuda13.3.0-release-ubuntu26.04-optix9.1.0-geant411.4.2-cmake4.3.4](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `release` | `ubuntu24.04` | `13.0.3` | `9.0.0` | `11.4.2` | `latest` | [cuda13.0.3-release-ubuntu24.04-optix9.0.0-geant411.4.2-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `release` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-release-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
-| `develop` | `ubuntu24.04` | `13.0.2` | `9.0.0` | `11.4.1` | `develop` | [cuda13.0.2-develop-ubuntu24.04-optix9.0.0-geant411.4.1-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
+| `develop` | `ubuntu24.04` | `13.0.3` | `9.0.0` | `11.4.2` | `develop` | [cuda13.0.3-develop-ubuntu24.04-optix9.0.0-geant411.4.2-cmake4.2.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `develop` | `ubuntu24.04` | `12.5.1` | `9.0.0` | `11.4.1` | | [cuda12.5.1-develop-ubuntu24.04-optix9.0.0-geant411.4.1-cmake3.28.3](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 | `develop` | `ubuntu22.04` | `12.1.1` | `8.0.0` | `11.3.2` | | [cuda12.1.1-develop-ubuntu22.04-optix8.0.0-geant411.3.2-cmake3.22.1](https://github.com/BNLNPPS/simphony/pkgs/container/simphony) |
 
@@ -67,6 +73,7 @@ The `build-push.yaml` workflow publishes the versioned container tags below to G
 ## Documentation
 
 - [Getting started](docs/getting-started.md)
-- [Physics and simulation inputs](docs/physics-and-inputs.md)
+- [Physics](docs/physics.md)
+- [Simulation inputs and outputs](docs/inputs-outputs.md)
 - [Performance and debugging](docs/performance-and-debugging.md)
 - [Examples](examples/README.md)

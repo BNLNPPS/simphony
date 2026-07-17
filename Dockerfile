@@ -1,17 +1,20 @@
 # syntax=docker/dockerfile:latest
 
 ARG OS=ubuntu24.04
-ARG CUDA_VERSION=13.0.2
+ARG CUDA_VERSION=13.0.3
 ARG OPTIX_VERSION=9.0.0
-ARG GEANT4_VERSION=11.4.1
+ARG GEANT4_VERSION=11.4.2
 ARG CMAKE_VERSION=4.2.1
+ARG PYTHON_VERSION=3.13
 ARG SPACK_BUILDCACHE_MIRROR=oci://ghcr.io/bnlnpps/simphony-spack-buildcache
+ARG SPACK_TARGET=x86_64_v2
 
 FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS base
 
 ARG OPTIX_VERSION
 ARG GEANT4_VERSION
 ARG CMAKE_VERSION
+ARG PYTHON_VERSION
 ARG CMAKE_BUILD_JOBS
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -22,9 +25,9 @@ RUN apt update \
  && rm -rf /var/lib/apt/lists/*
 
 RUN apt update \
- && apt install -y libssl-dev \
-    nlohmann-json3-dev \
-    libglfw3-dev libglu1-mesa-dev libxmu-dev libglew-dev libglm-dev \
+ && apt install -y nlohmann-json3-dev \
+    libglu1-mesa-dev libxmu-dev libglm-dev \
+    libxkbcommon-dev \
     qt6-base-dev libxerces-c-dev libexpat1-dev \
  && apt clean \
  && rm -rf /var/lib/apt/lists/*
@@ -51,6 +54,9 @@ RUN mkdir -p /opt/optix && curl -sL https://github.com/NVIDIA/optix-dev/archive/
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
 
+ENV UV_PYTHON=${PYTHON_VERSION}
+ENV UV_MANAGED_PYTHON=1
+
 SHELL ["/bin/bash", "-l", "-c"]
 
 # Set up non-interactive shells by sourcing all of the scripts in /etc/profile.d/
@@ -68,30 +74,30 @@ EOF
 RUN cat /etc/bash.nonint >> /etc/bash.bashrc
 
 ENV BASH_ENV=/etc/bash.nonint
-ENV OPTICKS_PREFIX=/opt/simphony
-ENV OPTICKS_HOME=/workspaces/simphony
-ENV OPTICKS_BUILD=/opt/simphony/build
-ENV LD_LIBRARY_PATH=${OPTICKS_PREFIX}/lib:${LD_LIBRARY_PATH}
-ENV VIRTUAL_ENV=${OPTICKS_HOME}/.venv
-ENV PATH=${OPTICKS_PREFIX}/bin:${VIRTUAL_ENV}/bin:${PATH}
+ENV SIMPHONY_PREFIX=/opt/simphony
+ENV SIMPHONY_HOME=/workspaces/simphony
+ENV SIMPHONY_BUILD=/opt/simphony/build
+ENV LD_LIBRARY_PATH=${SIMPHONY_PREFIX}/lib:${LD_LIBRARY_PATH}
+ENV VIRTUAL_ENV=${SIMPHONY_HOME}/.venv
+ENV PATH=${SIMPHONY_PREFIX}/bin:${VIRTUAL_ENV}/bin:${PATH}
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,compute,utility
 
-WORKDIR $OPTICKS_HOME
+WORKDIR $SIMPHONY_HOME
 
 # Install Python dependencies
-COPY pyproject.toml uv.lock $OPTICKS_HOME/
-COPY optiphy $OPTICKS_HOME/optiphy
-RUN uv sync
+COPY pyproject.toml uv.lock $SIMPHONY_HOME/
+COPY optiphy $SIMPHONY_HOME/optiphy
+RUN uv sync --python "${PYTHON_VERSION}" --managed-python
 
 
 FROM base AS release
 
 ARG CMAKE_BUILD_JOBS
 
-COPY . $OPTICKS_HOME
+COPY . $SIMPHONY_HOME
 
-RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Release \
- && cmake --build $OPTICKS_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
+RUN cmake -S $SIMPHONY_HOME -B $SIMPHONY_BUILD -DCMAKE_INSTALL_PREFIX=$SIMPHONY_PREFIX -DCMAKE_BUILD_TYPE=Release \
+ && cmake --build $SIMPHONY_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
 
 
 FROM base AS develop
@@ -100,10 +106,10 @@ ARG CMAKE_BUILD_JOBS
 
 RUN apt update && apt install -y x11-apps mesa-utils vim
 
-COPY . $OPTICKS_HOME
+COPY . $SIMPHONY_HOME
 
-RUN cmake -S $OPTICKS_HOME -B $OPTICKS_BUILD -DCMAKE_INSTALL_PREFIX=$OPTICKS_PREFIX -DCMAKE_BUILD_TYPE=Debug \
- && cmake --build $OPTICKS_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
+RUN cmake -S $SIMPHONY_HOME -B $SIMPHONY_BUILD -DCMAKE_INSTALL_PREFIX=$SIMPHONY_PREFIX -DCMAKE_BUILD_TYPE=Debug \
+ && cmake --build $SIMPHONY_BUILD --parallel "${CMAKE_BUILD_JOBS:-$(nproc)}" --target install
 
 
 FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS spack-base
@@ -111,6 +117,7 @@ FROM nvidia/cuda:${CUDA_VERSION}-devel-${OS} AS spack-base
 ARG OPTIX_VERSION
 ARG GEANT4_VERSION
 ARG SPACK_BUILDCACHE_MIRROR
+ARG SPACK_TARGET
 ARG SPACK_VERSION=1.1.1
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -126,31 +133,43 @@ RUN echo "source /opt/spack/share/spack/setup-env.sh" > /etc/profile.d/z09_sourc
 RUN echo "source /etc/profile.d/z09_source_spack_setup.sh" >> /etc/bash.bashrc
 
 ENV BASH_ENV=/etc/profile.d/z09_source_spack_setup.sh
-ENV OPTICKS_HOME=/workspaces/simphony
+ENV SIMPHONY_PREFIX=/opt/simphony
+ENV SIMPHONY_HOME=/workspaces/simphony
+ENV SIMPHONY_BUILD=/opt/simphony/build
 ENV OPTIX_VERSION=${OPTIX_VERSION}
 ENV GEANT4_VERSION=${GEANT4_VERSION}
 ENV SPACK_BUILDCACHE_MIRROR=${SPACK_BUILDCACHE_MIRROR}
+ENV SPACK_TARGET=${SPACK_TARGET}
 ENV PATH=/opt/spack/bin:${PATH}
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,compute,utility
 
-WORKDIR ${OPTICKS_HOME}
+WORKDIR ${SIMPHONY_HOME}
 
 SHELL ["/bin/bash", "-l", "-c"]
+
+RUN mkdir -p /root/.spack \
+ && cat > /root/.spack/packages.yaml <<EOF
+packages:
+  all:
+    target: [${SPACK_TARGET}]
+EOF
 
 
 FROM spack-base AS spack-no-env
 
-WORKDIR ${OPTICKS_HOME}
+WORKDIR ${SIMPHONY_HOME}
 
 # Intentionally track the latest Spack repo state in CI to catch packaging regressions.
 RUN spack repo update -b develop builtin
 RUN spack repo add https://github.com/BNLNPPS/spack-packages
 RUN spack mirror add --unsigned simphony-buildcache "${SPACK_BUILDCACHE_MIRROR}"
 RUN spack external find --not-buildable --path /usr/local/cuda cuda
+# Print out concretized specs
+RUN spack spec --fresh -Il simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 # Prefer dependency binaries when they exist, but let PR validation fall back to
 # source builds if the mirror lags behind the latest Spack package metadata.
-RUN spack install --only=dependencies --reuse --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
-RUN spack install --reuse --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+RUN spack install --only=dependencies --fresh --use-buildcache auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
+RUN spack install --fresh --use-buildcache package:never,dependencies:auto simphony ^geant4@${GEANT4_VERSION} ^optix-dev@${OPTIX_VERSION}
 RUN spack clean -a && rm -rf /root/.cache
 # Once simphony is installed it can be loaded in the user environment
 # $ spack load simphony

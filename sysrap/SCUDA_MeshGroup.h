@@ -4,8 +4,6 @@
 SCUDA_MeshGroup.h : collect vectors of NP from each SMeshGroup sub, upload together with SCU_BufferView 
 =========================================================================================================
 
-Try following the pattern of SGLFW_Mesh.h 
-
 **/
 
 #include "SMeshGroup.h"
@@ -78,5 +76,4 @@ inline SCUDA_MeshGroup::SCUDA_MeshGroup(const SMeshGroup* mg )
     idx.upload(_idx); 
     //std::cout << "SCUDA_MeshGroup::SCUDA_MeshGroup\n" << desc() ; 
 }
-
 

@@ -126,11 +126,8 @@ MaxPhoton
 MaxSimtrace
 
 MaxCurand
-   Used by QRng with XORWOW running when curandState files are needed.
-   With chunked curandstate controls how many chunk files and how much
-   of the final chunk to load into memory.
-   The value limits the total number of photons that can be XORWOW
-   simulated irrespective of multi-launching to fit within VRAM.
+   Reserved for RNG-related launch sizing. Philox does not require
+   precomputed curandState files.
 
 
 MaxSlot OPTICKS_MAX_SLOT
@@ -177,7 +174,6 @@ EventName [OPTICKS_EVENT_NAME envvar]
     (requires kEventName to match the token used as part of _EventReldirDefault)
 
 **/
-
 
 struct SYSRAP_API SEventConfig
 {

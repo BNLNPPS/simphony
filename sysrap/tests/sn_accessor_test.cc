@@ -1,4 +1,4 @@
-// ./sn_accessor_test.sh 
+// ./sn_accessor_test
 
 #include "ssys.h"
 #include "sn.h"

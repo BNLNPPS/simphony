@@ -62,10 +62,10 @@ SGLM_test.{sh,cc}
    standalone test for a few SGLM methods
 
 SGLM_set_frame_test.{sh,cc}
-   loads sframe sets into SGLM and dumps
+   loads sframe into SGLM and dumps
 
 SGLM_frame_targetting_test.{sh,cc}
-   compares SGLM A,B from two different center_extent sframe a,b
+   compares SGLM A,B from two different center_extent frames a,b
 
 
 Review coordinate systems, following along the below description
@@ -152,8 +152,8 @@ Screen
 #include "SGLM_View.h"
 #include "SGLM_Arcball.h"
 
-#include "sfr.h"     // formerly sframe.h
-#include "SCE.h"     // moving from sframe to SCE
+#include "SCE.h"
+#include "sframe.h"
 
 #include "ssys.h"
 #include "sstr.h"
@@ -431,15 +431,14 @@ struct SYSRAP_API SGLM : public SCMD
     static void Command(const SGLM_Parse& parse, SGLM* gm, bool dump);
     int command(const char* cmd);
 
-
-    sfr moi_fr = {} ;
-    sfr fr = {} ;  // CAUTION: SEvt also holds an sframe used for input photon targetting
+    sframe moi_fr = {};
+    sframe fr = {}; // CAUTION: SEvt also holds a frame used for input photon targetting
 
     static constexpr const char* _DUMP = "SGLM__set_frame_DUMP" ;
     void set_frame();
     void set_frame( const char* q_spec );
     void set_frame( const float4& ce );
-    void set_frame( const sfr& fr );
+    void set_frame(const sframe& fr);
 
     int get_frame_idx() const ;
     bool has_frame_idx(int idx) const ;
@@ -901,14 +900,9 @@ inline void SGLM::init()
 SGLM::setTreeScene
 -------------------
 
-This is invoked during initialization of some test executables,
-such as from::
-
-   CSGOptiXRenderInteractiveTest::init
-   sysrap/tests/SGLFW_SOPTIX_Scene_test.cc:main
+Associates the camera state with geometry and scene data during initialization.
 
 **/
-
 
 inline void SGLM::setTreeScene( stree* _tree, SScene* _scene )
 {
@@ -950,7 +944,7 @@ inline void SGLM::handle_frame_hop(int wanted_frame_idx)
         else if( wanted_frame_idx >= 0 )
         {
             assert(scene);  // must setTreeScene before using handle_frame_hop
-            sfr wfr = scene->getFrame(wanted_frame_idx) ;
+            sframe wfr = scene->getFrame(wanted_frame_idx);
             set_frame(wfr);
         }
     }
@@ -1020,12 +1014,11 @@ void SGLM::cursor_moved_action( const glm::vec2& a, const glm::vec2& b, unsigned
     }
 }
 
-
 /**
 SGLM::key_pressed_action
 -------------------------
 
-Currently only from SGLFW::key_repeated
+Applies keyboard-style navigation modifiers supplied by a client.
 
 **/
 
@@ -1182,19 +1175,14 @@ void SGLM::Command(const SGLM_Parse& parse, SGLM* gm, bool dump)  // static
     }
 }
 
-
 /**
 SGLM::command
 --------------
 
-The objective of this method is to provide a generic method
-to control view parameters without requiring tight coupling between
-this struct which handles view maths and various rendering systems.
-For example key callbacks into SGLFW yield control strings that
-can be passed here to change the view, where SGLFW need only know
-the SCMD interface that this method fulfils.
-Similarly UDP commands from remote commandlines picked up
-by async listeners can similarly change the view.
+The objective of this method is to provide a generic way to control view
+parameters without tightly coupling this struct to a rendering system.
+Interactive or remote clients can pass control strings through the SCMD
+interface to change the view.
 
 From old opticks see::
 
@@ -1306,26 +1294,25 @@ SGLM::set_frame
 inline void SGLM::set_frame()
 {
     assert(tree && "MUST CALL SGLM::setTreeScene BEFORE SGLM::set_frame");
-    sfr f = tree->get_frame_moi();
+    sframe f = tree->get_frame_moi();
     set_frame(f);
 }
 
 inline void SGLM::set_frame( const char* q_spec )
 {
     assert(tree && "MUST CALL SGLM::setTreeScene BEFORE SGLM::set_frame");
-    sfr f = tree->get_frame(q_spec);
+    sframe f = tree->get_frame(q_spec);
     set_frame(f);
 }
 
 inline void SGLM::set_frame( const float4& ce )
 {
     assert(tree && "MUST CALL SGLM::setTreeScene BEFORE SGLM::set_frame");
-    sfr f = sfr::MakeFromCE<float>(&ce.x);
+    sframe f = sframe::MakeFromCE<float>(&ce.x);
     set_frame(f);
 }
 
-
-inline void SGLM::set_frame( const sfr& fr_ )
+inline void SGLM::set_frame(const sframe& fr_)
 {
     fr = fr_ ;
     //std::cout << "SGLM::set_frame [" << fr.get_name() << "]\n";
@@ -1403,11 +1390,10 @@ updateNearFar
 updateProjection
 
 updateComposite
-    putting together the composite transforms that OpenGL uses
+    putting together the world-to-clip composite transforms
 
 
 **/
-
 
 inline void SGLM::update()
 {
@@ -1470,8 +1456,6 @@ inline void SGLM::set_extent_scale(bool extent_scale_ )
     addlog("set_extent_scale", extent_scale );
 }
 
-
-
 /**
 SGLM::initModelMatrix   (formerly updateModelMatrix)
 ------------------------------------------------------
@@ -1483,8 +1467,8 @@ Thats because changing CE is currently an initialization only thing.
 Called by SGLM::update.
 
 initModelMatrix_branch:1
-    used when the sframe transforms are not identity,
-    just take model2world and world2model from sframe m2w w2m
+    used when frame transforms are not identity,
+    just take model2world and world2model from frame m2w w2m
 
 initModelMatrix_branch:2
     used for rtp_tangential:true (not default)
@@ -1495,7 +1479,7 @@ initModelMatrix_branch:3
     form model2world and world2model matrices
     from fr.ce alone, ignoring the frame transforms
 
-    For consistency with the transforms from sframe.h
+    For consistency with the frame transforms
     the escale is not included into model2world/world2model,
     that is done in SGLM::initELU.
 
@@ -1507,13 +1491,6 @@ initModelMatrix_branch:3
 inline void SGLM::initModelMatrix()
 {
     initModelMatrix_branch = 0 ;
-
-    // NOTE THAT THESE SPECIAL CASES ARE THE ONLY NON-CE USES OF sframe.h
-    // SUGGESTS REMOVE sframe.h from SGLM passing instead normally the ce
-    // and the transforms in the special case where needed
-
-    //bool m2w_not_identity = fr.m2w.is_identity(sframe::EPSILON) == false ;
-    //bool w2m_not_identity = fr.w2m.is_identity(sframe::EPSILON) == false ;
 
     bool fr_has_transform = !fr.is_identity() ;
     if( fr_has_transform )
@@ -1613,8 +1590,6 @@ void SGLM::initView()
     view.UP = UP ;
 }
 
-
-
 /**
 SGLM::initELU
 -----------------
@@ -1640,7 +1615,7 @@ with geometry of any size.
 
 
 Q: Why not include extent scaling in the model2world matrix ?
-A: This is for consistency with sframe.h transforms which are used when
+A: This is for consistency with frame transforms which are used when
    non-identity transforms are provided with the frame.
 
 **/
@@ -1943,16 +1918,13 @@ std::string SGLM::descNearFar() const
     return s ;
 }
 
-
 /**
 SGLM::updateTitle
 ------------------
 
-The *title* is set as the cxr_min.sh OpenGL window title by SGLFW::renderloop_tail
+Updates the descriptive title string exposed to clients.
 
 **/
-
-
 
 void SGLM::updateTitle()
 {
@@ -2299,12 +2271,11 @@ void SGLM::increment_spin()
     //q_spin = q_spin * step_spin ;      // Local spin (relative to current view)
 }
 
-
 /**
 SGLM::updateComposite
 ----------------------
 
-Putting together the composite transforms that OpenGL needs
+Putting together the world-to-clip composite transforms.
 
 * contrast with old Opticks ~/o/optickscore/Composition.cc Composition::update
 
@@ -2331,7 +2302,7 @@ void SGLM::updateComposite()
     IMV = _iworldspin * camera2world * look2eye * _ilookrot * eye2look * _ieyerot  * _ieyeshift  ;
     //IMV = glm::inverse( MV );
 
-    MVP = projection * MV ;    // MVP aka world2clip (needed by OpenGL shader pipeline)
+    MVP = projection * MV; // MVP aka world2clip
 }
 
 
@@ -3231,11 +3202,8 @@ inline void SGLM::reset_time()
 SGLM::reset_time_TT
 --------------------
 
-SGLFW.h invokes this from renderloop when press shift+T
-causing time to be reset to value of TT envvar (default 0.f)
-and the animation to be disabled.
-
-Resume animation with alt+T
+Resets time to the value of the TT environment variable (default 0.f)
+and disables animation.
 
 **/
 
@@ -3358,8 +3326,6 @@ inline void SGLM::renderloop_head()
 SGLM::renderloop_tail
 ----------------------
 
-Invoked from SGLFW::renderloop_tail
-
 At each call the simulation time is bumped until the
 time exceeds t1 at which point it is returned to t0.
 
@@ -3369,4 +3335,3 @@ inline void SGLM::renderloop_tail()
 {
     if( option.A || option.B ) time_bump();
 }
-

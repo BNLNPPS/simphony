@@ -2,7 +2,7 @@
 SLaunchSequence_test.cc
 =========================
 
-~/o/sysrap/tests/SLaunchSequence_test.sh
+SLaunchSequence_test
 
 
 **/

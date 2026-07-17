@@ -173,19 +173,18 @@ public:
     NP*      gatherHitLite() const ;
     NP*      gatherHitLiteMerged() const ;
     NP*      gatherHitMerged() const ;
-
+    NP* gatherRecord() const; // full step records
+    NP* gatherGenstepFromDevice() const;
 
 #ifndef PRODUCTION
     NP*      gatherSeed() const ;
     NP*      gatherDomain() const ;
-    NP*      gatherGenstepFromDevice() const ;
     void     gatherSimtrace(     NP* t ) const ;
     NP*      gatherSimtrace() const ;
     void     gatherSeq(          NP* seq) const ;
     NP*      gatherSeq() const ;       // seqhis..
     NP*      gatherPrd() const ;
     NP*      gatherFlat() const ;
-    NP*      gatherRecord() const ;    // full step records
     NP*      gatherTag() const ;
     NP*      gatherRec() const  ;      // compressed step record
 #endif

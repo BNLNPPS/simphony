@@ -3,21 +3,18 @@ set(desc "System Level Utilities depending")
 
 find_package(nlohmann_json REQUIRED)
 find_package(plog REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
-find_package(OpenSSL REQUIRED)
 
-set(SYSRAP_OPTICKS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
-configure_file(sconfig.h.in inc/sconfig.h)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/inc/sconfig.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+configure_file(config_path.h.in config_path.h @ONLY)
 
 set(SOURCES
     SYSRAP_LOG.cc 
     SLOG.cc 
+    config.cpp
+    torch.cpp
+    torch.cu
 
-    SCurandStateMonolithic.cc
     SSys.cc
     SProf.cc
     SMeta.cc
@@ -28,7 +25,6 @@ set(SOURCES
     SAr.cc
     SArr.cc
     SArgs.cc
-    SPPM.cc
     SVec.cc
     SNameVec.cc
     SMap.cc
@@ -48,21 +44,16 @@ set(SOURCES
     SLogger.cc
     SSortKV.cc
     SPairVec.cc
-    md5.cc
-    SPPM.cc
+    ../third_party/solarmd5/md5.c
     SColor.cc
     SId.cc
     SGDML.cc
     S_get_option.cc
     STime.cc
-    SASCII.cc
-    SAbbrev.cc
     SPack.cc
     SBit.cc
     SEnabled.cc
     SRand.cc
-
-    SRngSpec.cc
 
     CheckGeo.cc
 
@@ -83,9 +74,6 @@ set(SOURCES
     SEvent.cc
     SFrameGenstep.cc
 
-    SOpticks.cc
-    SOpticksResource.cc
-    SOpticksKey.cc
     SThetaCut.cc 
     SPhiCut.cc 
 
@@ -110,6 +98,8 @@ set(SOURCES
 
 set(HEADERS
     OPTICKS_LOG.hh
+    config.h
+    torch.h
 
     SYSRAP_LOG.hh
     SYSRAP_API_EXPORT.hh
@@ -122,13 +112,6 @@ set(HEADERS
     SLaunchSequence.h 
 
 
-    SCurandSpec.h
-    SCurandChunk.h
-    scurandref.h
-    SCurandState.h
-
-
-    SCurandStateMonolithic.hh
     sproc.h
     sprof.h
     SProf.hh
@@ -245,21 +228,14 @@ set(HEADERS
     STime.hh
     s_time.h
 
-    SPPM.hh
-    sppm.h 
-
     SColor.hh
     SId.hh
     SGDML.hh
-    SASCII.hh
-    SAbbrev.hh
     SPack.hh
     SBit.hh
     SBitSet.h
     SEnabled.hh
     SRand.hh
-
-    SRngSpec.hh
 
     CheckGeo.hh
     SLabelCache.hh
@@ -274,6 +250,7 @@ set(HEADERS
     tcomplex.h
 
     srng.h
+    srng_traits.h
     srngcpu.h
     scurand.h  
 
@@ -297,7 +274,6 @@ set(HEADERS
     sseq_index.h
 
     sframe.h
-    sfr.h
     SCE.h 
 
     SPMT.h 
@@ -328,7 +304,6 @@ set(HEADERS
     SPlaceCylinder.h
     SPlaceCircle.h
 
-    ssincos.h
     sxyz.h
     sc4u.h
     stag.h 
@@ -341,12 +316,9 @@ set(HEADERS
     iexpand.h 
 
 
-    SOpticks.hh
     sdomain.h
 
     SDBG.h
-
-    SOpticksResource.hh
 
     SCMD.h
 
@@ -358,29 +330,9 @@ set(HEADERS
     SGLM_Modifiers.h
     SGLM_Arcball.h
 
-    GL_CHECK.h
-
     SScene.h 
     SMesh.h
     SMeshGroup.h
-
-    SGLFW.h
-    SGLFW_Keys.h
-    SGLFW_check.h
-    SGLFW_Buffer.h
-    SGLFW_VAO.h
-    SGLFW_Attrib.h
-    SGLFW_Program.h
-    SGLFW_Mesh.h
-    SGLFW_Scene.h
-    SGLFW_Record.h
-    SGLFW_Gen.h
-    SGLFW_Evt.h
-    SGLFW_GLEQ.h
-
-    SGLDisplay.h
-    SCUDA_OutputBuffer.h 
-    SGLFW_CUDA.h
 
     SCUDA_Mesh.h 
     SCU_BufferView.h 
@@ -410,8 +362,6 @@ set(HEADERS
     SOPTIX_BuildInput_CPA.h
     SOPTIX_BuildInput_IA.h
     
-    gleq.h
-
     SDir.h
     SRG.h
     SCAM.h
@@ -419,7 +369,6 @@ set(HEADERS
 
     SEvt.hh 
 
-    SOpticksKey.hh
     SMath.hh
 
     SEvent.hh
@@ -492,25 +441,29 @@ set(WITH_NP YES)
 
 add_library( ${name} ${SOURCES} )
 
+# The project enables CXX/CUDA but not C, so compile the vendored C source
+# as C++ so the OpenSSL-compatible MD5 API is available from SysRap.
+set_source_files_properties(../third_party/solarmd5/md5.c PROPERTIES LANGUAGE CXX)
+
 set_property( TARGET ${name} PROPERTY INTERFACE_DESCRIPTION ${desc} )
 
 target_link_libraries(${name}
     plog::plog
     nlohmann_json::nlohmann_json
     CUDA::cudart
-    GLEW::GLEW
-    glfw
     glm::glm
-    OpenSSL::SSL
-    OpenSSL::Crypto
 )
 
 target_include_directories( ${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/sysrap/inc>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../third_party>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../third_party/optix-toolkit>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party/optix-toolkit>
 )
 
 
@@ -530,12 +483,6 @@ former  WITH..SND
        WITH..SND uses snd.hh idx int as CSG root
        NOT:WITH..SND uses sn.h sn* pointer as CSG root 
     
-WITH_CHILD
-   sysrap/sn.h uses child vector of sn pointers supporting n-ary trees
-
-NOT:WITH_CHILD
-   sysrap/sn.h uses left, right sn pointers supporting only binary trees
-
 DEBUG_TAG 
    needed for random aligned running in multiple pkgs: sysrap, qudarap, u4  
    however making this PUBLIC makes rebuilding real heavy 
@@ -545,12 +492,6 @@ PLOG_LOCAL
    changes visibility of plog external symbols, allowing better
    integration with packages (like junosw) that do not hide 
    symbols by default  
-
-RNG_XORWOW/RNG_PHILOX
-   Use one of these to pick the curandState implementation, in srng.h
-   picking RNG_XORWOW requires curandState files which slows
-   down initialization greatly when simulating many millions 
-   of photons 
 
 #]=]
 
@@ -564,9 +505,7 @@ target_compile_definitions( ${name}
 
       OPTICKS_SYSRAP 
       GLM_ENABLE_EXPERIMENTAL
-      WITH_CHILD
       PLOG_LOCAL
-      RNG_PHILOX
 
       $<$<CONFIG:Debug>:DEBUG_TAG>
       $<$<CONFIG:Debug>:DEBUG_PIDX>
@@ -575,6 +514,18 @@ target_compile_definitions( ${name}
 )
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/sysrap/)
+install(
+    FILES
+        ../third_party/optix-toolkit/README.md
+        ../third_party/optix-toolkit/LICENSE.txt
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party/optix-toolkit
+)
+install(
+    FILES
+        ../third_party/optix-toolkit/OptiXToolkit/ShaderUtil/vec_math.h
+        ../third_party/optix-toolkit/OptiXToolkit/ShaderUtil/Preprocessor.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party/optix-toolkit/OptiXToolkit/ShaderUtil
+)
 
 install(TARGETS ${name}
         EXPORT ${PROJECT_NAME}Targets

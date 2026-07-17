@@ -7,7 +7,6 @@
 #include "sdigest.h"
 #include "stree.h"
 
-#include "SBitSet.h"
 #include "SLOG.hh"
 #include "SScene.h"
 #include "spath.h"
@@ -84,6 +83,8 @@ std::string SSim::DescCompare( const SSim* a , const SSim* b )
 
 SSim* SSim::Create()
 {
+    if (INSTANCE && ssys::getenvbool("CSGFoundry_GDMLBootstrap_ReturnExisting"))
+        return INSTANCE;
     LOG_IF(fatal, INSTANCE) << "replacing SSim::INSTANCE" ;
     new SSim ;
     return INSTANCE ;
@@ -170,41 +171,6 @@ void SSim::init()
     INSTANCE = this ;
     tree->set_level(stree_level);
 }
-
-/**
-SSim::AnnotateFrame
-----------------------
-
-
-**/
-
-
-void SSim::AnnotateFrame( sframe& fr, const SBitSet* elv, const char* caller ) // static
-{
-    const stree* tree = INSTANCE ? INSTANCE->tree : nullptr ;
-    const char* tree_digest = tree->get_tree_digest() ;
-
-    std::vector<unsigned char> extra ;
-    std::string _dynamic0 = tree->make_tree_digest( extra );
-    assert( strcmp( _dynamic0.c_str(), tree_digest ) == 0 ); // with empty extra should get same as standard tree digest
-
-    if(elv) elv->serialize(extra);
-    std::string _dynamic1 = tree->make_tree_digest( extra );
-    const char* dynamic = _dynamic1.c_str();
-
-    fr.set_tree( tree_digest );
-    fr.set_dynamic( dynamic );
-
-    LOG(info)
-       << " caller " << ( caller ? caller : "-" )
-       << " tree " << ( tree ? "YES" : "NO " )
-       << " elv " << ( elv ? "YES" : "NO " )
-       << " extra.size " << extra.size()
-       << " tree_digest " << ( tree_digest ? tree_digest : "-" )
-       << " dynamic " << ( dynamic ? dynamic : "-" )
-       ;
-}
-
 
 
 stree* SSim::get_tree() const { return tree ; }
@@ -523,13 +489,11 @@ void SSim::load_(const char* dir)
     LOG(LEVEL) << "]" ;
 }
 
-
 /**
 SSim::afterLoadOrCreate
 ------------------------
 
-Trying to progress with FRAME_TRANSITION by replacing the old
-CSGFoundry::AfterLoadOrCreate with SSim::afterLoadOrCreate
+Frame/event setup now lives below CSGFoundry, in SSim/stree and SEvt.
 
 **/
 
@@ -538,8 +502,7 @@ void SSim::afterLoadOrCreate()
     SEvt::CreateOrReuse() ;   // creates 1/2 SEvt depending on OPTICKS_INTEGRATION_MODE
     assert(tree);
 
-
-    sfr fr = tree->get_frame_moi() ;
+    sframe fr = tree->get_frame_moi();
     SEvt::SetFr(fr);
 }
 
@@ -1074,8 +1037,3 @@ bool SSim::findName( int& i, int& j, const char* qname ) const
     const NP* bnd = get_bnd();
     return bnd ? SBnd::FindName(i, j, qname, bnd->names) : false ;
 }
-
-
-
-
-

@@ -1,6 +1,6 @@
 /**
 
-~/o/CSG/tests/CSGFoundryLoadTest.sh
+CSGFoundryLoadTest
 
 **/
 

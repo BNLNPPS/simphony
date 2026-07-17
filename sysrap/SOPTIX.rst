@@ -4,9 +4,8 @@ SOPTIX.rst : triangulated machinery
 Overview
 ----------
 
-The SOPTIX, SCUDA, SMesh, SGLFW structs were developed to learn how to 
-implement a triangulated geometry workflow with the NVIDIA OptiX 7+ API
-and also to implement interactive OpenGL rendering of the triangulated geometry.  
+The SOPTIX, SCUDA, and SMesh structs implement a triangulated geometry
+workflow with the NVIDIA OptiX 7+ API.
 
 
 Structs
@@ -40,34 +39,15 @@ Structs
 * SMesh.h : holds tri,vtx,nrm NP either from original G4VSolid conversion or concatenation
 
 
-* SGLFW.h : Light touch OpenGL render loop and key handling
-* SGLFW_Keys.h : record of keyboard keys currently held down with modifiers bitfield summarization
-* SGLFW_Extras.h : Toggle, GLboolean, bool, GLenum, Attrib, Buffer, VAO 
-
-
-* SGLFW_CUDA.h : Coordinate SCUDA_OutputBuffer and SGLDisplay for display of interop buffers
-* SCUDA_OutputBuffer.h : Allows an OpenGL PBO buffer to be accessed from CUDA 
-* SGLDisplay.h : OpenGL shader pipeline that presents PBO to screen
-
-* SGLFW_Program.h : compile and link OpenGL pipeline using shader sources loaded from directory
-* SGLFW_Mesh.h : create OpenGL buffers with SMesh and instance data and render
-* SGLFW_Scene.h : manage scene data and OpenGL render pipelines 
-
-
 tests
 -------
-
-SGLFW_SOPTIX_Scene_test.{sh,cc}
-    interactive raytrace visualization of triangulated geometry::
-
-         sysrap/tests/SGLFW_SOPTIX_Scene_test.sh
 
 SOPTIX_Scene_test.{sh,cc} SOPTIX_Scene_Encapsulated_test.cc
     ppm non-interactive raytrace render of triangulated geometry
     both non-encapsulated and encapsulated versions can be built
     and run with the script::
    
-         sysrap/tests/SOPTIX_Scene_test.sh
+         SOPTIX_Scene_test
 
 SOPTIX_Options_test.{sh,cc}
     TODO: CHECK

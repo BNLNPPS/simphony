@@ -188,7 +188,7 @@ csg_intersect_prim_test::XY
 
 HMM so far do not see issue of getting full circle with cxr_min.sh ?::
 
-    MODE=3 CIRCLE=0,0,50,100 NCIRCLE=0,0,1 ~/o/CSG/tests/csg_intersect_prim_test.sh pdb
+    MODE=3 CIRCLE=0,0,50,100 NCIRCLE=0,0,1 csg_intersect_prim_test pdb
 
 **/
 

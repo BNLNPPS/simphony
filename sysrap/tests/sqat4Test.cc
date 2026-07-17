@@ -1,4 +1,4 @@
-// ./sqat4Test.sh 
+// ./sqat4Test
 
 #include "scuda.h"
 #include "squad.h"

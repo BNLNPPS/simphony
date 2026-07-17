@@ -4,7 +4,7 @@
 SProcessHits_EPH.h
 ====================
 
-~/o/sysrap/tests/SProcessHits_EPH_test.sh
+SProcessHits_EPH_test
 
 **/
 

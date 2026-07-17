@@ -1,801 +1,892 @@
 #pragma once
-
 /**
-sframe.h : NEW CODE SHOULD NOT USE sframe.h : INSTEAD USE sfr.h
-==================================================================
+sframe.h
+======
 
-TODO: see if this can be replaced with sfr.h ?
+The frame is needed in almost all situations:
 
-TODO: once bring in U4Tree.h/stree.h translation up this to double precision
+* simulate : input photon transformation
+* rendering : prepare raytrace rendering param
+* simtrace C++ : genstep preparation
+* simtrace python : metadata from the persisted frame
+
+Where to keep the frame ?
+----------------------------
+
+* for simulation the obvious location is SEvt
+* for simtrace it needs to be in SEvt for genstep preparation
+* for rendering the obvious location is SGLM
+
+Currently reluctant to depend on SEvt for rendering, because it
+brings complexity without much utility. So live with two locations
+for the frame.
 
 
-Provided by CSGFoundry::getFrame methods
+sframe Layout
+-----------
 
-* for MOI lookups CSGTarget::getFrameComponents sets the transforms
+::
 
+     +------------+-------------+-------------+----------------+
+     |   ce.x     |    ce.y     |    ce.z     |   ce.w         |
+     |            |             |             |                |
+     +------------+-------------+-------------+----------------+
+     |   aux0.x   |   aux0.y    |   aux0.z    |  aux0.w        |
+     |   lvid     |   lvid_ord  |             |                |
+     +------------+-------------+-------------+----------------+
+     |   aux1.x   |   aux1.y    |   aux1.z    |  aux1.w        |
+     |   hss      |   gas       |   sensorid  |  sensoridx     |
+     +------------+-------------+-------------+----------------+
+     |   aux2.x   |   aux2.y    |   aux2.z    |  aux2.w        |
+     |   inst     |   nidx      |   prim      |  idx           |
+     +------------+-------------+-------------+----------------+
 
+     +------------+-------------+-------------+----------------+
+     |  m2w                                                    |
+     |                                                         |
+     |                                                         |
+     |                                                         |
+     +------------+-------------+-------------+----------------+
 
-Persisted into (4,4,4) array.
-Any extension should be in quad4 blocks
-for persisting, alignment and numpy convenience
+     +------------+-------------+-------------+----------------+
+     |  w2m                                                    |
+     |                                                         |
+     |                                                         |
+     |                                                         |
+     +------------+-------------+-------------+----------------+
 
-Note that some variables like *frs* are
-persisted in metadata, not in the array.
-
-Currently *frs* is usually the same as *moi* from MOI envvar
-but are using *frs* to indicate intension for generalization
-to frame specification using global instance index rather than MOI
-which uses the gas specific instance index.
-
-TODO: should be using Tran<double> for transforming , might as well
-      do the lot in double : double4,dquad,dqat4
-
+     +---------------------------------------------------------+
+     |   bbmn.x   |   bbmn.y    |   bbmn.z    |  bbmx.x        |
+     |            |             |             |                |
+     +------------+-------------+-------------+----------------+
+     |   bbmx.y   |   bbmx.z    |   padd.x    |  padd.y        |
+     |            |             |             |                |
+     +------------+-------------+-------------+----------------+
+     |  ext0.x    |   ext0.y    |   ext0.z    |  ext0.w        |
+     |   eps      |   gridscale |             |                |
+     +------------+-------------+-------------+----------------+
+     |  ext1.x    |   ext1.y    |   ext1.z    |  ext1.w        |
+     |            |             |             |                |
+     +------------+-------------+-------------+----------------+
 
 **/
 
-#include <cassert>
-#include <vector>
-#include <cstring>
-#include <string>
-#include <cstdlib>
-
-#include "scuda.h"
-#include "squad.h"
-
-#ifdef WITH_SCUDA_DOUBLE
-#include "squad_double.h"
-#include "scuda_double.h"
-#endif
-
-#include "sqat4.h"
-#include "stran.h"
-#include "spath.h"
-#include "sphoton.h"
-
-#include "sfr.h"
-
 #include "NP.hh"
-
+#include "sphoton.h"
+#include "sstr.h"
+#include "stra.h"
+#include "stran.h"
 
 struct sframe
 {
-    static constexpr const bool VERBOSE = false ;
-    static constexpr const char* NAME = "sframe" ;  // formerly with .npy, now splitting ext for easier stem changes
-    static constexpr const char* DEFAULT_FRS = "-1" ;
-    static constexpr const char* DEFAULT_NAME = "ALL" ;
+    static constexpr const char*    NAME = "sframe";
+    static constexpr const unsigned NUM_4x4 = 4;
+    static constexpr const unsigned NUM_VALUES = NUM_4x4 * 4 * 4; // 64
+    static constexpr const double   EPSILON = 1e-5;
+    static constexpr const char*    DEFAULT_NAME = "ALL";
 
-    static constexpr const unsigned NUM_4x4 = 4 ;
-    static constexpr const unsigned NUM_VALUES = NUM_4x4*4*4 ;
-    static constexpr const float EPSILON = 1e-5 ;
+    template <typename T>
+    static sframe MakeFromCE(const char* ce, char delim = ',');
+    template <typename T>
+    static sframe MakeFromCE(const T* ce);
 
-    float4 ce = {} ;   // f4:center-extent           4x4:0
-    quad   q1 = {} ;   // i4:cegs
-    quad   q2 = {} ;   // i4:cegs.., f4:gridscale
-    quad   q3 = {} ;   // i4:midx,mord,gord,inst
+    template <typename T>
+    static sframe MakeFromExtent(const char* _extent);
+    template <typename T>
+    static sframe MakeFromExtent(T extent);
 
-    qat4   m2w = {} ;  // f4:inst transform          4x4:1
-    qat4   w2m = {} ;  // f4:iinst transform         4x4:2
+    template <typename T>
+    static sframe MakeFromTranslateExtent(const char* s_te, char delim);
+    template <typename T>
+    static sframe MakeFromTranslateExtent(const T* _te);
+    template <typename T>
+    static sframe MakeFromTranslateExtent(T tx, T ty, T tz, T extent);
 
-    quad4  aux = {} ;  // i4:ins,gas,sen_id,sen_idx  4x4:3
+    template <typename T>
+    static sframe MakeFromAxis(const char* tpde, char delim = ',');
+    template <typename T>
+    static sframe MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_distance_mm);
+    template <typename T>
+    static sframe MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_distance_mm);
 
+    //  nv   nv_offset
+    glm::tvec4<double>  ce;   //  4       0
+    glm::tvec4<int64_t> aux0; //  4       4
+    glm::tvec4<int64_t> aux1; //  4       8
+    glm::tvec4<int64_t> aux2; //  4      12       1st 4x4
 
-    // CAUTION : ABOVE HEAD PERSISTED BY MEMCPY INTO ARRAY,  BELOW TAIL ADDED AS METADATA
+    glm::tmat4x4<double> m2w; //  16     16       2nd 4x4
+    glm::tmat4x4<double> w2m; //  16     32       3rd 4x4
 
-    // on the edge, the above are memcpy in/out by load/save
-    const char* frs = nullptr ;
-    Tran<double>* tr_m2w = nullptr ;
-    Tran<double>* tr_w2m = nullptr ;
-    // TODO: Tran is already (t,v,i) triplet : so can have just the one Tran
+    glm::tvec3<double> bbmn; //   3     48
+    glm::tvec3<double> bbmx; //   3     51
+    glm::tvec2<double> padd; //   2     54
+    glm::tvec4<double> ext0; //   4     56
+    glm::tvec4<double> ext1; //   4     60       4th 4x4
+                             //   -     64
+    std::string name;
+    std::string treedir;
 
-    const char* ek = nullptr ;
-    const char* ev = nullptr ;
-    const char* ekvid = nullptr ;
-    const char* tree = nullptr ;  // tree digest
-    const char* dynamic = nullptr ;  // dynamic digest
+    // bytewise comparison of sframe instances fails
+    // for 4 bytes at offset corresponding to the std::string name reference
 
     sframe();
-    sframe(const sframe& other);
-    ~sframe();
-    void cleanup();
 
-    sfr spawn_lite() const ;
-    void populate( const sfr& l );
+    void set_propagate_epsilon(double eps);
+    void set_gridscale(double gsc);
 
-    void zero() ;
-    bool is_zero() const ;
+    double get_propagate_epsilon() const;
+    double get_gridscale() const;
 
-    std::string desc() const ;
-
-    static sframe Load( const char* dir, const char* name=NAME);
-    static sframe Load_(const char* path );
-    static sframe Fabricate(float tx=0.f, float ty=0.f, float tz=0.f);
-    static int PopulateFromRaw(sframe& fr, const char* raw, char delim);
-
-    // DO NOT ADD METHODS TO THIS : INSTEAD USE sfr.h
-
-    void set_grid(const std::vector<int>& cegs, float gridscale);
-    int ix0() const ;
-    int ix1() const ;
-    int iy0() const ;
-    int iy1() const ;
-    int iz0() const ;
-    int iz1() const ;
-    int num_photon() const ;
-    float gridscale() const ;
-
-    void set_tree(    const char* _tree );
-    void set_dynamic( const char* _dynamic );
-
-    void set_ekv( const char* k ) ;
-    void set_ekv( const char* k, const char* v ) ;
-    const char* form_ekvid() const ;
-    const char* getFrameId() const ;
-
-    const char* get_frs() const ; // returns nullptr when frs is default
-    bool is_frs_default() const ;
-
-    const char* get_name() const ; // returns nullptr when frs is default
-
-    void set_midx_mord_gord(int midx, int mord, int gord);
-    int midx() const ;
-    int mord() const ;
-    int gord() const ;
-
-
-
-
-    void set_inst(int inst);
-    int inst() const ;
-
-    void set_identity(int ins, int gas, int sensor_identifier, int sensor_index );  // formerly set_ins_gas_ias
-    int ins() const ;
-    int gas() const ;
-    int sensor_identifier() const ;
-    int sensor_index() const ;
-
-    void set_propagate_epsilon(float eps);
     void set_hostside_simtrace();
+    bool is_hostside_simtrace() const;
 
-    float propagate_epsilon() const ;
-    bool  is_hostside_simtrace() const ;
+    void set_gasix(int gix);
+    void set_sensorid(int sid);
+    void set_sensorix(int six);
 
+    int get_gasix() const;
+    int get_sensorid() const;
+    int get_sensorix() const;
 
-    float* data() ;
-    const float* cdata() const ;
+    void set_identity(int inst, int gasix, int sensorid, int sensorix);
 
-    void write( float* dst, unsigned num_values ) const ;
-    NP* getFrameArray() const ;
-    void save(const char* dir, const char* name=NAME) const ;
-    void save_extras(const char* dir) ;  // not const as may *prepare*
+    void set_lvid(int lvid);
+    void set_lvid_ordinal(int lvid_ordinal);
 
+    int get_lvid() const;
+    int get_lvid_ordinal() const;
 
-    void read( const float* src, unsigned num_values ) ;
-    void load(const char* dir, const char* name=NAME) ;
+    void set_inst(int idx);
+    void set_nidx(int nidx);
+    void set_prim(int prim);
+    void set_idx(int idx);
+
+    int get_inst() const;
+    int get_nidx() const;
+    int get_prim() const;
+    int get_idx() const;
+
+    bool is_zero() const;
+
+    double* ce_data();
+    template <typename T>
+    void set_ce(const T* _ce);
+    template <typename T>
+    void set_extent(T _w);
+    template <typename T>
+    void set_m2w(const T* _v16, size_t nv = 16);
+    template <typename T>
+    void set_bb(const T* _bb6);
+    template <typename T>
+    int write_bb(T* bb) const;
+
+    const glm::tmat4x4<double>& get_transform(bool inverse) const;
+
+    void transform_w2m(sphoton& p, bool normalize = true) const;
+    void transform_m2w(sphoton& p, bool normalize = true) const;
+    void transform(sphoton& p, bool normalize, bool inverse) const;
+
+    Tran<double>* getTransform() const;
+    NP* transform_photon_m2w(const NP* ph, bool normalize) const;
+    NP* transform_photon_w2m(const NP* ph, bool normalize) const;
+    NP* transform_photon(const NP* ph, bool normalize, bool inverse) const;
+
+    void set_name(const char* _name);
+    const std::string& get_name() const;
+    const char* get_id() const;
+
+    void set_treedir(const char* _treedir);
+    const std::string& get_treedir() const;
+
+    std::string get_key() const;
+
+    std::string desc_ce() const;
+    std::string desc() const;
+    bool is_identity() const;
+
+    NP* serialize() const;
+    void save(const char* dir, const char* stem = NAME) const;
+
+    static sframe Import(const NP* a);
+    static sframe Load(const char* dir, const char* stem = NAME);
+    static sframe Load_(const char* path);
+
+    void load(const char* dir, const char* stem = NAME);
     void load_(const char* path ) ;
     void load(const NP* a) ;
 
-
-
-    void prepare();   // below are const by asserting that *prepare* has been called
-
-    NP* transform_photon_m2w( const NP* ph, bool normalize=true ) const ; // hit OR photon (hmm could do record too)
-    NP* transform_photon_w2m( const NP* ph, bool normalize=true ) const ;
-    NP* transform_photon( const NP* ph, bool normalize, bool inverse  ) const ;
-
-
-    void transform_m2w( sphoton& p, bool normalize=true ) const ;
-    void transform_w2m( sphoton& p, bool normalize=true ) const ;
-
-
-    Tran<double>* getTransform() const ;
-
-
-    void setTranslate(float x, float y, float z);
-    void setTransform(const qat4* m2w_ );
-
-    void set_m2w(const glm::tmat4x4<double>& g_m2w);
-    void set_w2m(const glm::tmat4x4<double>& g_w2m);
-
+    double* data();
+    const double* cdata() const;
+    void write(double* dst, unsigned num_values) const;
+    void read(const double* src, unsigned num_values);
 };
 
-
-// ctor
-inline sframe::sframe()
-    :
-    tr_m2w(nullptr),
-    tr_w2m(nullptr)
+template <typename T>
+inline sframe sframe::MakeFromCE(const char* s_ce, char delim)
 {
-#ifdef SFRAME_DEBUG
-    printf("//sframe::sframe ctor NULL: tr_m2w %p tr_w2m %p \n", tr_m2w, tr_w2m );
-#endif
+    std::vector<T> elem;
+    sstr::split<T>(elem, s_ce, delim);
+    int num_elem = elem.size();
+
+    std::array<T, 4> _ce;
+
+    _ce[0] = num_elem > 0 ? elem[0] : 0.;
+    _ce[1] = num_elem > 1 ? elem[1] : 0.;
+    _ce[2] = num_elem > 2 ? elem[2] : 0.;
+    _ce[3] = num_elem > 3 ? elem[3] : 1000.;
+
+    return MakeFromCE<T>(_ce.data());
+}
+
+template <typename T>
+inline sframe sframe::MakeFromCE(const T* _ce)
+{
+    sframe fr;
+    fr.set_ce(_ce);
+    fr.set_name("MakeFromCE");
+    return fr;
+}
+
+template <typename T>
+inline sframe sframe::MakeFromExtent(const char* _ext)
+{
+    T _extent = sstr::To<T>(_ext);
+    return MakeFromExtent<T>(_extent);
+}
+
+template <typename T>
+inline sframe sframe::MakeFromExtent(T extent)
+{
+    sframe fr;
+    fr.set_extent(extent);
+    fr.set_name("MakeFromExtent");
+    return fr;
+}
+
+template <typename T>
+inline sframe sframe::MakeFromTranslateExtent(const char* s_te, char delim)
+{
+    std::vector<T> elem;
+    sstr::split<T>(elem, s_te, delim);
+    int num_elem = elem.size();
+
+    std::array<T, 4> _te;
+
+    _te[0] = num_elem > 0 ? elem[0] : 0.;
+    _te[1] = num_elem > 1 ? elem[1] : 0.;
+    _te[2] = num_elem > 2 ? elem[2] : 0.;
+    _te[3] = num_elem > 3 ? elem[3] : 1000.;
+
+    return MakeFromTranslateExtent<T>(_te.data());
+}
+
+template <typename T>
+inline sframe sframe::MakeFromTranslateExtent(const T* _te)
+{
+    return MakeFromTranslateExtent(_te[0], _te[1], _te[2], _te[3]);
+}
+
+template <typename T>
+inline sframe sframe::MakeFromTranslateExtent(T tx, T ty, T tz, T extent)
+{
+    T               sc = 1.;
+    glm::tmat4x4<T> model2world = stra<T>::Translate(tx, ty, tz, sc);
+    sframe          fr;
+    fr.set_m2w(glm::value_ptr(model2world));
+    fr.set_extent(extent);
+    fr.set_name("MakeFromTranslateExtent");
+    return fr;
 }
 
 /**
-sframe copy ctor
---------------------
+sframe::MakeFromAxis
+------------------
 
-notes/issues/sframe_dtor_double_free_from_CSGOptiX__initFrame.rst
+::
 
-Note that a simple copy of non-nullptr transform pointers without the "prepare"
-would cause double ownership of tr_m2w tr_w2m and subsequent dtor double free errors.
+    MOI=AXIS:56,-54,-21271,5000 cxr_min.sh
+
+    ELV=^s_EMF EYE=0,0,-2 UP=0,1,0 MOI=AXIS:56,-54,-21271,3843 cxr_min.sh
 
 **/
 
-// copy ctor
-inline sframe::sframe(const sframe& other)
+template <typename T>
+inline sframe sframe::MakeFromAxis(const char* tpde, char delim)
 {
-    ce = other.ce ;
-    q1 = other.q1 ;
-    q2 = other.q2 ;
-    q3 = other.q3 ;
-    m2w = other.m2w ;
-    w2m = other.w2m ;
-    aux = other.aux ;
+    std::vector<T> elem;
+    sstr::split<T>(elem, tpde, delim);
+    int num_elem = elem.size();
 
-    frs = other.frs ? strdup(other.frs) : nullptr ;
+    T theta_deg = num_elem > 0 ? elem[0] : 0.;
+    T phi_deg = num_elem > 1 ? elem[1] : 0.;
+    T dist_mm = num_elem > 2 ? elem[2] : 0.;
+    T extent_mm = num_elem > 3 ? elem[3] : 1000.;
+    T delta_dist_mm = num_elem > 4 ? elem[4] : 0.;
 
-    tr_m2w = nullptr ;
-    tr_w2m = nullptr ;
-    prepare();   // set the above from the m2w, w2m
+    if (0)
+        std::cout
+            << "sframe::MakeFromAxis"
+            << " tpde [" << (tpde ? tpde : "-") << "]"
+            << " num_elem " << num_elem
+            << " elem " << sstr::desc<T>(elem)
+            << "\n";
 
-    ek = other.ek ? strdup(other.ek) : nullptr ;
-    ev = other.ev ? strdup(other.ev) : nullptr ;
-    ekvid = other.ekvid ? strdup(other.ekvid) : nullptr ;
-    tree = other.tree ? strdup(other.tree) : nullptr ;
-    dynamic = other.dynamic ? strdup(other.dynamic) : nullptr ;
-
-
-#ifdef SFRAME_DEBUG
-    printf("//sframe.copy.ctor NEW: tr_m2w %p tr_w2m %p \n", tr_m2w, tr_w2m );
-#endif
+    return MakeFromAxisQuat<T>(theta_deg, phi_deg, dist_mm, extent_mm, delta_dist_mm);
 }
 
 /**
-sframe::spawn_lite
--------------------
+sframe::MakeFromAxis
+------------------
 
-transitional
+Suspect this doesnt handle theta_deg = 0 when want to just move the
+plane around in phi_deg.
 
 **/
 
-inline sfr sframe::spawn_lite() const
+template <typename T>
+inline sframe sframe::MakeFromAxis(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_dist_mm)
 {
-    sfr l ;
-    l.ce.x = ce.x ;
-    l.ce.y = ce.y ;
-    l.ce.z = ce.z ;
-    l.ce.w = ce.w ;
+    std::cout
+        << "sframe::MakeFromAxis"
+        << " theta_deg " << theta_deg
+        << " phi_deg " << phi_deg
+        << " ax_dist_mm " << ax_dist_mm
+        << " extent_mm " << extent_mm
+        << " delta_ax_dist_mm " << delta_ax_dist_mm
+        << "\n";
 
-    l.m2w = tr_m2w->t ;
-    l.w2m = tr_w2m->t ;
+    T theta = theta_deg * glm::pi<T>() / 180.;
+    T phi = phi_deg * glm::pi<T>() / 180.;
 
-    return l ;
+    T st = glm::sin(theta);
+    T ct = glm::cos(theta);
+    T sp = glm::sin(phi);
+    T cp = glm::cos(phi);
+
+    glm::tvec3<T> ax = glm::vec3(st * cp, st * sp, ct);
+    glm::tvec3<T> translation = ax * (ax_dist_mm + delta_ax_dist_mm);
+
+    glm::tvec3<T> world_z = glm::tvec3<T>(0.0f, 0.0f, 1.0f);
+    glm::tvec3<T> up = world_z - glm::dot(world_z, ax) * ax;
+    up = glm::normalize(up);
+
+    glm::tmat4x4<T> model2world = stra<T>::Model2World(ax, up, translation);
+
+    sframe fr;
+    fr.set_m2w(glm::value_ptr(model2world));
+    fr.set_extent(extent_mm);
+    fr.set_name("MakeFromAxis");
+
+    return fr;
 }
-
-inline void sframe::populate( const sfr& l )
-{
-    set_m2w(l.m2w);
-    set_w2m(l.w2m);
-
-    ce.x = l.ce.x ;
-    ce.y = l.ce.y ;
-    ce.z = l.ce.z ;
-    ce.w = l.ce.w ;
-}
-
-
-
-
 
 /**
-sframe::~sframe dtor
+sframe::MakeFromAxisQuat
 ----------------------
 
+Quaternion version avoids having to deal the degeneracies::
+
+    MOI=AXIS:0,90,0,20000 EYE=2,0,0 cxr_min.sh
+    MOI=AXIS:0,-90,0,20000 EYE=2,0,0 cxr_min.sh
+
 **/
-inline sframe::~sframe()
+
+template <typename T>
+inline sframe sframe::MakeFromAxisQuat(T theta_deg, T phi_deg, T ax_dist_mm, T extent_mm, T delta_ax_dist_mm)
 {
-#ifdef SFRAME_DEBUG
-    printf("//sframe::~sframe tr_m2w %p tr_w2m %p \n", tr_m2w, tr_w2m );
-#endif
-    //cleanup();  // JUST LEAKING FOR NOW : SEE PLAN IN notes/issues/sframe_dtor_double_free_from_CSGOptiX__initFrame.rst
+    T theta = glm::radians(theta_deg);
+    T phi = glm::radians(phi_deg);
+
+    // 1. Create rotations as quaternions
+    // We rotate around Y by theta, then around Z by phi
+    glm::tquat<T> qPhi = glm::angleAxis(phi, glm::tvec3<T>(0, 0, 1));
+    glm::tquat<T> qTheta = glm::angleAxis(theta, glm::tvec3<T>(0, 1, 0));
+
+    // Combine them: Phi is the "outer" rotation, Theta is "inner"
+    glm::tquat<T> orientation = qPhi * qTheta;
+
+    // 2. Derive our coordinate system vectors from the quaternion
+    // The "ax" (forward) is the local Z-axis transformed by the orientation
+    glm::tvec3<T> ax = orientation * glm::tvec3<T>(0, 0, 1);
+
+    // The "up" vector is the local Y-axis transformed by the orientation
+    // This will be perfectly valid even when theta is 0!
+    glm::tvec3<T> up = orientation * glm::tvec3<T>(0, 1, 0);
+
+    // 3. Translation remains the same
+    glm::tvec3<T> translation = ax * (ax_dist_mm + delta_ax_dist_mm);
+
+    // 4. Build the matrix
+    // If stra::Model2World takes (z, y, pos), we pass (ax, up, translation)
+    glm::tmat4x4<T> model2world = stra<T>::Model2World(ax, up, translation);
+
+    sframe fr;
+    fr.set_m2w(glm::value_ptr(model2world));
+    fr.set_extent(extent_mm);
+    fr.set_name("MakeFromAxisQuat");
+
+    return fr;
 }
 
-inline void sframe::cleanup()
+inline sframe::sframe() :
+    ce(0., 0., 0., 0.),
+    aux0(0),
+    aux1(0),
+    aux2(0),
+    m2w(1.),
+    w2m(1.),
+    bbmn(0., 0., 0.),
+    bbmx(0., 0., 0.),
+    padd(0., 0.),
+    ext0(0., 0., 0., 0.),
+    ext1(0., 0., 0., 0.),
+    name(DEFAULT_NAME)
 {
-    free((void*)frs);
-    delete tr_m2w ;
-    delete tr_w2m ;
-    free((void*)ek);
-    free((void*)ev);
-    free((void*)ekvid);
 }
 
-
-inline void sframe::zero()
+inline void sframe::set_propagate_epsilon(double eps)
 {
-    ce = {} ;   // 0
-    q1 = {} ;
-    q2 = {} ;
-    q3 = {} ;
-    m2w = {} ;  // 1
-    w2m = {} ;  // 2
-    aux = {} ;  // 3
-
-    frs = nullptr ;
-    tr_m2w = nullptr ;
-    tr_w2m = nullptr ;
-    ek = nullptr ;
-    ev = nullptr ;
-    ekvid = nullptr ;
-    tree = nullptr ;
-    dynamic = nullptr ;
+    ext0.x = eps;
+}
+inline void sframe::set_gridscale(double gsc)
+{
+    ext0.y = gsc;
+}
+inline double sframe::get_propagate_epsilon() const
+{
+    return ext0.x;
+}
+inline double sframe::get_gridscale() const
+{
+    return ext0.y;
 }
 
+inline void sframe::set_hostside_simtrace()
+{
+    aux1.x = 1;
+} // hss
+inline void sframe::set_gasix(int gasix)
+{
+    aux1.y = gasix;
+}
+inline void sframe::set_sensorid(int senid)
+{
+    aux1.z = senid;
+}
+inline void sframe::set_sensorix(int senix)
+{
+    aux1.w = senix;
+}
+
+inline bool sframe::is_hostside_simtrace() const
+{
+    return aux1.x == 1;
+} // hss
+inline int sframe::get_gasix() const
+{
+    return aux1.y;
+}
+inline int sframe::get_sensorid() const
+{
+    return aux1.z;
+}
+inline int sframe::get_sensorix() const
+{
+    return aux1.w;
+}
+
+inline void sframe::set_identity(int inst, int gasix, int sensorid, int sensorix)
+{
+    set_inst(inst);
+    set_gasix(gasix);
+    set_sensorid(sensorid);
+    set_sensorix(sensorix);
+}
+
+inline void sframe::set_lvid(int lvid)
+{
+    aux0.x = lvid;
+}
+inline void sframe::set_lvid_ordinal(int lvid_ordinal)
+{
+    aux0.y = lvid_ordinal;
+}
+
+inline int sframe::get_lvid() const
+{
+    return aux0.x;
+}
+inline int sframe::get_lvid_ordinal() const
+{
+    return aux0.y;
+}
+
+inline void sframe::set_inst(int ii)
+{
+    aux2.x = ii;
+}
+inline void sframe::set_nidx(int nidx)
+{
+    aux2.y = nidx;
+}
+inline void sframe::set_prim(int prim)
+{
+    aux2.z = prim;
+}
+inline void sframe::set_idx(int idx)
+{
+    aux2.w = idx;
+}
+
+inline int sframe::get_inst() const
+{
+    return aux2.x;
+}
+inline int sframe::get_nidx() const
+{
+    return aux2.y;
+}
+inline int sframe::get_prim() const
+{
+    return aux2.z;
+}
+inline int sframe::get_idx() const
+{
+    return aux2.w;
+}
 
 inline bool sframe::is_zero() const
 {
-    return ce.x == 0. && ce.y == 0. && ce.z == 0. && ce.w == 0. ;
+    return ce.x == 0. && ce.y == 0. && ce.z == 0. && ce.w == 0.;
 }
 
-
-
-
-inline std::string sframe::desc() const
+inline double* sframe::ce_data()
 {
-    std::stringstream ss ;
-    ss << "sframe::desc"
-       << " inst " << inst()
-       << " frs " << ( frs ? frs : "-" ) << std::endl
-       << " tree " << ( tree ? tree : "-" ) << std::endl
-       << " dynamic " << ( dynamic ? dynamic : "-" ) << std::endl
-       << " ekvid " << ( ekvid ? ekvid : "-" )
-       << " ek " << ( ek ? ek : "-" )
-       << " ev " << ( ev ? ev : "-" )
-       << std::endl
-       << " ce  " << ce
-       << " is_zero " << is_zero()
-       << std::endl
-       << " m2w " << m2w
-       << std::endl
-       << " w2m " << w2m
-       << std::endl
-       << " midx " << std::setw(4) << midx()
-       << " mord " << std::setw(4) << mord()
-       << " gord " << std::setw(4) << gord()
-       << std::endl
-       << " inst " << std::setw(4) << inst()
-       << std::endl
-       << " ix0  " << std::setw(4) << ix0()
-       << " ix1  " << std::setw(4) << ix1()
-       << " iy0  " << std::setw(4) << iy0()
-       << " iy1  " << std::setw(4) << iy1()
-       << " iz0  " << std::setw(4) << iz0()
-       << " iz1  " << std::setw(4) << iz1()
-       << " num_photon " << std::setw(4) << num_photon()
-       << std::endl
-       << " ins  " << std::setw(4) << ins()
-       << " gas  " << std::setw(4) << gas()
-       << " sensor_identifier  " << std::setw(7) << sensor_identifier()
-       << " sensor_index  " << std::setw(5) << sensor_index()
-       << std::endl
-       << " propagate_epsilon " << std::setw(10) << std::fixed << std::setprecision(5) << propagate_epsilon()
-       << " is_hostside_simtrace " << ( is_hostside_simtrace() ? "YES" : "NO" )
-       << std::endl
-       ;
-    std::string str = ss.str();
-    return str ;
+    return glm::value_ptr(ce);
 }
 
-
-inline sframe sframe::Load(const char* dir, const char* name) // static
+template <typename T>
+inline void sframe::set_ce(const T* _ce)
 {
-    sframe fr ;
-    fr.load(dir, name);
-    return fr ;
-}
-inline sframe sframe::Load_(const char* path) // static
-{
-    sframe fr ;
-    fr.load_(path);
-    return fr ;
-}
-/**
-sframe::Fabricate
---------------------
-
-Placeholder frame for testing, optionally with translation transform.
-
-**/
-inline sframe sframe::Fabricate(float tx, float ty, float tz) // static
-{
-    sframe fr ;
-    fr.setTranslate(tx, ty, tz) ;
-    fr.prepare();
-    return fr ;
+    ce.x = _ce[0];
+    ce.y = _ce[1];
+    ce.z = _ce[2];
+    ce.w = _ce[3];
 }
 
-/**
-sframe::PopulateFromRaw
--------------------------
-
-NOTE NEAR DUPLICATION WITH stree::get_frame_from_raw
-
-**/
-
-
-inline int sframe::PopulateFromRaw(sframe& fr, const char* raw, char delim ) // static
+template <typename T>
+inline void sframe::set_extent(T _w)
 {
+    ce.w = _w;
+}
 
-    // 1. split *raw* into elem values using delim
+template <typename T>
+inline void sframe::set_m2w(const T* vv, size_t nv)
+{
+    assert(nv == 16);
+    double* _m2w = glm::value_ptr(m2w);
+    for (size_t i = 0; i < nv; i++) _m2w[i] = T(vv[i]);
+    w2m = glm::inverse(m2w);
+}
 
-    std::vector<double> elem ;
-    sstr::split<double>( elem, raw, delim );
-    int num_elem = elem.size();
+template <typename T>
+inline void sframe::set_bb(const T* bb)
+{
+    bbmn.x = bb[0];
+    bbmn.y = bb[1];
+    bbmn.z = bb[2];
+    bbmx.x = bb[3];
+    bbmx.y = bb[4];
+    bbmx.z = bb[5];
+}
 
-    std::cout
-        << "sframe::PopulateFromRaw"
-        << " raw [" << ( raw ? raw : "-" ) << "]"
-        << " num_elem " << num_elem
-        << " elem " << sstr::desc<double>(elem)
-        << "\n"
-        ;
-
-    if( num_elem == 4 || num_elem == 3 || num_elem == 2 || num_elem == 1  )
-    {
-         float tx = num_elem > 0 ? elem[0] : 0.f ;
-         float ty = num_elem > 1 ? elem[1] : 0.f ;
-         float tz = num_elem > 2 ? elem[2] : 0.f ;
-         float extent = num_elem > 3 ? elem[3] : 1000.f ;
-
-         fr.setTranslate( tx, ty, tz );
-         fr.ce.w = extent ;   // HMM: maybe not equivalent to sfr.h ?
-    }
-    else
-    {
-         std::cerr
-             << "sframe::PopulateFromRaw"
-             << " UNHANDLED num_elem " << num_elem
-             << " raw [" << ( raw ? raw : "-" ) << "]"
-             << "\n" ;
-         assert(0);
-         std::raise(SIGINT);
-    }
-    fr.prepare();
+template <typename T>
+inline int sframe::write_bb(T* bb) const
+{
+    bb[0] = bbmn.x;
+    bb[1] = bbmn.y;
+    bb[2] = bbmn.z;
+    bb[3] = bbmx.x;
+    bb[4] = bbmx.y;
+    bb[5] = bbmx.z;
     return 0;
 }
 
-
-
-
-inline void sframe::set_grid(const std::vector<int>& cegs, float gridscale)
+inline const glm::tmat4x4<double>& sframe::get_transform(bool inverse) const
 {
-    assert( cegs.size() == 8 );   // use SFrameGenstep::StandardizeCEGS to convert 4/7/8 to 8
-
-    q1.i.x = cegs[0] ;  // ix0   these are after standardization
-    q1.i.y = cegs[1] ;  // ix1
-    q1.i.z = cegs[2] ;  // iy0
-    q1.i.w = cegs[3] ;  // iy1
-
-    q2.i.x = cegs[4] ;  // iz0
-    q2.i.y = cegs[5] ;  // iz1
-    q2.i.z = cegs[6] ;  // num_photon
-    q2.f.w = gridscale ;
-
-    //assert( cegs[7] == 1 ); // expecting 1 for cegs[7] other than fine regions where 2 (or 4) might be used
-
+    return inverse ? w2m : m2w;
 }
-
-inline int sframe::ix0() const { return q1.i.x ; }
-inline int sframe::ix1() const { return q1.i.y ; }
-inline int sframe::iy0() const { return q1.i.z ; }
-inline int sframe::iy1() const { return q1.i.w ; }
-inline int sframe::iz0() const { return q2.i.x ; }
-inline int sframe::iz1() const { return q2.i.y ; }
-inline int sframe::num_photon() const { return q2.i.z ; }
-inline float sframe::gridscale() const { return q2.f.w ; }
-
-
-inline void sframe::set_tree( const char* _tree )
+inline void sframe::transform_w2m(sphoton& p, bool normalize) const
 {
-    tree = _tree ? strdup(_tree) :  nullptr ;
+    transform(p, normalize, true);
 }
-inline void sframe::set_dynamic( const char* _dynamic )
+inline void sframe::transform_m2w(sphoton& p, bool normalize) const
 {
-    dynamic = _dynamic ? strdup(_dynamic) :  nullptr ;
+    transform(p, normalize, false);
 }
-
-
-
-
-inline void sframe::set_ekv( const char* k )
+inline void sframe::transform(sphoton& p, bool normalize, bool inverse) const
 {
-    char* v = getenv(k) ;
-    set_ekv(k, v);
+    const glm::tmat4x4<double>& tr = get_transform(inverse);
+    p.transform(tr, normalize);
 }
-
-inline void sframe::set_ekv( const char* k, const char* v )
-{
-    ek = k ? strdup(k) : nullptr ;
-    ev = v ? strdup(v) : nullptr ;
-    ekvid = form_ekvid();
-}
-
-inline const char* sframe::form_ekvid() const
-{
-    std::stringstream ss ;
-    ss << "sframe_"
-       << ( ek ? ek : "ek" )
-       << "_"
-       ;
-    for(int i=0 ; i < int(ev?strlen(ev):0) ; i++) ss << ( ev[i] == ':' ? '_' : ev[i] ) ;
-    std::string str = ss.str();
-    return strdup(str.c_str());
-}
-inline const char* sframe::getFrameId() const
-{
-    return ekvid ;
-}
-
-
-
-inline const char* sframe::get_frs() const
-{
-    return is_frs_default() ? nullptr : frs ;
-}
-inline bool sframe::is_frs_default() const
-{
-    return frs != nullptr && strcmp(frs, DEFAULT_FRS) == 0 ;
-}
-inline const char* sframe::get_name() const
-{
-    const char* f = get_frs();
-    return f ? f : DEFAULT_NAME ;
-}
-
-inline void sframe::set_midx_mord_gord(int midx, int mord, int gord)
-{
-    q3.i.x = midx ;
-    q3.i.y = mord ;
-    q3.i.z = gord ;
-}
-inline int sframe::midx() const { return q3.i.x ; }
-inline int sframe::mord() const { return q3.i.y ; }
-inline int sframe::gord() const { return q3.i.z ; }
-inline int sframe::inst() const { return q3.i.w ; }
-
-inline void sframe::set_inst(int inst){ q3.i.w = inst ; }
-
-inline void sframe::set_identity(int ins, int gas, int sensor_identifier, int sensor_index ) // formerly set_ins_gas_ias
-{
-    aux.q0.i.x = ins ;
-    aux.q0.i.y = gas ;
-    aux.q0.i.z = sensor_identifier ;
-    aux.q0.i.w = sensor_index  ;
-}
-inline int sframe::ins() const { return aux.q0.i.x ; }
-inline int sframe::gas() const { return aux.q0.i.y ; }
-inline int sframe::sensor_identifier() const { return aux.q0.i.z ; }
-inline int sframe::sensor_index() const {      return aux.q0.i.w ; }
-
-
-inline void sframe::set_propagate_epsilon(float eps){     aux.q1.f.x = eps ; }
-inline void sframe::set_hostside_simtrace(){              aux.q1.u.y = 1u ; }
-
-inline float sframe::propagate_epsilon() const   { return aux.q1.f.x ; }
-inline bool sframe::is_hostside_simtrace() const { return aux.q1.u.y == 1u ; }
-
-
-inline const float* sframe::cdata() const
-{
-    return (const float*)&ce.x ;
-}
-inline float* sframe::data()
-{
-    return (float*)&ce.x ;
-}
-inline void sframe::write( float* dst, unsigned num_values ) const
-{
-    assert( num_values == NUM_VALUES );
-    char* dst_bytes = (char*)dst ;
-    char* src_bytes = (char*)cdata();
-    unsigned num_bytes = sizeof(float)*num_values ;
-    memcpy( dst_bytes, src_bytes, num_bytes );
-}
-
-inline void sframe::read( const float* src, unsigned num_values )
-{
-    assert( num_values == NUM_VALUES );
-    char* src_bytes = (char*)src ;
-    char* dst_bytes = (char*)data();
-    unsigned num_bytes = sizeof(float)*num_values ;
-    memcpy( dst_bytes, src_bytes, num_bytes );
-}
-
-inline NP* sframe::getFrameArray() const
-{
-    NP* a = NP::Make<float>(NUM_4x4, 4, 4) ;
-    write( a->values<float>(), NUM_4x4*4*4 ) ;
-
-    a->set_meta<std::string>("creator", "sframe::getFrameArray");
-    if(frs) a->set_meta<std::string>("frs", frs);
-    if(tree) a->set_meta<std::string>("tree", tree);
-    if(dynamic) a->set_meta<std::string>("dynamic", dynamic);
-    if(ek) a->set_meta<std::string>("ek", ek);
-    if(ev) a->set_meta<std::string>("ev", ev);
-    if(ekvid) a->set_meta<std::string>("ekvid", ekvid);
-
-    return a ;
-}
-inline void sframe::save(const char* dir, const char* name_ ) const
-{
-    if(VERBOSE) std::cout
-        << "[ sframe::save "
-        << " dir : " << ( dir ? dir : "MISSING_DIR" )
-        << " name: " << ( name_ ? name_ : "MISSING_NAME" )
-        << std::endl
-        ;
-
-    std::string name = U::form_name( name_ , ".npy" ) ;
-    NP* a = getFrameArray();
-
-    a->save(dir, name.c_str());
-
-    if(VERBOSE) std::cout
-       << "] sframe::save "
-       << std::endl
-       ;
-
-}
-inline void sframe::save_extras(const char* dir)
-{
-    if(tr_m2w == nullptr) prepare();
-    tr_m2w->save(dir, "m2w.npy");
-    tr_w2m->save(dir, "w2m.npy");
-}
-
-
-inline void sframe::load(const char* dir, const char* name_ )
-{
-    std::string name = U::form_name( name_ , ".npy" ) ;
-    const NP* a = NP::Load(dir, name.c_str() );
-    load(a);
-}
-inline void sframe::load_(const char* path_)   // eg $A_FOLD/sframe.npy
-{
-    const NP* a = NP::Load(path_);
-    if(!a) std::cerr
-       << "sframe::load_ ERROR : non-existing"
-       << " path_ " << path_
-       << std::endl
-       ;
-    assert(a);
-    load(a);
-}
-inline void sframe::load(const NP* a)
-{
-    read( a->cvalues<float>() , NUM_VALUES );
-    std::string _frs = a->get_meta<std::string>("frs", "");
-    std::string _tree = a->get_meta<std::string>("tree", "");
-    std::string _dynamic = a->get_meta<std::string>("dynamic", "");
-
-    if(!_frs.empty()) frs = strdup(_frs.c_str());
-    if(!_tree.empty()) tree = strdup(_tree.c_str());
-    if(!_dynamic.empty()) dynamic = strdup(_dynamic.c_str());
-}
-
-
 
 /**
-sframe::prepare
------------------
+sframe::getTransform
+-------------------
 
+t:m2w
+v:w2m
 
 **/
 
-inline void sframe::prepare()
+inline Tran<double>* sframe::getTransform() const
 {
-    tr_m2w = Tran<double>::ConvertFromQat(&m2w) ;
-    tr_w2m = Tran<double>::ConvertFromQat(&w2m) ;
+    Tran<double>* geotran = new Tran<double>(m2w, w2m); // ORDER ?
+    return geotran;
 }
 
+inline NP* sframe::transform_photon_m2w(const NP* ph, bool normalize) const
+{
+    bool inverse = false; // false:m2w true:w2m
+    return transform_photon(ph, normalize, inverse);
+}
+inline NP* sframe::transform_photon_w2m(const NP* ph, bool normalize) const
+{
+    bool inverse = true; // false:m2w true:w2m
+    return transform_photon(ph, normalize, inverse);
+}
 
 /**
-sframe::transform_photon_m2w
--------------------------------
+sframe::transform_photon
+----------------------
 
-Canonical call from SEvt::setFrame for transforming input photons into frame
+Canonical call from::
+
+     SEvt::transformInputPhoton
+     SEvt::setFr
+
+
 When normalize is true the mom and pol are normalized after the transformation.
-
 Note that the transformed photon array is always in double precision.
 That will be narrowed down to float prior to upload by QEvt::setInputPhoton
 
 **/
 
-inline NP* sframe::transform_photon_m2w( const NP* ph, bool normalize ) const
+inline NP* sframe::transform_photon(const NP* ph, bool normalize, bool inverse) const
 {
-    bool inverse = false ;
-    return transform_photon(ph, normalize, inverse);
-}
-inline NP* sframe::transform_photon_w2m( const NP* ph, bool normalize ) const
-{
-    bool inverse = true ;
-    return transform_photon(ph, normalize, inverse);
-}
-
-inline NP* sframe::transform_photon( const NP* ph, bool normalize, bool inverse  ) const
-{
-    if( ph == nullptr ) return nullptr ;
-    Tran<double>* tr = inverse ? tr_w2m : tr_m2w ;
-    if(!tr) std::cerr << "sframe::transform_photon MUST sframe::prepare before calling sframe::transform_photon " << std::endl;
-    assert( tr ) ;
-    NP* pht = Tran<double>::PhotonTransform(ph, normalize, tr, false );
-    assert( pht->ebyte == 8 );
-    return pht ;
+    if (ph == nullptr)
+        return nullptr;
+    Tran<double>* tr = getTransform();
+    assert(tr);
+    NP* pht = Tran<double>::PhotonTransform(ph, normalize, tr, inverse);
+    assert(pht->ebyte == 8);
+    return pht;
 }
 
-inline void sframe::transform_m2w( sphoton& p, bool normalize ) const
+inline const std::string& sframe::get_name() const
 {
-    if(!tr_m2w) std::cerr << "sframe::transform_m2w MUST sframe::prepare before calling this " << std::endl;
-    assert( tr_m2w) ;
-    p.transform( tr_m2w->t, normalize );
+    return name;
 }
 
-inline void sframe::transform_w2m( sphoton& p, bool normalize ) const
+inline const char* sframe::get_id() const
 {
-    if(!tr_w2m) std::cerr << "sframe::transform_w2m MUST sframe::prepare before calling this " << std::endl;
-    assert( tr_w2m) ;
-    p.transform( tr_w2m->t, normalize );
+    return name.c_str();
 }
 
-
-inline Tran<double>* sframe::getTransform() const
+inline std::string sframe::get_key() const
 {
-    double eps = 1e-3 ; // formerly used 1e-6 gives idenity check warnings
-    Tran<double>* geotran = Tran<double>::FromPair( &m2w, &w2m, eps );
-    return geotran ;
+    return name.empty() ? "" : sstr::Replace(name.c_str(), ':', '_');
 }
 
-inline void sframe::setTranslate(float x, float y, float z)  // UNTESTED
+inline void sframe::set_name(const char* _n)
 {
-    qat4 m2w(x,y,z);
-    setTransform(&m2w);
+    if (_n)
+        name = _n;
 }
 
-inline void sframe::setTransform(const qat4* m2w_ )  // UNTESTED
+inline void sframe::set_treedir(const char* _t)
 {
-    const qat4* w2m_ = Tran<double>::Invert(m2w_);
-    qat4::copy(m2w, *m2w_ );
-    qat4::copy(w2m, *w2m_ );
+    if (_t)
+        treedir = _t;
+}
+inline const std::string& sframe::get_treedir() const
+{
+    return treedir;
 }
 
-
-inline void sframe::set_m2w(const glm::tmat4x4<double>& g_m2w)
+inline std::string sframe::desc_ce() const
 {
-    const qat4* q_m2w = Tran<double>::ConvertFrom(g_m2w);
-    qat4::copy(m2w, *q_m2w);
-}
-inline void sframe::set_w2m(const glm::tmat4x4<double>& g_w2m)
-{
-    const qat4* q_w2m = Tran<double>::ConvertFrom(g_w2m);
-    qat4::copy(w2m, *q_w2m);
+    std::stringstream ss;
+    ss << "sframe::desc_ce " << stra<double>::Desc(ce);
+    std::string str = ss.str();
+    return str;
 }
 
+inline std::string sframe::desc() const
+{
+    std::stringstream ss;
+    ss
+        << "[sframe::desc name [" << name << "]\n"
+        << "ce\n"
+        << stra<double>::Desc(ce)
+        << "\n"
+        << "aux0\n"
+        << stra<int64_t>::Desc(aux0)
+        << "\n"
+        << "aux1\n"
+        << stra<int64_t>::Desc(aux1)
+        << "\n"
+        << "aux2\n"
+        << stra<int64_t>::Desc(aux2)
+        << "\n"
+        << "m2w\n"
+        << stra<double>::Desc(m2w)
+        << "\n"
+        << "w2m\n"
+        << stra<double>::Desc(w2m)
+        << "\n"
+        << "bbmn\n"
+        << stra<double>::Desc(bbmn)
+        << "\n"
+        << "bbmx\n"
+        << stra<double>::Desc(bbmx)
+        << "\n"
+        << "padd\n"
+        << stra<double>::Desc(padd)
+        << "\n"
+        << "is_identity " << (is_identity() ? "YES" : "NO ") << "\n"
+        << "]sframe::desc\n";
 
+    std::string str = ss.str();
+    return str;
+}
 
+inline bool sframe::is_identity() const
+{
+    bool m2w_identity = stra<double>::IsIdentity(m2w, EPSILON);
+    bool w2m_identity = stra<double>::IsIdentity(w2m, EPSILON);
+    return m2w_identity && w2m_identity;
+}
 
+inline NP* sframe::serialize() const
+{
+    NP* a = NP::Make<double>(NUM_4x4, 4, 4);
+    write(a->values<double>(), NUM_4x4 * 4 * 4);
+    a->set_meta<std::string>("creator", "sframe::serialize");
+    if (!name.empty())
+        a->set_meta<std::string>("name", name);
+    if (!treedir.empty())
+        a->set_meta<std::string>("treedir", treedir);
+    return a;
+}
 
+inline void sframe::save(const char* dir, const char* stem_) const
+{
+    std::string aname = U::form_name(stem_, ".npy");
+    NP*         a = serialize();
+    a->save(dir, aname.c_str());
+}
 
+inline sframe sframe::Import(const NP* a) // static
+{
+    sframe fr;
+    fr.load(a);
+    return fr;
+}
 
+inline sframe sframe::Load(const char* dir, const char* name) // static
+{
+    sframe fr;
+    fr.load(dir, name);
+    return fr;
+}
+inline sframe sframe::Load_(const char* path) // static
+{
+    sframe fr;
+    fr.load_(path);
+    return fr;
+}
 
+inline void sframe::load(const char* dir, const char* name_)
+{
+    std::string aname = U::form_name(name_, ".npy");
+    const NP*   a = NP::Load(dir, aname.c_str());
+    load(a);
+}
+inline void sframe::load_(const char* path_)
+{
+    const NP* a = NP::Load(path_);
+    if (!a)
+        std::cerr
+            << "sframe::load_ ERROR : non-existing"
+            << " path_ " << path_
+            << std::endl;
+    assert(a);
+    load(a);
+}
 
+inline void sframe::load(const NP* a)
+{
+    assert(a);
+    assert(a->uifc == 'f');
+    assert(a->num_values() == NUM_VALUES);
+    assert(a->ebyte == 8 || a->ebyte == 4);
 
+    if (a->ebyte == 8)
+    {
+        read(a->cvalues<double>(), NUM_VALUES);
+    }
+    else
+    {
+        const float* src = a->cvalues<float>();
+        set_ce(src);
+        set_m2w(src + 16);
 
+        double* _w2m = glm::value_ptr(w2m);
 
+        for (size_t i = 0; i < 16; i++)
+            _w2m[i] = double(src[32 + i]);
+
+        set_gridscale(src[11]);
+    }
+
+    std::string _name = a->get_meta<std::string>("name", "");
+    std::string _treedir = a->get_meta<std::string>("treedir", "");
+    if (!_name.empty())
+        name = _name;
+    if (!_treedir.empty())
+        treedir = _treedir;
+}
+
+inline const double* sframe::cdata() const
+{
+    return (const double*)&ce.x;
+}
+inline double* sframe::data()
+{
+    return (double*)&ce.x;
+}
+inline void sframe::write(double* dst, unsigned num_values) const
+{
+    assert(num_values == NUM_VALUES);
+    char*    dst_bytes = (char*)dst;
+    char*    src_bytes = (char*)cdata();
+    unsigned num_bytes = sizeof(double) * num_values;
+    memcpy(dst_bytes, src_bytes, num_bytes);
+}
+
+inline void sframe::read(const double* src, unsigned num_values)
+{
+    assert(num_values == NUM_VALUES);
+    char*    src_bytes = (char*)src;
+    char*    dst_bytes = (char*)data();
+    unsigned num_bytes = sizeof(double) * num_values;
+    memcpy(dst_bytes, src_bytes, num_bytes);
+}
 
 inline std::ostream& operator<<(std::ostream& os, const sframe& fr)
 {
     os << fr.desc() ;
     return os;
 }
-
-

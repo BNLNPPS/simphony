@@ -54,7 +54,7 @@ Steps to fix:
 2. Generate the precooked randoms with::
 
    cd ~/opticks/qudarap/tests 
-   ./rng_sequence.sh run 
+   ./rng_sequence run
 
 3. run with envvars set to increase logging OR take actions on unclassified or selected stacks::
 

@@ -741,7 +741,7 @@ High level API intending to be used from CSGOptiXService
 
 Thus is used from language crossing stack::
 
-    async def simulate(request: Request)  [CSGOptiX/tests/CSGOptiXService_FastAPI_test/main.py]
+    async def simulate(request: Request)  [the CSGOptiX service prototype]
     inline nb::ndarray<nb::numpy> _CSGOptiXService::simulate( nb::ndarray<nb::numpy> _gs, int eventID )
     inline NP* CSGOptiXService::simulate( NP* gs, int eventID )
     NP* CSGOptiX::simulate(const NP* gs, int eventID)
@@ -2038,12 +2038,6 @@ std::string QSim::Desc(char delim)  // static
        << "NOT-PRODUCTION"
 #endif
        << delim
-#ifdef WITH_CHILD
-       << "WITH_CHILD"
-#else
-       << "NOT-WITH_CHILD"
-#endif
-       << delim
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else
@@ -2062,17 +2056,7 @@ std::string QSim::Desc(char delim)  // static
        << "NOT-DEBUG_TAG"
 #endif
        << delim
-#ifdef RNG_XORWOW
-       << "RNG_XORWOW"
-#else
-       << "NOT-RNG_XORWOW"
-#endif
-       << delim
-#ifdef RNG_PHILOX
        << "RNG_PHILOX"
-#else
-       << "NOT-RNG_PHILOX"
-#endif
        << delim
        ;
     std::string str = ss.str() ;

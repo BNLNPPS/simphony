@@ -5,14 +5,10 @@
 #include "sqat4.h"
 #include "stran.h"
 
-#ifdef WITH_OLD_FRAME
 #include "sframe.h"
-#else
-#include "sfr.h"
-#endif
 
 #include "sc4u.h"
-#include "ssincos.h"
+#include "smath.h"
 #include "ssys.h"
 
 #include "SLOG.hh"
@@ -153,10 +149,6 @@ std::string SFrameGenstep::GetGridConfig(std::vector<int>& cegs)
     return str ;
 }
 
-
-
-
-
 /**
 SFrameGenstep::MakeCenterExtentGensteps_FromFrame
 --------------------------------------------------
@@ -170,8 +162,8 @@ To switch that off (eg whilse debugging) use::
 
 Default GRIDSCALE is 0.1 to conform with default CEGS of 16:0:9:500
 
-The sframe argument is used for its *ce* and the details
-of the grid config are saved into the sframe
+The frame argument is used for its *ce* and the details
+of the grid config are saved into the frame
 which makes the config available from python.
 
 **/
@@ -185,25 +177,13 @@ bool SFrameGenstep::HasConfigEnv()
     return ssys::hasenv_("CEGS");
 }
 
-
-
 /**
 SFrameGenstep::MakeCenterExtentGenstep_FromFrame
 --------------------------------------------------
 
 This uses config obtained from envvars such as CEGS to
-create an array of gensteps. sframe::set_grid is
-invoked to pass config details into the frame for
-persisting and use from python such as simtrace
-plotter cxt_min.py. Those details are also
-written into metadata of the gensteps.
-
-HMM: could avoid changing the frame by instead
-relying on the genstep metadata which might
-simplify FRAME_TRANSITION
-
-Q: What does simtrace cxt_min.py actually need from the frame ?
-
+create an array of gensteps. Grid details are saved
+into the frame and also written into genstep metadata.
 
 simtrace stack::
 
@@ -219,36 +199,7 @@ simtrace stack::
 
 
 **/
-#ifdef WITH_OLD_FRAME
 NP* SFrameGenstep::MakeCenterExtentGenstep_FromFrame(sframe& fr)  // static
-{
-    const float4& ce = fr.ce ;
-    Tran<double>* geotran = fr.getTransform();
-    char* _GRIDSCALE = getenv("GRIDSCALE") ;
-    float gridscale = ssys::getenvfloat("GRIDSCALE", 0.1f ) ;
-    int prim = -1 ;
-
-    LOG(LEVEL)
-       << " _GRIDSCALE [" << ( _GRIDSCALE ? _GRIDSCALE : "-" ) << "]"
-       << " GRIDSCALE " << gridscale
-       ;
-
-    std::vector<int> cegs ;
-    std::string str_cegs = GetGridConfig(cegs);
-    fr.set_grid(cegs, gridscale);
-
-    NP* gs = MakeCenterExtentGenstep_From_CE_geotran( ce, cegs, gridscale, geotran, prim );
-
-    gs->set_meta<int>("midx", fr.midx() );
-    gs->set_meta<int>("mord", fr.mord() );
-    gs->set_meta<int>("gord", fr.gord() );
-    gs->set_meta<float>("gridscale", fr.gridscale() );
-    gs->set_meta<std::string>("cegs", str_cegs );
-
-    return gs ;
-}
-#else
-NP* SFrameGenstep::MakeCenterExtentGenstep_FromFrame(sfr& fr)  // static
 {
     float4 ce = make_float4( fr.ce.x, fr.ce.y, fr.ce.z, fr.ce.w );
     Tran<double>* geotran = fr.getTransform();
@@ -278,7 +229,6 @@ NP* SFrameGenstep::MakeCenterExtentGenstep_FromFrame(sfr& fr)  // static
 
     return gs ;
 }
-#endif
 
 NP* SFrameGenstep::MakeCenterExtentGenstep_From_CE_geotran(const float4& ce, const std::vector<int>& cegs, float gridscale, const Tran<double>* geotran, int prim)  // static
 {
@@ -1043,21 +993,15 @@ void SFrameGenstep::GenerateCenterExtentGenstepPhotons( std::vector<quad4>& pp, 
 
         assert(expect);
 
-        //std::cout << " i " << i << " num_photons " << num_photons << std::endl ;
-
         double u0, u1 ;
-        double phi, sinPhi,   cosPhi ;
         double sinTheta, cosTheta ;
-
-
 
         for(unsigned j=0 ; j < num_photons ; j++)
         {
             u0 = num_photons_ < 0 ? double(j)/double(num_photons-1) : rng() ;
 
-            phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
-            ssincos(phi,sinPhi,cosPhi);
-
+            const double phi = 2. * M_PIf * u0; // azimuthal 0->2pi
+            const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
             // cosTheta sinTheta are only used for 3D (not 2D planar gensteps)
             u1 = rng();
@@ -1145,18 +1089,16 @@ void SFrameGenstep::GenerateSimtracePhotons( std::vector<quad4>& simtrace, const
             << " OpticksGenstep_::Name " << OpticksGenstep_::Name(gencode) ;
 
         assert(expect);
-        //std::cout << " i " << i << " num_photons " << num_photons << std::endl ;
 
         double u0, u1 ;
-        double phi, sinPhi,   cosPhi ;
         double sinTheta, cosTheta ;
 
         for(unsigned j=0 ; j < num_photons ; j++)
         {
             u0 = num_photons_ < 0 ? double(j)/double(num_photons-1) : rng() ;
 
-            phi = 2.*M_PIf*u0 ;     // azimuthal 0->2pi
-            ssincos(phi,sinPhi,cosPhi);
+            const double phi = 2. * M_PIf * u0; // azimuthal 0->2pi
+            const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
             // cosTheta sinTheta are only used for 3D (not 2D planar gensteps)
             u1 = rng();
@@ -1252,4 +1194,3 @@ void SFrameGenstep::SetGridPlaneDirection( float4& dir, int gridaxes, double cos
         assert(0);
     }
 }
-

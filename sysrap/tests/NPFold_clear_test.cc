@@ -1,17 +1,16 @@
 /**
-NPFold_clear_test.sh
+NPFold_clear_test
 ======================
 
 ::
 
-    ~/opticks/sysrap/tests/NPFold_clear_test.sh
+    NPFold_clear_test
 
 Without the NPFold::clear call get assert::
 
     NPFold::add_ FATAL : have_key_already [photon.npy]
 
 **/
-
 
 #include "sprof.h"
 #include "ssys.h"
@@ -168,5 +167,4 @@ int main()
     return 0 ; 
 }
 
-// ~/opticks/sysrap/tests/NPFold_clear_test.sh
-
+// NPFold_clear_test

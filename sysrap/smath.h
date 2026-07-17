@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cmath>
+#include <type_traits>
+#include <utility>
+
 #include "scuda.h"
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
@@ -11,13 +15,22 @@
 
 struct smath
 {
-    static constexpr float hc_eVnm = 1239.8418754200f ; // G4: h_Planck*c_light/(eV*nm) 
+    static constexpr float hc_eVnm = 1239.8418754200f; // G4: h_Planck*c_light/(eV*nm)
 
-    SMATH_METHOD static void rotateUz(float3& d, const float3& u ); 
-    SMATH_METHOD static int count_nibbles( unsigned long long ); 
-    SMATH_METHOD static float erfcinvf(float u2); 
-}; 
+    template <class T>
+    static std::pair<T, T> sincos(T x);
 
+    SMATH_METHOD static void rotateUz(float3& d, const float3& u);
+    SMATH_METHOD static int count_nibbles(unsigned long long);
+    SMATH_METHOD static float erfcinvf(float u2);
+};
+
+template <class T>
+inline std::pair<T, T> smath::sincos(T x)
+{
+    static_assert(std::is_floating_point<T>::value, "smath::sincos expects a floating-point type");
+    return std::pair<T, T>(std::sin(x), std::cos(x));
+}
 
 /**
 smath::rotateUz
@@ -154,10 +167,10 @@ Geant4 sigma_alpha ground surface smears normal using angle from::
 
 Tests while trying to do this on GPU::
 
-    sysrap/tests/S4MTRandGaussQTest.sh
-    sysrap/tests/erfcinvf_Test.sh
-    sysrap/tests/njuffa_erfcinvf_test.sh
-    sysrap/tests/smath_test.sh
+    S4MTRandGaussQTest
+    erfcinvf_Test
+    njuffa_erfcinvf_test
+    smath_test
 
 **/
 

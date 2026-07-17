@@ -2,7 +2,7 @@
 sdirectory_test.cc
 ===================
 
-~/o/sysrap/tests/sdirectory_test.sh 
+sdirectory_test
 
 **/
 
@@ -49,11 +49,11 @@ int sdirectory_test::MakeDirsForFile()
 
 int sdirectory_test::DirList()
 {
-    std::vector<std::string> names ; 
-    
-    const char* path = spath::Resolve("${RNGDir:-$HOME/.opticks/rngcache/RNG}") ; 
-    const char* pfx = "QCurandState_" ; 
-    const char* ext = ".bin" ; 
+    std::vector<std::string> names;
+
+    const char* path = spath::Resolve("$HOME");
+    const char* pfx = ".";
+    const char* ext = "";
     sdirectory::DirList(names, path, pfx, ext ); 
 
     std::cout << "names.size " << names.size() << "\n" ; 

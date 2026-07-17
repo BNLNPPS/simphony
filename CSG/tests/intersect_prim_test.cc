@@ -2,7 +2,7 @@
 intersect_prim_test.cc
 ========================
 
-~/opticks/CSG/tests/intersect_prim_test.sh
+intersect_prim_test
 
 
 TODO: replace Sphere with boolean tree, listnode, tree with listnode, ...  

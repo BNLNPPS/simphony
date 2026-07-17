@@ -1447,7 +1447,7 @@ PolyconeWithPhiCut
 
 phiStart=30 phiDelta=30 selects wedge in middle of +X+Y quadrant::
 
-   SOLID=PolyconeWithPhiCut EYE=0,0,1000  UP=0,1,0 ~/o/u4/tests/U4SolidMakerTest.sh
+   SOLID=PolyconeWithPhiCut EYE=0,0,1000  UP=0,1,0 U4SolidMakerTest
 
 
           Y 30. + +
@@ -1481,12 +1481,12 @@ U4SolidMaker::PolyconeWithPhiCutHalf
 
 Confirmed that 0->pi selects +Y hemi with::
 
-    SOLID=PolyconeWithPhiCutHalf EYE=0,0,1000  UP=0,1,0 ~/o/u4/tests/U4SolidMakerTest.sh
+    SOLID=PolyconeWithPhiCutHalf EYE=0,0,1000  UP=0,1,0 U4SolidMakerTest
 
 Convert this with::
 
     GEOM # set GEOM to LocalPolyconeWithPhiCutHalf
-    ~/o/g4cx/tests/G4CX_U4TreeCreateCSGFoundryTest.sh
+    G4CX_U4TreeCreateCSGFoundryTest
 
 Viz with::
 
@@ -1499,7 +1499,7 @@ Viz with::
         # Cannot pin down any halfspace bug, so suspect its coming from
         # the CSG unbounded handling
         #
-        # WIP: try to reproduce issue on CPU with CSG/tests/csg_intersect_prim_test.sh
+        # WIP: try to reproduce issue on CPU with csg_intersect_prim_test
 
 **/
 

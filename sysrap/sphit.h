@@ -4,7 +4,7 @@ sphit.h
 =========
 
 Used by SEvt::getLocalHit interface for
-passing information from sframe into U4Hit
+passing frame information into U4Hit
 
 Currently node_index is not included. As node_index is primarily
 of interest for debugging, it is not so critical to expose it all
@@ -66,5 +66,4 @@ inline std::string sphit::desc() const
     std::string s = ss.str();
     return s ;
 }
-
 

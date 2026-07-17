@@ -1,4 +1,4 @@
-// ./stran_test.sh 
+// ./stran_test
 
 #include "scuda.h"
 #include "sqat4.h"

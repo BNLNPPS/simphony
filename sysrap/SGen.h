@@ -3,7 +3,7 @@
 SGen.h
 ==============
 
-Used from SGLFW_Gen.h
+Loads and summarizes genstep arrays.
 
 **/
 
@@ -17,8 +17,6 @@ Used from SGLFW_Gen.h
 struct SGen
 {
     static constexpr const char* NAME = "genstep.npy" ;
-    static constexpr const char* RPOS_SPEC = "4,GL_FLOAT,GL_FALSE,96,16,false";   // 6*4*4 = 96, 1*4*4 = 16
-    static constexpr const char* RDEL_SPEC = "4,GL_FLOAT,GL_FALSE,96,32,false";   // 6*4*4 = 96, 2*4*4 = 32
     static constexpr const char* _level = "SGen__level" ;
 
     int level ;
@@ -208,4 +206,3 @@ inline std::string SGen::desc() const
     std::string str = ss.str() ;
     return str ;
 }
-

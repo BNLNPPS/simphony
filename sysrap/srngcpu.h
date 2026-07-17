@@ -18,7 +18,7 @@ generated to the number of rng_sequence that have been precooked
 and persisted to ~/.opticks/precooked.
 To extend that see::
   
-   ~/opticks/qudarap/tests/rng_sequence.sh
+   rng_sequence
 
 **/
 
@@ -124,7 +124,6 @@ template <> struct srng<srngcpu>
     static constexpr char CODE = 'C';
     static constexpr const char *NAME = "srngcpu";
     static constexpr unsigned SIZE = sizeof(srngcpu);
-    static constexpr bool UPLOAD_RNG_STATES = false;
 
     static inline float uniform(srngcpu &state)
     {

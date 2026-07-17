@@ -2,7 +2,7 @@
 sdigest_test.cc
 =================
 
-~/o/sysrap/tests/sdigest_test.sh
+sdigest_test
 
 
 When comparing with digests from files beware of the newline::

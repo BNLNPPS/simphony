@@ -12,7 +12,7 @@ and metadata recording is handled with sdevice.h scontext.h
 * scontext.h needs updating to handle updated sdevice.h and
   metadata from scontext needs to be included into the SEvt run metadata
 
-* running sysrap/tests/sdevice_test.sh without CUDA_VISIBLE_DEVICES
+* running sdevice_test without CUDA_VISIBLE_DEVICES
   defined persists info on all GPUs into ~/.opticks/runcache/sdevice.bin
 
 **/

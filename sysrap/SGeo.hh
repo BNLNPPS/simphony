@@ -28,10 +28,10 @@ Only a little usage from active code::
 
 **/
 
-#include "plog/Severity.h"
-#include <string>
 #include "SYSRAP_API_EXPORT.hh"
-#include "sframe.h"   // Zepeng reports needed for Rocky Linux 9/gcc 11.3 
+#include "plog/Severity.h"
+#include "sframe.h"
+#include <string>
 struct stree ; 
 
 struct SYSRAP_API SGeo 
@@ -58,5 +58,4 @@ struct SYSRAP_API SGeo
         virtual ~SGeo(){};
 
 };
-
 

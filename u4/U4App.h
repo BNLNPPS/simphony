@@ -3,13 +3,13 @@ U4App.h  : Geant4 Application in a header (formerly misnamed U4RecorderTest.h)
 =========================================================================================
 
 Note that the methods are not inlined, but that does not matter as this should only be included
-once into the main.  This is effectively providing a Geant4 application in a single header. 
+once into the main.  This is effectively providing a Geant4 application in a single header.
 
-Geometry setup in U4App::Construct is done by U4VolumeMaker::PV 
-which is controlled by the GEOM envvar.  
+Geometry setup in U4App::Construct is done by U4VolumeMaker::PV
+which is controlled by the GEOM envvar.
 
-Note that this does not have access to CSGFoundry geometry, so the SEvt/sframe
-is a default one with zero ce.w extent. 
+Note that this does not have access to CSGFoundry geometry, so the SEvt frame
+is a default one with zero ce.w extent.
 
 **/
 
@@ -34,7 +34,6 @@ is a default one with zero ce.w extent.
 #include "SPath.hh"
 #include "SEventConfig.hh"
 #include "NP.hh"
-#include "sframe.h"
 
 #include "U4Material.hh"
 #include "U4VolumeMaker.hh"
@@ -42,10 +41,6 @@ is a default one with zero ce.w extent.
 #include "U4Random.hh"
 #include "U4Physics.hh"
 #include "U4VPrimaryGenerator.h"
-
-#ifdef WITH_PMTSIM
-#include "PMTSim.hh"
-#endif
 
 
 struct U4App
@@ -220,12 +215,6 @@ void U4App::EndOfEventAction(const G4Event* event)
 
     const char* savedir = SEvt::GetSaveDir(1); 
     SaveMeta(savedir); 
-
-#if defined(WITH_PMTSIM) && defined(POM_DEBUG)
-    PMTSim::ModelTrigger_Debug_Save(savedir) ; 
-#else
-    LOG(info) << "not-(WITH_PMTSIM and POM_DEBUG)"  ; 
-#endif
 }
 
 void U4App::PreUserTrackingAction(const G4Track* trk){  fRecorder->PreUserTrackingAction(trk); }
@@ -290,6 +279,3 @@ void U4App::Main()  // static
 
     LOG(info) << SLOG::Banner() << " " << " savedir " << SEvt::GetSaveDir(1) ; 
 }
-
-
-

@@ -17,14 +17,11 @@ call stack::
 
 
 To some extent the SScene acts as a minimal sub-selection of the
-full stree.h info needed to do triangulated rendering both
-with OptiX ray trace and OpenGL rasterized.
+full stree.h info needed to do triangulated OptiX ray tracing.
 
 ::
 
-    ~/o/sysrap/tests/SScene_test.sh
-
-* OpenGL/CUDA interop-ing the triangle data is possible (but not straight off)
+    SScene_test
 
 * TODO: solid selection via ELV envvar eg skipping virtuals so can see PMT shapes
 
@@ -71,7 +68,7 @@ struct SScene
 
     std::vector<const SMeshGroup*>    meshgroup ;
     std::vector<const SMesh*>         meshmerge ;
-    std::vector<sfr>                  frame ;
+    std::vector<sframe>               frame;
 
     std::vector<int4>                 inst_info ;  // compound solid level
 
@@ -137,9 +134,9 @@ struct SScene
     void load(const char* dir);
 
     void addFrames(const char* path, const stree* st);
-    void addFrame( const sfr& _f);
+    void addFrame(const sframe& _f);
 
-    sfr getFrame(int _idx=-1) const ;
+    sframe getFrame(int _idx = -1) const;
 
     static SScene* CopySelect( const SScene* src, const SBitSet* elv );
     SScene* copy(const SBitSet* elv=nullptr) const ;
@@ -167,16 +164,14 @@ inline SScene* SScene::Load_(const char* _base)
     return src ;
 }
 
-
 /**
 SScene::Load
 --------------
 
 HMM cf CSGFoundry::Load which uses SSim::set_override_scene
 
-Dependency on SGeoConfig.cc (ie library functionality, not just header only)
-is inconvenient for examples/UseShaderSGLFW_SScene. Workaraound is to
-use lowerlevel SScene::Load_ without the ELV functionality.
+Dependency on SGeoConfig.cc means callers needing only header-level loading
+should use lower-level SScene::Load_ without the ELV functionality.
 
 **/
 
@@ -367,7 +362,7 @@ meshgroup
     (used by triangulated OptiX?)
 
 meshmerge
-    concatenated SMesh used by OpenGL
+    concatenated SMesh representation
     HMM: the concatenation could be deferred or redone following
     lvid based sub-selection applied to mg->subs
 
@@ -624,7 +619,7 @@ inline std::string SScene::descFrame() const
     ss << "[SScene::descFrame num_frame " << num_frame << std::endl ;
     for(int i=0 ; i < num_frame ; i++)
     {
-        const sfr& f = frame[i];
+        const sframe& f = frame[i];
         ss << f.desc() ;
     }
     ss << "]SScene::descFrame num_frame " << num_frame << std::endl ;
@@ -751,7 +746,7 @@ inline NPFold* SScene::serialize_frame() const
     int num_frame = frame.size();
     for(int i=0 ; i < num_frame ; i++)
     {
-        const sfr& f  = frame[i] ;
+        const sframe& f = frame[i];
         std::string key = f.get_key() ;
         _frame->add( key.c_str(), f.serialize() );
     }
@@ -764,7 +759,7 @@ inline void SScene::import_frame(const NPFold* _frame )
     for(int i=0 ; i < num_frame ; i++)
     {
         const NP* a = _frame->get_array(i);
-        sfr f = sfr::Import(a) ;
+        sframe    f = sframe::Import(a);
         frame.push_back(f);
     }
 }
@@ -830,7 +825,6 @@ inline void SScene::load(const char* dir)
     import_(fold);
 }
 
-
 /**
 SScene::addFrames
 ------------------
@@ -842,13 +836,13 @@ argument from envvar::
 
 Which is set for example from::
 
-    ~/o/sysrap/tests/SScene_test.sh
+    SScene_test
 
 Actions:
 
 1. read framespec string from path file
 2. parse the string splitting into trimmed lines
-3. for each line get sfr with stree::get_frame add to frame vector
+3. for each line get sframe with stree::get_frame add to frame vector
 4. add last frame f0 fabricated from the ce of the first global mergedmesh
 
 For integrated running a sensible place to configure this
@@ -883,10 +877,9 @@ The file needs to contain frame specification triplet lines, comments starting #
     sSurftube_38V1_1:0:-1
     solidXJfixture:27:-1     ## near bottom of CD
 
-These framespec lines are used to provide navigation bookmarks in the visualization GUI
-which are accessed by number keys 0-9 with and without modifier keys ALT, SHIFT, ALT+SHIFT.
-So it only makes sense to have up to 40 lines in the file. See SGLFW::HELP for details.
-The framespec lines are converted into sfr.h instances by stree::get_frame.
+These framespec lines provide named navigation bookmarks. Clients can map the
+first 40 entries to number keys 0-9 with modifier combinations if desired.
+The framespec lines are converted into sframe.h instances by stree::get_frame.
 
 
 
@@ -925,7 +918,7 @@ inline void SScene::addFrames(const char* path, const stree* st)
                 continue ;
             }
 
-            sfr f = st->get_frame(spec);
+            sframe f = st->get_frame(spec);
             addFrame(f);
         }
     }
@@ -936,11 +929,9 @@ inline void SScene::addFrames(const char* path, const stree* st)
 
     // last frame that ensures always at least one
     const float* _ce = get_ce(0) ;
-    sfr f0 = sfr::MakeFromCE(_ce) ;
+    sframe       f0 = sframe::MakeFromCE(_ce);
     f0.set_name("MakeFromCE0");
     addFrame(f0);
-
-
 
     /**
     // this is wrong place to do this, need to do from main
@@ -949,20 +940,17 @@ inline void SScene::addFrames(const char* path, const stree* st)
     const char* MOI = ssys::getenvvar("MOI", nullptr);
     if(MOI)
     {
-        sfr fm = st->get_frame(MOI);
+        sframe fm = st->get_frame(MOI);
         addFrame(fm);
     }
     **/
-
-
 }
 
-
-inline void SScene::addFrame( const sfr& _f)
+inline void SScene::addFrame(const sframe& _f)
 {
-   sfr f = _f ;
-   f.set_idx( frame.size() );
-   frame.push_back(f);
+    sframe f = _f;
+    f.set_idx(frame.size());
+    frame.push_back(f);
 }
 
 
@@ -976,7 +964,7 @@ For argument _idx beyond available frames returns the last frame
 
 **/
 
-inline sfr SScene::getFrame(int _idx) const
+inline sframe SScene::getFrame(int _idx) const
 {
     int num_frame = frame.size();
     bool num_frame_expect =  num_frame > 0  ;
@@ -993,8 +981,7 @@ inline sfr SScene::getFrame(int _idx) const
 
     assert( num_frame_expect );
 
-    const sfr& f = frame[idx] ;
-
+    const sframe& f = frame[idx];
 
     assert( f.get_idx() == idx );
     return f ;
@@ -1148,7 +1135,7 @@ SScene::Compare
 ---------------
 
 Observed that this comparison does not notice
-exclusions of global LV, see tests/SSceneLoadTest.sh
+exclusions of global LV, see tests/SSceneLoadTest
 
 **/
 
@@ -1163,14 +1150,13 @@ inline int SScene::Compare(const SScene* a, const SScene* b) // static
     mismatch += svec<int4>::Compare( "inst_info", a->inst_info, b->inst_info, out );
     mismatch += svec<glm::tmat4x4<float>>::Compare( "inst_tran", a->inst_tran, b->inst_tran, out );
     mismatch += svec<glm::tvec4<int32_t>>::Compare( "inst_col3", a->inst_col3, b->inst_col3, out );
-    //mismatch += svec<sfr>::Compare( "frame", a->frame, b->frame, out );   // std::string name 4 bytes is bytewise discrepant
+    // mismatch += svec<sframe>::Compare( "frame", a->frame, b->frame, out );   // std::string name 4 bytes is bytewise discrepant
 
     if(dump) std::cout << "SScene::Compare mismatch "  << mismatch << "\n" ;
     if(out) std::cout << ss.str() << "\n" ;
 
     return mismatch ;
 }
-
 
 
 

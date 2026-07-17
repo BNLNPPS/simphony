@@ -1,20 +1,15 @@
 /**
-SOPTIX_Scene_Encapsulated_test.cc 
+SOPTIX_Scene_Encapsulated_test.cc
 ====================================
 
 ::
- 
-    ~/o/sysrap/tests/SOPTIX_Scene_test.sh 
+
+    SOPTIX_Scene_test
     ~/o/sysrap/tests/SOPTIX_Scene_test.cc
-
-For an enchancement of this with OpenGL interactive control see::
-
-    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.sh  
-    ~/o/sysrap/tests/SGLFW_SOPTIX_Scene_test.cc  
 
 Other related tests::
 
-    ~/o/sysrap/tests/SCUDA_Mesh_test.sh
+    SCUDA_Mesh_test
     ~/o/sysrap/tests/SCUDA_Mesh_test.cc
 
 **/
@@ -26,15 +21,15 @@ Other related tests::
 
 int main()
 {
-    SScene* scene = SScene::Load("$SCENE_FOLD") ; 
-    sfr fr = scene->getFrame(ssys::getenvint("FRAME", -1))  ; 
+    SScene* scene = SScene::Load("$SCENE_FOLD");
+    sframe  fr = scene->getFrame(ssys::getenvint("FRAME", -1));
 
-    SGLM gm ; 
-    gm.set_frame(fr);   
-    std::cout << gm.desc() ; 
+    SGLM gm;
+    gm.set_frame(fr);
+    std::cout << gm.desc();
 
-    SOPTIX opx(scene, gm) ; 
-    opx.render_ppm("$PPM_PATH"); 
+    SOPTIX opx(scene, gm);
+    opx.render_npy("$NPY_PATH");
 
-    return 0 ; 
+    return 0;
 }

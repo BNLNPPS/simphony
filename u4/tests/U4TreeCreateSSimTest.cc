@@ -4,12 +4,12 @@ U4TreeCreateSSimTest.cc
 
 ::
 
-    ~/o/u4/tests/U4TreeCreateSSimTest.sh
+    ~/o/u4/tests/U4TreeCreateSSimTest
 
-    TEST=find_lvid ~/o/u4/tests/U4TreeCreateSSimTest.sh
-    TEST=pick_lvid_ordinal_node ~/o/u4/tests/U4TreeCreateSSimTest.sh
-    TEST=get_combined_transform  ~/o/u4/tests/U4TreeCreateSSimTest.sh
-    TEST=get_combined_tran_and_aabb ~/o/u4/tests/U4TreeCreateSSimTest.sh
+    TEST=find_lvid ~/o/u4/tests/U4TreeCreateSSimTest
+    TEST=pick_lvid_ordinal_node ~/o/u4/tests/U4TreeCreateSSimTest
+    TEST=get_combined_transform  ~/o/u4/tests/U4TreeCreateSSimTest
+    TEST=get_combined_tran_and_aabb ~/o/u4/tests/U4TreeCreateSSimTest
 
 
 1. access geometry with U4VolumeMaker::PV

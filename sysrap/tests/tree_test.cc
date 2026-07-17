@@ -1,4 +1,4 @@
-// ./tree_test.sh 
+// ./tree_test
 
 #include <cassert>
 #include <cstring>

@@ -525,10 +525,7 @@ void intersect_node_contiguous( bool& valid_isect, float4& isect, const CSGNode*
 #endif
 
 
-    // insertionSortIndirectSentinel : 
-    // 4. order the enter indices so that they would make enter ascend 
-    // see sysrap/tests/sorting/insertionSortIndirect.sh to understand the sort 
-    // ordering the idx (isub indices) to make the enter values ascend 
+    // 4. order the enter indices so that enter[idx[i]] ascends.
 
 #ifdef DEBUG
     printf("//intersect_node_contiguous enter_count %d  (before sort) \n", enter_count ); 
@@ -959,4 +956,3 @@ float distance_node( const float3& global_position, const CSGNode* node, const C
     }
     return distance ; 
 }
-

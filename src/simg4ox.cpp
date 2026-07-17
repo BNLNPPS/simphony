@@ -4,6 +4,7 @@
 
 #include "FTFP_BERT.hh"
 #include "G4OpticalPhysics.hh"
+#include "Randomize.hh"
 #include "G4RunManager.hh"
 #include "G4VModularPhysicsList.hh"
 
@@ -18,14 +19,14 @@
 
 using namespace std;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
     argparse::ArgumentParser program("simg4ox", "0.0.0");
 
     string gdml_file, config_name, macro_name;
-    bool interactive;
+    bool   interactive;
 
     program.add_argument("-g", "--gdml")
         .help("path to GDML file")
@@ -50,37 +51,47 @@ int main(int argc, char **argv)
         .flag()
         .store_into(interactive);
 
+    program.add_argument("-s", "--seed").help("fixed random seed").scan<'i', long>();
+
     try
     {
         program.parse_args(argc, argv);
     }
-    catch (const exception &err)
+    catch (const exception& err)
     {
         cerr << err.what() << endl;
         cerr << program;
         exit(EXIT_FAILURE);
     }
 
-    gphox::Config cfg(config_name);
+    simphony::Config cfg(config_name);
+
+    if (program.is_used("--seed"))
+    {
+        const long seed = program.get<long>("--seed");
+        CLHEP::HepRandom::setTheSeed(seed);
+        G4cout << "Random seed set to: " << seed << G4endl;
+    }
 
     // Configure Geant4
     // The physics list must be instantiated before other user actions
-    G4VModularPhysicsList *physics = new FTFP_BERT;
+    G4VModularPhysicsList* physics = new FTFP_BERT;
     physics->RegisterPhysics(new G4OpticalPhysics);
 
     G4RunManager run_mgr;
     run_mgr.SetUserInitialization(physics);
 
-    G4App *g4app = new G4App(cfg, gdml_file);
+    G4App* g4app = new G4App(cfg, gdml_file);
     run_mgr.SetUserInitialization(g4app->det_cons_);
     run_mgr.SetUserAction(g4app->prim_gen_);
+    run_mgr.SetUserAction(g4app->run_act_);
     run_mgr.SetUserAction(g4app->event_act_);
     run_mgr.SetUserAction(g4app->tracking_);
     run_mgr.SetUserAction(g4app->stepping_);
     run_mgr.Initialize();
 
-    G4UIExecutive *uix = nullptr;
-    G4VisManager *vis = nullptr;
+    G4UIExecutive* uix = nullptr;
+    G4VisManager*  vis = nullptr;
 
     if (interactive)
     {
@@ -89,7 +100,7 @@ int main(int argc, char **argv)
         vis->Initialize();
     }
 
-    G4UImanager *ui = G4UImanager::GetUIpointer();
+    G4UImanager* ui = G4UImanager::GetUIpointer();
     ui->ApplyCommand("/control/execute " + macro_name);
 
     if (interactive)

@@ -4,11 +4,11 @@ sphoton_test.cc
 
 ::
 
-     ~/o/sysrap/tests/sphoton_test.sh
-     TEST=set_lpos ~/o/sysrap/tests/sphoton_test.sh
+     sphoton_test
+     TEST=set_lpos sphoton_test
 
-     OFFSET=100,100,100 ~/o/sysrap/tests/sphoton_test.sh
-     OFFSET=1000,1000,1000 ~/o/sysrap/tests/sphoton_test.sh
+     OFFSET=100,100,100 sphoton_test
+     OFFSET=1000,1000,1000 sphoton_test
 
 
 **/
@@ -535,11 +535,6 @@ int sphoton_test::make_record_array()
             memcpy( aa + idx_ij, p.cdata(), sizeof(float)*nk*nl );
         }
     }
-    a->set_meta<std::string>("rpos", "4,GL_FLOAT,GL_FALSE,64,0,false" );
-    // Q:What reads this OpenGL attribute metadata ?
-    // A:sysrap/SGLFW.h SGLFW_Attribute
-
-
     static const int N = 4 ;
     float mn[N] = {} ;
     float mx[N] = {} ;
@@ -879,4 +874,3 @@ int main()
 {
     return sphoton_test::main();
 }
-

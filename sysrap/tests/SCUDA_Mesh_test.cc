@@ -1,6 +1,6 @@
 /**
 
-~/o/sysrap/tests/SCUDA_Mesh_test.sh
+SCUDA_Mesh_test
 
 
 optix7.5 p28
@@ -8,7 +8,6 @@ optix7.5 p28
    [will need separated triangulated GAS for guidetube]
 
 **/
-
 
 #include "scuda.h"
 

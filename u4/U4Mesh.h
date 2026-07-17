@@ -21,7 +21,7 @@ allowing 3D visualization with quads as well as triangles.
 | (NP*)tpd   |  flat vtx index array : funny pyvista using all triangles              | same as tri, pv useful             |
 +------------+------------------------------------------------------------------------+------------------------------------+
 
-For use with OpenGL rendering its natural to use "vtx" and "tri".
+The "vtx" and "tri" arrays provide the conventional indexed-triangle form.
 
 **/
 
@@ -507,7 +507,7 @@ Create pyvista PolyData from the fpd and vtx array with the below::
 
     pd = pv.PolyData(f.vtx, f.fpd)
 
-For use of that in context see u4/tests/U4Mesh_test.py
+For use of that in context see U4Mesh_test.cc
 
 **/
 inline void U4Mesh::init_fpd()
@@ -747,5 +747,4 @@ inline void U4Mesh::init_tpd()
     }
     tpd = NPX::Make<int>(_tpd);
 }
-
 

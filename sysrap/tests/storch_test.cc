@@ -4,7 +4,7 @@ storch_test.cc : CPU tests of storch.h CUDA code using "mocking" with srngcpu.h
 
 Standalone compile and run with::
 
-   ~/opticks/sysrap/tests/storch_test.sh 
+   storch_test
 
 HMM: not standalone anymore, currently using libSysrap
 

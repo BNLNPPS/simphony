@@ -2,7 +2,7 @@
 U4SimtraceSimpleTest.cc
 ============================
 
-Split from U4SimtraceTest.cc as that has PMTSim_standalone dependency complications
+Legacy lightweight simtrace variant for self-contained geometries.
 
 Usually invoked from U4SimtraceSimpleTest.sh
 
@@ -76,5 +76,4 @@ int main(int argc, char** argv)
 
     return 0 ;
 }
-
 

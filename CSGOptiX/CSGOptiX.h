@@ -14,7 +14,7 @@ CSGOptiX.h
 #include <optix.h>
 
 #include "plog/Severity.h"
-#include "sfr.h"
+#include "sframe.h"
 
 #include "CSGOPTIX_API_EXPORT.hh"
 
@@ -70,7 +70,6 @@ struct CSGOPTIX_API CSGOptiX : public SSimulator
     const char*       flight ;
     const CSGFoundry* foundry ;
     const char*       outdir ;
-    const char*       _optixpath ;
     const char*       optixpath ;
     float             tmin_model ;
     plog::Severity    level = plog::debug ;   // quell prolific logging using level instead of LEVEL
@@ -123,9 +122,6 @@ private:
     void initParams();
     void initGeometry();
     void initSimulate();
-#ifdef WITH_OLD_FRAME
-    void initFrame();
-#endif
     void initRender();
     void initPIDXYZ();
  public:
@@ -136,8 +132,7 @@ private:
     void setFrame();
     void setFrame(const char* moi);
     void setFrame(const float4& ce);
-    void setFrame(const sfr& fr_);
-
+    void setFrame(const sframe& fr_);
 
     static constexpr const char* _prepareParamRender_DEBUG = "CSGOptiX__prepareParamRender_DEBUG" ;
     void prepareParamRender();

@@ -5,9 +5,7 @@ sdigest.h
 
 Header-only hexdigest
 
-Example from /usr/include/openssl/opensslv.h::
-
-   33 # define OPENSSL_VERSION_NUMBER  0x100020bfL
+Uses the vendored Solar Designer MD5 implementation.
 
 **/
 
@@ -16,8 +14,7 @@ Example from /usr/include/openssl/opensslv.h::
 #include <array>
 #include <sstream>
 
-#include <openssl/md5.h>
-#include <openssl/opensslv.h>
+#include "solarmd5/md5.h"
 
 struct NP ;
 
@@ -81,21 +78,7 @@ struct sdigest
 
 inline std::string sdigest::Desc()
 {
-    std::stringstream ss ;
-#if OPENSSL_VERSION_NUMBER == 0x100020bfL
-    ss << "OPENSSL_VERSION_NUMBER == 0x100020bfL" << std::endl ;
-#elif OPENSSL_VERSION_NUMBER > 0x100020bfL
-    ss << "OPENSSL_VERSION_NUMBER > 0x100020bfL" << std::endl ;
-#elif OPENSSL_VERSION_NUMBER < 0x100020bfL
-    ss << "OPENSSL_VERSION_NUMBER < 0x100020bfL" << std::endl ;
-#endif
-
-#if __linux
-    ss << "Linux : OPENSSL_VERSION_NUMBER is 0x" << std::hex << OPENSSL_VERSION_NUMBER  << std::dec << std::endl ;
-#endif
-
-    std::string s = ss.str();
-    return s ;
+    return "Solar Designer MD5";
 }
 
 

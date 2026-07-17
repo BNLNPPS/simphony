@@ -1,4 +1,4 @@
-// ~/o/sysrap/tests/SGLM_test.sh
+// SGLM_test
 
 #include <functional>
 #include "ssys.h"

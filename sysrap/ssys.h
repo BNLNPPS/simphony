@@ -244,10 +244,10 @@ For ekey with a comma such as "OPTICKS_ELV_SELECTION,ELV" the
 envvars are checked in order and the first to yield a value
 is returned.::
 
-    OPTICKS_ELV_SELECTION=greetings ELV=hello ./ssys_test.sh
+    OPTICKS_ELV_SELECTION=greetings ELV=hello ./ssys_test
     test_getenvvar ekey OPTICKS_ELV_SELECTION,ELV val greetings
 
-    OPTICKS_ELV_SELECTION_=greetings ELV=hello ./ssys_test.sh
+    OPTICKS_ELV_SELECTION_=greetings ELV=hello ./ssys_test
     test_getenvvar ekey OPTICKS_ELV_SELECTION,ELV val hello
 
 
@@ -1127,12 +1127,6 @@ inline std::string ssys::Desc()  // static
        << "NOT:PRODUCTION"
 #endif
        << std::endl
-#ifdef WITH_CHILD
-       << "WITH_CHILD"
-#else
-       << "NOT:WITH_CHILD"
-#endif
-       << std::endl
 #ifdef PLOG_LOCAL
        << "PLOG_LOCAL"
 #else
@@ -1182,4 +1176,3 @@ inline void ssys::getenv_with_prefix(std::vector<std::pair<std::string,std::stri
         kvs.push_back( std::pair<std::string,std::string>( k, v ) );
     }
 }
-

@@ -10,7 +10,7 @@ identical_bbox_cheat:true
     
     In that case have observed small 0.002 mm shifts in 
     large bbox dimension values as a result of the copy : 
-    causing CSGCopyTest.sh to fail when using exact comparisons. 
+    causing CSGCopyTest to fail when using exact comparisons.
 
     As a shortcut to fixing the small bbox shift issue 
     can instead cheat and copy the bbox from the src when it

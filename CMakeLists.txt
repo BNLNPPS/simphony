@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.22)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -6,12 +6,13 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES 75)
 endif()
 
-# Default CMAKE_BUILD_TYPE=Debug for single-config generators (Ninja/Makefiles) when not specified
-if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type")
-endif()
+project(simphony VERSION 0.7.0 LANGUAGES CXX CUDA)
 
-project(simphony VERSION 0.6.0 LANGUAGES CXX CUDA)
+# Use CMake's standard testing option, but avoid enabling this project's tests
+# by default when Simphony is pulled in as a subproject.
+if(NOT DEFINED BUILD_TESTING)
+    set(BUILD_TESTING ${PROJECT_IS_TOP_LEVEL} CACHE BOOL "Build the testing tree.")
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,8 +25,16 @@ set(CMAKE_CUDA_EXTENSIONS OFF)
 set(BUILD_SHARED_LIBS ON)
 
 include(GNUInstallDirs)
+# Keep CTest included even when BUILD_TESTING=OFF so external drivers can run
+# ctest and observe an empty test set rather than a missing configuration.
 include(CTest)
 include(CheckLinkerFlag)
+
+add_library(simphony_argparse INTERFACE)
+target_include_directories(simphony_argparse INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party>
+)
 
 # Make installed binaries self-describing at runtime:
 # - use $ORIGIN so executables/libraries can find Simphony's own shared libs
@@ -42,23 +51,27 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
-# used by src/config.h.in
-set(GPHOX_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
-set(GPHOX_BUILD_PTX_DIR "${PROJECT_BINARY_DIR}/ptx")
+# used by sysrap/config_path.h.in
+set(SIMPHONY_INSTALL_FULL_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
+set(SIMPHONY_BUILD_PTX_DIR "${PROJECT_BINARY_DIR}/ptx")
 
 add_subdirectory(sysrap)
-add_subdirectory(sysrap/tests)
 add_subdirectory(CSG)
-add_subdirectory(CSG/tests)
 add_subdirectory(qudarap)
-add_subdirectory(qudarap/tests)
 add_subdirectory(CSGOptiX)
-add_subdirectory(CSGOptiX/tests)
 add_subdirectory(u4)
-add_subdirectory(u4/tests)
 add_subdirectory(g4cx)
-add_subdirectory(g4cx/tests)
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+    add_subdirectory(sysrap/tests)
+    add_subdirectory(CSG/tests)
+    add_subdirectory(qudarap/tests)
+    add_subdirectory(CSGOptiX/tests)
+    add_subdirectory(u4/tests)
+    add_subdirectory(g4cx/tests)
+    add_subdirectory(tests)
+endif()
 
 # Optional DD4hep integration plugins
 find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
@@ -100,6 +113,16 @@ install(
 )
 
 install(
+    TARGETS simphony_argparse
+    EXPORT ${PROJECT_NAME}Targets
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/third_party
+)
+
+install(
     DIRECTORY ./config
-    DESTINATION ${GPHOX_INSTALL_FULL_DATADIR}
+    DESTINATION ${SIMPHONY_INSTALL_FULL_DATADIR}
 )

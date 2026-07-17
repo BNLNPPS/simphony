@@ -35,7 +35,6 @@ CFBASE
 #include "ssys.h"
 
 #include "SSim.hh"
-#include "SOpticks.hh"
 #include "SEventConfig.hh"
 #include "SBitSet.h"
 #include "SGeoConfig.hh"
@@ -189,4 +188,3 @@ int main(int argc, char** argv)
     }
     return 0 ; 
 }
-

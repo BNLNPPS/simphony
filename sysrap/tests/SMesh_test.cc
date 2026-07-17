@@ -4,7 +4,7 @@ SMesh_test.cc
 
 ::
 
-    ~/o/sysrap/tests/SMesh_test.sh 
+    SMesh_test
 
 **/
 

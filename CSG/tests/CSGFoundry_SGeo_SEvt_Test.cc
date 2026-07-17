@@ -3,9 +3,6 @@
 #include "SSim.hh"
 #include "SEvt.hh"
 
-#ifdef WITH_OLD_FRAME
-#include "CSGFoundry.h"
-#endif
 
 int main(int argc, char** argv)
 {
@@ -34,14 +31,7 @@ int main(int argc, char** argv)
 
     SSim* sim = SSim::Create();
 
-#ifdef WITH_OLD_FRAME
-    // search up dir tree starting from loaddir for dir with CSGFoundry/solid.npy
-    const char* cfbase = sev->getSearchCFBase() ;
-    const CSGFoundry* fd = CSGFoundry::Load(cfbase);
-    sev->setGeo(fd);
-#else
     sev->setSim(sim);
-#endif
 
 
     int ins_idx = SSys::getenvint("INS_IDX", 39216) ;

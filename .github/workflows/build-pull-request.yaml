@@ -30,7 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           style: file
-          ignore: include/argparse
+          ignore: third_party
           lines-changed-only: true
           thread-comments: update
           format-review: false
@@ -54,39 +54,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: release
-            os: ubuntu24.04
-            cuda_version: 13.2.0
+        target: [release, develop]
+        config: &build_configs
+          - os: ubuntu26.04
+            cuda_version: 13.3.0
             optix_version: 9.1.0
-            geant4_version: 11.4.1
-            cmake_version: 4.3.1
-          - target: release
-            os: ubuntu24.04
-            cuda_version: 13.0.2
+            geant4_version: 11.4.2
+            cmake_version: 4.3.4
+          - os: ubuntu24.04
+            cuda_version: 13.0.3
             optix_version: 9.0.0
-            geant4_version: 11.4.1
+            geant4_version: 11.4.2
             cmake_version: 4.2.1
-          - target: release
-            os: ubuntu22.04
-            cuda_version: 12.1.1
-            optix_version: 8.0.0
-            geant4_version: 11.3.2
-            cmake_version: 3.22.1
-          - target: develop
-            os: ubuntu24.04
-            cuda_version: 13.0.2
-            optix_version: 9.0.0
-            geant4_version: 11.4.1
-            cmake_version: 4.2.1
-          - target: develop
-            os: ubuntu24.04
+          - os: ubuntu24.04
             cuda_version: 12.5.1
             optix_version: 9.0.0
             geant4_version: 11.4.1
             cmake_version: 3.28.3
-          - target: develop
-            os: ubuntu22.04
+          - os: ubuntu22.04
             cuda_version: 12.1.1
             optix_version: 8.0.0
             geant4_version: 11.3.2
@@ -97,9 +82,11 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')-buildcache
           REF_SANITIZED=PR-${{ github.event.pull_request.number }}
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-${{ matrix.target }}-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          BASE_VARIANT=cuda${{ matrix.config.cuda_version }}-base-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
+          echo BASE_CACHE_REF=${IMAGE_NAME}:${BASE_VARIANT} >> $GITHUB_ENV
           echo CACHE_REF=${IMAGE_NAME}:${BUILD_VARIANT} >> $GITHUB_ENV
 
       - name: Checkout code
@@ -123,15 +110,17 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           target: ${{ matrix.target }}
           build-args: |
-            OS=${{ matrix.os }}
-            CUDA_VERSION=${{ matrix.cuda_version }}
-            OPTIX_VERSION=${{ matrix.optix_version }}
-            GEANT4_VERSION=${{ matrix.geant4_version }}
-            CMAKE_VERSION=${{ matrix.cmake_version }}
-          cache-from: type=registry,ref=${{ env.CACHE_REF }}
-          push: ${{ matrix.target == 'develop' && github.event.pull_request.head.repo.full_name == github.repository }}
+            OS=${{ matrix.config.os }}
+            CUDA_VERSION=${{ matrix.config.cuda_version }}
+            OPTIX_VERSION=${{ matrix.config.optix_version }}
+            GEANT4_VERSION=${{ matrix.config.geant4_version }}
+            CMAKE_VERSION=${{ matrix.config.cmake_version }}
+          cache-from: |
+            type=registry,ref=${{ env.BASE_CACHE_REF }}
+            type=registry,ref=${{ env.CACHE_REF }}
+          push: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 
-  test-develop-image:
+  test-image:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     needs: build-image
     runs-on: [gpu]
@@ -141,30 +130,24 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: &develop_matrix
-        include:
-          - os: ubuntu24.04
-            cuda_version: 13.0.2
-            optix_version: 9.0.0
-            geant4_version: 11.4.1
-            cmake_version: 4.2.1
-          - os: ubuntu24.04
-            cuda_version: 12.5.1
-            optix_version: 9.0.0
-            geant4_version: 11.4.1
-            cmake_version: 3.28.3
-          - os: ubuntu22.04
-            cuda_version: 12.1.1
-            optix_version: 8.0.0
-            geant4_version: 11.3.2
-            cmake_version: 3.22.1
+      matrix:
+        target: [release, develop]
+        config: *build_configs
+        exclude:
+          # The gpu runner driver does not support the ubuntu26.04/CUDA 13.3.0 image yet.
+          - config:
+              os: ubuntu26.04
+              cuda_version: 13.3.0
+              optix_version: 9.1.0
+              geant4_version: 11.4.2
+              cmake_version: 4.3.4
 
     steps:
       - name: Define environment variables
         run: |
           IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')-buildcache
           REF_SANITIZED=PR-${{ github.event.pull_request.number }}
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-develop-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo IMAGE_NAME=${IMAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
 
@@ -175,21 +158,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull develop image
+      - name: Pull PR image
         run: |
           docker pull ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Run tests
         run: |
-          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_opticks.sh
-          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_simg4ox.sh
+          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -lc 'ctest --test-dir "$SIMPHONY_BUILD"'
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPURaytrace.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_triangulated.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_triangulated_multi.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonFileSource.sh
-          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_GPUPhotonSource_8x8SiPM.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/test_wavelength_shifting.sh
           docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} tests/g4trap_validation.sh
+
+      - name: Build and run external example
+        run: |
+          docker run --rm --gpus 'device=1' ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -lc examples/simphox/run.sh
 
       - name: Cleanup local test image
         if: ${{ success() }}
@@ -199,21 +184,23 @@ jobs:
 
   cleanup-pr-images:
     if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
-    needs: test-develop-image
+    needs: test-image
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
       fail-fast: false
-      matrix: *develop_matrix
+      matrix:
+        target: [release, develop]
+        config: *build_configs
 
     steps:
       - name: Define environment variables
         run: |
           PACKAGE_NAME=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')-buildcache
           REF_SANITIZED=PR-${{ github.event.pull_request.number }}
-          BUILD_VARIANT=cuda${{ matrix.cuda_version }}-develop-${{ matrix.os }}-optix${{ matrix.optix_version }}-geant4${{ matrix.geant4_version }}-cmake${{ matrix.cmake_version }}
+          BUILD_VARIANT=cuda${{ matrix.config.cuda_version }}-${{ matrix.target }}-${{ matrix.config.os }}-optix${{ matrix.config.optix_version }}-geant4${{ matrix.config.geant4_version }}-cmake${{ matrix.config.cmake_version }}
           echo PACKAGE_NAME=${PACKAGE_NAME} >> $GITHUB_ENV
           echo IMAGE_TAG=${REF_SANITIZED}-${BUILD_VARIANT} >> $GITHUB_ENV
 

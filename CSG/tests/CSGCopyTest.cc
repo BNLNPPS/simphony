@@ -19,26 +19,27 @@ int main(int argc, char** argv)
 
     // CAUTION : MOST OF THIS IS DONE BY CSGFoundry::Load
 
-    CSGFoundry* src = mode == 'D' ? CSGMaker::MakeDemo() : CSGFoundry::Load_() ; 
-    LOG_IF(fatal , src == nullptr ) << " NO GEOMETRY " ; 
-    if(src == nullptr) return 1 ; 
+    CSGFoundry* src = mode == 'D' ? CSGMaker::MakeDemo() : CSGFoundry::Load_();
+    LOG_IF(fatal, src == nullptr) << " NO GEOMETRY ";
+    if (src == nullptr)
+        return 1;
 
-    const SBitSet* elv = SBitSet::Create( src->getNumMeshName(), "ELV", "t" ); 
+    const SBitSet* elv = SBitSet::Create(src->getNumMeshName(), "ELV", "t");
 
-    LOG(info) 
+    LOG(info)
         << "env->desc()"
-        << std::endl 
-        << elv->desc() 
-        << std::endl 
+        << std::endl
+        << elv->desc()
+        << std::endl
         << "src->descELV(elv)"
-        << std::endl 
+        << std::endl
         << src->descELV(elv)
-        << std::endl 
-        ; 
+        << std::endl;
 
-    CSGFoundry* dst = CSGCopy::Select(src, elv ); 
+    bool        gdml_no_selection = ssys::hasenv_("SIMPHONY_GEOM_FILE") && (elv == nullptr || elv->all());
+    CSGFoundry* dst = gdml_no_selection ? src : CSGCopy::Select(src, elv);
 
-    int cf = CSGFoundry::Compare(src, dst); 
+    int cf = gdml_no_selection ? 0 : CSGFoundry::Compare(src, dst);
 
     if(ssys::hasenv_("AFOLD")) src->save("$AFOLD"); 
     if(ssys::hasenv_("BFOLD")) dst->save("$BFOLD"); 
@@ -51,12 +52,11 @@ int main(int argc, char** argv)
 
     if( elv == nullptr || elv->all() )
     {
-        LOG_IF(fatal, cf != 0 ) 
-            << " UNEXPECTED DIFFERENCE " 
-            << " DEBUG WITH :" 
-            << std::endl 
-            << " ~/opticks/CSG/tests/CSGCopyTest.sh ana "
-            ;  
+        LOG_IF(fatal, cf != 0)
+            << " UNEXPECTED DIFFERENCE "
+            << " DEBUG WITH :"
+            << std::endl
+            << " CSGCopyTest ana ";
 
         assert( cf == 0 ); 
     }

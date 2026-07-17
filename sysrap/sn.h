@@ -75,7 +75,6 @@ struct _sn
     int  aabb ;         // 5
     int  parent ;       // 6
 
-#ifdef WITH_CHILD
     int  sibdex ;       // 7     0-based sibling index
     int  num_child ;    // 8
     int  first_child ;  // 9
@@ -86,16 +85,6 @@ struct _sn
     int  coincide ;     // 14
     char label[16] ;    // 15,16,17,18
     static constexpr const char* ITEM = "19" ;
-#else
-    int  left ;         // 7
-    int  right ;        // 8
-    int  index ;        // 9
-    int  depth ;        // 10
-    int  note  ;        // 11
-    int  coincide ;     // 12
-    char label[16] ;    // 13,14,15,16
-    static constexpr const char* ITEM = "17" ;
-#endif
 
     std::string desc() const ;
     bool is_root() const ;
@@ -112,15 +101,10 @@ inline std::string _sn::desc() const
        << " param " << std::setw(4) << param
        << " aabb " << std::setw(4) << aabb
        << " parent " << std::setw(4) << parent
-#ifdef WITH_CHILD
        << " sx " << std::setw(4) << sibdex
        << " nc " << std::setw(4) << num_child
        << " fc " << std::setw(4) << first_child
        << " ns " << std::setw(4) << next_sibling
-#else
-       << " left " << std::setw(4) << left
-       << " right " << std::setw(4) << right
-#endif
        << " is_root " << ( is_root() ? "YES" : "NO " )
        ;
     std::string str = ss.str();
@@ -159,12 +143,7 @@ struct SYSRAP_API sn
     std::vector<double>* planes;    // auxiliary plane data for CSG_CONVEXPOLYHEDRON (4 doubles per plane: nx,ny,nz,d)
     sn*   parent ;   // NOT owned by this sn
 
-#ifdef WITH_CHILD
     std::vector<sn*> child ;
-#else
-    sn* left ;
-    sn* right ;
-#endif
     int depth ;
     int note ;
     int coincide ;
@@ -232,9 +211,7 @@ struct SYSRAP_API sn
 
 
     sn(int typecode, sn* left, sn* right);
-#ifdef WITH_CHILD
     void add_child( sn* ch );
-#endif
 
     ~sn();
 
@@ -834,65 +811,36 @@ inline bool sn::is_root() const { return parent == nullptr ; }
 
 inline int sn::num_child() const
 {
-#ifdef WITH_CHILD
     return int(child.size());
-#else
-    return left && right ? 2 : 0 ;
-#endif
 }
 
 inline sn* sn::first_child() const
 {
-#ifdef WITH_CHILD
     return child.size() > 0 ? child[0] : nullptr ;
-#else
-    return left ;
-#endif
 }
 inline sn* sn::last_child() const
 {
-#ifdef WITH_CHILD
     return child.size() > 0 ? child[child.size()-1] : nullptr ;
-#else
-    return right ;
-#endif
 }
 inline sn* sn::get_child(int ch) const
 {
-#ifdef WITH_CHILD
     return ch > -1 && ch < int(child.size()) ? child[ch] : nullptr ;
-#else
-    switch(ch)
-    {
-        case 0: return left  ; break ;
-        case 1: return right ; break ;
-    }
-    return nullptr ;
-#endif
 }
 
 
 inline sn* sn::get_left() const
 {
     sn* l = nullptr ;
-#ifdef WITH_CHILD
     assert( child.size() == 2 );
     l = child[0] ;
-#else
-    l = left ;
-#endif
     return l ;
 }
 
 inline sn* sn::get_right() const
 {
     sn* r = nullptr ;
-#ifdef WITH_CHILD
     assert( child.size() == 2 );
     r = child[1] ;
-#else
-    r = right ;
-#endif
     return r ;
 }
 
@@ -903,25 +851,13 @@ inline sn* sn::get_right() const
 
 inline int sn::total_siblings() const
 {
-#ifdef WITH_CHILD
     return parent ? int(parent->child.size()) : 1 ;  // root regarded as sole sibling (single child)
-#else
-    if(parent == nullptr) return 1 ;
-    return ( parent->left && parent->right ) ? 2 : -1 ;
-#endif
 }
 
 inline int sn::child_index( const sn* ch )
 {
-#ifdef WITH_CHILD
     size_t idx = std::distance( child.begin(), std::find( child.begin(), child.end(), ch )) ;
     return idx < child.size() ? idx : -1 ;
-#else
-    int idx = -1 ;
-    if(      ch == left )  idx = 0 ;
-    else if( ch == right ) idx = 1 ;
-    return idx ;
-#endif
 }
 
 inline int sn::sibling_index() const
@@ -941,18 +877,8 @@ inline int sn::sibling_index() const
 
 inline const sn* sn::get_sibling(int sx) const     // NB this return self for appropriate sx
 {
-#ifdef WITH_CHILD
     assert( sx < total_siblings() );
     return parent ? parent->child[sx] : this ;
-#else
-    const sn* sib = nullptr ;
-    switch(sx)
-    {
-        case 0: sib = parent ? parent->left  : nullptr ; break ;
-        case 1: sib = parent ? parent->right : nullptr ; break ;
-    }
-    return sib ;
-#endif
 }
 
 inline const sn* sn::next_sibling() const
@@ -977,7 +903,7 @@ The Serialize operates by converting pointer members into pool indices
 This T::Serialize is invoked from s_pool<T,P>::serialize_
 for with paired T and P for all pool objects.
 
-At first glance this looks like the WITH_CHILD vector of child nodes
+At first glance this looks like the vector of child nodes
 is restricted to working with two children, but that is not the case
 because the the full vector in the T pool gets represented via next_sibling
 links in the P buffer allowing any number of child nodes to be handled.
@@ -1006,15 +932,10 @@ inline void sn::Serialize(_sn& n, const sn* x) // static
     n.aabb = s_bb::pool->index(x->aabb) ;
     n.parent = pool->index(x->parent);
 
-#ifdef WITH_CHILD
     n.sibdex = x->sibling_index();  // 0 for root
     n.num_child = x->num_child() ;
     n.first_child = pool->index(x->first_child());
     n.next_sibling = pool->index(x->next_sibling());
-#else
-    n.left  = pool->index(x->left);
-    n.right = pool->index(x->right);
-#endif
 
     n.index = pool->index(x) ;
     n.depth = x->depth ;
@@ -1073,7 +994,6 @@ inline sn* sn::Import_r(const _sn* _n,  const std::vector<_sn>& buf, int d)
     if(level() > 0) std::cout << "sn::Import_r d " << d << " " << ( _n ? _n->desc() : "(null)" ) << std::endl ;
     if(_n == nullptr) return nullptr ;
 
-#ifdef WITH_CHILD
     sn* n = Create( _n->typecode , nullptr, nullptr );
     n->complement = _n->complement ;
     n->lvid = _n->lvid ;
@@ -1089,18 +1009,6 @@ inline sn* sn::Import_r(const _sn* _n,  const std::vector<_sn>& buf, int d)
         n->add_child(ch);  // push_back and sets *ch->parent* to *n*
         _child = _child->next_sibling > -1 ? &buf[_child->next_sibling] : nullptr ;
     }
-#else
-    const _sn* _l = _n->left  > -1 ? &buf[_n->left]  : nullptr ;
-    const _sn* _r = _n->right > -1 ? &buf[_n->right] : nullptr ;
-    sn* l = Import_r( _l, buf, d+1 );
-    sn* r = Import_r( _r, buf, d+1 );
-    sn* n = Create( _n->typecode, l, r );  // sn::sn ctor sets parent of l and r to n
-    n->complement = _n->complement ;
-    n->lvid = _n->lvid ;
-    n->xform = s_tv::pool->getbyidx(_n->xform) ;
-    n->param = s_pa::pool->getbyidx(_n->param) ;
-    n->aabb = s_bb::pool->getbyidx(_n->aabb) ;
-#endif
     return n ;
 }
 
@@ -1124,11 +1032,6 @@ inline sn::sn(int typecode_, sn* left_, sn* right_) :
     aabb(nullptr),
     planes(nullptr),
     parent(nullptr),
-#ifdef WITH_CHILD
-#else
-    left(left_),
-    right(right_),
-#endif
     depth(0),
     note(0),
     coincide(0),
@@ -1138,31 +1041,21 @@ inline sn::sn(int typecode_, sn* left_, sn* right_) :
     if(level() > 1) std::cout << "[ sn::sn " << id() << "\n" ;
     zero_label();
 
-#ifdef WITH_CHILD
     if(left_ && right_)
     {
         add_child(left_);   // sets parent of left_ to this
         add_child(right_);  // sets parent of right_ to this
     }
-#else
-    if(left && right)
-    {
-        left->parent = this ;
-        right->parent = this ;
-    }
-#endif
 
     if(level() > 1) std::cout << "] sn::sn " << id() << "\n" ;
 }
 
-#ifdef WITH_CHILD
 inline void sn::add_child( sn* ch )
 {
     assert(ch);
     ch->parent = this ;
     child.push_back(ch) ;
 }
-#endif
 
 
 
@@ -1180,16 +1073,11 @@ inline sn::~sn()
     // parent is not deleted : as it is regarded as weakly linked (ie not owned by this node)
 
 
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++)
     {
         sn* ch = child[i] ;
         delete ch ;
     }
-#else
-    delete left ;
-    delete right ;
-#endif
 
     if(pool) pool->remove(this);
 
@@ -1202,7 +1090,6 @@ inline sn::~sn()
 
 
 
-#ifdef WITH_CHILD
 /**
 sn::disown_child
 ------------------
@@ -1227,7 +1114,6 @@ inline void sn::disown_child(sn* ch)
     IT it = std::find(child.begin(), child.end(), ch );
     if(it != child.end() ) child.erase(it) ;
 }
-#endif
 
 
 /**
@@ -1263,7 +1149,6 @@ inline sn* sn::deepcopy_r(int d) const
 {
     sn* n = copy();
 
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++)
     {
         sn* ch = child[i] ;
@@ -1271,15 +1156,6 @@ inline sn* sn::deepcopy_r(int d) const
         sn* deep_ch = ch->deepcopy_r(d+1) ;
         n->child.push_back( deep_ch );
     }
-#else
-    // whether nullptr or not the shallow default copy
-    // should have copied left and right
-    assert( n->left == left );
-    assert( n->right == right );
-    // but thats just a shallow copy so replace here with deep copies
-    n->left  = left  ? left->deepcopy_r(d+1) : nullptr ;
-    n->right = right ? right->deepcopy_r(d+1) : nullptr ;
-#endif
 
     return n ;
 }
@@ -1297,7 +1173,6 @@ inline sn* sn::deepcopy_excluding_leaf_r(int d, const sn* l) const
 
     sn* n = copy();
 
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++)
     {
         sn* ch = child[i] ;
@@ -1305,15 +1180,6 @@ inline sn* sn::deepcopy_excluding_leaf_r(int d, const sn* l) const
         sn* deep_ch = ch->deepcopy_excluding_leaf_r(d+1, l ) ;
         n->child.push_back( deep_ch );
     }
-#else
-    // whether nullptr or not the shallow default copy
-    // should have copied left and right
-    assert( n->left == left );
-    assert( n->right == right );
-    // but thats just a shallow copy so replace here with deep copies
-    n->left  = left  ? left->deepcopy_excluding_leaf_r(d+1) : nullptr ;
-    n->right = right ? right->deepcopy_excluding_leaf_r(d+1) : nullptr ;
-#endif
     return n ;
 }
 
@@ -1396,16 +1262,10 @@ inline void sn::set_child( int ix, sn* ch, bool copy )
     sn* new_ch = copy ? ch->deepcopy() : ch ;
     new_ch->parent = this ;
 
-#ifdef WITH_CHILD
     assert( ix < int(child.size()) );
     sn*& target = child[ix] ;
     if(!LEAK) delete target ;
     target = new_ch ;
-#else
-    sn** target = ix == 0 ? &left : &right ;
-    if(!LEAK) delete *target ;
-    *target = new_ch ;
-#endif
 
 }
 
@@ -1415,14 +1275,9 @@ inline void sn::set_child_leaking_prior( int ix, sn* ch, bool copy )
     sn* new_ch = copy ? ch->deepcopy() : ch ;
     new_ch->parent = this ;
 
-#ifdef WITH_CHILD
     assert( ix < int(child.size()) );
     sn*& target = child[ix] ;
     target = new_ch ;
-#else
-    sn** target = ix == 0 ? &left : &right ;
-    *target = new_ch ;
-#endif
 
 }
 
@@ -1447,12 +1302,7 @@ inline void sn::set_right( sn* ch, bool copy )
 
 inline bool sn::is_primitive() const
 {
-#ifdef WITH_CHILD
     return child.size() == 0 ;
-#else
-    return left == nullptr && right == nullptr ;
-#endif
-
 }
 
 inline bool sn::is_complement() const           { return complement == 1 ; }
@@ -1461,23 +1311,15 @@ inline bool sn::is_complement_primitive() const { return is_complement() && is_p
 
 inline bool sn::is_bileaf() const
 {
-#ifdef WITH_CHILD
     int num_ch   = int(child.size()) ;
     int num_prim = 0 ;
     for(int i=0 ; i < num_ch ; i++) if(child[i]->is_primitive()) num_prim += 1 ;
     bool all_prim = num_prim == num_ch ;
     return !is_primitive() && all_prim ;
-#else
-    return !is_primitive() && left->is_primitive() && right->is_primitive() ;
-#endif
 }
 inline bool sn::is_operator() const
 {
-#ifdef WITH_CHILD
     return child.size() == 2 ;
-#else
-    return left != nullptr && right != nullptr ;
-#endif
 }
 inline bool sn::is_zero() const
 {
@@ -1485,31 +1327,19 @@ inline bool sn::is_zero() const
 }
 inline bool sn::is_lrzero() const
 {
-#ifdef WITH_CHILD
     int num_ch   = int(child.size()) ;
     int num_zero = 0 ;
     for(int i=0 ; i < num_ch ; i++) if(child[i]->is_zero()) num_zero += 1 ;
     bool all_zero = num_zero == num_ch ;
     return is_operator() && all_zero ;
-#else
-    return is_operator() && left->is_zero() && right->is_zero() ;
-#endif
 }
 inline bool sn::is_rzero() const
 {
-#ifdef WITH_CHILD
     return is_operator() && !child[0]->is_zero() && child[1]->is_zero() ;
-#else
-    return is_operator() && !left->is_zero() && right->is_zero() ;
-#endif
 }
 inline bool sn::is_lzero() const
 {
-#ifdef WITH_CHILD
     return is_operator() && child[0]->is_zero() && !child[1]->is_zero() ;
-#else
-    return is_operator() && left->is_zero() && !right->is_zero() ;
-#endif
 }
 
 
@@ -1525,12 +1355,7 @@ inline int sn::num_node() const
 inline int sn::num_node_r(int d) const
 {
     int nn = 1 ;   // always at least 1 node,  no exclusion of CSG_ZERO
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) nn += child[i]->num_node_r(d+1) ;
-#else
-    nn += left ? left->num_node_r(d+1) : 0 ;
-    nn += right ? right->num_node_r(d+1) : 0 ;
-#endif
     return nn ;
 }
 
@@ -1543,12 +1368,7 @@ inline int sn::num_notsupported_node() const
 inline int sn::num_notsupported_node_r(int d) const
 {
     int nn = typecode == CSG_NOTSUPPORTED ? 1 : 0 ;
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) nn += child[i]->num_notsupported_node_r(d+1) ;
-#else
-    nn += left ? left->num_notsupported_node_r(d+1) : 0 ;
-    nn += right ? right->num_notsupported_node_r(d+1) : 0 ;
-#endif
     return nn ;
 }
 
@@ -1562,12 +1382,7 @@ inline int sn::num_leaf() const
 inline int sn::num_leaf_r(int d) const
 {
     int nl = is_primitive() ? 1 : 0 ;
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) nl += child[i]->num_leaf_r(d+1) ;
-#else
-    nl += left ? left->num_leaf_r(d+1) : 0 ;
-    nl += right ? right->num_leaf_r(d+1) : 0 ;
-#endif
     return nl ;
 }
 
@@ -1578,14 +1393,10 @@ inline int sn::maxdepth() const
 }
 inline int sn::maxdepth_r(int d) const
 {
-#ifdef WITH_CHILD
     if( child.size() == 0 ) return d ;
     int mx = 0 ;
     for(int i=0 ; i < int(child.size()) ; i++) mx = std::max( mx, child[i]->maxdepth_r(d+1) ) ;
     return mx ;
-#else
-    return left && right ? std::max( left->maxdepth_r(d+1), right->maxdepth_r(d+1)) : d ;
-#endif
 }
 
 
@@ -1743,18 +1554,8 @@ inline void sn::operators_v(unsigned& mask, int minsubdepth) const
 
 inline void sn::operators_r(unsigned& mask, int minsubdepth) const
 {
-#ifdef WITH_CHILD
     if(child.size() >= 2) operators_v(mask, minsubdepth) ;
     for(int i=0 ; i < int(child.size()) ; i++) child[i]->operators_r(mask, minsubdepth ) ;
-#else
-    if(left && right )
-    {
-        operators_v(mask, minsubdepth );
-        left->operators_r( mask, minsubdepth );
-        right->operators_r( mask, minsubdepth );
-    }
-#endif
-
 }
 
 
@@ -1776,15 +1577,7 @@ inline void sn::typecodes(std::set<int>& tcs, int minsubdepth ) const
 inline void sn::typecodes_r(std::set<int>& tcs, int minsubdepth ) const
 {
     if(subdepth >= minsubdepth) tcs.insert(typecode);
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) child[i]->typecodes_r(tcs, minsubdepth ) ;
-#else
-    if(left && right )
-    {
-        left->typecodes_r( tcs, minsubdepth );
-        right->typecodes_r( tcs, minsubdepth );
-    }
-#endif
 }
 
 
@@ -1876,12 +1669,7 @@ inline void sn::postorder(std::vector<const sn*>& order ) const
 inline void sn::preorder_r(std::vector<const sn*>& order, int d ) const
 {
     order.push_back(this);
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) child[i]->preorder_r(order, d+1) ;
-#else
-    if(left) left->preorder_r(order, d+1) ;
-    if(right) right->preorder_r(order, d+1) ;
-#endif
 }
 
 /**
@@ -1892,7 +1680,6 @@ sn::inorder_r
 
 inline void sn::inorder_r(std::vector<const sn*>& order, int d ) const
 {
-#ifdef WITH_CHILD
     int nc = int(child.size()) ;
     if( nc > 0 )
     {
@@ -1905,20 +1692,10 @@ inline void sn::inorder_r(std::vector<const sn*>& order, int d ) const
     {
         order.push_back(this);
     }
-#else
-    if(left) left->inorder_r(order, d+1) ;
-    order.push_back(this);
-    if(right) right->inorder_r(order, d+1) ;
-#endif
 }
 inline void sn::postorder_r(std::vector<const sn*>& order, int d ) const
 {
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) child[i]->postorder_r(order, d+1) ;
-#else
-    if(left) left->postorder_r(order, d+1) ;
-    if(right) right->postorder_r(order, d+1) ;
-#endif
     order.push_back(this);
 }
 
@@ -1929,7 +1706,6 @@ inline void sn::inorder_(std::vector<sn*>& order )
 }
 inline void sn::inorder_r_(std::vector<sn*>& order, int d )
 {
-#ifdef WITH_CHILD
     int nc = int(child.size()) ;
     if( nc > 0 )
     {
@@ -1942,11 +1718,6 @@ inline void sn::inorder_r_(std::vector<sn*>& order, int d )
     {
         order.push_back(this);
     }
-#else
-    if(left) left->inorder_r_(order, d+1) ;
-    order.push_back(this);
-    if(right) right->inorder_r_(order, d+1) ;
-#endif
 }
 
 
@@ -2069,12 +1840,7 @@ inline std::string sn::brief() const
        << " pa " << std::setw(1) << ( param ? "Y" : "N" )
        << " bb " << std::setw(1) << ( aabb  ? "Y" : "N" )
        << " pt " << std::setw(1) << ( parent ? "Y" : "N" )
-#ifdef WITH_CHILD
        << " nc " << std::setw(2) << child.size()
-#else
-       << " l  " << std::setw(1) << ( left  ? "Y" : "N" )
-       << " r  " << std::setw(1) << ( right  ? "Y" : "N" )
-#endif
        << " dp " << std::setw(2) << depth
        << " tg " << tag()
        << " bb.desc " << ( aabb ? aabb->desc() : "-" )
@@ -2117,15 +1883,7 @@ inline std::string sn::desc_r() const
 inline void sn::desc_r(int d, std::stringstream& ss) const
 {
     ss << std::setw(3) << d << ":" << desc_this() << desc()  << std::endl ;
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) child[i]->desc_r(d+1, ss ) ;
-#else
-    if( left && right )
-    {
-        left->desc_r(d+1, ss);
-        right->desc_r(d+1, ss);
-    }
-#endif
 }
 
 
@@ -2258,12 +2016,7 @@ inline void sn::render_r(scanvas* canvas, std::vector<const sn*>& order, int mod
         case IDX      : canvas->draw(   ix, iy, 0,0,  idx())          ; break ;
     }
 
-#ifdef WITH_CHILD
     for(int i=0 ; i < int(child.size()) ; i++) child[i]->render_r(canvas, order, mode, d+1) ;
-#else
-    if(left)  left->render_r( canvas, order, mode, d+1 );
-    if(right) right->render_r( canvas, order, mode, d+1 );
-#endif
 }
 
 
@@ -2419,10 +2172,8 @@ inline void sn::populate_leaftypes(std::vector<int>& leaftypes )
     {
         sn* n = order[i];
 
-#ifdef WITH_CHILD
         if(level() > 1) std::cout
             << "sn::populate_leaftypes"
-            << " WITH_CHILD "
             << " i " << i
             << " n.is_operator " << n->is_operator()
             << " n.child.size " << n->child.size()
@@ -2449,21 +2200,6 @@ inline void sn::populate_leaftypes(std::vector<int>& leaftypes )
                 }
             }
         }
-#else
-        if(n->is_operator())
-        {
-            if(n->left->is_zero() && num_leaves_placed < num_leaves)
-            {
-                n->set_left( sn::Prim(leaftypes[num_leaves_placed]), false ) ;
-                num_leaves_placed += 1 ;
-            }
-            if(n->right->is_zero() && num_leaves_placed < num_leaves)
-            {
-                n->set_right(sn::Prim(leaftypes[num_leaves_placed]), false ) ;
-                num_leaves_placed += 1 ;
-            }
-        }
-#endif
     }
     assert( num_leaves_placed == num_leaves );
 }
@@ -2511,10 +2247,8 @@ inline void sn::populate_leaves(std::vector<sn*>& leaves )
     {
         sn* n = order[i];
 
-#ifdef WITH_CHILD
         if(level() > 1) std::cout
             << "sn::populate_leaves"
-            << " WITH_CHILD "
             << " i " << i
             << " n.is_operator " << n->is_operator()
             << " n.child.size " << n->child.size()
@@ -2541,21 +2275,6 @@ inline void sn::populate_leaves(std::vector<sn*>& leaves )
                 }
             }
         }
-#else
-        if(n->is_operator())
-        {
-            if(n->left->is_zero() && num_leaves_placed < num_leaves)
-            {
-                n->set_left( leaves[num_leaves_placed], false ) ;
-                num_leaves_placed += 1 ;
-            }
-            if(n->right->is_zero() && num_leaves_placed < num_leaves)
-            {
-                n->set_right( leaves[num_leaves_placed], false ) ;
-                num_leaves_placed += 1 ;
-            }
-        }
-#endif
     }
     assert( num_leaves_placed == num_leaves );
 }
@@ -2661,13 +2380,9 @@ A dangle node is an operator with a one or two placeholder children (aka zeros),
 
 inline bool sn::has_dangle() const  // see NTreeBuilder::rootprune
 {
-#ifdef WITH_CHILD
     int num_zero = 0 ;
     for(int i=0 ; i < int(child.size()) ; i++) if(child[i]->is_zero()) num_zero += 1 ;
     return num_zero > 0 ;
-#else
-    return is_operator() && ( right->is_zero() || left->is_zero()) ;
-#endif
 }
 
 
@@ -2750,11 +2465,9 @@ inline void sn::positivize_r(bool negate, int d)
             }
         }
 
-#ifdef WITH_CHILD
         assert( child.size() == 2 );
         sn* left = child[0] ;
         sn* right = child[1] ;
-#endif
         left->positivize_r(left_negate,  d+1);
         right->positivize_r(right_negate, d+1);
     }
@@ -4267,14 +3980,7 @@ inline sn* sn::Compound(std::vector<sn*>& prims, int typecode_ )
     for(int i=0 ; i < num_prim ; i++)
     {
         sn* pr = prims[i] ;
-#ifdef WITH_CHILD
         nd->add_child(pr) ;
-#else
-        assert(0 && "sn::Compound requires WITH_CHILD " );
-        assert(num_prim == 2 );
-        if(i==0) nd->set_left(pr,  false) ;
-        if(i==1) nd->set_right(pr, false) ;
-#endif
     }
     return nd ;
 }

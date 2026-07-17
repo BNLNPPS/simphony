@@ -4,7 +4,7 @@ intersect_leaf_cone_test.cc
 
 ::
 
-   ./intersect_leaf_cone_test.sh
+   ./intersect_leaf_cone_test
 
 
 

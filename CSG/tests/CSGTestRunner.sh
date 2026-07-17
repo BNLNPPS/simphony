@@ -43,11 +43,11 @@ Resolve_CFBaseFromGEOM()
     fi  
 }
 
-Resolve_CFBaseFromGEOM
+if [ -z "$SIMPHONY_GEOM_FILE" ]; then
+    Resolve_CFBaseFromGEOM
+fi
 
-
-
-vars="HOME PWD GEOM BASH_SOURCE EXECUTABLE ARGS"
+vars="HOME PWD GEOM SIMPHONY_GEOM_FILE BASH_SOURCE EXECUTABLE ARGS"
 for var in $vars ; do printf "%20s : %s\n" "$var" "${!var}" ; done 
 
 #env 
@@ -55,4 +55,3 @@ $EXECUTABLE $@
 [ $? -ne 0 ] && echo $BASH_SOURCE : FAIL from $EXECUTABLE && exit 1 
 
 exit 0
-

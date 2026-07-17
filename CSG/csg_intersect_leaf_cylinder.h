@@ -33,18 +33,18 @@ into a float4 and then pick from that ?
 LEAF_FUNC
 void intersect_leaf_cylinder( bool& valid_isect, float4& isect, const quad& q0, const quad& q1, const float t_min, const float3& ray_origin, const float3& ray_direction )
 {
-    const float& r  = q0.f.w ; 
-    const float& z1 = q1.f.x  ; 
-    const float& z2 = q1.f.y  ; 
-    const float& ox = ray_origin.x ; 
-    const float& oy = ray_origin.y ; 
-    const float& oz = ray_origin.z ; 
-    const float& vx = ray_direction.x ; 
-    const float& vy = ray_direction.y ; 
-    const float& vz = ray_direction.z ; 
+    const float& r = q0.f.w;
+    const float& z1 = q1.f.x;
+    const float& z2 = q1.f.y;
+    const float& ox = ray_origin.x;
+    const float& oy = ray_origin.y;
+    const float& oz = ray_origin.z;
+    const float& vx = ray_direction.x;
+    const float& vy = ray_direction.y;
+    const float& vz = ray_direction.z;
 
-    const float r2 = r*r ; 
-    const float a = vx*vx + vy*vy ;     // see CSG/sympy_cylinder.py 
+    const float r2 = r * r;
+    const float a = vx * vx + vy * vy; // see the cylinder derivation notes
     const float b = ox*vx + oy*vy ; 
     const float c = ox*ox + oy*oy - r2 ; 
 

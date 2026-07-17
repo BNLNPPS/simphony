@@ -46,6 +46,7 @@ struct G4CX_API G4CXOpticks
     static const U4Tree* GetU4Tree();
     static G4CXOpticks* SetGeometry() ;
     static G4CXOpticks* SetGeometryFromGDML() ;
+    static G4CXOpticks* SetGeometry(const char* gdmlpath);
     static G4CXOpticks* SetGeometry(const G4VPhysicalVolume* world) ;
     static G4CXOpticks* SetGeometry_JUNO(const G4VPhysicalVolume* world, const G4VSensitiveDetector* sd, NPFold* jpmt, const NP* jlut ) ;
 

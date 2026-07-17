@@ -1,0 +1,107 @@
+#pragma once
+
+#include <filesystem>
+#include <string>
+#include <vector>
+
+#include "torch.h"
+
+namespace simphony
+{
+
+enum class EventMode
+{
+    DebugHeavy,
+    DebugLite,
+    Nothing,
+    Minimal,
+    Hit,
+    HitPhoton,
+    HitPhotonSeq,
+    HitSeq
+};
+
+enum class ModeLite : int
+{
+    /// Preserve SEventConfig's lower-level default or OPTICKS_MODE_LITE value.
+    Unspecified = -1,
+
+    /// Store standard photon/hit components. ModeMerge still controls merged hits.
+    Standard = 0,
+
+    /// Store compact photonlite/hitlite components instead of the standard forms.
+    Lite = 1,
+
+    /// Debug mode that gathers standard, lite, and local comparison components.
+    DebugCompare = 2
+};
+
+enum class ModeMerge : int
+{
+    /// Preserve SEventConfig's lower-level default or OPTICKS_MODE_MERGE value.
+    Unspecified = -1,
+
+    /// Keep unmerged hit or hitlite components as the canonical hit output.
+    Separate = 0,
+
+    /// Use merged hit or hitlitemerged components as the canonical hit output.
+    Merged = 1
+};
+
+/**
+ * Provides access to all configuration types and data.
+ *
+ * Config is the authoritative source for app-level event output policy.
+ * Lower-level Opticks code still consumes this through SEventConfig after
+ * Config::Apply has synchronized the selected values.
+ */
+class Config
+{
+  public:
+    Config(std::string config_name = "dev");
+
+    /// Resolve a PTX file from SIMPHONY_PTX_DIR or configured search paths.
+    static std::string PtxPath(const std::string& ptx_name = "CSGOptiX7.ptx");
+
+    /// A unique name associated with this Config
+    std::string name{"dev"};
+
+    /// Maximum photon bounce count.
+    int max_bounce{31};
+
+    /// Maximum gensteps allocated for event uploads.
+    int max_genstep{10000000};
+
+    /// Maximum event slots applied to SEventConfig.
+    int maxslot{0};
+
+    /// Event persistence mode applied to SEventConfig.
+    EventMode event_mode{EventMode::Minimal};
+
+    /// Optional compact photon/hit storage mode.
+    ModeLite mode_lite{ModeLite::Unspecified};
+
+    /// Optional hit merge mode, combined with mode_lite to choose hit output.
+    ModeMerge mode_merge{ModeMerge::Unspecified};
+
+    /// Base directory for event output folders.
+    std::filesystem::path output_dir{std::filesystem::current_path()};
+
+    /// Ray offset after boundary crossing.
+    float propagate_epsilon{0.05f};
+
+    /// Ray offset after bulk interaction.
+    float propagate_epsilon0{0.05f};
+
+    /// Flag mask selecting which bulk interactions use propagate_epsilon0.
+    std::string propagate_epsilon0_mask{"TO,CK,SI,SC,RE"};
+
+    storch torch{default_torch};
+
+  private:
+    std::string Locate(std::string filename) const;
+    void ReadConfig(std::string filepath);
+    void Apply() const;
+};
+
+} // namespace simphony

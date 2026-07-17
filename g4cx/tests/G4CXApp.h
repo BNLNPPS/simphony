@@ -30,7 +30,6 @@ Geometry setup in G4CXApp::Construct is done by U4VolumeMaker::PV which is contr
 
 
 #include "ssys.h"
-#include "sframe.h"
 
 #include "OPTICKS_LOG.hh"
 #include "SEvt.hh"
@@ -359,4 +358,3 @@ int G4CXApp::Main()  // static
     delete app ;  // avoids "Attempt to delete the (physical volume/logical volume/solid/region) store while geometry closed" warnings
     return 0 ;
 }
-

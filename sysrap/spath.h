@@ -113,7 +113,8 @@ public:
 
     static bool Write(const char* txt, const char* base, const char* name );
     static bool Write(const char* txt, const char* path );
-private:
+
+  private:
     static bool Write_( const char* str , const char* path );
 public:
     static void MakeDirsForFile(const char* path);
@@ -123,7 +124,6 @@ public:
 
     static char* CWD();
 
-    // WIP: replacing SOpticksResource
     static const char* GEOM(const char* _geom=nullptr);
     static const char* GEOM_Aux(const char* geom, const char* aux);
     static const char* GEOMSub(const char* _geom=nullptr);
@@ -674,7 +674,7 @@ Currently this uses std::filesystem which requires c++17 (as opposed to c++11)
 
 ::
 
-    TEST=SplitExt ~/o/sysrap/tests/spath_test.sh
+    TEST=SplitExt spath_test
 
 **/
 
@@ -1058,7 +1058,6 @@ that points to the CFBase directory. Specifically:
 2. form ekey "${geom}_CFBaseFromGEOM"
 3. obtain path (of CFBase directory) from getenv(ekey)
 
-This functionality was formerly provided by SOpticksResource
 **/
 
 inline char* spath::CFBaseFromGEOM(const char* _geom)
@@ -1176,7 +1175,4 @@ inline int64_t spath::last_write_time(const char* path, bool dump)
 #endif
     return lwt ;
 }
-
-
-
 

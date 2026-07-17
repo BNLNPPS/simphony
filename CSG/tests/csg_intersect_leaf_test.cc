@@ -4,7 +4,7 @@ csg_intersect_leaf_test.cc
 
 ::
 
-    ~/o/CSG/tests/csg_intersect_leaf_test.sh
+    csg_intersect_leaf_test
 
 
 1. creates single CSGNode sphere

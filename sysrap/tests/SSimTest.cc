@@ -2,15 +2,14 @@
 SSimTest.cc
 ============
 
-TEST=Load ~/o/sysrap/tests/SSimTest.sh
+TEST=Load SSimTest
 
-TEST=get_jpmt_nocopy  ~/o/sysrap/tests/SSimTest.sh
-TEST=get_jpmt         ~/o/sysrap/tests/SSimTest.sh
-TEST=get_spmt         ~/o/sysrap/tests/SSimTest.sh
-TEST=get_spmt_f       ~/o/sysrap/tests/SSimTest.sh
+TEST=get_jpmt_nocopy  SSimTest
+TEST=get_jpmt         SSimTest
+TEST=get_spmt         SSimTest
+TEST=get_spmt_f       SSimTest
 
 **/
-
 
 #include "SSim.hh"
 #include "NPFold.h"

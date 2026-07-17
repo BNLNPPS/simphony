@@ -58,9 +58,6 @@ set(TEST_SOURCES
 
    SSetTest.cc
    STimeTest.cc
-   SASCIITest.cc
-   SAbbrevTest.cc
-   SPPMTest.cc
    SColorTest.cc
    SPackTest.cc 
    SBitTest.cc
@@ -68,10 +65,6 @@ set(TEST_SOURCES
    SEnabledTest.cc
    SBitFromStringTest.cc
    SRandTest.cc
-   SOpticksTest.cc
-   SOpticksKeyTest.cc
-
-
    CheckGeoTest.cc
 
    SGLMTest.cc
@@ -117,12 +110,11 @@ set(TEST_SOURCES
    SProfTest.cc
 
    SEvt_test.cc
+   smath_test.cc
    sseq_index_test.cc
 
    ssys_test.cc
    srng_test.cc
-
-   SCurandStateMonolithicTest.cc
 
    SEvt__createInputGenstep_configuredTest.cc
 
@@ -133,7 +125,6 @@ set(REPORT_SOURCES
 )
 
 set(BASH_RUN_TEST_SOURCES
-    SOpticksResourceTest.cc
     SEnvTest_PASS.cc
     SSimTest.cc
     SBndTest.cc

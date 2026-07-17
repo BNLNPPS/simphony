@@ -1,4 +1,4 @@
-// ./csg_intersect_leaf_test.sh
+// ./csg_intersect_leaf_test
 
 #include <cstdio>
 

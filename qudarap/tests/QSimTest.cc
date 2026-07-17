@@ -607,7 +607,7 @@ void QSimTest::quad_launch_generate()
 {
     assert( QSimLaunch::IsMutate(type)==false );
     NP* q = qs->quad_launch_generate(num, type );
-    q->set_meta<std::string>("source", "QSimTest.sh");
+    q->set_meta<std::string>("source", "QSimTest");
     q->save("$FOLD/q.npy");
 }
 
@@ -633,7 +633,7 @@ void QSimTest::photon_launch_mutate()
     NP* a = NP::Load("$BASE", src_subfold,  "p.npy" );
 
     // U::Resolve does not support "$FOLD/.." so use "$BASE"
-    // and plant that in QSimTest.sh
+    // and plant that in QSimTest
 
     if( a == nullptr )
     {

@@ -5,29 +5,24 @@
 
 int main(int argc, char** argv)
 {
-    CheckGeo geo ; 
-    SGeo* sg = (SGeo*)&geo ; 
+    CheckGeo geo;
+    SGeo*    sg = (SGeo*)&geo;
 
-    unsigned num_meshes_geo = geo.getNumMeshes() ; 
-    unsigned num_meshes_sgeo = sg->getNumMeshes() ; 
+    unsigned num_meshes_geo = geo.getNumMeshes();
+    unsigned num_meshes_sgeo = sg->getNumMeshes();
 
-    std::cout 
-        << " num_meshes_geo " << num_meshes_geo 
-        << " num_meshes_sgeo " << num_meshes_sgeo 
-        << std::endl 
-        ;    
+    std::cout
+        << " num_meshes_geo " << num_meshes_geo
+        << " num_meshes_sgeo " << num_meshes_sgeo
+        << std::endl;
 
-    assert( num_meshes_geo == num_meshes_sgeo ); 
+    assert(num_meshes_geo == num_meshes_sgeo);
 
+    sframe fr;
+    sg->getFrame(fr, 0);
+    assert(fr.is_zero());
 
-     
-    sframe fr ; 
-    sg->getFrame(fr, 0); 
+    std::cout << fr.desc() << std::endl;
 
-    std::cout << fr.desc() << std::endl ; 
- 
-
-
-
-    return 0 ; 
-}  
+    return 0;
+}

@@ -23,7 +23,6 @@ TODO : implement sanity check for use after loading::
 #include "plog/Severity.h"
 #include "curand_kernel.h"   
 #include "qrng.h"
-#include "SCurandState.h"
 
 
 
@@ -37,13 +36,9 @@ struct QUDARAP_API QRng
     static const QRng* Get(); 
     static std::string Desc();
 
-    static constexpr const char* IMPL = "CHUNKED_CURANDSTATE" ; 
-    static XORWOW* LoadAndUpload(ULL rngmax, const SCurandState& cs); 
-    static void Save( XORWOW* states, unsigned num_states, const char* path ); 
-
+    static constexpr const char* IMPL = "PHILOX";
 
     const char* RNGNAME ; 
-    bool  UPLOAD_RNG_STATES ; 
     ULL            skipahead_event_offset ; 
     ULL            seed ;
     ULL            offset ; 
@@ -52,13 +47,10 @@ struct QUDARAP_API QRng
     qrng<RNG>*     qr ;  
     qrng<RNG>*     d_qr ;  
     ULL            rngmax ;
-    SCurandState   cs ; 
 
 
     QRng(unsigned skipahead_event_offset=1) ;  
     void init(); 
-
-    template<typename R> void initStates();
 
     void initMeta(); 
 

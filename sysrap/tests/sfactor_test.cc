@@ -1,4 +1,4 @@
-// ./sfactor_test.sh
+// ./sfactor_test
 
 #include <cstdlib>
 #include <iostream>

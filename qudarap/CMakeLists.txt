@@ -7,11 +7,6 @@ set(DEV_SOURCES
 set(SOURCES
     QUDARAP_LOG.cc
 
-    QCurandStateMonolithic.cc
-    QCurandStateMonolithic.cu
-    QCurandState.cu
-
-
     QSim.cc
     QSim.cu
 
@@ -75,10 +70,6 @@ SET(HEADERS
     QUDA_CHECK.h
 
 
-    QCurandStateMonolithic.hh
-    qcurandwrap.h
-
-
     QSim.hh
     qsim.h
 
@@ -140,12 +131,7 @@ add_library( ${name} ${SOURCES} )
 get_target_property(ILL ${name} INTERFACE_LINK_LIBRARIES)
 message(STATUS "${name} INTERFACE_LINK_LIBRARIES:${ILL} " )
 
-find_package(OpenSSL REQUIRED)
-
-target_link_libraries( ${name} SysRap
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
+target_link_libraries(${name} SysRap)
 
 target_compile_definitions( ${name} PUBLIC OPTICKS_QUDARAP DEBUG_TAG)
 
@@ -165,7 +151,6 @@ target_compile_definitions( ${name} PRIVATE WITH_THRUST )
 
 target_include_directories( ${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/sysrap/inc>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/qudarap>

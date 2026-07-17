@@ -4,8 +4,8 @@
 
 ::
 
-    ~/o/sysrap/tests/sn_test.sh
-    sn__level=5 ~/o/sysrap/tests/sn_test.sh
+    sn_test
+    sn__level=5 sn_test
 
 
 * https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes
@@ -27,16 +27,8 @@ const char* FOLD = getenv("FOLD");
 
 void Desc()
 {
-#ifdef WITH_CHILD
-    if(sn::level() > -1) std::cout << "WITH_CHILD " ;
-#else
-    if(sn::level() > -1) std::cout << "NOT:WITH_CHILD " ;
-#endif
     std::cout << " level : " << sn::level() << std::endl ;
 }
-
-
-
 
 sn* manual_tree_0()
 {
@@ -767,13 +759,7 @@ int sn_test::deepcopy_0()
 
     sn* c1_check = sn::GetLVRoot(88) ;
     assert( c1 == c1_check );
-
-
-
-
-#ifdef WITH_CHILD
     assert( c1->child.size() == c0->child.size() );
-#endif
 
     std::cout << "sn_test::deepcopy_0 : delete c0 \n" ;
     delete c0 ;
@@ -1171,4 +1157,3 @@ int main(int argc, char** argv)
     std::cout << _csg->brief() ;
     return sn_test::main() ;
 }
-

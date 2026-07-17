@@ -53,7 +53,7 @@ The details of the generation are done by storch::generate or scarrier:generate
 NB : currently only limited gentype can be generated with this
 
 Q: Does MOCK_CURAND generate the same photons as without ?
-A: YES, see SGenerate__test.sh : MOCK_CURAND is to allow
+A: YES, see SGenerate__test : MOCK_CURAND is to allow
    code intended to run via CUDA to see GPU like API on the CPU
 
 **/

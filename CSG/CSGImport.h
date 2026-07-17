@@ -5,8 +5,8 @@ CSGImport.h
 
 See::
 
-    sysrap/tests/stree_load_test.sh 
-    CSG/tests/CSGFoundry_importTree_Test.sh
+    stree_load_test
+    CSGFoundry_importTree_Test
 
 
 CAUTION : SOME PARALLEL DEV NEEDS REVIEW, CONSOLIDATION::

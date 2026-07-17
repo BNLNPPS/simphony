@@ -2,9 +2,9 @@
 QRngTest.cc
 ============
 
-TEST=ctor ~/o/qudarap/tests/QRngTest.sh 
+TEST=ctor QRngTest
 
-OPTICKS_MAX_PHOTON=M4 ~/o/qudarap/tests/QRngTest.sh
+OPTICKS_MAX_PHOTON=M4 QRngTest
 
 
 **/
@@ -45,13 +45,11 @@ struct QRngTest
     static int Main(int argc, char** argv);
 };
 
-
-QRngTest::QRngTest()
-    :
-    num_event(ssys::getenvull(_NUM_EVENT, 3ull)), 
-    num_value(ssys::getenvull(_NUM_VALUE, 16ull)), 
+QRngTest::QRngTest() :
+    num_event(ssys::getenvull(_NUM_EVENT, 3ull)),
+    num_value(ssys::getenvull(_NUM_VALUE, 16ull)),
     skipahead_event_offset(ssys::getenvull(_SKIPAHEAD, 1ull)),
-    qr(skipahead_event_offset)  // may load and upload curandState depending on srng<RNG>::UPLOAD_RNG_STATES
+    qr(skipahead_event_offset)
 {
 } 
    
@@ -145,4 +143,3 @@ int QRngTest::Main(int argc, char** argv)
 }
 
 int main(int argc, char** argv){ return QRngTest::Main(argc, argv) ; }   
-

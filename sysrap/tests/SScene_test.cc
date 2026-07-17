@@ -6,7 +6,7 @@ CreateFromTree
 ---------------
 
 1. Load stree.h from TREE_FOLD
-2. SScene::initFromTree 
+2. SScene::initFromTree
 3. saves scene to SCENE_FOLD
 
 
@@ -14,7 +14,7 @@ Load
 -----
 
 1. SScene::Load from SCENE_FOLD
-2. SScene::desc to stdout 
+2. SScene::desc to stdout
 
 
 Usage
@@ -22,9 +22,9 @@ Usage
 
 ::
 
-    TEST=CreateFromTree ~/o/sysrap/tests/SScene_test.sh 
-    TEST=Load ~/o/sysrap/tests/SScene_test.sh 
-   ~/o/sysrap/tests/SScene_test.sh 
+    TEST=CreateFromTree SScene_test
+    TEST=Load SScene_test
+   SScene_test
 
    ~/o/sysrap/tests/SScene_test.cc
 

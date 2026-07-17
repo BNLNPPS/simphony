@@ -4,7 +4,7 @@ U4HitTest.cc
 
 ::
 
-    ~/o/u4/tests/U4HitTest.sh run_cat
+    U4HitTest run_cat
 
 
 **/
@@ -98,11 +98,7 @@ inline U4HitTest::U4HitTest()
 
 inline void U4HitTest::init()
 {
-#ifdef WITH_OLD_FRAME
-    sev->setGeo(fd);
-#else
     sev->setSim(sim);
-#endif
 
     assert( sev->hasInstance() );  // check that the instance is persisted and retrieved (via domain metadata)
     assert( sev == SEvt::Get(sev->instance) );  // check the loaded SEvt got slotted in expected slot

@@ -22,7 +22,7 @@ For traversal examples see *stree::get_children*
 Q: Is repeat_index always zero for global nodes, including triangulated ones ?
 A: Yes, see stree::desc_repeat_index() as shown by::
 
-   TEST=desc_repeat_index ~/o/sysrap/tests/stree_load_test.sh
+   TEST=desc_repeat_index stree_load_test
 
    The artificial "triangulated" solid that is tacked on last,  has ridx 0
    as does the first global analytic solid.

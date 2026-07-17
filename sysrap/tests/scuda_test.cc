@@ -1,9 +1,8 @@
 /**
 
-~/o/sysrap/tests/scuda_test.sh 
+scuda_test
 
 **/
-
 
 #include "ssys.h"
 #include "scuda.h"

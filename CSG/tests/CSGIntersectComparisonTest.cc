@@ -17,9 +17,9 @@ Compare intersects onto two implementations of a CSGNode
 #include <map>
 
 #include "scuda.h"
-#include "squad.h"
+#include "smath.h"
 #include "sqat4.h"
-#include "ssincos.h"
+#include "squad.h"
 
 #include "SSys.hh"
 #include "SRng.hh"
@@ -618,11 +618,9 @@ void CSGIntersectComparisonTest::random2D_ray_origin()
 }
 void CSGIntersectComparisonTest::random2D_ray_direction()
 {
-    double phi, sinPhi, cosPhi ; 
-
-    double u2 = rng() ; 
-    phi = 2.*M_PIf*u2 ;     // azimuthal 0->2pi 
-    ssincos(phi,sinPhi,cosPhi);  
+    double       u2 = rng();
+    const double phi = 2. * M_PIf * u2; // azimuthal 0->2pi
+    const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
     vv[h] = cosPhi ; 
     vv[v] = sinPhi ; 
@@ -665,7 +663,6 @@ void CSGIntersectComparisonTest::random3D_ray_origin()
 }
 void CSGIntersectComparisonTest::random3D_ray_direction()
 {
-    double phi, sinPhi, cosPhi  ;
     double cosTheta, sinTheta ;  
 
     double u3 = rng() ; 
@@ -674,8 +671,8 @@ void CSGIntersectComparisonTest::random3D_ray_direction()
     cosTheta = u3 ; 
     sinTheta = sqrtf(1.0-cosTheta*cosTheta);
 
-    phi = 2.*M_PIf*u4 ;     // azimuthal 0->2pi 
-    ssincos(phi,sinPhi,cosPhi);  
+    const double phi = 2. * M_PIf * u4; // azimuthal 0->2pi
+    const auto [sinPhi, cosPhi] = smath::sincos(phi);
 
     vv[X] = sinTheta * cosPhi  ; 
     vv[Y] = sinTheta * sinPhi  ; 
@@ -749,6 +746,3 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
-
-

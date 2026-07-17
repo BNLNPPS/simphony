@@ -1,4 +1,4 @@
-// ./NPFold_test.sh
+// ./NPFold_test
 
 #include "NPFold.h"
 

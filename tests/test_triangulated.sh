@@ -17,9 +17,10 @@
 # tolerance below absorbs cross-OptiX-version numerics while still failing hard
 # if the triangulated-GAS wiring breaks (zero / grossly wrong hits).
 set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-GDML="$OPTICKS_HOME/tests/geom/opticks_raindrop_sphere.gdml"
-MAC="$OPTICKS_HOME/tests/run.mac"
+GDML="$SCRIPT_DIR/geom/opticks_raindrop_sphere.gdml"
+MAC="$SCRIPT_DIR/run.mac"
 SEED=42
 TOL=0.02
 
