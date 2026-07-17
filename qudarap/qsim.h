@@ -1281,7 +1281,7 @@ inline QSIM_METHOD int qsim::propagate_at_boundary(unsigned& flag, RNG& rng, sct
     }
 
 #if !defined(PRODUCTION) && defined(DEBUG_TAG)
-    if( flag ==  BOUNDARY_REFLECT )
+    if (flag == BOUNDARY_REFLECT)
     {
         const float u_br_align_0 = curand_uniform(&rng) ;
         const float u_br_align_1 = curand_uniform(&rng) ;
@@ -2168,7 +2168,7 @@ QSIM_FORCEINLINE_METHOD int qsim::propagate(const int bounce, RNG& rng, sctx& ct
 #endif
 
     // copy geometry info into the sphoton struct
-    ctx.p.set_prd(boundary, identity, cosTheta, iindex );  // HMM: lposcost not passed along
+    ctx.p.set_prd(boundary, identity, cosTheta, iindex); // HMM: lposcost not passed along
 
     bnd->fill_state(ctx.s, boundary, ctx.p.wavelength, cosTheta, ctx.pidx, base->pidx, ctx.current_matline); // F7: pass carried matline for sibling-pair override
 

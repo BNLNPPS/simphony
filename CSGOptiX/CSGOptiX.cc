@@ -592,9 +592,9 @@ void CSGOptiX::initSimulate()
     params->PropagateEpsilon0Mask = SEventConfig::PropagateEpsilon0Mask();  // eg from CK|SI|TO|SC|RE
 
     params->PropagateRefine = SEventConfig::PropagateRefine();
-    params->PropagateRefineDistance = SEventConfig::PropagateRefineDistance();  // approx distance beyond which to refine intersect with 2nd trace
+    params->PropagateRefineDistance = SEventConfig::PropagateRefineDistance(); // approx distance beyond which to refine intersect with 2nd trace
 
-    params->tmin = SEventConfig::PropagateEpsilon() ;  // eg 0.1 0.05 to avoid self-intersection off boundaries
+    params->tmin = SEventConfig::PropagateEpsilon(); // eg 0.1 0.05 to avoid self-intersection off boundaries
 
     // Per-boundary face-bias gate for the sibling-coincident t-bias (see __intersection__is).
     // bit=1 only where the boundary's own index contrast |n_m1 - n_m2| (max over wavelength)
@@ -648,21 +648,9 @@ void CSGOptiX::initSimulate()
         }
     }
 
-    params->tmax = 1000000.f ;
-    params->max_time = SEventConfig::MaxTime() ;
-
-
+    params->tmax = 1000000.f;
+    params->max_time = SEventConfig::MaxTime();
 }
-
-
-
-
-
-
-
-
-
-
 
 /**
 CSGOptiX::initRender
