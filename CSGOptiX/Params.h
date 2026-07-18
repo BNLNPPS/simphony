@@ -61,12 +61,13 @@ struct Params
     float3     V ;
     float3     W ;
     float3     WNORM ;
-    float      tmin ;
+    float      tmin;
 
-    float      tmin0 ;
-    unsigned   PropagateEpsilon0Mask ;   // default from SEventConfig TO,CK,SI,SC,RE
-    float      PropagateRefineDistance ;
-    bool       PropagateRefine ;
+    float                tmin0;
+    const unsigned char* boundary_face_bias;    // per-boundary gate (1=apply sibling-coincident t-bias) keyed on |n_m1-n_m2|>0.1; nullptr => always-on
+    unsigned             PropagateEpsilon0Mask; // default from SEventConfig TO,CK,SI,SC,RE
+    float                PropagateRefineDistance;
+    bool                 PropagateRefine;
 
     float      tmax ;
     float4     ZPROJ ;
