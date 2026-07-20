@@ -115,6 +115,8 @@ unsigned U4StepPoint::ProcessDefinedStepType(const char* name) // static
     if(strcmp(name, Transportation_) == 0 ) type = U4StepPoint_Transportation ;
     if(strcmp(name, OpRayleigh_) == 0)      type = U4StepPoint_OpRayleigh ;
     if(strcmp(name, OpAbsorption_) == 0)    type = U4StepPoint_OpAbsorption ;
+    if (strcmp(name, OpWLS_) == 0)
+        type = U4StepPoint_OpWLS;
     if(strcmp(name, OpFastSim_) == 0)       type = U4StepPoint_OpFastSim ;
     if(strcmp(name, OTHER_) == 0)           type = U4StepPoint_OTHER ;
     return type ;
@@ -130,6 +132,9 @@ const char* U4StepPoint::ProcessDefinedStepTypeName( unsigned type ) // static
         case U4StepPoint_Transportation: s = Transportation_ ; break ;
         case U4StepPoint_OpRayleigh:     s = OpRayleigh_     ; break ;
         case U4StepPoint_OpAbsorption:   s = OpAbsorption_   ; break ;
+        case U4StepPoint_OpWLS:
+            s = OpWLS_;
+            break;
         case U4StepPoint_OpFastSim:      s = OpFastSim_      ; break ;
         default:                         s = OTHER_          ; break ;
     }
@@ -168,7 +173,7 @@ unsigned U4StepPoint::Flag(const G4StepPoint* point, bool warn, bool& tir )
     unsigned flag = 0 ;
     tir = false ;
 
-    if( status == fPostStepDoItProc && proc == U4StepPoint_OpAbsorption )
+    if (status == fPostStepDoItProc && (proc == U4StepPoint_OpAbsorption || proc == U4StepPoint_OpWLS))
     {
         flag = BULK_ABSORB ;
     }

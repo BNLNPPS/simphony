@@ -24,13 +24,25 @@ from optiphy.geant4_version import detect_geant4_version, geant4_series
 
 
 EXPECTED_DIFF = {
-    "11.3": {
-        "default": [14, 22, 32, 34, 40, 81, 85],
-        "Release": [14, 16, 22, 32, 40, 67, 81],
+    "raindrop": {
+        "11.3": {
+            "Debug": [14, 22, 32, 34, 40, 81, 85],
+            "Release": [14, 16, 22, 32, 40, 67, 81],
+        },
+        "11.4+": {
+            "Debug": [0, 30, 32, 34, 42, 69, 78, 85, 86],
+            "Release": [0, 16, 30, 32, 42, 67, 69, 78, 86],
+        },
     },
-    "11.4+": {
-        "default": [0, 30, 32, 34, 42, 69, 78, 85, 86],
-        "Release": [0, 16, 30, 32, 42, 67, 69, 78, 86],
+    "nested_dune_module": {
+        "11.3": {
+            "Debug": [13, 22, 34, 43, 50, 61, 63, 68, 82, 88],
+            "Release": [6, 22, 25, 34, 61, 63, 68, 82],
+        },
+        "11.4+": {
+            "Debug": [13, 22, 34, 43, 50, 61, 63, 68, 82, 88],
+            "Release": [6, 22, 25, 34, 61, 63, 68, 82],
+        },
     },
 }
 
@@ -59,8 +71,8 @@ def detect_build_type(base):
 
 def expected_diff_for_version(version, build_type):
     """Return expected record mismatch indices for a Geant4 version and build type."""
-    expected_by_build = EXPECTED_DIFF[geant4_series(version)]
-    return expected_by_build.get(build_type, expected_by_build["default"])
+    expected_by_build = EXPECTED_DIFF[geometry][geant4_series(version)]
+    return expected_by_build.get(build_type, expected_by_build["Debug"])
 
 
 def load_records(base, a_record, b_record):
@@ -93,6 +105,17 @@ def record_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default=".", help="directory containing the A/B event outputs")
     parser.add_argument(
+        "--geometry",
+        default="raindrop",
+        choices=sorted(EXPECTED_DIFF),
+        help="geometry expectation set to use",
+    )
+    parser.add_argument(
+        "--build-type",
+        default="Debug",
+        help="build type expectation set to use, falling back to Debug when unknown",
+    )
+    parser.add_argument(
         "--a-record",
         default="ALL0_no_opticks_event_name/A000/record.npy",
         help="path to the A-side record.npy relative to --base",
@@ -109,13 +132,14 @@ def compare_records_main(args):
     """Run record validation and fail unless its mismatch indices are expected."""
     base = Path(args.base).resolve()
     geant4_version = detect_geant4_version()
-    build_type = detect_build_type(base)
-    expected_diff = expected_diff_for_version(geant4_version, build_type)
+    build_type = args.build_type
+    expected_diff = expected_diff_for_version(args.geometry, geant4_version, build_type)
 
     a, b = load_records(base, Path(args.a_record), Path(args.b_record))
     diff = compare_records(a, b)
 
     print(f"BASE={base}")
+    print(f"GEOMETRY={args.geometry}")
     print(f"A_SHAPE={a.shape}")
     print(f"B_SHAPE={b.shape}")
     print(f"GEANT4_VERSION={geant4_version}")
