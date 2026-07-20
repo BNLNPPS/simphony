@@ -292,7 +292,7 @@ set(HEADERS
 
     SGenerate.h
     
-    sflow.h
+    FlowAction.h
     sqat4.h
     saabb.h
     stran.h
