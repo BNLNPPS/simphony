@@ -66,6 +66,9 @@ class Config
     /// A unique name associated with this Config
     std::string name{"dev"};
 
+    /// Event persistence mode applied to SEventConfig.
+    EventMode event_mode{EventMode::Minimal};
+
     /// Maximum photon bounce count.
     int max_bounce{31};
 
@@ -74,9 +77,6 @@ class Config
 
     /// Maximum event slots applied to SEventConfig.
     int maxslot{0};
-
-    /// Event persistence mode applied to SEventConfig.
-    EventMode event_mode{EventMode::Minimal};
 
     /// Optional compact photon/hit storage mode.
     ModeLite mode_lite{ModeLite::Unspecified};

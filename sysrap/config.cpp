@@ -326,7 +326,7 @@ void Config::ReadConfig(std::string filepath)
             Assign(event_, "max_bounce", max_bounce);
             Assign(event_, "max_genstep", max_genstep);
             Assign(event_, "maxslot", maxslot);
-            AssignNamedEnum(event_, "event", "mode", event_mode, EventModeInfos);
+            AssignNamedEnum(event_, "event", "event_mode", event_mode, EventModeInfos);
             AssignNamedEnum(event_, "event", "mode_lite", mode_lite, ModeLiteInfos);
             AssignNamedEnum(event_, "event", "mode_merge", mode_merge, ModeMergeInfos);
             AssignOutputDir(event_, output_dir);
@@ -350,10 +350,10 @@ void Config::Apply() const
     const std::string event_mode_name{EventModeName(event_mode)};
     const std::string output_dir_str = output_dir.string();
 
+    SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
     SEventConfig::SetMaxSlot(maxslot);
-    SEventConfig::SetEventMode(event_mode_name.c_str());
     if (mode_lite != ModeLite::Unspecified)
         SEventConfig::SetModeLite(static_cast<int>(mode_lite));
     if (mode_merge != ModeMerge::Unspecified)
