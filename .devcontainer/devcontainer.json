@@ -7,9 +7,9 @@
       "version": "23"
     }
   },
-  "remoteEnv": {
-    "CODEX_HOME": "${containerWorkspaceFolder}/.codex"
-  },
+  "mounts": [
+    "source=${localEnv:HOME}/.codex,target=/root/.codex,type=bind"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
