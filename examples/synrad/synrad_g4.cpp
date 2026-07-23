@@ -97,7 +97,8 @@ static void usage(const char* prog)
     std::cerr << "Usage: " << prog
               << " [-g analytic|tess] [-n N] [-s SEED] [-r SIGMA_NM] [-T T_UM]"
                  " [-I x,y,z,dx,dy,dz,emin_keV,emax_keV] [-f FAN_MRAD]"
-                 " [-i input_photons.npy] [-o OUTDIR] [-e NELECTRON] [--killphotons]\n" ;
+                 " [-i input_photons.npy] [-o OUTDIR] [-e NELECTRON] [--killphotons]"
+                 " [-B births.npy]\n" ;
 }
 
 // ---------------------------------------------------------------- counters
@@ -105,7 +106,9 @@ static long g_gen = 0 ;        // photons entering transport (>= 30 eV)
 static long g_stackkill = 0 ;  // < 30 eV stack kills (reference behaviour)
 static long g_refl = 0 ;       // total reflections
 static bool g_killphotons = false ;
+static bool g_recordbirths = false ;   // -B: record SR gammas at creation, kill after
 static std::vector<sphoton> g_hits ;
+static std::vector<sphoton> g_births ;
 
 struct ReflInfo : public G4VUserTrackInformation { } ;   // "has reflected" tag
 
@@ -444,6 +447,23 @@ struct Stacking : public G4UserStackingAction
         {
             if( trk->GetTotalEnergy() < 30.0*eV ){ g_stackkill += 1 ; return fKill ; }
             g_gen += 1 ;
+            if( g_recordbirths )
+            {
+                // record the SR photon as emitted (sphoton layout:
+                // pos+time | direction | polarization | E_keV) and kill it:
+                // a generation-only run whose births feed -i transport
+                sphoton p = {} ;
+                const G4ThreeVector& x = trk->GetPosition() ;
+                const G4ThreeVector& d = trk->GetMomentumDirection() ;
+                const G4ThreeVector& q = trk->GetPolarization() ;
+                p.pos.x = float(x.x()/mm) ; p.pos.y = float(x.y()/mm) ; p.pos.z = float(x.z()/mm) ;
+                p.time  = float(trk->GetGlobalTime()/ns) ;
+                p.mom.x = float(d.x()) ; p.mom.y = float(d.y()) ; p.mom.z = float(d.z()) ;
+                p.pol.x = float(q.x()) ; p.pol.y = float(q.y()) ; p.pol.z = float(q.z()) ;
+                p.wavelength = float(trk->GetTotalEnergy()/keV) ;
+                g_births.push_back(p) ;
+                return fKill ;
+            }
             if( g_killphotons ) return fKill ;   // Delta method: kill at birth
         }
         return fUrgent ;
@@ -523,6 +543,7 @@ int main(int argc, char** argv)
 {
     std::string geo = "analytic" ;
     std::string input ;
+    std::string births ;
     std::string outdir = "." ;
     int      n = 1000000 ;
     long     nel = 0 ;
@@ -546,6 +567,7 @@ int main(int argc, char** argv)
         else if( arg == "-T" && i+1 < argc ) T_um = atof(argv[++i]) ;
         else if( arg == "-f" && i+1 < argc ) fan_mrad = atof(argv[++i]) ;
         else if( arg == "-I" && i+1 < argc ) sscanf(argv[++i], "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf", I, I+1, I+2, I+3, I+4, I+5, I+6, I+7) ;
+        else if( arg == "-B" && i+1 < argc ) { births = argv[++i] ; g_recordbirths = true ; }
         else if( arg == "--killphotons" )    g_killphotons = true ;
         else if( arg == "-h" || arg == "--help" ){ usage(argv[0]) ; return 0 ; }
         else { std::cerr << "Unknown argument: " << arg << "\n" ; usage(argv[0]) ; return 1 ; }
@@ -587,6 +609,14 @@ int main(int argc, char** argv)
     run->BeamOn( electrons ? int(nel) : 1 );
     auto t1 = std::chrono::steady_clock::now();
     double t_s = std::chrono::duration<double>(t1 - t0).count();
+
+    if( g_recordbirths )
+    {
+        SaveHits(g_births, births);
+        printf("synrad-g4-births: electrons %ld -> %ld SR photons >=30eV (%.2f/e-) stackkill<30eV %ld -> %s\n",
+               nel, long(g_births.size()), nel > 0 ? double(g_births.size())/double(nel) : 0.,
+               g_stackkill, births.c_str());
+    }
 
     std::string path = outdir + "/synrad_g4_hits.npy" ;
     SaveHits(g_hits, path);
