@@ -1,4 +1,6 @@
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -244,6 +246,180 @@ void U4Material::RemoveProperty( const char* key, G4Material* mat )
          prop = mpt->GetProperty(key);
          assert( prop == nullptr );
     }
+}
+
+namespace
+{
+G4MaterialPropertyVector* U4Material_CloneProperty(const G4MaterialPropertyVector* src)
+{
+    if(src == nullptr) return nullptr ;
+
+    std::vector<G4double> energies ;
+    std::vector<G4double> values ;
+    energies.reserve(src->GetVectorLength());
+    values.reserve(src->GetVectorLength());
+
+    for(std::size_t i = 0 ; i < src->GetVectorLength() ; ++i)
+    {
+        energies.push_back(src->Energy(i));
+        values.push_back((*src)[i]);
+    }
+    return new G4MaterialPropertyVector(energies, values);
+}
+
+void U4Material_AddWLSTimeConstant(G4MaterialPropertiesTable* mpt)
+{
+    if(mpt->ConstPropertyExists("WLSTIMECONSTANT")) return ;
+
+    G4double timeConstant = 0. ;
+    if(mpt->ConstPropertyExists("SCINTILLATIONTIMECONSTANT1"))
+    {
+        timeConstant = mpt->GetConstProperty("SCINTILLATIONTIMECONSTANT1");
+    }
+    else if(mpt->ConstPropertyExists("FASTTIMECONSTANT"))
+    {
+        timeConstant = mpt->GetConstProperty("FASTTIMECONSTANT");
+    }
+    else
+    {
+        G4MaterialPropertyVector* ratioTime = mpt->GetProperty("OpticalCONSTANT");
+        if(ratioTime && ratioTime->GetVectorLength() > 0) timeConstant = ratioTime->Energy(0);
+    }
+    mpt->AddConstProperty("WLSTIMECONSTANT", timeConstant);
+}
+}
+
+/**
+U4Material::ConvertLegacyReemissionToWLS
+-----------------------------------------
+
+Converts the legacy two-stage attenuation model
+
+    interaction length ABSLENGTH, followed by re-emission probability p
+
+to two competing official Geant4 processes. For legacy absorption length L,
+
+    WLSABSLENGTH = L/p
+    new ABSLENGTH = L/(1-p)
+
+so the total attenuation rate remains 1/L and the fraction handled by
+G4OpWLS remains p. REEMISSIONPROB is removed only after a complete migration,
+which also prevents the GPU legacy re-emission path from competing with the
+official WLS path.
+
+An already complete WLS definition is authoritative. A zero-valued legacy
+probability is simply removed. Incomplete non-zero definitions are retained
+and reported rather than silently changing their behavior.
+**/
+
+bool U4Material::ConvertLegacyReemissionToWLS(G4Material* mat)
+{
+    if(mat == nullptr) return false ;
+    G4MaterialPropertiesTable* mpt = mat->GetMaterialPropertiesTable();
+    if(mpt == nullptr) return false ;
+
+    G4MaterialPropertyVector* probability = mpt->GetProperty("REEMISSIONPROB");
+    if(probability == nullptr) return false ;
+
+    G4double maxProbability = 0. ;
+    for(std::size_t i = 0 ; i < probability->GetVectorLength() ; ++i)
+    {
+        maxProbability = std::max(maxProbability, (*probability)[i]);
+    }
+
+    if(maxProbability <= 0.)
+    {
+        mpt->RemoveProperty("REEMISSIONPROB");
+        LOG(info) << "removed zero REEMISSIONPROB from " << mat->GetName();
+        return true ;
+    }
+
+    G4MaterialPropertyVector* wlsAbs = mpt->GetProperty("WLSABSLENGTH");
+    G4MaterialPropertyVector* wlsComponent = mpt->GetProperty("WLSCOMPONENT");
+    G4MaterialPropertyVector* emission = wlsComponent ;
+
+    if(emission == nullptr) emission = mpt->GetProperty("SCINTILLATIONCOMPONENT1");
+    if(emission == nullptr) emission = mpt->GetProperty("FASTCOMPONENT");
+    if(emission == nullptr) emission = mpt->GetProperty("SLOWCOMPONENT");
+
+    if(wlsAbs)
+    {
+        if(wlsComponent == nullptr && emission)
+        {
+            mpt->AddProperty("WLSCOMPONENT", U4Material_CloneProperty(emission));
+            wlsComponent = mpt->GetProperty("WLSCOMPONENT");
+        }
+
+        if(wlsComponent)
+        {
+            U4Material_AddWLSTimeConstant(mpt);
+            mpt->RemoveProperty("REEMISSIONPROB");
+            LOG(info)
+                << "removed REEMISSIONPROB from material with authoritative WLS properties "
+                << mat->GetName();
+            return true ;
+        }
+
+        LOG(error)
+            << "cannot complete WLS migration for " << mat->GetName()
+            << ": WLSABSLENGTH exists but no emission spectrum is available";
+        return false ;
+    }
+
+    G4MaterialPropertyVector* absorption = mpt->GetProperty("ABSLENGTH");
+    if(absorption == nullptr || emission == nullptr)
+    {
+        LOG(error)
+            << "cannot migrate non-zero REEMISSIONPROB for " << mat->GetName()
+            << " ABSLENGTH " << (absorption ? "YES" : "NO")
+            << " emission spectrum " << (emission ? "YES" : "NO");
+        return false ;
+    }
+
+    std::vector<G4double> energies ;
+    energies.reserve(absorption->GetVectorLength() + probability->GetVectorLength());
+    for(std::size_t i = 0 ; i < absorption->GetVectorLength() ; ++i) energies.push_back(absorption->Energy(i));
+    for(std::size_t i = 0 ; i < probability->GetVectorLength() ; ++i) energies.push_back(probability->Energy(i));
+    std::sort(energies.begin(), energies.end());
+    energies.erase(std::unique(energies.begin(), energies.end()), energies.end());
+
+    std::vector<G4double> ordinaryAbsorption ;
+    std::vector<G4double> wavelengthShiftAbsorption ;
+    ordinaryAbsorption.reserve(energies.size());
+    wavelengthShiftAbsorption.reserve(energies.size());
+
+    const G4double infinity = std::numeric_limits<G4double>::max();
+    for(G4double energy : energies)
+    {
+        const G4double length = absorption->Value(energy);
+        const G4double p = std::max(0., std::min(1., probability->Value(energy)));
+
+        ordinaryAbsorption.push_back(p >= 1. ? infinity : length/(1. - p));
+        wavelengthShiftAbsorption.push_back(p <= 0. ? infinity : length/p);
+    }
+
+    mpt->RemoveProperty("ABSLENGTH");
+    mpt->AddProperty("ABSLENGTH", new G4MaterialPropertyVector(energies, ordinaryAbsorption));
+    mpt->AddProperty("WLSABSLENGTH", new G4MaterialPropertyVector(energies, wavelengthShiftAbsorption));
+
+    if(wlsComponent == nullptr)
+    {
+        mpt->AddProperty("WLSCOMPONENT", U4Material_CloneProperty(emission));
+    }
+    U4Material_AddWLSTimeConstant(mpt);
+    mpt->RemoveProperty("REEMISSIONPROB");
+
+    LOG(info)
+        << "migrated REEMISSIONPROB to official WLS properties for " << mat->GetName();
+    return true ;
+}
+
+int U4Material::ConvertLegacyReemissionToWLS()
+{
+    int converted = 0 ;
+    G4MaterialTable* materials = G4Material::GetMaterialTable();
+    for(G4Material* mat : *materials) converted += ConvertLegacyReemissionToWLS(mat) ? 1 : 0 ;
+    return converted ;
 }
 
 /**

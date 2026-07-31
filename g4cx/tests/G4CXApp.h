@@ -232,8 +232,7 @@ void G4CXApp::GeneratePrimaries(G4Event* event)
 
     if(SEventConfig::IsRunningModeGun())
     {
-        LOG(fatal) << " THIS MODE NEEDS WORK ON U4PHYSICS " ;
-        std::raise(SIGINT);
+        assert(fGun);
         fGun->GeneratePrimaryVertex(event) ;
     }
     else if(SEventConfig::IsRunningModeTorch())
@@ -300,6 +299,37 @@ G4CXApp::EndOfEventAction
 void G4CXApp::EndOfEventAction(const G4Event* event)
 {
     G4int eventID = event->GetEventID();
+
+    if(SEventConfig::GPU_Simulation())
+    {
+        const int cerenkovGensteps = fRecorder->getNumCerenkovGenstep();
+        const int scintillationGensteps = fRecorder->getNumScintillationGenstep();
+        const int wlsPhotons = fRecorder->getNumWLSPhoton();
+        const int chargedParticleGensteps = cerenkovGensteps + scintillationGensteps ;
+        const int64_t gpuGensteps = SEvt::GetNumGenstepFromGenstep(SEvt::EGPU);
+        const bool allChargedParticleGenstepsPresent =
+            SEvt::Exists(SEvt::EGPU) && gpuGensteps >= chargedParticleGensteps ;
+
+        LOG(info)
+            << "eventID " << eventID
+            << " Cerenkov gensteps/photons "
+            << cerenkovGensteps << "/" << fRecorder->getNumCerenkovPhoton()
+            << " Scintillation gensteps/photons "
+            << scintillationGensteps << "/" << fRecorder->getNumScintillationPhoton()
+            << " WLS photons " << wlsPhotons
+            << " EGPU gensteps " << gpuGensteps ;
+
+        assert(allChargedParticleGenstepsPresent);
+
+        if(ssys::getenvbool("G4CXApp__RequireCerenkovScintillationGensteps"))
+        {
+            assert(cerenkovGensteps > 0);
+            assert(scintillationGensteps > 0);
+        }
+
+        if(ssys::getenvbool("G4CXApp__RequireWLS")) assert(wlsPhotons > 0);
+    }
+
     fRecorder->EndOfEventAction_(eventID);   // saves SEvt::ECPU
 
     if(SEventConfig::GPU_Simulation())

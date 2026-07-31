@@ -36,7 +36,8 @@ Maybe will need to add some casts too.
 struct U4Scint
 {
     static constexpr const bool VERBOSE = false ; 
-    static constexpr const char* PROPS = "SLOWCOMPONENT,FASTCOMPONENT,REEMISSIONPROB" ; 
+    static constexpr const char* PROPS = "SCINTILLATIONCOMPONENT1" ;
+    static constexpr const char* LEGACY_PROPS = "SLOWCOMPONENT,FASTCOMPONENT" ;
     static U4Scint* Create(const NPFold* materials ); 
 
     const NPFold* scint ; 
@@ -94,7 +95,8 @@ inline U4Scint* U4Scint::Create(const NPFold* materials ) // static
 {
     std::vector<const NPFold*> subs ; 
     std::vector<std::string> names ; 
-    materials->find_subfold_with_all_keys( subs, names, PROPS ); 
+    materials->find_subfold_with_all_keys( subs, names, PROPS );
+    if(subs.empty()) materials->find_subfold_with_all_keys( subs, names, LEGACY_PROPS );
 
     int num_subs = subs.size(); 
     int num_names = names.size() ; 
@@ -112,8 +114,12 @@ inline U4Scint::U4Scint(const NPFold* scint_, const char* name_)
     :
     scint(scint_),
     name(strdup(name_)),
-    fast(scint->get("FASTCOMPONENT")),
-    slow(scint->get("SLOWCOMPONENT")),
+    fast(scint->get("SCINTILLATIONCOMPONENT1")
+        ? scint->get("SCINTILLATIONCOMPONENT1")
+        : scint->get("FASTCOMPONENT")),
+    slow(scint->get("SCINTILLATIONCOMPONENT2")
+        ? scint->get("SCINTILLATIONCOMPONENT2")
+        : (scint->get("SLOWCOMPONENT") ? scint->get("SLOWCOMPONENT") : fast)),
     reem(scint->get("REEMISSIONPROB")),
     epsilon(0.), 
     mismatch_0(NP::DumpCompare<double>(fast, slow, 0, 0, epsilon)),
@@ -169,7 +175,7 @@ inline NPFold* U4Scint::make_fold() const
     NPFold* fold = new NPFold ; 
     fold->add("fast", fast) ; 
     fold->add("slow", slow) ; 
-    fold->add("reem", reem) ; 
+    if(reem) fold->add("reem", reem) ;
     fold->add("icdf", icdf) ; 
     if(wlsamp) fold->add("wlsamp", wlsamp) ; 
     return fold ; 

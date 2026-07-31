@@ -60,6 +60,124 @@ NP *U4UniformRand::UU = nullptr;
 
 
 #include "G4OpBoundaryProcess.hh"
+#include "G4AutoLock.hh"
+#include "G4Cerenkov.hh"
+#include "G4EventManager.hh"
+#include "G4Material.hh"
+#include "G4MaterialPropertiesTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4ProcessVector.hh"
+#include "G4Scintillation.hh"
+#include "G4Step.hh"
+#include "G4SteppingManager.hh"
+#include "G4TrackingManager.hh"
+#include "G4VProcess.hh"
+
+#include "U4.hh"
+
+namespace
+{
+G4Mutex U4Recorder_Genstep_Mutex = G4MUTEX_INITIALIZER;
+
+struct U4Recorder_SEvtGenstepCount
+{
+    int64_t gpu ;
+    int64_t cpu ;
+
+    U4Recorder_SEvtGenstepCount()
+        :
+        gpu(SEvt::GetNumGenstepFromGenstep(SEvt::EGPU)),
+        cpu(SEvt::GetNumGenstepFromGenstep(SEvt::ECPU))
+    {
+    }
+
+    void assertAdded() const
+    {
+        if(SEvt::Exists(SEvt::EGPU)) assert(SEvt::GetNumGenstepFromGenstep(SEvt::EGPU) == gpu + 1);
+        if(SEvt::Exists(SEvt::ECPU)) assert(SEvt::GetNumGenstepFromGenstep(SEvt::ECPU) == cpu + 1);
+    }
+};
+
+std::vector<const G4Track*> U4Recorder_Secondaries(const G4Step* step, const G4VProcess* process)
+{
+    std::vector<const G4Track*> selected ;
+    const std::vector<const G4Track*>* secondaries = step->GetSecondaryInCurrentStep();
+    if(secondaries == nullptr) return selected ;
+
+    for(const G4Track* secondary : *secondaries)
+    {
+        if(secondary && secondary->GetCreatorProcess() == process) selected.push_back(secondary);
+    }
+    return selected ;
+}
+
+void U4Recorder_ScintillationComponentValues(
+    const G4Track* track,
+    const G4Scintillation* scintillation,
+    const G4MaterialPropertiesTable* mpt,
+    G4int numComponent,
+    G4double* yields,
+    G4double* times)
+{
+    const char* standardYieldKeys[3] = {
+        "SCINTILLATIONYIELD1",
+        "SCINTILLATIONYIELD2",
+        "SCINTILLATIONYIELD3"
+    };
+    const char* standardTimeKeys[3] = {
+        "SCINTILLATIONTIMECONSTANT1",
+        "SCINTILLATIONTIMECONSTANT2",
+        "SCINTILLATIONTIMECONSTANT3"
+    };
+
+    G4String particlePrefix ;
+    if(scintillation->GetScintillationByParticleType())
+    {
+        const G4ParticleDefinition* definition = track->GetParticleDefinition();
+        const G4String& name = definition->GetParticleName();
+        particlePrefix = name == "proton"   ? "PROTON" :
+                         name == "deuteron" ? "DEUTERON" :
+                         name == "triton"   ? "TRITON" :
+                         name == "alpha"    ? "ALPHA" :
+                         name == "neutron" || definition->GetParticleType() == "nucleus"
+                                           ? "ION" : "ELECTRON" ;
+    }
+
+    for(G4int c = 0 ; c < numComponent ; ++c)
+    {
+        const G4String suffix = std::to_string(c + 1);
+        const G4String yieldKey = particlePrefix.empty()
+            ? G4String(standardYieldKeys[c])
+            : particlePrefix + "SCINTILLATIONYIELD" + suffix ;
+        const G4String timeKey = particlePrefix.empty()
+            ? G4String(standardTimeKeys[c])
+            : particlePrefix + "SCINTILLATIONTIMECONSTANT" + suffix ;
+
+        yields[c] = mpt->ConstPropertyExists(yieldKey)
+            ? mpt->GetConstProperty(yieldKey)
+            : (c == 0 ? 1. : 0.);
+        times[c] = mpt->ConstPropertyExists(timeKey)
+            ? mpt->GetConstProperty(timeKey)
+            : (mpt->ConstPropertyExists(standardTimeKeys[c])
+                ? mpt->GetConstProperty(standardTimeKeys[c])
+                : 0.);
+    }
+}
+
+void U4Recorder_LabelGenstepSecondaries(
+    const G4Track* parent,
+    const std::vector<const G4Track*>& secondaries,
+    unsigned& cursor,
+    G4int count)
+{
+    U4::GenPhotonAncestor(parent);
+    for(G4int i = 0 ; i < count && cursor < secondaries.size() ; ++i, ++cursor)
+    {
+        U4::GenPhotonBegin(i);
+        U4::GenPhotonEnd(i, const_cast<G4Track*>(secondaries[cursor]));
+    }
+}
+}
 
 
 const plog::Severity U4Recorder::LEVEL = SLOG::EnvLevel("U4Recorder", "DEBUG");
@@ -212,6 +330,11 @@ will instanciate SEvt if this is not used
 U4Recorder::U4Recorder()
     :
     eventID(-1),
+    num_cerenkov_genstep(0),
+    num_scintillation_genstep(0),
+    num_cerenkov_photon(0),
+    num_scintillation_photon(0),
+    num_wls_photon(0),
     transient_fSuspend_track(nullptr),
     rerun_rand(nullptr),
     sev(SEvt::CreateOrReuse(SEvt::ECPU)),
@@ -317,6 +440,11 @@ void U4Recorder::EndOfEventAction(const G4Event*)
 void U4Recorder::BeginOfEventAction_(int eventID_)
 {
     eventID = eventID_ ;
+    num_cerenkov_genstep = 0 ;
+    num_scintillation_genstep = 0 ;
+    num_cerenkov_photon = 0 ;
+    num_scintillation_photon = 0 ;
+    num_wls_photon = 0 ;
     LOG(info) << " eventID " << eventID ;
     LOG_IF(info, SEvt::LIFECYCLE ) << " eventID " << eventID ;
     sev->beginOfEvent(eventID);
@@ -368,8 +496,222 @@ void U4Recorder::PostUserTrackingAction_(const G4Track* track, int* label){ LOG(
 
 void U4Recorder::UserSteppingAction(const G4Step* step)
 {
-    if(!U4Track::IsOptical(step->GetTrack())) return ;
-    UserSteppingAction_Optical<G4OpBoundaryProcess>(step);
+    if(U4Track::IsOptical(step->GetTrack()))
+    {
+        LabelWLSSecondaries(step);
+        UserSteppingAction_Optical<G4OpBoundaryProcess>(step);
+    }
+    else
+    {
+        CollectGensteps(step);
+    }
+}
+
+/**
+U4Recorder::CollectGensteps
+----------------------------
+
+Collects GPU gensteps after the official Geant4 Cerenkov and scintillation
+processes have completed. This keeps the generation physics in Geant4 while
+retaining the U4/SEvt input contract. SEvt::AddGenstep broadcasts each
+genstep to every live event instance, including the EGPU instance consumed by
+G4CXApp at EndOfEventAction.
+
+The scintillation component split intentionally follows G4Scintillation
+11.x: two components give the second component the integer remainder, while
+three components truncate each component independently.
+**/
+
+void U4Recorder::CollectGensteps(const G4Step* step)
+{
+    G4EventManager* eventManager = G4EventManager::GetEventManager();
+    G4TrackingManager* trackingManager = eventManager ? eventManager->GetTrackingManager() : nullptr ;
+    G4SteppingManager* steppingManager = trackingManager ? trackingManager->GetSteppingManager() : nullptr ;
+    if(steppingManager == nullptr) return ;
+
+    const bool atRest = steppingManager->GetfStepStatus() == fAtRestDoItProc ;
+    G4ProcessVector* processes = atRest
+        ? steppingManager->GetfAtRestDoItVector()
+        : steppingManager->GetfPostStepDoItVector();
+    if(processes == nullptr) return ;
+    const std::size_t numProcess = processes->size();
+
+    const G4Track* track = step->GetTrack();
+
+    for(std::size_t i = 0 ; i < numProcess ; ++i)
+    {
+        G4VProcess* process = (*processes)[i];
+        if(process == nullptr) continue ;
+
+        G4Cerenkov* cerenkov = dynamic_cast<G4Cerenkov*>(process);
+        if(cerenkov)
+        {
+            const std::vector<const G4Track*> secondaries = U4Recorder_Secondaries(step, process);
+            if(secondaries.empty()) continue ;
+
+            const G4int numPhotons = cerenkov->GetNumPhotons();
+            if(numPhotons <= 0) continue ;
+
+            const G4Material* material = track->GetMaterial();
+            G4MaterialPropertiesTable* mpt = material ? material->GetMaterialPropertiesTable() : nullptr ;
+            G4MaterialPropertyVector* rindex = mpt ? mpt->GetProperty(kRINDEX) : nullptr ;
+            if(rindex == nullptr || rindex->GetVectorLength() == 0) continue ;
+
+            const G4double beta1 = step->GetPreStepPoint()->GetBeta();
+            const G4double beta2 = step->GetPostStepPoint()->GetBeta();
+            const G4double beta = 0.5*(beta1 + beta2);
+            const G4double nMax = rindex->GetMaxValue();
+            if(beta <= 0. || nMax <= 0.) continue ;
+
+            const G4double charge = track->GetDynamicParticle()->GetDefinition()->GetPDGCharge();
+            const G4double betaInverse = 1./beta ;
+            const G4double maxCos = betaInverse/nMax ;
+            const G4double maxSin2 = (1. - maxCos)*(1. + maxCos);
+            const G4double mean1 = cerenkov->GetAverageNumberOfPhotons(charge, beta1, material, rindex);
+            const G4double mean2 = cerenkov->GetAverageNumberOfPhotons(charge, beta2, material, rindex);
+            const bool secondaryCountMatches = secondaries.size() == static_cast<std::size_t>(numPhotons);
+            LOG_IF(error, !secondaryCountMatches)
+                << "Cerenkov secondary count mismatch generated " << numPhotons
+                << " selected " << secondaries.size() ;
+            assert(secondaryCountMatches);
+            if(!secondaryCountMatches) continue ;
+
+            G4AutoLock lock(&U4Recorder_Genstep_Mutex);
+            U4Recorder_SEvtGenstepCount before ;
+            U4::CollectGenstep_G4Cerenkov_modified(
+                track, step, numPhotons, betaInverse,
+                rindex->Energy(0), rindex->GetMaxEnergy(),
+                maxCos, maxSin2, mean1, mean2);
+            before.assertAdded();
+
+            unsigned cursor = 0 ;
+            U4Recorder_LabelGenstepSecondaries(track, secondaries, cursor, numPhotons);
+            assert(cursor == secondaries.size());
+
+            num_cerenkov_genstep += 1 ;
+            num_cerenkov_photon += numPhotons ;
+            continue ;
+        }
+
+        G4Scintillation* scintillation = dynamic_cast<G4Scintillation*>(process);
+        if(scintillation == nullptr) continue ;
+
+        const std::vector<const G4Track*> secondaries = U4Recorder_Secondaries(step, process);
+        if(secondaries.empty()) continue ;
+
+        const G4int totalPhotons = scintillation->GetNumPhotons();
+        if(totalPhotons <= 0) continue ;
+
+        const G4Material* material = track->GetMaterial();
+        G4MaterialPropertiesTable* mpt = material ? material->GetMaterialPropertiesTable() : nullptr ;
+        if(mpt == nullptr) continue ;
+
+        const G4int componentKeys[3] = {
+            kSCINTILLATIONCOMPONENT1,
+            kSCINTILLATIONCOMPONENT2,
+            kSCINTILLATIONCOMPONENT3
+        };
+
+        G4int numComponent = mpt->GetProperty(componentKeys[2]) ? 3 :
+                             mpt->GetProperty(componentKeys[1]) ? 2 :
+                             mpt->GetProperty(componentKeys[0]) ? 1 : 0 ;
+        if(numComponent == 0) continue ;
+
+        G4double yields[3] = {1., 0., 0.};
+        G4double times[3] = {0., 0., 0.};
+        G4int counts[3] = {0, 0, 0};
+
+        U4Recorder_ScintillationComponentValues(
+            track, scintillation, mpt, numComponent, yields, times);
+
+        const G4double yieldSum = yields[0] + yields[1] + yields[2];
+        if(yieldSum <= 0.)
+        {
+            LOG(error) << "Scintillation component yields sum to zero" ;
+            continue ;
+        }
+        else if(numComponent == 1)
+        {
+            counts[0] = totalPhotons ;
+        }
+        else if(numComponent == 2)
+        {
+            counts[0] = G4int(yields[0]/yieldSum*totalPhotons);
+            counts[1] = totalPhotons - counts[0];
+        }
+        else
+        {
+            for(G4int c = 0 ; c < 3 ; ++c) counts[c] = G4int(yields[c]/yieldSum*totalPhotons);
+        }
+
+        G4int expectedSecondaries = 0 ;
+        for(G4int c = 0 ; c < numComponent ; ++c)
+        {
+            if(mpt->GetProperty(componentKeys[c])) expectedSecondaries += counts[c] ;
+        }
+        const bool secondaryCountMatches =
+            secondaries.size() == static_cast<std::size_t>(expectedSecondaries);
+        LOG_IF(error, !secondaryCountMatches)
+            << "Scintillation secondary count mismatch process total " << totalPhotons
+            << " expected " << expectedSecondaries
+            << " selected " << secondaries.size() ;
+        assert(secondaryCountMatches);
+        if(!secondaryCountMatches) continue ;
+
+        G4AutoLock lock(&U4Recorder_Genstep_Mutex);
+        unsigned cursor = 0 ;
+        G4int collectedThisStep = 0 ;
+        for(G4int c = 0 ; c < numComponent ; ++c)
+        {
+            if(counts[c] <= 0 || mpt->GetProperty(componentKeys[c]) == nullptr) continue ;
+
+            U4Recorder_SEvtGenstepCount before ;
+            U4::CollectGenstep_Scintillation(track, step, counts[c], c, times[c]);
+            before.assertAdded();
+            U4Recorder_LabelGenstepSecondaries(track, secondaries, cursor, counts[c]);
+
+            num_scintillation_genstep += 1 ;
+            num_scintillation_photon += counts[c] ;
+            collectedThisStep += counts[c] ;
+        }
+        assert(collectedThisStep == expectedSecondaries);
+        assert(cursor == secondaries.size());
+    }
+}
+
+/**
+U4Recorder::LabelWLSSecondaries
+--------------------------------
+
+Official G4OpWLS creates a new optical track. It does not create a new GPU
+genstep: the child continues the parent photon's lineage with its generation
+counter incremented, allowing SEvt::rjoinPhoton to rewrite BULK_ABSORB as
+BULK_REEMIT when the child starts tracking.
+**/
+
+void U4Recorder::LabelWLSSecondaries(const G4Step* step)
+{
+    const G4Track* parent = step->GetTrack();
+    const std::vector<const G4Track*>* secondaries = step->GetSecondaryInCurrentStep();
+    if(secondaries == nullptr || secondaries->empty()) return ;
+
+    spho ancestor = STrackInfo::Get(parent);
+    if(ancestor.isPlaceholder())
+    {
+        PreUserTrackingAction_Optical_FabricateLabel(parent);
+        ancestor = STrackInfo::Get(parent);
+    }
+    assert(ancestor.isDefined());
+
+    for(const G4Track* secondary : *secondaries)
+    {
+        const G4VProcess* creator = secondary ? secondary->GetCreatorProcess() : nullptr ;
+        if(creator && creator->GetProcessName() == "OpWLS")
+        {
+            STrackInfo::Set(const_cast<G4Track*>(secondary), ancestor.make_nextgen());
+            num_wls_photon += 1 ;
+        }
+    }
 }
 
 

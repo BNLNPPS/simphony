@@ -279,6 +279,10 @@ inline void U4Tree::init()
 {
     if(top == nullptr) return ;
 
+    const int numLegacyReemissionConverted = U4Material::ConvertLegacyReemissionToWLS();
+    LOG_IF(info, numLegacyReemissionConverted > 0)
+        << "converted legacy re-emission materials " << numLegacyReemissionConverted ;
+
     LOG(LEVEL) << "-initSid" ;
     initSid();
     LOG(LEVEL) << "-initRayleigh" ;

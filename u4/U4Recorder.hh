@@ -94,6 +94,11 @@ public:
     void addProcessHits_EPH(NP* eph_stats);
 
     int eventID ;
+    int num_cerenkov_genstep ;
+    int num_scintillation_genstep ;
+    int num_cerenkov_photon ;
+    int num_scintillation_photon ;
+    int num_wls_photon ;
     const G4Track* transient_fSuspend_track ;
     NP* rerun_rand ;
     SEvt* sev ;   // HMM: Not used as much as it should ? Lots of SEvt::Get_ECPU() instead, WHY ?
@@ -138,6 +143,15 @@ public:
 
 
     void UserSteppingAction(const G4Step*);
+
+    void CollectGensteps(const G4Step*);
+    void LabelWLSSecondaries(const G4Step*);
+
+    int getNumCerenkovGenstep() const { return num_cerenkov_genstep ; }
+    int getNumScintillationGenstep() const { return num_scintillation_genstep ; }
+    int getNumCerenkovPhoton() const { return num_cerenkov_photon ; }
+    int getNumScintillationPhoton() const { return num_scintillation_photon ; }
+    int getNumWLSPhoton() const { return num_wls_photon ; }
 
     // boundary process template type
     template<typename T>

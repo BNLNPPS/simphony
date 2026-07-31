@@ -45,7 +45,10 @@ struct U4_API U4Material
     static std::string DescProperty(); 
 
 
-    static void RemoveProperty( const char* key, G4Material* mat ); 
+    static void RemoveProperty( const char* key, G4Material* mat );
+
+    static bool ConvertLegacyReemissionToWLS(G4Material* mat);
+    static int  ConvertLegacyReemissionToWLS();
 
     static void GetPropertyNames( std::vector<std::string>& names, const G4Material* mat ) ; 
     static NPFold* MakePropertyFold(const G4Material* mat ); 

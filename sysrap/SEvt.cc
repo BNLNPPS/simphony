@@ -1020,7 +1020,7 @@ void SEvt::addInputGenstep()
     LOG(LEVEL);
 
     NP* igs = createInputGenstep_configured();
-    addGenstep(igs);
+    if(igs) addGenstep(igs);  // gun mode starts empty; stepping actions add C/S gensteps
 }
 
 void SEvt::assertZeroGenstep()
