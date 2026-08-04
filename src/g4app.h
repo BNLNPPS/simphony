@@ -3,10 +3,12 @@
 #include <cassert>
 #include <condition_variable>
 #include <cstring>
+#include <cmath>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -15,18 +17,24 @@
 #include <cuda_runtime_api.h>
 
 #include "G4BooleanSolid.hh"
+#include "G4Cerenkov.hh"
+#include "G4DynamicParticle.hh"
 #include "G4Event.hh"
 #include "G4Exception.hh"
+#include "G4EventManager.hh"
 #include "G4GDMLParser.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4OpBoundaryProcess.hh"
 #include "G4OpticalPhoton.hh"
+#include "G4ParticleTable.hh"
 #include "G4PhysicalConstants.hh"
 #include "G4PrimaryParticle.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4SDManager.hh"
+#include "G4Scintillation.hh"
+#include "G4SteppingManager.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Threading.hh"
@@ -53,12 +61,24 @@
 #include "sysrap/spho.h"
 #include "sysrap/sphoton.h"
 #include "u4/U4Random.hh"
+#include "u4/U4.hh"
 #include "u4/U4StepPoint.hh"
 #include "u4/U4Touchable.h"
 #include "u4/U4Track.h"
 
 #include "config.h"
+#include "EventTiming.hh"
 #include "torch.h"
+
+struct PrimaryParticleConfig
+{
+    bool          enabled{false};
+    std::string   particle{"mu-"};
+    double        momentum_gev_c{5.0};
+    int           multiplicity{1};
+    G4ThreeVector position_mm{0.0, 0.0, 0.0};
+    G4ThreeVector direction{0.0, 0.2, 0.8};
+};
 
 struct PhotonHit : public G4VHit
 {
@@ -211,18 +231,49 @@ struct PrimaryPhotonInfo : G4VUserEventInformation
 
 struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
-    simphony::Config    cfg;
-    SEvt*               sev;
-    std::unique_ptr<NP> input_photon;
+    simphony::Config      cfg;
+    SEvt*                 sev;
+    PrimaryParticleConfig primary;
+    EventTimingRecorder*  timing;
+    std::unique_ptr<NP>   input_photon;
 
-    PrimaryGenerator(const simphony::Config& cfg, SEvt* sev) :
+    PrimaryGenerator(const simphony::Config& cfg, SEvt* sev, const PrimaryParticleConfig& primary,
+                     EventTimingRecorder* timing) :
         cfg(cfg),
-        sev(sev)
+        sev(sev),
+        primary(primary),
+        timing(timing)
     {
     }
 
     void GeneratePrimaries(G4Event* event) override
     {
+        if (timing)
+            timing->BeginEvent(event->GetEventID());
+
+        if (primary.enabled)
+        {
+            G4ParticleDefinition* definition = G4ParticleTable::GetParticleTable()->FindParticle(primary.particle);
+            if (!definition)
+                throw std::runtime_error("Unknown Geant4 particle: " + primary.particle);
+
+            const G4double momentum = primary.momentum_gev_c * GeV;
+            const G4double mass = definition->GetPDGMass();
+            const G4double kinetic_energy = std::sqrt(momentum * momentum + mass * mass) - mass;
+            const G4ThreeVector direction = primary.direction.unit();
+
+            for (int i = 0; i < primary.multiplicity; ++i)
+            {
+                G4PrimaryVertex* vertex = new G4PrimaryVertex(primary.position_mm, 0.0);
+                G4PrimaryParticle* particle = new G4PrimaryParticle(definition);
+                particle->SetKineticEnergy(kinetic_energy);
+                particle->SetMomentumDirection(direction);
+                vertex->SetPrimary(particle);
+                event->AddPrimaryVertex(vertex);
+            }
+            return;
+        }
+
         std::vector<sphoton> sphotons = generate_photons(cfg.torch);
 
         for (const sphoton& p : sphotons)
@@ -334,17 +385,25 @@ struct EventAction : G4UserEventAction
     SEvt*                               sev;
     std::shared_ptr<Simg4oxSharedState> shared_state;
     bool                                order_gpu_events;
+    bool                                particle_source;
+    EventTimingRecorder*                timing;
 
-    EventAction(SEvt* sev, std::shared_ptr<Simg4oxSharedState> shared_state, bool order_gpu_events) :
+    EventAction(SEvt* sev, std::shared_ptr<Simg4oxSharedState> shared_state, bool order_gpu_events,
+                bool particle_source, EventTimingRecorder* timing) :
         sev(sev),
         shared_state(std::move(shared_state)),
-        order_gpu_events(order_gpu_events)
+        order_gpu_events(order_gpu_events),
+        particle_source(particle_source),
+        timing(timing)
     {
     }
 
     void BeginOfEventAction(const G4Event* event) override
     {
-        if (sev)
+        // Generated optical gensteps are collected before QSim owns the EGPU
+        // begin-of-event transition. The torch comparison still needs the ECPU
+        // event opened before Geant4 transports its input photons.
+        if (sev && !particle_source)
             sev->beginOfEvent(event->GetEventID());
     }
 
@@ -393,7 +452,7 @@ struct EventAction : G4UserEventAction
         return g4_hits;
     }
 
-    std::vector<sphoton> SimulateOnGPU(const G4Event* event)
+    std::vector<sphoton> SimulateOnGPU(const G4Event* event, bool has_gpu_work)
     {
         const PrimaryPhotonInfo* primary_info = nullptr;
         if (order_gpu_events)
@@ -418,13 +477,26 @@ struct EventAction : G4UserEventAction
             SEvt::SetInputPhoton(shared_state->input_photon.get());
         }
 
-        G4CXOpticks* gx = G4CXOpticks::Get();
-        gx->simulate(event_id, false);
-        cudaDeviceSynchronize();
+        if (timing)
+            timing->BeginGpu();
 
-        SEvt* sev_gpu = SEvt::Get_EGPU();
-        auto  gpu_hits = CollectGPUHits(sev_gpu);
-        gx->reset(event_id);
+        std::vector<sphoton> gpu_hits;
+        if (has_gpu_work)
+        {
+            G4CXOpticks* gx = G4CXOpticks::Get();
+            gx->simulate(event_id, false);
+            cudaDeviceSynchronize();
+
+            if (timing)
+                timing->EndGpu();
+
+            gpu_hits = CollectGPUHits(SEvt::Get_EGPU());
+            // QSim::reset ends the EGPU event; particle-source mode must not
+            // end its aliased SEvt a second time.
+            gx->reset(event_id);
+        }
+        else if (timing)
+            timing->EndGpu();
 
         if (order_gpu_events)
         {
@@ -439,40 +511,61 @@ struct EventAction : G4UserEventAction
     void EndOfEventAction(const G4Event* event) override
     {
         const G4int event_id = event->GetEventID();
-        if (sev)
+        std::int64_t num_gensteps = 0;
+        std::int64_t num_photons = 0;
+        if (particle_source)
+        {
+            num_gensteps = sev->getNumGenstepFromGenstep();
+            num_photons = sev->getNumPhotonFromGenstep();
+        }
+        else if (sev)
         {
             sev->addEventConfigArray();
             sev->gather();
+            num_gensteps = sev->getNumGenstepFromGenstep();
+            num_photons = sev->getNumPhotonCollected();
             sev->endOfEvent(event_id);
-            G4cout << "EventAction::EndOfEventAction: CPU hits:  " << sev->getNumHit() << G4endl;
         }
 
         auto g4_hits = CollectG4Hits(event);
-        auto gpu_hits = SimulateOnGPU(event);
+        if (timing)
+            timing->SubmitGpu(num_gensteps, num_photons);
+
+        auto gpu_hits = SimulateOnGPU(event, !particle_source || num_gensteps > 0);
 
         G4cout << "EventAction::EndOfEventAction: Event " << event_id
                << ": Collected GPU hits: " << gpu_hits.size() << G4endl;
         G4cout << "EventAction::EndOfEventAction: Event " << event_id
                << ": Collected G4  hits: " << g4_hits.size() << G4endl;
 
+        const size_t num_gpu_hits = gpu_hits.size();
+        const size_t num_g4_hits = g4_hits.size();
         auto* run = static_cast<Simg4oxRun*>(G4RunManager::GetRunManager()->GetNonConstCurrentRun());
         run->AddEvent(event_id, std::move(gpu_hits), std::move(g4_hits));
+        if (timing)
+            timing->EndEvent(num_gpu_hits, num_g4_hits);
     }
 };
 
 struct SteppingAction : G4UserSteppingAction
 {
     SEvt* sev;
+    bool  collect_gensteps;
 
-    SteppingAction(SEvt* sev) :
-        sev(sev)
+    SteppingAction(SEvt* sev, bool collect_gensteps) :
+        sev(sev),
+        collect_gensteps(collect_gensteps)
     {
     }
 
     void UserSteppingAction(const G4Step* step)
     {
         if (step->GetTrack()->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
+        {
+            if (collect_gensteps)
+                CollectGensteps(step);
             return;
+        }
 
         const G4Track*      track = step->GetTrack();
         const G4VTouchable* touch = track->GetTouchable();
@@ -535,6 +628,65 @@ struct SteppingAction : G4UserSteppingAction
 
         sev->pointPhoton(ulabel);
     }
+
+    void CollectGensteps(const G4Step* step)
+    {
+        G4SteppingManager* stepping_manager =
+            G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
+        if (!stepping_manager || stepping_manager->GetfStepStatus() == fAtRestDoItProc)
+            return;
+
+        G4ProcessVector* processes = stepping_manager->GetfPostStepDoItVector();
+        const size_t     process_count = stepping_manager->GetMAXofPostStepLoops();
+        const G4Track*   track = step->GetTrack();
+
+        for (size_t i = 0; i < process_count; ++i)
+        {
+            G4VProcess* process = (*processes)[i];
+            if (!process)
+                continue;
+
+            if (process->GetProcessName() == "Cerenkov")
+            {
+                G4Cerenkov* cerenkov = dynamic_cast<G4Cerenkov*>(process);
+                const G4Material* material = track->GetMaterial();
+                G4MaterialPropertiesTable* properties = material ? material->GetMaterialPropertiesTable() : nullptr;
+                G4MaterialPropertyVector* rindex = properties ? properties->GetProperty(kRINDEX) : nullptr;
+                const G4int num_photons = cerenkov ? cerenkov->GetNumPhotons() : 0;
+                if (!cerenkov || !rindex || rindex->GetVectorLength() == 0 || num_photons <= 0)
+                    continue;
+
+                const G4double charge = track->GetDynamicParticle()->GetDefinition()->GetPDGCharge();
+                const G4double beta1 = step->GetPreStepPoint()->GetBeta();
+                const G4double beta2 = step->GetPostStepPoint()->GetBeta();
+                const G4double beta_inverse = 2.0 / (beta1 + beta2);
+                const G4double pmin = rindex->Energy(0);
+                const G4double pmax = rindex->GetMaxEnergy();
+                const G4double max_cos = beta_inverse / rindex->GetMaxValue();
+                const G4double max_sin2 = (1.0 - max_cos) * (1.0 + max_cos);
+                const G4double mean1 = cerenkov->GetAverageNumberOfPhotons(charge, beta1, material, rindex);
+                const G4double mean2 = cerenkov->GetAverageNumberOfPhotons(charge, beta2, material, rindex);
+
+                U4::CollectGenstep_G4Cerenkov_modified(track, step, num_photons, beta_inverse, pmin, pmax, max_cos,
+                                                       max_sin2, mean1, mean2);
+            }
+            else if (process->GetProcessName() == "Scintillation")
+            {
+                G4Scintillation* scintillation = dynamic_cast<G4Scintillation*>(process);
+                const G4int num_photons = scintillation ? scintillation->GetNumPhotons() : 0;
+                if (!scintillation || num_photons <= 0)
+                    continue;
+
+                const G4Material* material = track->GetMaterial();
+                G4MaterialPropertiesTable* properties = material ? material->GetMaterialPropertiesTable() : nullptr;
+                const G4double decay_time =
+                    properties && properties->ConstPropertyExists(kSCINTILLATIONTIMECONSTANT1)
+                        ? properties->GetConstProperty(kSCINTILLATIONTIMECONSTANT1)
+                        : 0.0;
+                U4::CollectGenstep_Scintillation(track, step, num_photons, 1, decay_time);
+            }
+        }
+    }
 };
 
 struct TrackingAction : G4UserTrackingAction
@@ -573,6 +725,9 @@ struct TrackingAction : G4UserTrackingAction
 
     void PreUserTrackingAction(const G4Track* track) override
     {
+        if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
+            return;
+
         if (track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition())
         {
             // Geant4 boundary updates optical velocity via ProposeVelocity, but the
@@ -613,7 +768,7 @@ struct TrackingAction : G4UserTrackingAction
 
     void PostUserTrackingAction(const G4Track* track) override
     {
-        if (!sev)
+        if (!sev || track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition())
             return;
 
         G4TrackStatus tstat = track->GetTrackStatus();
@@ -647,10 +802,15 @@ struct RunAction : G4UserRunAction
 {
     simphony::Config                    cfg;
     std::shared_ptr<Simg4oxSharedState> shared_state;
+    EventTimingRecorder*                timing;
+    EventTimingMetadata                 timing_metadata;
 
-    RunAction(const simphony::Config& cfg, std::shared_ptr<Simg4oxSharedState> shared_state) :
+    RunAction(const simphony::Config& cfg, std::shared_ptr<Simg4oxSharedState> shared_state,
+              EventTimingRecorder* timing, EventTimingMetadata timing_metadata) :
         cfg(cfg),
-        shared_state(std::move(shared_state))
+        shared_state(std::move(shared_state)),
+        timing(timing),
+        timing_metadata(std::move(timing_metadata))
     {
     }
 
@@ -662,7 +822,11 @@ struct RunAction : G4UserRunAction
     void BeginOfRunAction(const G4Run*) override
     {
         if (!G4Threading::IsWorkerThread())
+        {
             shared_state->BeginRun();
+            if (timing)
+                timing->BeginRun();
+        }
     }
 
     void SaveHits(const std::vector<sphoton>& source, const char* name) const
@@ -690,6 +854,11 @@ struct RunAction : G4UserRunAction
         SaveHits(g4_hits, "g_hits.npy");
         G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << gpu_hits.size() << G4endl;
         G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << g4_hits.size() << G4endl;
+        if (timing)
+        {
+            timing->Write(timing_metadata);
+            G4cout << "RunAction::EndOfRunAction: Event timing: " << timing->output() << G4endl;
+        }
     }
 };
 
@@ -698,20 +867,29 @@ struct ActionInitialization : G4VUserActionInitialization
     simphony::Config                    cfg;
     std::shared_ptr<Simg4oxSharedState> shared_state;
     bool                                multithreaded;
+    PrimaryParticleConfig               primary;
+    EventTimingRecorder*                timing;
+    EventTimingMetadata                 timing_metadata;
 
     ActionInitialization(
         const simphony::Config&             cfg,
         std::shared_ptr<Simg4oxSharedState> shared_state,
-        bool                                multithreaded) :
+        bool                                multithreaded,
+        const PrimaryParticleConfig&        primary,
+        EventTimingRecorder*                timing,
+        EventTimingMetadata                 timing_metadata) :
         cfg(cfg),
         shared_state(std::move(shared_state)),
-        multithreaded(multithreaded)
+        multithreaded(multithreaded),
+        primary(primary),
+        timing(timing),
+        timing_metadata(std::move(timing_metadata))
     {
     }
 
     void BuildForMaster() const override
     {
-        SetUserAction(new RunAction(cfg, shared_state));
+        SetUserAction(new RunAction(cfg, shared_state, timing, timing_metadata));
     }
 
     void Build() const override
@@ -719,14 +897,16 @@ struct ActionInitialization : G4VUserActionInitialization
         // SEvt's CPU instance and its profiling/persistence helpers are
         // process-global. Keep the full CPU history recorder in serial mode;
         // MT workers still perform normal Geant4 tracking and collect SD hits.
-        SEvt* sev = multithreaded ? nullptr : SEvt::CreateOrReuse_ECPU();
+        SEvt* sev = multithreaded ? nullptr
+                                 : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
+                                                    : SEvt::CreateOrReuse_ECPU());
 
-        SetUserAction(new PrimaryGenerator(cfg, sev));
-        SetUserAction(new RunAction(cfg, shared_state));
-        SetUserAction(new EventAction(sev, shared_state, multithreaded));
+        SetUserAction(new PrimaryGenerator(cfg, sev, primary, timing));
+        SetUserAction(new RunAction(cfg, shared_state, timing, timing_metadata));
+        SetUserAction(new EventAction(sev, shared_state, multithreaded, primary.enabled, timing));
         SetUserAction(new TrackingAction(sev));
 
         if (sev)
-            SetUserAction(new SteppingAction(sev));
+            SetUserAction(new SteppingAction(sev, primary.enabled));
     }
 };

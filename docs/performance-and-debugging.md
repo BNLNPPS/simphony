@@ -40,6 +40,55 @@ pure GPU speed-up measurement.
 The supplied `tests/run_mt.mac` contains only five low-statistics events and is
 an integration check, not a benchmark.
 
+## Per-event CPU/GPU timelines
+
+`simg4ox` can write event-level timing data suitable for CPU/GPU scheduling
+studies. `--timing-output` enables a CSV with one row per event and a JSON run
+manifest beside it. The CSV records:
+
+- the basket-forming Geant4 interval before GPU dispatch and the CPU
+  collection/reset interval afterward;
+- GPU submission, start, and completion timestamps for the blocking
+  `G4CXOpticks::simulate()` call, including transfers and synchronization;
+- wall-clock, process-CPU, and event-thread CPU durations; and
+- generated genstep/photon counts and CPU/GPU hit counts.
+
+All timeline offsets use a monotonic run-local clock. They are intended for
+interval comparison within one run, not as timestamps shared across jobs.
+
+The bundled pfrich baseline runs three single-threaded Geant4 events with one
+negative muon at 5 GeV/c per event. Its position and forward direction come
+from [`config/pfrich.json`](../config/pfrich.json). Optical secondaries are not
+placed on the Geant4 stack; their Cerenkov/scintillation gensteps are captured
+and transported by Opticks on the GPU.
+
+```bash
+cmake --build build --target simg4ox
+SIMG4OX_BIN="$PWD/build/src/simg4ox" scripts/run_pfrich_timing.sh
+```
+
+The runner creates `pfrich_timing/events.csv`,
+`pfrich_timing/events.manifest.json`, and `pfrich_timing/simg4ox.stdout.log`.
+The CSV follows the timeline columns used by teerex: `scenario`,
+`dispatch_mode`, event and CPU phase boundaries, GPU submit/start/end and wait
+boundaries, run-local offsets, and measured durations. Producer-specific
+particle, genstep, photon, and hit columns are retained.
+
+Use teerex's marimo notebook to compare this measured run with simulated
+blocking and asynchronous scheduling:
+
+```bash
+cd third_party/teerex
+uv run marimo edit notebooks/simload.py
+```
+
+When teerex is checked out at that path, the notebook discovers
+`pfrich_timing/events.csv` automatically. It also accepts arbitrary CSV paths
+through its input control. The first event includes CUDA and OptiX warm-up, so
+steady-state comparisons should report it separately or exclude it explicitly.
+This small run matches the table's pfrich particle and momentum, but not its
+`10^5`-muon statistics.
+
 ## Debug analysis with `optiphy/ana/photon_history_summary.py`
 
 The script analyzes GPU optical photon simulation output to debug where
