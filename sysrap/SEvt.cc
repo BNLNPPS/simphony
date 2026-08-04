@@ -1788,13 +1788,18 @@ void SEvt::beginOfEvent(int eventID)
     LOG_IF(info, LIFECYCLE) << id() ;
 
     clear_output();   // output vectors and fold : excluding gensteps as thats input
-    if( addGenstep_array == 0 )
+    // Normal Geant4 integration collects quad6 gensteps before EGPU
+    // beginOfEvent. Do not try to add a configured input-photon/torch
+    // genstep when that generated workload is already present.
+    if( addGenstep_array == 0 && numgenstep_collected == 0 )
     {
         addInputGenstep();  // does genstep setup for simtrace, input photon and torch running
     }
     else
     {
-        LOG(LEVEL) << "skip addInputGenstep as addGenstep_array " << addGenstep_array ;
+        LOG(LEVEL)
+            << "skip addInputGenstep as addGenstep_array " << addGenstep_array
+            << " numgenstep_collected " << numgenstep_collected ;
     }
 
 
