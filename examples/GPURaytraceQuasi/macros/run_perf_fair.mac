@@ -1,0 +1,13 @@
+# Fair performance comparison macro:
+#   - single-thread (avoids the pre-existing eic-opticks MT crash on beamOn>1
+#     with the scintillation geometry)
+#   - stackPhotons=false on both Cerenkov and Scintillation, so the legacy
+#     GPURaytrace and the new GPURaytraceQuasi both run pure offload mode
+#     (no real G4OpticalPhoton secondaries; Opticks-only propagation)
+#   - beamOn 100 so per-event statistical noise averages out
+/run/numberOfThreads 1
+/process/optical/cerenkov/setStackPhotons false
+/process/optical/scintillation/setStackPhotons false
+/run/verbose 0
+/run/initialize
+/run/beamOn 100
