@@ -33,7 +33,11 @@ other projects together with NP.hh
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#if defined(_MSC_VER)
+#include "s_windows.h"
+#else
 #include <unistd.h>
+#endif
 
 
 /**
@@ -150,7 +154,10 @@ expressed in big endian "network order".
 
 **/
 
+#if !defined(_MSC_VER)
 #include <arpa/inet.h>    // htonl
+#endif
+// on MSVC htonl/ntohl come from winsock2.h via s_windows.h, included above
 
 
 struct net_hdr
@@ -1553,7 +1560,8 @@ template const char* U::Path( const char*, const char*, const char*, const char*
 #include <cstdio>
 #include <sys/stat.h>
 #include <errno.h>
-#include "dirent.h"
+#include <filesystem>
+#include <system_error>
 
 inline int U::MakeDirs( const char* dirpath_, int mode_ )
 {
@@ -1625,23 +1633,24 @@ inline void U::DirList(
 {
     const char* path = Resolve(_path);
 
-    DIR* dir = opendir(path) ;
-    if(!dir && allow_nonexisting) return ;
-    if(!dir) std::cout << "U::DirList FAILED TO OPEN DIR " << ( path ? path : "-" ) << std::endl ;
-    if(!dir && RAISE) std::raise(SIGINT) ;
-    if(!dir) return ;
-    struct dirent* entry ;
-    while ((entry = readdir(dir)) != nullptr)
+    // std::filesystem rather than opendir/readdir: portable to MSVC, which has
+    // no dirent.h. directory_iterator never yields "." or "..", so the
+    // dot-name skip the POSIX loop needed is not reproduced here.
+    std::error_code ec ;
+    std::filesystem::directory_iterator it(path ? path : "", ec) ;
+    if(ec && allow_nonexisting) return ;
+    if(ec) std::cout << "U::DirList FAILED TO OPEN DIR " << ( path ? path : "-" ) << std::endl ;
+    if(ec && RAISE) std::raise(SIGINT) ;
+    if(ec) return ;
+    for(const std::filesystem::directory_entry& entry : it)
     {
-        const char* name = entry->d_name ;
-        bool dot_name = strcmp(name,".") == 0 || strcmp(name,"..") == 0 ;
-        if(dot_name) continue ;
+        std::string fname = entry.path().filename().string() ;
+        const char* name = fname.c_str() ;
 
         bool ext_match = ext == nullptr ? true : ( strlen(name) > strlen(ext) && strcmp(name + strlen(name) - strlen(ext), ext)==0)  ;
-        if(ext_match == true  && exclude == false) names.push_back(name);
-        if(ext_match == false && exclude == true)  names.push_back(name);
+        if(ext_match == true  && exclude == false) names.push_back(fname);
+        if(ext_match == false && exclude == true)  names.push_back(fname);
     }
-    closedir (dir);
     std::sort( names.begin(), names.end() );
 
     if(names.size() == 0 ) std::cout
@@ -2726,6 +2735,10 @@ inline std::string NPU::_make_other(const char* descr, char other) // static
 
 inline bool NPU::is_readable(const char* path)  // static
 {
+    // directories: ifstream-opening a directory succeeds on Linux (glibc)
+    // but always fails on Windows, so answer for directories directly
+    std::error_code ec ;
+    if( std::filesystem::is_directory(path ? path : "", ec) ) return true ;
     std::ifstream fp(path, std::ios::in|std::ios::binary);
     bool readable = !fp.fail();
     fp.close();

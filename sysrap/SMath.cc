@@ -5,6 +5,11 @@
 
 #include "SMath.hh"
 
+#ifndef M_PI
+// MSVC's <cmath> defines M_PI only under _USE_MATH_DEFINES
+#define M_PI 3.14159265358979323846
+#endif
+
 /**
 SMath::cos_pi
 ------------------

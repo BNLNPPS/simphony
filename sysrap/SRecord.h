@@ -58,7 +58,7 @@ struct SRecord
 };
 
 
-int SRecord::level = ssys::getenvint(_level,0) ;
+inline int SRecord::level = ssys::getenvint(_level,0) ;
 
 
 /**

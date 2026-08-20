@@ -30,15 +30,30 @@
 
 #include "ssys.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 
-int SBit::ffs(int i)     
+
+int SBit::ffs(int i)
 {
+#if defined(_MSC_VER)
+   // ffs semantics: 1-based index of the least significant set bit, 0 for no bits
+   unsigned long idx ;
+   return _BitScanForward(&idx, static_cast<unsigned long>(i)) ? static_cast<int>(idx) + 1 : 0 ;
+#else
    return ::ffs(i);
+#endif
 }
 
-long long SBit::ffsll(long long i)   
+long long SBit::ffsll(long long i)
 {
+#if defined(_MSC_VER)
+   unsigned long idx ;
+   return _BitScanForward64(&idx, static_cast<unsigned __int64>(i)) ? static_cast<long long>(idx) + 1 : 0ll ;
+#else
    return ::ffsll(i);
+#endif
 }
 
 

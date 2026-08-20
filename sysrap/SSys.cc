@@ -30,7 +30,11 @@
 #include <cstdio>
 #include <fstream> 
 
+#if defined(_MSC_VER)
+#include "s_windows.h"    // popen, pclose, wait status macros
+#else
 #include <sys/wait.h>
+#endif
 
 #include "SSys.hh"
 #include "SLOG.hh"
@@ -602,23 +606,38 @@ const char* SSys::username()
 #  define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 # elif defined(MAXHOSTNAMELEN)
 #  define HOST_NAME_MAX MAXHOSTNAMELEN
+# elif defined(_MSC_VER)
+#  define HOST_NAME_MAX 256
 # endif
 #endif /* HOST_NAME_MAX */
 
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include <limits.h>
 const char* SSys::hostname()
 {
     char hostname[HOST_NAME_MAX];
     hostname[0] = '\0' ;
+#if defined(_MSC_VER)
+    // winsock gethostname needs WSAStartup; the computer name serves without it
+    DWORD len = HOST_NAME_MAX ;
+    if(!GetComputerNameA(hostname, &len)) hostname[0] = '\0' ;
+#else
     gethostname(hostname, HOST_NAME_MAX);
-    return hostname[0] == '\0' ? "SSys-hostname-undefined" : strdup(hostname) ; 
+#endif
+    return hostname[0] == '\0' ? "SSys-hostname-undefined" : strdup(hostname) ;
 }
 
 int SSys::unsetenv( const char* ekey )
 {
-    return ::unsetenv(ekey); 
+#if defined(_MSC_VER)
+    // no unsetenv in the CRT; an empty value removes the variable
+    return ::_putenv_s(ekey, "");
+#else
+    return ::unsetenv(ekey);
+#endif
 }
 
 /**

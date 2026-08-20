@@ -57,6 +57,16 @@ This has several advantages:
 #define POSTORDER_DEPTH(currIdx) ( 32 - __clz((currIdx)) - 1 )
 #define TREE_HEIGHT(numNodes) ( __ffs((numNodes) + 1) - 2)
 #define TREE_DEPTH(nodeIdx) ( 32 - __clz((nodeIdx)) - 1 )
+#elif defined(_MSC_VER)
+#include <intrin.h>
+// ffs/clz semantics from the MSVC intrinsics: ffs is the 1-based index of the
+// least significant set bit (0 for none); clz counts leading zeros of a
+// nonzero value, matching __builtin_clz whose x==0 case is undefined anyway
+inline int csg_postorder_ffs_(int x){ unsigned long i ; return _BitScanForward(&i, static_cast<unsigned long>(x)) ? static_cast<int>(i) + 1 : 0 ; }
+inline int csg_postorder_clz_(unsigned x){ unsigned long i ; return _BitScanReverse(&i, x) ? 31 - static_cast<int>(i) : 32 ; }
+#define POSTORDER_DEPTH(currIdx) ( 32 - csg_postorder_clz_((currIdx)) - 1 )
+#define TREE_HEIGHT(numNodes) ( csg_postorder_ffs_((numNodes) + 1) - 2)
+#define TREE_DEPTH(nodeIdx) ( 32 - csg_postorder_clz_((nodeIdx)) - 1 )
 #else
 #define POSTORDER_DEPTH(currIdx) ( 32 - std::__clz((currIdx)) - 1 )
 #define TREE_HEIGHT(numNodes) ( ffs((numNodes) + 1) - 2)

@@ -5,6 +5,13 @@ SGLM_Modifiers.h : control keys enumeration
 
 **/
 
+#if defined(_MSC_VER)
+// winuser.h claims these enum names as hotkey-modifier macros
+#undef MOD_SHIFT
+#undef MOD_CONTROL
+#undef MOD_ALT
+#endif
+
 struct SGLM_Modifiers
 {
     // NB these enum values must not clash with SGLM_Modnav

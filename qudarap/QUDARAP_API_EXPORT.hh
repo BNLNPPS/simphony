@@ -20,4 +20,16 @@
 
 #pragma once
 
-#define QUDARAP_API __attribute__((visibility("default")))
+#if defined(_MSC_VER)
+#  if defined(SIMPHONY_SHARED_LIBS)
+#    if defined(QUDARap_EXPORTS)
+#      define QUDARAP_API __declspec(dllexport)
+#    else
+#      define QUDARAP_API __declspec(dllimport)
+#    endif
+#  else
+#    define QUDARAP_API
+#  endif
+#else
+#  define QUDARAP_API __attribute__((visibility("default")))
+#endif

@@ -7,7 +7,12 @@
 #include <errno.h> 
 #include <vector>
 #include <algorithm>
-#include "dirent.h"
+#include <iostream>
+#include <filesystem>
+#include <system_error>
+#if defined(_MSC_VER)
+#include "s_windows.h"    // mkdir
+#endif
 
 struct sdirectory
 {
@@ -75,22 +80,26 @@ sdirectory::DirList
 
 inline void sdirectory::DirList( std::vector<std::string>& names, const char* path, const char* pfx, const char* ext)
 {
-    DIR* dir = opendir(path) ;
-    if(!dir) std::cout << "sdirectory::DirList FAILED TO OPEN DIR " << ( path ? path : "-" ) << std::endl ; 
-    if(!dir) return ; 
-    struct dirent* entry ;
-    while ((entry = readdir(dir)) != nullptr) 
-    {   
-        const char* name = entry->d_name ;
-        bool dot_name = strcmp(name,".") == 0 || strcmp(name,"..") == 0 ; 
-        if(dot_name) continue ; 
- 
-        bool pfx_match = pfx == nullptr ? true : ( strlen(name) > strlen(pfx) && strncmp(name, pfx, strlen(pfx)) == 0 ) ; 
+    // std::filesystem rather than opendir/readdir: portable to MSVC, which has
+    // no dirent.h. directory_iterator never yields "." or "..", so the
+    // dot-name skip the POSIX loop needed is not reproduced here.
+    std::error_code ec ;
+    std::filesystem::directory_iterator it(path ? path : "", ec) ;
+    if(ec)
+    {
+        std::cout << "sdirectory::DirList FAILED TO OPEN DIR " << ( path ? path : "-" ) << std::endl ;
+        return ;
+    }
+    for(const std::filesystem::directory_entry& entry : it)
+    {
+        std::string fname = entry.path().filename().string() ;
+        const char* name = fname.c_str() ;
+
+        bool pfx_match = pfx == nullptr ? true : ( strlen(name) > strlen(pfx) && strncmp(name, pfx, strlen(pfx)) == 0 ) ;
         bool ext_match = ext == nullptr ? true : ( strlen(name) > strlen(ext) && strcmp(name + strlen(name) - strlen(ext), ext)==0)  ;
-        if(ext_match && pfx_match) names.push_back(name); 
-    }   
-    closedir (dir);
-    std::sort( names.begin(), names.end() );  
+        if(ext_match && pfx_match) names.push_back(fname);
+    }
+    std::sort( names.begin(), names.end() );
 
     if(names.size() == 0 ) std::cout 
         << "sdirectory::DirList" 

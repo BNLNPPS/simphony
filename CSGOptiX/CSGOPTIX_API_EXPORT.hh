@@ -20,4 +20,16 @@
 
 #pragma once
 
-#define CSGOPTIX_API __attribute__((visibility("default")))
+#if defined(_MSC_VER)
+#  if defined(SIMPHONY_SHARED_LIBS)
+#    if defined(CSGOptiX_EXPORTS)
+#      define CSGOPTIX_API __declspec(dllexport)
+#    else
+#      define CSGOPTIX_API __declspec(dllimport)
+#    endif
+#  else
+#    define CSGOPTIX_API
+#  endif
+#else
+#  define CSGOPTIX_API __attribute__((visibility("default")))
+#endif

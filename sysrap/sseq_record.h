@@ -34,7 +34,7 @@ struct sseq_record
     NP* create_record_selection(const char* q_startswith);
 };
 
-int sseq_record::level = ssys::getenvint(sseq_record__level,0 );
+inline int sseq_record::level = ssys::getenvint(sseq_record__level,0 );
 
 
 inline bool sseq_record::LooksLikeRecordSeqSelection(const char* _q )

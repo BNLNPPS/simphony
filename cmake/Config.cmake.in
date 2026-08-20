@@ -5,14 +5,23 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
 include(CMakeFindDependencyMacro)
 
+# Dependency set matches the options the install was built with:
+# GLEW/glfw3 only with viz, Geant4/CLHEP only with the full (non-core) build.
+set(SIMPHONY_CONFIG_WITH_VIZ "@SIMPHONY_WITH_VIZ@")
+set(SIMPHONY_CONFIG_CORE_ONLY "@SIMPHONY_CORE_ONLY@")
+
 find_dependency(nlohmann_json REQUIRED)
 find_dependency(plog REQUIRED)
-find_dependency(GLEW REQUIRED)
-find_dependency(glfw3 REQUIRED)
+if(SIMPHONY_CONFIG_WITH_VIZ)
+    find_dependency(GLEW REQUIRED)
+    find_dependency(glfw3 REQUIRED)
+endif()
 find_dependency(glm REQUIRED)
 find_dependency(CUDAToolkit REQUIRED)
 find_dependency(OptiX 7 REQUIRED)
-find_dependency(Geant4 REQUIRED)
-find_dependency(CLHEP  REQUIRED)
+if(NOT SIMPHONY_CONFIG_CORE_ONLY)
+    find_dependency(Geant4 REQUIRED)
+    find_dependency(CLHEP  REQUIRED)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")

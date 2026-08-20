@@ -14,7 +14,8 @@ SDir.h : header only dirent.h directory listing paths with supplied ext
 #include <string>
 #include <algorithm>
 
-#include "dirent.h"
+#include <filesystem>
+#include <system_error>
 
 struct SDir 
 {
@@ -33,28 +34,30 @@ Collect the names of files or directories within a single directory that end wit
 
 inline void SDir::List(std::vector<std::string>& names, const char* path, const char* ext, bool sigint )
 {
-    DIR* dir = opendir(path) ;
-    if(!dir)
-    { 
-        std::cout << "SDir::List FAILED TO OPEN DIR " << ( path ? path : "-" ) << std::endl ; 
+    // std::filesystem rather than opendir/readdir: portable to MSVC, which has
+    // no dirent.h.
+    std::error_code ec ;
+    std::filesystem::directory_iterator it(path ? path : "", ec) ;
+    if(ec)
+    {
+        std::cout << "SDir::List FAILED TO OPEN DIR " << ( path ? path : "-" ) << std::endl ;
         if(sigint)
         {
-            std::cout << "SDir::List std::raise(SIGINT) due to argument sigint:true " << std::endl ;  
-            std::raise(SIGINT) ; 
+            std::cout << "SDir::List std::raise(SIGINT) due to argument sigint:true " << std::endl ;
+            std::raise(SIGINT) ;
         }
-        return ; 
+        return ;
     }
-    struct dirent* entry ;
-    while ((entry = readdir(dir)) != nullptr) 
-    {   
-        const char* name = entry->d_name ; 
+    for(const std::filesystem::directory_entry& entry : it)
+    {
+        std::string fname = entry.path().filename().string() ;
+        const char* name = fname.c_str() ;
         if(strlen(name) > strlen(ext) && strcmp(name + strlen(name) - strlen(ext), ext)==0)
-        {   
-            names.push_back(name); 
-        }   
-    }   
-    closedir (dir);
-    std::sort( names.begin(), names.end() );  
+        {
+            names.push_back(fname);
+        }
+    }
+    std::sort( names.begin(), names.end() );
 
     if(names.size() == 0 ) std::cout 
         << "SDir::List" 

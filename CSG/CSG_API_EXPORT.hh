@@ -20,4 +20,16 @@
 
 #pragma once
 
-#define CSG_API __attribute__((visibility("default")))
+#if defined(_MSC_VER)
+#  if defined(SIMPHONY_SHARED_LIBS)
+#    if defined(CSG_EXPORTS)
+#      define CSG_API __declspec(dllexport)
+#    else
+#      define CSG_API __declspec(dllimport)
+#    endif
+#  else
+#    define CSG_API
+#  endif
+#else
+#  define CSG_API __attribute__((visibility("default")))
+#endif
