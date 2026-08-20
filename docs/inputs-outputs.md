@@ -31,6 +31,24 @@ See [Physics](physics.md) for the current standard-GPU interpretation of GDML
 optical-surface properties such as `model`, `finish`, `type`, `EFFICIENCY`,
 and `REFLECTIVITY`.
 
+### Persisted CSGFoundry geometry
+
+Service-style applications (consumers of `CSGOptiXService`) load a persisted
+CSGFoundry geometry directory instead of importing GDML. Resolution is by an
+environment variable pair, implemented in `spath::CFBaseFromGEOM`:
+
+```bash
+export GEOM=<name>
+export <name>_CFBaseFromGEOM=/path/to/base   # directory containing CSGFoundry/
+```
+
+Both variables are required: `GEOM` names the geometry, and the variable
+named `<name>_CFBaseFromGEOM` — the literal geometry name followed by
+`_CFBaseFromGEOM` — carries its base directory. Setting `CFBASE` alone does
+not resolve geometry on this path. A persisted geometry is produced from a
+Geant4-integrated run with `G4CXOpticks__setGeometry_saveGeometry` pointing
+at the base directory to be written.
+
 ## Photon source inputs
 
 Simphony examples feed the GPU simulation in three common ways:

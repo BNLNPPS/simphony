@@ -25,11 +25,17 @@ target_link_libraries(synrad
 # (sysrap NP/sphoton, the qudarap Cu table), so take the include directories
 # from the imported targets without linking their libraries. sphoton.h sits
 # on the CUDA vector types, so the CUDA headers are needed at compile time.
+# The header chain also needs glm (stra.h uses gtx extensions, gated behind
+# GLM_ENABLE_EXPERIMENTAL) and plog (OpticksPhoton.hh); both are header-only
+# INTERFACE targets, so linking them propagates includes without libraries —
+# required wherever they are not on default compiler paths.
+find_package(plog REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 add_executable(synrad_g4 synrad_g4.cpp)
 get_target_property(_sysrap_inc  simphony::SysRap  INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(_qudarap_inc simphony::QUDARap INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(synrad_g4 PRIVATE ${_sysrap_inc} ${_qudarap_inc} ${CUDAToolkit_INCLUDE_DIRS})
-target_link_libraries(synrad_g4 ${Geant4_LIBRARIES})
+target_link_libraries(synrad_g4 ${Geant4_LIBRARIES} glm::glm plog::plog)
+target_compile_definitions(synrad_g4 PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 install(TARGETS synrad synrad_g4)
