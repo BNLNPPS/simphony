@@ -5389,6 +5389,18 @@
       <fraction n="0.0804389789701" ref="H_elm"/>
       <fraction n="0.320138573647" ref="O_elm"/>
     </material>
+    <!-- The opaque metallic coating prevents optical transport through the
+         mirror backing.  Match its optical properties to the surrounding gas
+         so a zero-length Geant4 boundary relocation cannot add a spurious
+         acrylic-to-gas refraction after reflection. -->
+    <material name="MirrorBacking_DRICH">
+      <property name="RINDEX" ref="RINDEX__C2F6_DRICH"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH__C2F6_DRICH"/>
+      <D unit="g/cm3" value="1.19"/>
+      <fraction n="0.599422454834" ref="C_elm"/>
+      <fraction n="0.0804389789701" ref="H_elm"/>
+      <fraction n="0.320138573647" ref="O_elm"/>
+    </material>
     <material name="AirOptical">
       <property name="RINDEX" ref="RINDEX__AirOptical"/>
       <property name="ABSLENGTH" ref="ABSLENGTH__AirOptical"/>
@@ -8469,7 +8481,7 @@
       <solidref ref="DRICH_filter_shape_0x55d16759c6b0"/>
     </volume>
     <volume name="DRICH_mirror_sec0">
-      <materialref ref="Acrylic_DRICH"/>
+      <materialref ref="MirrorBacking_DRICH"/>
       <solidref ref="DRICH_mirror_sec0_shape_0x55d167b41bb0"/>
     </volume>
     <volume name="DRICH_pss_sec0">
@@ -35440,9 +35452,10 @@
     <skinsurface name="_world_DRICH_sensor_de_sec0_pdu3_sipm3_sensor_optical_surface_sec0_pdu3_sipm3" surfaceproperty="SensorSurface_DRICH">
       <volumeref ref="DRICH_pss_sec00x3"/>
     </skinsurface>
-    <skinsurface name="_world_DRICH_mirror_de_sec0_mirror_optical_surface_sec0" surfaceproperty="MirrorSurface_DRICH">
-      <volumeref ref="DRICH_mirror_sec0"/>
-    </skinsurface>
+    <bordersurface name="_world_DRICH_mirror_de_sec0_mirror_optical_surface_sec0" surfaceproperty="MirrorSurface_DRICH">
+      <physvolref ref="DRICH_gas_0"/>
+      <physvolref ref="DRICH_mirror_sec0_3"/>
+    </bordersurface>
     <skinsurface name="_world_DRICH_sensor_de_sec0_pdu4_sipm0_sensor_optical_surface_sec0_pdu4_sipm0" surfaceproperty="SensorSurface_DRICH">
       <volumeref ref="DRICH_pss_sec00x4"/>
     </skinsurface>

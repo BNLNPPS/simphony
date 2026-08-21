@@ -29,6 +29,7 @@ add_simg4ox_integration_test(dune_mock_wls_detector_box)
 add_simg4ox_integration_test(8x8SiPM_w_CSI_optial_grease)
 add_simg4ox_integration_test(opticks_two_spheres)
 add_simg4ox_integration_test(drich)
+add_simg4ox_integration_test(drich_mirror)
 add_simg4ox_integration_test(sibling_pair)
 
 set(SIMPHONY_SIMG4OX_MULTIEVENT_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_multievent")

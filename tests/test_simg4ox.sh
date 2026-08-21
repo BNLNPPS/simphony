@@ -22,6 +22,7 @@ usage() {
     echo "  8x8SiPM_w_CSI_optial_grease" >&2
     echo "  opticks_two_spheres" >&2
     echo "  drich" >&2
+    echo "  drich_mirror" >&2
     echo "  sibling_pair" >&2
 }
 
@@ -91,6 +92,11 @@ case "${TEST_CASE}" in
         # a SiPM patch for a stable, nonzero CPU/GPU hit comparison.
         # Invoke Geant4 SDs for the EFFICIENCY=1 SiPM skin surfaces.
         run_hit_validation drich drich "${REPO_DIR}/tests/run_validate.mac"
+        ;;
+    drich_mirror)
+        # Start in the dRICH gas and aim at the mirror so detected photons must
+        # undergo one specular reflection before reaching a SiPM patch.
+        run_hit_validation drich drich_mirror "${REPO_DIR}/tests/run_validate.mac"
         ;;
     sibling_pair)
         # The beam can reach the sensor only by crossing the exact shared face
