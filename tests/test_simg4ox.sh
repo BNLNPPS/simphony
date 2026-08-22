@@ -21,7 +21,9 @@ usage() {
     echo "  dune_mock_wls_detector_box" >&2
     echo "  8x8SiPM_w_CSI_optial_grease" >&2
     echo "  opticks_two_spheres" >&2
-    echo "  drich" >&2
+    echo "  drich_direct_sensor" >&2
+    echo "  drich_aerogel" >&2
+    echo "  drich_mirror" >&2
     echo "  sibling_pair" >&2
 }
 
@@ -85,12 +87,22 @@ case "${TEST_CASE}" in
         # regression where each PhotonSD overwrites g_hits.npy with its own collection.
         run_hit_validation opticks_two_spheres dev
         ;;
-    drich)
+    drich_direct_sensor)
         # Loading the full geometry exercises conversion of its partial-phi
         # sphere and tube solids. The torch aims identical optical photons at
         # a SiPM patch for a stable, nonzero CPU/GPU hit comparison.
         # Invoke Geant4 SDs for the EFFICIENCY=1 SiPM skin surfaces.
-        run_hit_validation drich drich "${REPO_DIR}/tests/run_validate.mac"
+        run_hit_validation drich drich_direct_sensor "${REPO_DIR}/tests/run_validate.mac"
+        ;;
+    drich_aerogel)
+        # Start inside the realistic aerogel aperture and aim photons through
+        # the air gap and filter, off the mirror, and onto a SiPM patch.
+        run_hit_validation drich drich_aerogel "${REPO_DIR}/tests/run_validate.mac"
+        ;;
+    drich_mirror)
+        # Start in the dRICH gas and aim at the mirror so detected photons must
+        # undergo one specular reflection before reaching a SiPM patch.
+        run_hit_validation drich drich_mirror "${REPO_DIR}/tests/run_validate.mac"
         ;;
     sibling_pair)
         # The beam can reach the sensor only by crossing the exact shared face
