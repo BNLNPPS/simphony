@@ -3,12 +3,12 @@
     "gentype": "TORCH",
     "trackid": 0,
     "matline": 0,
-    "numphoton": 10000,
+    "numphoton": 100,
 
-    "pos": [1183.6, 630.6, 2574.0],
+    "pos": [682.0, 356.0, 2021.2],
     "time": 0.0,
 
-    "mom": [0.1175, 0.0359, 0.9924],
+    "mom": [0.0493, 0.0233, 0.9985],
     "weight": 0.0,
 
     "pol": [1.0, 0.0, 0.0],
@@ -17,7 +17,7 @@
     "zenith": [0.0, 1.0],
     "azimuth": [0.0, 1.0],
 
-    "radius": 100.0,
+    "radius": 30.0,
     "distance": 0.0,
     "mode": 255,
     "type": "disc"
@@ -25,7 +25,7 @@
 
   "event": {
     "mode": "HitPhoton",
-    "maxslot": 1000000,
+    "maxslot": 1000,
     "max_bounce": 31,
     "propagate_epsilon": 0.05,
     "propagate_epsilon0": 0.05,
