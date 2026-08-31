@@ -47,8 +47,8 @@ struct U4Stack
     static unsigned TagToStack(unsigned tag); 
 
     static constexpr const char* Unclassified_      = "Unclassified" ;        // 0
-    static constexpr const char* RestDiscreteReset_ = "RestDiscreteReset" ;   // 1: not used as use Shims to idenify processes in SBacktrace
-    static constexpr const char* DiscreteReset_ = "DiscreteReset" ; // 2    : G4OpAbsoption G4OpRayleigh but now use Shims to identify 
+    static constexpr const char* RestDiscreteReset_ = "RestDiscreteReset";    // 1
+    static constexpr const char* DiscreteReset_ = "DiscreteReset";            // 2: G4OpAbsorption/G4OpRayleigh share this reset path
     static constexpr const char* ScintDiscreteReset_ = "ScintDiscreteReset" ;  // 3
     static constexpr const char* BoundaryDiscreteReset_ = "BoundaryDiscreteReset" ; // 4
     static constexpr const char* RayleighDiscreteReset_ = "RayleighDiscreteReset" ;  // 5
@@ -171,4 +171,3 @@ inline unsigned U4Stack::TagToStack(unsigned tag)
     }
     return stack ; 
 }
-

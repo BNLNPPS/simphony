@@ -80,7 +80,6 @@
 #include "G4Electron.hh"
 #include "globals.hh"
 
-
 #include "U4Stack.h"
 #include "SEvt.hh"
 
@@ -781,7 +780,6 @@ Local_DsG4Scintillation::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep
 
     return change ; 
 }
-
 
 // BuildThePhysicsTable for the scintillation process
 // --------------------------------------------------
