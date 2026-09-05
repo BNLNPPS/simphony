@@ -24,8 +24,6 @@ set(SOURCES
 
     ShimG4OpAbsorption.cc
     ShimG4OpRayleigh.cc
-    Local_G4Cerenkov_modified.cc
-    Local_DsG4Scintillation.cc
 
     U4Physics.cc
 )
@@ -89,8 +87,6 @@ set(HEADERS
     ShimG4OpAbsorption.hh
     ShimG4OpRayleigh.hh
 
-    Local_G4Cerenkov_modified.hh
-    Local_DsG4Scintillation.hh
     U4Physics.hh
 
     U4Process.h

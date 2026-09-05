@@ -1,11 +1,8 @@
 #pragma once
 /**
-U4Material.hh
-=================
-
-HMM: make this header-only .h ?
-
-**/
+ * Provides helpers for inspecting, constructing, serializing, and migrating
+ * Geant4 materials and their optical property tables.
+ */
 
 #include <vector>
 #include <string>
@@ -35,17 +32,31 @@ struct U4_API U4Material
     static G4Material* Get(const char* name);
     static G4Material* Get_(const char* name);
     static G4Material* Vacuum(const char* name);
-    static G4MaterialPropertyVector* GetProperty(const G4Material* mat, const char* name); 
-    static G4MaterialPropertyVector* GetProperty(const char* mname, const char* pname); 
+    static G4MaterialPropertyVector* GetProperty(const G4Material* mat, const char* name);
+    static G4MaterialPropertyVector* GetProperty(const char* mname, const char* pname);
 
-    static void GetMinMaxValue( double& mn , double& mx, const G4MaterialPropertyVector* prop ); 
-    static std::string DescProperty(const G4MaterialPropertyVector* prop); 
-    static std::string DescProperty( const char* mname, const char* pname);  
-    static std::string DescProperty(const char* mname); 
-    static std::string DescProperty(); 
+    static void GetMinMaxValue(double& mn, double& mx, const G4MaterialPropertyVector* prop);
+    static std::string DescProperty(const G4MaterialPropertyVector* prop);
+    static std::string DescProperty(const char* mname, const char* pname);
+    static std::string DescProperty(const char* mname);
+    static std::string DescProperty();
 
+    static void RemoveProperty(const char* key, G4Material* mat);
 
-    static void RemoveProperty( const char* key, G4Material* mat ); 
+    /**
+     * Converts legacy `ABSLENGTH` plus `REEMISSIONPROB` data on one material
+     * into competing `ABSLENGTH` and `WLSABSLENGTH` properties.
+     *
+     * @param mat material to inspect and, when possible, update
+     * @return `true` when `REEMISSIONPROB` was consumed; otherwise `false`
+     */
+    static bool ConvertLegacyReemissionToWLS(G4Material* mat);
+    /**
+     * Converts every eligible material in the Geant4 material table.
+     *
+     * @return number of materials whose `REEMISSIONPROB` was consumed
+     */
+    static int ConvertLegacyReemissionToWLS();
 
     static void GetPropertyNames( std::vector<std::string>& names, const G4Material* mat ) ; 
     static NPFold* MakePropertyFold(const G4Material* mat ); 

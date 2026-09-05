@@ -270,14 +270,19 @@ inline U4Tree::U4Tree(stree *st_, const G4VPhysicalVolume *const top_, U4SensorI
 }
 
 /**
-U4Tree::init
---------------
-
-**/
+ * Initializes the serialized geometry and its derived optical data.
+ *
+ * Legacy reemission properties are migrated before material serialization so
+ * the CPU and GPU representations use the same official WLS model.
+ */
 
 inline void U4Tree::init()
 {
     if(top == nullptr) return ;
+
+    const int numLegacyReemissionConverted = U4Material::ConvertLegacyReemissionToWLS();
+    LOG_IF(info, numLegacyReemissionConverted > 0)
+        << "converted legacy re-emission materials " << numLegacyReemissionConverted;
 
     LOG(LEVEL) << "-initSid" ;
     initSid();

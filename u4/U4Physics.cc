@@ -11,15 +11,14 @@ Boundary class changes need to match in all the below::
 
 **/
 
-
-#include <iomanip>
-#include "ssys.h"
-#include "sstr.h"
 #include "U4Physics.hh"
-#include "U4OpBoundaryProcess.h"
-#include "G4ProcessManager.hh"
 #include "G4FastSimulationManagerProcess.hh"
-
+#include "G4ProcessManager.hh"
+#include "U4Material.hh"
+#include "U4OpBoundaryProcess.h"
+#include "sstr.h"
+#include "ssys.h"
+#include <iomanip>
 
 #include "G4OpBoundaryProcess.hh"
 
@@ -27,10 +26,10 @@ Boundary class changes need to match in all the below::
 #include "SLOG.hh"
 const plog::Severity U4Physics::LEVEL = SLOG::EnvLevel("U4Physics", "DEBUG") ;
 
-U4Physics::U4Physics()
-    :
+U4Physics::U4Physics() :
     fCerenkov(nullptr),
     fScintillation(nullptr),
+    fWLS(nullptr),
     fAbsorption(nullptr),
     fRayleigh(nullptr),
     fBoundary(nullptr),
@@ -38,6 +37,7 @@ U4Physics::U4Physics()
 {
     Cerenkov_DISABLE = EInt(_Cerenkov_DISABLE, "0") ;
     Scintillation_DISABLE = EInt(_Scintillation_DISABLE, "0" );
+    OpWLS_DISABLE = EInt(_OpWLS_DISABLE, "0");
     OpAbsorption_DISABLE = EInt(_OpAbsorption_DISABLE, "0") ;
     OpRayleigh_DISABLE = EInt(_OpRayleigh_DISABLE, "0") ;
     OpBoundaryProcess_DISABLE = EInt(_OpBoundaryProcess_DISABLE, "0") ;
@@ -150,8 +150,9 @@ void U4Physics::ConstructEM()
   }
 }
 
-#include "Local_G4Cerenkov_modified.hh"
-#include "Local_DsG4Scintillation.hh"
+#include "G4Cerenkov.hh"
+#include "G4OpWLS.hh"
+#include "G4Scintillation.hh"
 
 #include "ShimG4OpAbsorption.hh"
 #include "ShimG4OpRayleigh.hh"
@@ -162,14 +163,14 @@ std::string U4Physics::desc() const
     std::stringstream ss ;
     ss
         << "U4Physics::desc" << "\n"
-        << std::setw(60) << _Cerenkov_DISABLE           << " : " << Cerenkov_DISABLE << "\n"
-        << std::setw(60) << _Scintillation_DISABLE      << " : " << Scintillation_DISABLE << "\n"
-        << std::setw(60) << _OpAbsorption_DISABLE       << " : " << OpAbsorption_DISABLE << "\n"
-        << std::setw(60) << _OpRayleigh_DISABLE         << " : " << OpRayleigh_DISABLE << "\n"
-        << std::setw(60) << _OpBoundaryProcess_DISABLE  << " : " << OpBoundaryProcess_DISABLE << "\n"
+        << std::setw(60) << _Cerenkov_DISABLE << " : " << Cerenkov_DISABLE << "\n"
+        << std::setw(60) << _Scintillation_DISABLE << " : " << Scintillation_DISABLE << "\n"
+        << std::setw(60) << _OpWLS_DISABLE << " : " << OpWLS_DISABLE << "\n"
+        << std::setw(60) << _OpAbsorption_DISABLE << " : " << OpAbsorption_DISABLE << "\n"
+        << std::setw(60) << _OpRayleigh_DISABLE << " : " << OpRayleigh_DISABLE << "\n"
+        << std::setw(60) << _OpBoundaryProcess_DISABLE << " : " << OpBoundaryProcess_DISABLE << "\n"
         << std::setw(60) << _OpBoundaryProcess_LASTPOST << " : " << OpBoundaryProcess_LASTPOST << "\n"
-        << std::setw(60) << _FastSim_ENABLE             << " : " << FastSim_ENABLE << "\n"
-        ;
+        << std::setw(60) << _FastSim_ENABLE << " : " << FastSim_ENABLE << "\n";
     std::string str = ss.str();
     return str ;
 }
@@ -212,40 +213,48 @@ int U4Physics::EInt(const char* key, const char* fallback)  // static
     return val ;
 }
 
-
 /**
-U4Physics::ConstructOp
------------------------
-
-Scintillation needs to come after absorption for reemission
-to sometimes happen for fStopAndKill
-
-But suspect coming after boundary may be causing
-the need for UseGivenVelocity_KLUDGE to get velocity and times correct see::
-
-    ~/o/notes/issues/Geant4_UseGivenVelocity_after_refraction_is_there_a_better_way_than_the_kludge_fix.rst
-
-
-**/
-
+ * Creates and registers the optical processes enabled by this physics list.
+ *
+ * Legacy reemission properties are migrated before process construction.
+ * Official Geant4 Cerenkov and scintillation processes are registered on
+ * applicable non-optical particles, while WLS, absorption, Rayleigh,
+ * boundary, and optional fast-simulation processes are registered on optical
+ * photons. Photon stacking remains controlled by `G4OpticalParameters` and
+ * Geant4 macro commands so GPU-only runs can suppress CPU optical
+ * secondaries.
+ */
 
 void U4Physics::ConstructOp()
 {
     LOG(info) << desc() ;
 
+    const int numLegacyReemissionConverted = U4Material::ConvertLegacyReemissionToWLS();
+    LOG_IF(info, numLegacyReemissionConverted > 0)
+        << "converted legacy re-emission materials " << numLegacyReemissionConverted;
+
     if(Cerenkov_DISABLE == 0)
     {
-        fCerenkov = new Local_G4Cerenkov_modified ;
+        fCerenkov = new G4Cerenkov;
         fCerenkov->SetMaxNumPhotonsPerStep(10000);
         fCerenkov->SetMaxBetaChangePerStep(10.0);
         fCerenkov->SetTrackSecondariesFirst(true);
-        fCerenkov->SetVerboseLevel(EInt("Local_G4Cerenkov_modified_verboseLevel", "0"));
+        fCerenkov->SetVerboseLevel(EInt("G4Cerenkov_verboseLevel", "0"));
     }
 
     if(Scintillation_DISABLE == 0)
     {
-        fScintillation = new Local_DsG4Scintillation(EInt("Local_DsG4Scintillation_opticksMode","0")) ;
+        fScintillation = new G4Scintillation;
+        fScintillation->SetScintillationTrackInfo(false);
         fScintillation->SetTrackSecondariesFirst(true);
+        fScintillation->SetVerboseLevel(EInt("G4Scintillation_verboseLevel", "0"));
+    }
+
+    if (OpWLS_DISABLE == 0)
+    {
+        fWLS = new G4OpWLS;
+        fWLS->UseTimeProfile("exponential");
+        fWLS->SetVerboseLevel(EInt("G4OpWLS_verboseLevel", "0"));
     }
 
     if(FastSim_ENABLE == 1 )
@@ -307,29 +316,19 @@ void U4Physics::ConstructOp()
     }
 }
 
-
 /**
-U4Physics::ConstructOp_opticalphoton
-------------------------------------
-
-TO AVOID THE UseGivenVelocity KLUDGE scintillation process needs to be after absorption
-BUT UNFORTUNATELY PUTTING Scintillation AFTER Absorption prevents REEMISSION from happening
-
-* ~/o/notes/issues/Geant4_UseGivenVelocity_KLUDGE_may_be_avoided_by_doing_PostStepDoIt_for_boundary_after_scintillation
-* ~/o/notes/issues/G4CXTest_GEOM_shakedown.rst
-
-**/
+ * Installs the configured processes that operate on optical photons.
+ *
+ * @param pmanager process manager that receives the optical processes
+ * @param particleName particle name, which must be `opticalphoton`
+ */
 
 void U4Physics::ConstructOp_opticalphoton(G4ProcessManager* pmanager, const G4String& particleName)
 {
     assert( particleName == "opticalphoton" );
 
-    if(fScintillation)
-    {
-        pmanager->AddProcess(fScintillation);
-        pmanager->SetProcessOrderingToLast(fScintillation, idxAtRest);
-        pmanager->SetProcessOrderingToLast(fScintillation, idxPostStep);
-    }
+    if (fWLS)
+        pmanager->AddDiscreteProcess(fWLS);
     if(fAbsorption)    pmanager->AddDiscreteProcess(fAbsorption);
     if(fRayleigh)      pmanager->AddDiscreteProcess(fRayleigh);
     if(fBoundary)      pmanager->AddDiscreteProcess(fBoundary);

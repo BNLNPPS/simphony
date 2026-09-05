@@ -27,6 +27,9 @@ target_link_libraries(${TGT} U4)
 set(TEST_SOURCES
    U4NistManagerTest.cc
    U4MaterialTest.cc
+   U4MaterialLegacyReemissionTest.cc
+   U4ScintSpectrumTest.cc
+   U4PhysicsStackingTest.cc
    U4MaterialPropertyVectorTest.cc
    U4TrackInfoTest.cc 
    U4TrackTest.cc

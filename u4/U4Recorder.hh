@@ -94,6 +94,15 @@ public:
     void addProcessHits_EPH(NP* eph_stats);
 
     int eventID ;
+    /**
+     * Per-event counts of reconstructed gensteps and labeled optical photons.
+     * These counters are reset by `BeginOfEventAction_`.
+     */
+    int            num_cerenkov_genstep;
+    int            num_scintillation_genstep;
+    int            num_cerenkov_photon;
+    int            num_scintillation_photon;
+    int            num_wls_photon;
     const G4Track* transient_fSuspend_track ;
     NP* rerun_rand ;
     SEvt* sev ;   // HMM: Not used as much as it should ? Lots of SEvt::Get_ECPU() instead, WHY ?
@@ -138,6 +147,47 @@ public:
 
 
     void UserSteppingAction(const G4Step*);
+
+    /**
+     * Reconstructs Cerenkov and scintillation gensteps from official process
+     * photon counts and labels any stacked CPU secondaries.
+     *
+     * @param step completed non-optical-particle step to inspect
+     */
+    void CollectGensteps(const G4Step*);
+    /**
+     * Propagates an optical parent's lineage to its single WLS secondary and
+     * rejects unsupported branching interactions.
+     *
+     * @param step optical-photon step whose secondaries are inspected
+     */
+    void LabelWLSSecondaries(const G4Step*);
+
+    /** Returns the number of reconstructed Cerenkov gensteps in this event. */
+    int getNumCerenkovGenstep() const
+    {
+        return num_cerenkov_genstep;
+    }
+    /** Returns the number of reconstructed scintillation gensteps in this event. */
+    int getNumScintillationGenstep() const
+    {
+        return num_scintillation_genstep;
+    }
+    /** Returns the number of Cerenkov photons assigned to gensteps in this event. */
+    int getNumCerenkovPhoton() const
+    {
+        return num_cerenkov_photon;
+    }
+    /** Returns the number of scintillation photons assigned to gensteps in this event. */
+    int getNumScintillationPhoton() const
+    {
+        return num_scintillation_photon;
+    }
+    /** Returns the number of WLS secondary photons labeled in this event. */
+    int getNumWLSPhoton() const
+    {
+        return num_wls_photon;
+    }
 
     // boundary process template type
     template<typename T>
