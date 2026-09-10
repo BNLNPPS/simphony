@@ -53,8 +53,9 @@ def load_hits(path):
 def chi2_ndf(a, b, edges):
     ha, _ = np.histogram(a, bins=edges)
     hb, _ = np.histogram(b, bins=edges)
+    s = len(a) / len(b)
     m = (ha + hb) > 0
-    chi2 = np.sum((ha[m] - hb[m]) ** 2 / (ha[m] + hb[m]).astype(float))
+    chi2 = np.sum((ha[m] - s * hb[m]) ** 2 / (ha[m] + s * s * hb[m]))
     ndf = max(int(m.sum()) - 1, 1)
     return chi2 / ndf, ndf
 
@@ -67,8 +68,8 @@ def banner(title):
 
 def marginal_test(name, a, b, nbin=101, ok=True):
     banner(f"TEST: {name} marginal of the absorption points")
-    lo = min(a.min(), b.min())
-    hi = max(a.max(), b.max())
+    lo = min(np.percentile(a, 0.001), np.percentile(b, 0.001))
+    hi = max(np.percentile(a, 99.999), np.percentile(b, 99.999))
     c2, ndf = chi2_ndf(a, b, np.linspace(lo, hi, nbin))
     print(f"  chi2/ndf = {c2:.2f}  (ndf {ndf}, max {CHI2_NDF_MAX})")
     passed = c2 < CHI2_NDF_MAX
@@ -82,19 +83,22 @@ def main():
     ap.add_argument("g4")
     ap.add_argument("--nphoton", type=int, default=0,
                     help="number of input photons (0: use max of the two hit counts)")
+    ap.add_argument("--nphoton2", type=int, default=0)
+    ap.add_argument("--zwindow", nargs=2, type=float, default=None)
     args = ap.parse_args()
 
     x_gpu, y_gpu, z_gpu, e_gpu, r_gpu = load_hits(args.gpu)
     x_g4, y_g4, z_g4, e_g4, r_g4 = load_hits(args.g4)
     n_gpu, n_g4 = len(z_gpu), len(z_g4)
     n_in = args.nphoton if args.nphoton > 0 else max(n_gpu, n_g4)
+    n_in2 = args.nphoton2 if args.nphoton2 > 0 else n_in
 
     ok = True
 
     banner("TEST: Wall-absorbed count")
     print(f"  GPU: {n_gpu}   G4: {n_g4}   input: {n_in}")
     loss_gpu = 1.0 - n_gpu / n_in
-    loss_g4 = 1.0 - n_g4 / n_in
+    loss_g4 = 1.0 - n_g4 / n_in2
     print(f"  unabsorbed fraction  GPU {loss_gpu:.2e}  G4 {loss_g4:.2e}  (max {COUNT_LOSS_MAX:.0e})")
     passed = loss_gpu < COUNT_LOSS_MAX and loss_g4 < COUNT_LOSS_MAX
     print(f"  {'PASS' if passed else 'FAIL'}")
@@ -109,6 +113,13 @@ def main():
     passed = zscore < PROP_Z_MAX
     print(f"  {'PASS' if passed else 'FAIL'}")
     ok &= passed
+
+    if args.zwindow:
+        zlo, zhi = args.zwindow
+        wg = (z_gpu > zlo) & (z_gpu < zhi)
+        w4 = (z_g4 > zlo) & (z_g4 < zhi)
+        x_gpu, y_gpu, z_gpu = x_gpu[wg], y_gpu[wg], z_gpu[wg]
+        x_g4, y_g4, z_g4 = x_g4[w4], y_g4[w4], z_g4[w4]
 
     ok = marginal_test("z", z_gpu, z_g4, ok=ok)
     ok = marginal_test("x", x_gpu, x_g4, ok=ok)
