@@ -87,3 +87,9 @@ echo ""
 
 python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
     "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/synrad_g4_hits.npy" --nphoton "$NPHOTON"
+
+mkdir -p "$RUN_DIR/unpaired"
+"$BUILD_DIR/synrad_g4" -g analytic -n "$NPHOTON" -s $((SEED + 1)) -I "$BEAM" -f 0 -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/g4.log" 2>&1
+python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
+    "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/unpaired/synrad_g4_hits.npy" \
+    --nphoton "$NPHOTON" --zwindow 500 49500

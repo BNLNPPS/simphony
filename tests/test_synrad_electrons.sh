@@ -95,3 +95,11 @@ echo ""
 
 python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
     "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/synrad_g4_hits.npy" --nphoton "$NBIRTH"
+
+mkdir -p "$RUN_DIR/unpaired"
+"$BUILD_DIR/synrad_g4" -g analytic -e "$NELECTRON" -B "$RUN_DIR/unpaired/sr_births.npy" -s $((SEED + 1)) -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/gen.log" 2>&1
+"$BUILD_DIR/synrad_g4" -g analytic -i "$RUN_DIR/unpaired/sr_births.npy" -s $((SEED + 1)) -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/g4.log" 2>&1
+NBIRTH2=$(python3 -c "import numpy as np; print(np.load('$RUN_DIR/unpaired/sr_births.npy').shape[0])")
+python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
+    "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/unpaired/synrad_g4_hits.npy" \
+    --nphoton "$NBIRTH" --nphoton2 "$NBIRTH2" --zwindow 500 49500
