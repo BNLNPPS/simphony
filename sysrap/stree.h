@@ -3020,7 +3020,13 @@ stree::get_frame_instanced
 inline int stree::get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out, VTR* t_stack) const
 {
     int ii = pick_lvid_ordinal_repeat_ordinal_inst_( lvid, lvid_ordinal, repeat_ordinal );
+    if (ii < 0 || ii >= int(inst_nidx.size()))
+        return 1;
+
     int nidx = inst_nidx[ii] ;
+    if (nidx < 0 || nidx >= int(nds.size()))
+        return 2;
+
     const snode& nd = nds[nidx] ;
 
     //assert( nd.lvid == lvid );
