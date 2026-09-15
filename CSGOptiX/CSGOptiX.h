@@ -147,6 +147,17 @@ private:
 
     bool handle_snap(int wanted_snap);
 
+    /** Render and download one display-ready four-channel frame.
+
+    RGB contains the selected normal or depth visualization; the fourth byte
+    contains z-depth rather than opacity. The returned storage is owned by
+    this CSGOptiX instance and remains valid until the next frame download or
+    destruction.
+    **/
+    const unsigned char* renderFrame();
+    int getRenderWidth() const;
+    int getRenderHeight() const;
+
     double render(const char* stem_=nullptr);
     void   render_save(const char* stem_=nullptr);
     void   render_save_inverted(const char* stem_=nullptr);

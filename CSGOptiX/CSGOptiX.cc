@@ -1200,6 +1200,27 @@ bool CSGOptiX::handle_snap(int wanted_snap)
     return true ;
 }
 
+const unsigned char* CSGOptiX::renderFrame()
+{
+    assert(framebuf);
+    render_launch();
+    framebuf->download();
+    return framebuf->pixel.empty()
+               ? nullptr
+               : reinterpret_cast<const unsigned char*>(framebuf->pixel.data());
+}
+
+int CSGOptiX::getRenderWidth() const
+{
+    assert(framebuf);
+    return framebuf->width;
+}
+
+int CSGOptiX::getRenderHeight() const
+{
+    assert(framebuf);
+    return framebuf->height;
+}
 
 /**
 CSGOptiX::render (formerly render_snap)
