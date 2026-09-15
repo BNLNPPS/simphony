@@ -54,6 +54,40 @@ the analytic CSG data, triangle scene, material and surface data, transforms,
 and instance metadata. If no CUDA device is available, conversion and saving
 still proceed; only creation of the in-memory OptiX geometry is skipped.
 
+To inspect the converted analytic CSG geometry interactively with the same
+OptiX intersection programs used for photon transport, run:
+
+```bash
+simrender -g detector.gdml
+```
+
+The viewer displays surface normals by default. Use the mouse to orbit, pan,
+and zoom, or use the corresponding keyboard controls:
+
+- Arrow keys orbit; Shift+arrow keys pan.
+- PageUp/PageDown dolly forward/back; `+`/`-` zoom in/out.
+- `W`/`S`, `A`/`D`, and `Q`/`E` move forward/back, left/right, and
+  up/down. Hold Shift for faster movement.
+- `1`/`2` select front/back, `3`/`4` left/right, and `5`/`6`
+  top/bottom orthographic views. These are views from -Y/+Y, -X/+X, and
+  +Z/-Z respectively, looking toward the selected geometry frame.
+- `O` switches projection, `H` restores the launch camera, and `X` switches
+  between normal and depth display.
+
+A perspective view sends rays from one eye point so distant objects appear
+smaller. This foreshortening provides useful depth cues and makes free camera
+navigation feel natural. An orthographic view sends parallel rays, so apparent
+size does not depend on distance. The axis-aligned orthographic presets are
+therefore better for checking silhouettes, alignment, symmetry, and relative
+dimensions without perspective distortion.
+
+`simrender --controls` or F1 prints the complete key map. `simrender --help`
+lists initial camera, frame, and resolution options. This is a geometric
+intersection diagnostic: it does not apply material or optical-surface physics.
+
+Configure with `-DSIMPHONY_BUILD_INTERACTIVE_RENDERER=OFF` when only the
+headless simulation and rendering libraries are needed.
+
 Use a new output directory for each conversion. The current writer does not
 clear an existing `CSGFoundry` directory first, so reusing a directory can
 leave files from an older conversion mixed with the new output.

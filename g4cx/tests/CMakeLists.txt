@@ -46,7 +46,8 @@ foreach(SRC ${TEST_SOURCES})
     target_link_libraries(${TGT} G4CX CUDA::cudart)
 
     set(TEST_ARGS)
-    if("${TGT}" STREQUAL "G4CXOpticks_setGeometry_Test")
+    if("${TGT}" STREQUAL "G4CXOpticks_setGeometry_Test" OR
+       "${TGT}" STREQUAL "G4CXRenderTest")
        set(TEST_ARGS ${SIMPHONY_GEOM_FILE})
     endif()
 
@@ -59,4 +60,8 @@ foreach(SRC ${TEST_SOURCES})
     )
 endforeach()
 
-set_tests_properties(${name}.G4CXRenderTest PROPERTIES DISABLED TRUE)
+set_tests_properties(${name}.G4CXRenderTest PROPERTIES
+    LABELS "gpu;integration"
+    SKIP_RETURN_CODE 77
+    TIMEOUT 120
+)
