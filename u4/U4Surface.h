@@ -67,12 +67,20 @@ struct U4Surface
     static void    Collect( std::vector<const G4LogicalSurface*>& surfaces ); 
     static void    CollectRawNames( std::vector<std::string>& rawnames, const std::vector<const G4LogicalSurface*>& surfaces ); 
 
+    static constexpr const char* PERMIT_UNSUPPORTED = "U4Surface__PERMIT_UNSUPPORTED";
+    static double Prop(const G4MaterialPropertiesTable* mpt, const char* key, bool lo = false);
+    static void Check(const std::vector<const G4LogicalSurface*>& surfaces);
+
     static NPFold* MakeFold(const std::vector<const G4LogicalSurface*>& surfaces, const std::vector<std::string>& keys ); 
     static NPFold* MakeFold(); 
     static G4LogicalSurface* Find( const G4VPhysicalVolume* thePrePV, const G4VPhysicalVolume* thePostPV ) ;  
 
 };
 
+#include "ssys.h"
+#include <algorithm>
+#include <set>
+#include <stdexcept>
 
 #include "U4Material.hh"
 #include "U4MaterialPropertiesTable.h"
@@ -315,7 +323,133 @@ inline void U4Surface::CollectRawNames( std::vector<std::string>& rawnames, cons
     }
 }
 
+inline double U4Surface::Prop(const G4MaterialPropertiesTable* mpt, const char* key, bool lo)
+{
+    const G4MaterialPropertyVector* v = mpt->GetProperty(key);
+    if (v == nullptr || v->GetVectorLength() < 2)
+        return 0.;
+    double p = (*v)[0];
+    for (std::size_t i = 1; i < v->GetVectorLength(); i++)
+        p = lo ? std::min(p, (*v)[i]) : std::max(p, (*v)[i]);
+    return p;
+}
 
+inline void U4Surface::Check(const std::vector<const G4LogicalSurface*>& surfaces)
+{
+    std::set<const G4OpticalSurface*> seen;
+    std::stringstream                 bad;
+    std::stringstream                 approx;
+
+    for (unsigned i = 0; i < surfaces.size(); i++)
+    {
+        const G4OpticalSurface* os = dynamic_cast<const G4OpticalSurface*>(surfaces[i]->GetSurfaceProperty());
+        if (os == nullptr)
+            throw std::runtime_error("U4Surface::Check : " + surfaces[i]->GetName() + " has no G4OpticalSurface, nothing to translate");
+        if (!seen.insert(os).second)
+            continue;
+
+        const char*    sn = os->GetName().c_str();
+        const unsigned type = os->GetType();
+        const unsigned model = os->GetModel();
+        const unsigned finish = os->GetFinish();
+        const bool     metal = type == dielectric_metal;
+        const bool     dd = type == dielectric_dielectric;
+        const bool     basic = model == glisur || model == unified;
+
+        if (!metal && !dd)
+            bad << sn << " : type " << U4SurfaceType::Name(type) << " has no GPU boundary model\n";
+
+        if (!basic)
+            bad << sn << " : model " << U4OpticalSurfaceModel::Name(model) << " has no GPU implementation\n";
+
+        if (finish > groundbackpainted)
+            bad << sn << " : finish " << finish << " names a measured wrapping with no GPU implementation\n";
+
+        if ((!metal && !dd) || !basic || finish > groundbackpainted)
+            continue;
+
+        const G4MaterialPropertiesTable* mpt = os->GetMaterialPropertiesTable();
+        if (mpt == nullptr)
+        {
+            bad << sn << " : no material properties table, nothing to translate\n";
+            continue;
+        }
+
+        const std::vector<G4String>& pname = mpt->GetMaterialPropertyNames();
+        for (unsigned j = 0; j < pname.size(); j++)
+        {
+            const G4MaterialPropertyVector* v = mpt->GetProperty(pname[j]);
+            if (v && v->GetVectorLength() < 2)
+                approx << sn << " : " << pname[j] << " has a single node, so G4PhysicsVector::Value reads past it, 0 in practice, for Geant4 and the payload alike\n";
+        }
+
+        const bool   painted = U4OpticalSurfaceFinish::IsPainted(finish);
+        const bool   backpainted = finish == polishedbackpainted || finish == groundbackpainted;
+        const bool   specular = U4OpticalSurfaceFinish::IsPolished(finish);
+        const double effi = Prop(mpt, "EFFICIENCY");
+        const double refl = Prop(mpt, "REFLECTIVITY");
+        const double tran = Prop(mpt, "TRANSMITTANCE");
+        const bool   sensor = effi > 0.;
+        const bool   reflects = !sensor && refl > 0.;
+        const bool   cplx = mpt->GetProperty("REALRINDEX") && mpt->GetProperty("IMAGINARYRINDEX");
+        const bool   choose = model == unified && finish != polished && !(dd && painted && !backpainted);
+        const double ss = Prop(mpt, "SPECULARSPIKECONSTANT");
+        const double sl = Prop(mpt, "SPECULARLOBECONSTANT");
+        const double bs = Prop(mpt, "BACKSCATTERCONSTANT");
+        const bool   g4spike = Prop(mpt, "SPECULARSPIKECONSTANT", true) >= 1. || (Prop(mpt, "SPECULARLOBECONSTANT", true) >= 1. && os->GetSigmaAlpha() == 0.);
+
+        if (backpainted && mpt->GetProperty("RINDEX") == nullptr)
+            bad << sn << " : " << U4OpticalSurfaceFinish::Name(finish) << " without RINDEX on the surface makes Geant4 kill every photon as NoRINDEX\n";
+
+        if (dd && backpainted)
+            bad << sn << " : " << U4OpticalSurfaceFinish::Name(finish) << " is a two interface stack, the payload has one interface\n";
+
+        if (reflects && choose && (specular ? !g4spike : ss + sl + bs > 0.))
+            bad << sn << " : unified " << U4OpticalSurfaceFinish::Name(finish) << " reflects by ChooseReflection with spike " << ss << " lobe " << sl << " backscatter " << bs
+                << " and otherwise Lambertian, the payload is pure " << (specular ? "specular" : "Lambertian") << "\n";
+
+        if (reflects && metal && model == glisur && painted && !specular)
+            bad << sn << " : " << U4OpticalSurfaceFinish::Name(finish) << " on dielectric_metal+glisur reflects specularly in Geant4, the payload is Lambertian\n";
+
+        if (cplx && mpt->GetProperty("REFLECTIVITY") == nullptr)
+            bad << sn << " : REALRINDEX with IMAGINARYRINDEX gives an angle dependent Fresnel reflectivity, the payload has no REFLECTIVITY and absorbs\n";
+
+        if (!cplx && mpt->GetProperty("REFLECTIVITY") == nullptr)
+            approx << sn << " : no REFLECTIVITY, so Geant4 " << (dd && !painted ? "refracts or reflects" : "reflects") << " every photon and never absorbs or detects, the payload "
+                   << (sensor ? "detects EFFICIENCY " : "absorbs ") << (sensor ? effi : 1.) << " of them\n";
+
+        if (tran > 0.)
+            approx << sn << " : TRANSMITTANCE " << tran << " passes straight through in Geant4, the payload never transmits\n";
+
+        if (reflects && dd && !painted)
+            approx << sn << " : REFLECTIVITY " << refl << " on dielectric_dielectric is the fraction handed to Fresnel and Snell in Geant4, which mostly transmits, the payload reflects it\n";
+
+        if (reflects && metal && model == glisur && finish == ground)
+            approx << sn << " : ground on dielectric_metal+glisur reflects specularly in Geant4 about a facet normal smeared by 1-polish " << 1. - os->GetPolish() << ", the payload is Lambertian\n";
+
+        if (sensor && refl > 0.)
+            approx << sn << " : EFFICIENCY " << effi << " makes addSurface a non reflecting sensor, dropping REFLECTIVITY " << refl << " that makes Geant4 detect (1-REFLECTIVITY)*EFFICIENCY\n";
+    }
+
+    const std::string sbad = bad.str();
+    const std::string sapprox = approx.str();
+
+    if (!sapprox.empty())
+        std::cerr << "U4Surface::Check : " << std::count(sapprox.begin(), sapprox.end(), '\n') << " approximated surface feature(s), see docs/physics.md\n"
+                  << sapprox;
+
+    if (sbad.empty())
+        return;
+
+    std::stringstream msg;
+    msg << "U4Surface::Check : " << std::count(sbad.begin(), sbad.end(), '\n') << " unsupported surface feature(s), the GPU propagation would not reproduce the Geant4 surface physics"
+        << " [" << PERMIT_UNSUPPORTED << "=1 to translate anyway]\n"
+        << sbad;
+
+    if (!ssys::getenvbool(PERMIT_UNSUPPORTED))
+        throw std::runtime_error(msg.str());
+    std::cerr << msg.str();
+}
 
 /**
 U4Surface::MakeFold
@@ -327,7 +461,8 @@ Canonical usage from U4Tree::initSurfaces creating the stree::surface NPFold.
 
 inline NPFold* U4Surface::MakeFold(const std::vector<const G4LogicalSurface*>& surfaces, const std::vector<std::string>& keys ) // static
 {
-    assert( surfaces.size() == keys.size() ); 
+    assert(surfaces.size() == keys.size());
+    Check(surfaces);
 
     NPFold* fold = new NPFold ; 
     for(unsigned i=0 ; i < surfaces.size() ; i++)
@@ -349,8 +484,7 @@ inline NPFold* U4Surface::MakeFold(const std::vector<const G4LogicalSurface*>& s
         const char* osn = os->GetName().c_str() ; 
         G4MaterialPropertiesTable* mpt = os->GetMaterialPropertiesTable() ;
 
-        assert(mpt);  
-        NPFold* sub = U4MaterialPropertiesTable::MakeFold(mpt) ; 
+        NPFold* sub = mpt ? U4MaterialPropertiesTable::MakeFold(mpt) : new NPFold;
 
         sub->set_meta<std::string>("rawname", rawname) ; 
         sub->set_meta<std::string>("OpticalSurfaceName", osn) ; 
