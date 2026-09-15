@@ -1,22 +1,4 @@
 #pragma once
-/**
-CSGImport.h 
-==============
-
-See::
-
-    stree_load_test
-    CSGFoundry_importTree_Test
-
-
-CAUTION : SOME PARALLEL DEV NEEDS REVIEW, CONSOLIDATION::
-
-    CSG_stree_Convert.h
-    CSG_stree_Convert_test.cc
-    CSG_stree_Convert_test.sh
-
-
-**/
 
 #include <string>
 #include "plog/Severity.h"
@@ -59,6 +41,3 @@ struct CSG_API CSGImport  // HMM: maybe CSGCreate is a better name ?
     CSGNode*  importListnode(int nodeOffset, int partIdx, const snode& node, const sn* nd); 
 
 }; 
-
-
-

@@ -2180,28 +2180,19 @@ inline int stree::find_lvid_node( const char* q_spec ) const
     return nidx ;
 }
 
-
-
-
-
-
-
-
-
-
-
 /**
 stree::pick_lvid_ordinal_node
 -------------------------------
 
-For ridx_type '?' look for the frame first using rem 'R' nodes and then tri 'T' nodes
+For ridx_type '?' look for the frame first using rem 'R' nodes and then tri 'T' nodes.
+For ridx_type 'N' search the full nds vector.
 
 **/
 inline const snode* stree::pick_lvid_ordinal_node( int lvid, int lvid_ordinal, char ridx_type  ) const
 {
     const snode* _node = nullptr ;
-    assert( ridx_type == 'R' || ridx_type == 'T' || ridx_type == '?' );
-    if( ridx_type == 'R' || ridx_type == 'T' )  // remainder OR triangulated
+    assert(ridx_type == 'N' || ridx_type == 'R' || ridx_type == 'T' || ridx_type == '?');
+    if (ridx_type == 'N' || ridx_type == 'R' || ridx_type == 'T') // full, remainder OR triangulated
     {
         _node = _pick_lvid_ordinal_node(lvid, lvid_ordinal, ridx_type );
     }
@@ -3029,7 +3020,13 @@ stree::get_frame_instanced
 inline int stree::get_frame_instanced(sframe& f, int lvid, int lvid_ordinal, int repeat_ordinal, std::ostream* out, VTR* t_stack) const
 {
     int ii = pick_lvid_ordinal_repeat_ordinal_inst_( lvid, lvid_ordinal, repeat_ordinal );
+    if (ii < 0 || ii >= int(inst_nidx.size()))
+        return 1;
+
     int nidx = inst_nidx[ii] ;
+    if (nidx < 0 || nidx >= int(nds.size()))
+        return 2;
+
     const snode& nd = nds[nidx] ;
 
     //assert( nd.lvid == lvid );
@@ -6188,7 +6185,6 @@ inline void stree::get_remainder_nidx(std::vector<int>& nodes ) const
     get_repeat_nidx(nodes, q_repeat_index, q_repeat_ordinal);
 }
 
-
 /**
 stree::get_repeat_node
 -----------------------
@@ -6201,11 +6197,8 @@ not handle the rem and tri nodes.
 ::
 
    TEST=get_repeat_node stree_load_test
-
-   TEST=get_repeat_node RIDX=1 RORD=10 stree_load_test run
-
-   TEST=get_repeat_node RIDX=9 RORD=0 stree_load_test run
-
+   TEST=get_repeat_node RIDX=1 RORD=10 stree_load_test
+   TEST=get_repeat_node RIDX=9 RORD=0 stree_load_test
 **/
 
 inline void stree::get_repeat_node(std::vector<snode>& nodes, int q_repeat_index, int q_repeat_ordinal ) const
@@ -6484,8 +6477,6 @@ stree::get_global_aabb_sibling_overlaps
 -----------------------------------------
 
 TEST=get_global_aabb_sibling_overlaps stree_load_test
-TEST=get_global_aabb_sibling_overlaps stree_load_test pdb
-
 **/
 
 
