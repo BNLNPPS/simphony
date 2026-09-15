@@ -92,7 +92,6 @@ const char* SEventConfig::_PropagateEpsilon0MaskDefault = "TO,CK,SI,SC,RE" ; // 
 unsigned SEventConfig::_PropagateRefineDefault = 0u ;
 float SEventConfig::_PropagateRefineDistanceDefault = 5000.f ;
 
-
 const char* SEventConfig::_InputGenstepDefault = nullptr ;
 const char* SEventConfig::_InputGenstepSelectionDefault = nullptr ;
 const char* SEventConfig::_InputPhotonDefault = nullptr ;
@@ -287,6 +286,8 @@ unsigned SEventConfig::_PropagateEpsilon0Mask  = OpticksPhoton::GetFlagMask(ssys
 std::string SEventConfig::PropagateEpsilon0MaskLabel(){  return OpticksPhoton::FlagMaskLabel( _PropagateEpsilon0Mask ) ; }
 unsigned SEventConfig::_PropagateRefine = ssys::getenvunsigned(kPropagateRefine, _PropagateRefineDefault ) ;
 float SEventConfig::_PropagateRefineDistance = ssys::getenvfloat(kPropagateRefineDistance, _PropagateRefineDistanceDefault ) ;
+int      SEventConfig::_SerInterval = 0;
+int      SEventConfig::_SerHint = 0;
 
 const char* SEventConfig::_InputGenstep = ssys::getenvvar(kInputGenstep, _InputGenstepDefault );
 const char* SEventConfig::_InputGenstepSelection = ssys::getenvvar(kInputGenstepSelection, _InputGenstepSelectionDefault );
@@ -412,7 +413,6 @@ float SEventConfig::PropagateEpsilon0(){ return _PropagateEpsilon0 ; }
 unsigned SEventConfig::PropagateEpsilon0Mask(){ return _PropagateEpsilon0Mask ; }
 unsigned SEventConfig::PropagateRefine(){         return _PropagateRefine ; }
 float    SEventConfig::PropagateRefineDistance(){ return _PropagateRefineDistance ; }
-
 
 /**
 SEventConfig::_InputGenstepPath

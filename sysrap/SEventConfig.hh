@@ -631,6 +631,8 @@ struct SYSRAP_API SEventConfig
     static unsigned _PropagateEpsilon0Mask ;
     static float _PropagateRefineDistance ;
     static unsigned _PropagateRefine ;
+    static int      _SerInterval;
+    static int      _SerHint;
 
     static const char* _InputGenstep ;
     static const char* _InputGenstepSelection ;
