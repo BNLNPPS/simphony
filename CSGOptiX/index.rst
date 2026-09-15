@@ -228,9 +228,6 @@ Params.h
 Frame.h
     render pixels holder  
 
-BI.h
-    wrapper for OptixBuildInput 
-
 Binding.h
     GPU/CPU types, including SbtRecord : RaygenData, MissData, HitGroupData (effectively Prim)
 

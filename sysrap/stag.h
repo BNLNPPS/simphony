@@ -330,6 +330,7 @@ STAG_METHOD void stag::zero()
 {
     for(unsigned i=0 ; i < NSEQ ; i++) seqtag[i] = 0ull ; 
 }
+
 STAG_METHOD void stag::set(unsigned slot, unsigned tag) 
 {
     unsigned iseq = slot/SLOTMAX ;  // iseq:element to write to 
@@ -341,10 +342,9 @@ STAG_METHOD void stag::set(unsigned slot, unsigned tag)
     // gives the appropriate shift for the iseq element 
 
 }
+
 STAG_METHOD unsigned stag::get(unsigned slot) const 
 {
     unsigned iseq = slot/SLOTMAX ; 
     return iseq < NSEQ ? ( seqtag[iseq] >> BITS*(slot - iseq*SLOTMAX) ) & MASK : 0  ; 
 }
-
-

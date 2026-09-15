@@ -28,7 +28,6 @@ Note the distinction in the names of accessors:
    cheap action, done as many times as needed, returning a pointer to
    already allocated memory that is separately managed, eg within NPFold
 
-
 header-only INSTANCE problem
 ------------------------------
 
@@ -126,8 +125,6 @@ struct SYSRAP_API SEvt : public SCompProvider
     static constexpr const char* SEvt__DIRECTORY = "SEvt__DIRECTORY" ;
     static bool DIRECTORY ;
 
-
-
     static constexpr const char* SEvt__CLEAR_SIGINT = "SEvt__CLEAR_SIGINT" ;
     static bool CLEAR_SIGINT ;
 
@@ -140,15 +137,11 @@ struct SYSRAP_API SEvt : public SCompProvider
     static constexpr const char* SEvt__RUNMETA = "SEvt__RUNMETA" ;
     static bool RUNMETA ;
 
-
     static constexpr const char* SEvt__SAVE_NOTHING = "SEvt__SAVE_NOTHING" ;
     static bool SAVE_NOTHING ;
 
     static constexpr const char* SEvt__SAVE_RUNDIR = "SEvt__SAVE_RUNDIR" ;
     static bool SAVE_RUNDIR ;
-
-
-
 
     enum { SEvt__SEvt,
            SEvt__init,
@@ -171,7 +164,6 @@ struct SYSRAP_API SEvt : public SCompProvider
     const char* descStage() const ;
     void setStage(int stage_);
     int  getStage() const ;
-
 
     void* async_handle = nullptr;
 
@@ -259,13 +251,11 @@ struct SYSRAP_API SEvt : public SCompProvider
     unsigned hit_total ;
     unsigned addGenstep_array ;
 
-
-    // [--- these vectors are cleared by SEvt::clear_genstep_vector
+    // These vectors are cleared by SEvt::clear_genstep_vector
     std::vector<quad6>   genstep ;
     std::vector<sgs>     gs ;
-    // ]
 
-    // [--- these vectors are cleared by SEvt::clear_output_vector
+    // These vectors are cleared by SEvt::clear_output_vector
     std::vector<spho>    pho ;   // spho are label structs holding 4*int
     std::vector<int>     slot ;
     std::vector<sphoton> photon ;
@@ -278,14 +268,11 @@ struct SYSRAP_API SEvt : public SCompProvider
     std::vector<quad4>   simtrace ;
     std::vector<quad4>   aux ;
     std::vector<quad6>   sup ;
-    // ]---- these vectors are cleared by SEvt::clear_output_vector
-
 
     // current_* are saved into the vectors on calling SEvt::pointPhoton
     spho    current_pho = {} ;
     quad2   current_prd = {} ;
     sctx    current_ctx = {};
-
 
     static constexpr const int64_t UNDEF = ~0u ;
     static bool IsDefined(unsigned val);
@@ -296,11 +283,9 @@ struct SYSRAP_API SEvt : public SCompProvider
     static uint64_t TimerStartCount();
     static std::string TimerDesc();
 
-
     static NP* Init_RUN_META();
     static NP* RUN_META ;
     static std::string* RunMetaString();
-
 
     static NP* UU ;
     static NP* UU_BURN ;
@@ -318,9 +303,9 @@ struct SYSRAP_API SEvt : public SCompProvider
     static std::string DescINSTANCE();
 
 private:
-
     SEvt();
     void init();
+
 public:
     void setFoldVerbose(bool v);
 
@@ -331,7 +316,6 @@ public:
 
     static constexpr const char* SearchCFBase_RELF = "CSGFoundry/solid.npy" ;
     const char* getSearchCFBase() const ;
-
 
     static const char* INPUT_GENSTEP_DIR ;
     static const char* INPUT_PHOTON_DIR ;
@@ -364,16 +348,8 @@ public:
     NP* getInputPhoton() const ;    // returns input_photon_transformed when exists
     bool hasInputPhotonTransformed() const ;
 
-
-
     NP* gatherInputGenstep() const ;   // returns a copy of the input genstep array
     NP* gatherInputPhoton() const ;   // returns a copy of the input photon array
-
-
-
-
-
-
 
     void initG4State() ;
     NP* makeG4State() const ;
@@ -388,14 +364,12 @@ public:
     static const bool transformInputPhoton_WIDE ;
     void transformInputPhoton();
 
-
     NP* createInputGenstep_simtrace();
     NP* createInputGenstep_simulate();
     NP* createInputGenstep_configured();
     void addInputGenstep();
 
     void assertZeroGenstep();
-
 
     const char* getFrameId() const ;
     const NP*   getFrameArray() const ;
@@ -409,14 +383,11 @@ public:
 
     //// below decl order matches impl order : KEEP IT THAT WAY
 
-
     static SEvt* CreateSimtraceEvent();
-
 
     void setCompProvider(const SCompProvider* provider);
     bool isSelfProvider() const ;
     std::string descProvider() const ;
-
 
     NP* gatherDomain() const ;
 
@@ -442,7 +413,6 @@ public:
     bool isLastEvtInstance() const ;   // within the event
 
     SEvt* getSibling() const ;
-
 
     static bool Exists(int idx);
     static bool Exists_ECPU();
@@ -472,26 +442,18 @@ public:
     static void Save(const char* dir);
     static bool HaveDistinctOutputDirs();
 
-
     static void SaveGenstepLabels(const char* dir, const char* name="gsl.npy");
 
     static void BeginOfRun();
     static void EndOfRun();
-    //static const int EndOfRun_SProf ;
-
 
     template<typename T>
     static void SetRunMeta(const char* k, T v );
 
     static void SetRunMetaString(const char* k, const char* v );
 
-    //static void SetRunProf(const char* k, const sprof& v);
-    //static void SetRunProf(const char* k);  // NOW
-    //void setRunProf_Annotated(const char* hdr) const  ;
-
     static bool IsSaveNothing();
     static void SaveRunMeta(const char* base=nullptr );
-
 
     void setMetaString(const char* k, const char* v);
     void setMetaProf(  const char* k, const sprof& v);
@@ -500,25 +462,15 @@ public:
     template<typename T>
     void setMeta( const char* k, T v );
 
-
     void beginOfEvent(int eventID);
     void endOfEvent(int eventID);
     void reset_counter();
 
     void endMeta();
 
-
     static bool IndexPermitted(int index);   // index is 1-based
     static int  GetIndex(int idx);
     static S4RandomArray* GetRandomArray(int idx);
-
-
-    // MOVED TO SEventConfig::EventReldir
-    //static const char*  DEFAULT_RELDIR ;
-    //static const char* RELDIR ;
-    //static void SetReldir(const char* reldir);
-    //static const char* GetReldir();
-
 
     static int64_t GetNumPhotonCollected(int idx);
     static int64_t GetNumPhotonGenstepMax(int idx);
@@ -527,7 +479,6 @@ public:
     static int64_t GetNumHit(int idx) ;
     static int64_t GetNumHit_EGPU() ;
     static int64_t GetNumHit_ECPU() ;
-
 
     static NP* GatherGenstep(int idx);
     static NP* GetInputPhoton(int idx);
@@ -559,7 +510,6 @@ public:
     void setInstance(int instance);
     int getInstance() const ;
 
-
     int64_t getNumGenstepFromGenstep() const ; // number of collected gensteps from size of collected gensteps vector
     int64_t getNumPhotonFromGenstep() const ;  // total photons since last clear from looping over collected gensteps
     int64_t getNumGenstepCollected() const ;   // total collected genstep since last clear
@@ -585,7 +535,6 @@ public:
     void rjoin_resumePhoton(const spho& label); // reemission rjoin AND FastSim->SlowSim resume
     void rjoinPhoton(const spho& sp);   // reemission rjoin
 
-
     void rjoinRecordCheck(const sphoton& rj, const sphoton& ph  ) const ;
     static void ComparePhotonDump(const sphoton& a, const sphoton& b );
     void rjoinPhotonCheck(const sphoton& ph) const ;
@@ -607,11 +556,7 @@ public:
 
     void checkPhotonLineage(const spho& sp) const ;
 
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-///////// below methods handle gathering arrays and persisting, not array content //////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
+ .  // below methods handle gathering arrays and persisting, not array content
 
     NP* gatherPho0() const ;   // unordered push_back as they come
     NP* gatherPho() const ;    // resized at genstep and slotted in
@@ -623,9 +568,7 @@ public:
     NP*    makeGenstepArrayFromVector() const ;   // formerly misnamed getGenstepArray
     std::string descGenstepArrayFromVector() const;
 
-
     bool haveGenstepVec() const ;
-
 
     NP* gatherPhoton() const ;
     NP* gatherRecord() const ;
@@ -641,7 +584,6 @@ public:
     NP* gatherHitLite() const ;
     NP* gatherSimtrace() const ;
 
-
     NP* makePhoton() const ;
     NP* makePhotonLite() const ;
 
@@ -655,7 +597,6 @@ public:
     NP* makeFlat() const ;
     NP* makeSimtrace() const ;
 
-
     static constexpr const char* TYPENAME = "SEvt" ;
 
     //[ SCompProvider methods
@@ -663,7 +604,6 @@ public:
     const char* getTypeName() const ;
     NP* gatherComponent(unsigned comp) const ;
     //] SCompProvider methods
-
 
     NP* gatherComponent_(unsigned comp) const ;
 
@@ -689,15 +629,10 @@ public:
     void addEventConfigArray() ;
     void addProcessHits_EPH(NP* eph_meta);
 
-
-
     int  load() ;
-
-
 
     bool hasIndex() const ;
     bool hasInstance() const ;
-
 
     static const char* DefaultBase(const char* base_=nullptr) ;
     static const char* RunDir( const char* base_=nullptr );
@@ -706,7 +641,6 @@ public:
     char getInstancePrefix() const ;
     std::string getIndexString_(const char* hdr) const ;
     const char* getIndexString(const char* hdr) const ;
-
 
     std::string descSaveDir(const char* dir_) const ;
 
@@ -719,7 +653,6 @@ public:
     void save(const char* base, const char* reldir );
     void save() ;
     void save(const char* dir);
-
 
     void saveExtra( const char* name, const NP* a ) const ;
     void saveExtra( const char* base, const char* name, const NP* a ) const ;
@@ -739,7 +672,6 @@ public:
     const NP* getHit() const ;    // uses SEventConfig::HitCompOneName    depending on ModeLite ModeMerge
     size_t    getNumHit() const ;
 
-
     const NP* getAux() const ;
     const NP* getSup() const ;
     const NP* getPho() const ;
@@ -747,8 +679,6 @@ public:
 
     std::string descSimulate() const ;
     std::string getCounts() const ;
-
-
 
     void getPhoton(sphoton& p, unsigned idx) const ;
     void getHit(   sphoton& p, unsigned idx) const ;
@@ -760,7 +690,6 @@ public:
     void getLocalHit(       sphit& ht, sphoton& p, unsigned idx) const ;
     void localize_photon_inplace( sphoton& p ) const ;
 
-
     NP*  localize_photon(const NP* hit, bool consistency_check) const ;
 
     void getPhotonFrame( sframe& fr, const sphoton& p ) const ;
@@ -769,7 +698,6 @@ public:
     std::string descPhoton(unsigned max_print=10) const ;
     std::string descLocalPhoton(unsigned max_print=10) const ;
     std::string descFramePhoton(unsigned max_print=10) const ;
-
 
     std::string descInputGenstep() const ;
     std::string descInputPhoton() const ;
@@ -785,5 +713,4 @@ public:
 
     static NP* CountNibbles( const NP* seq );
     static NP* CountNibbles_Table( const NP* seqnib );
-
 };
