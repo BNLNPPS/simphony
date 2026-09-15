@@ -60,7 +60,35 @@ target_include_directories(simtox PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
 )
 
-install(TARGETS consgeo simg4ox GPUCerenkov GPURaytrace GPUPhotonSourceMinimal GPUPhotonFileSource simtox simphony_g4_deps
+set(SIMPHONY_EXECUTABLE_TARGETS
+    consgeo
+    simg4ox
+    GPUCerenkov
+    GPURaytrace
+    GPUPhotonSourceMinimal
+    GPUPhotonFileSource
+    simtox
+)
+
+if(SIMPHONY_BUILD_INTERACTIVE_RENDERER)
+    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+
+    add_executable(simrender simrender.cpp)
+    target_link_libraries(simrender
+        PRIVATE
+            SysRap
+            simphony_g4_deps
+            simphony_argparse
+            Qt${QT_VERSION_MAJOR}::Widgets
+    )
+    target_include_directories(simrender PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+    )
+    list(APPEND SIMPHONY_EXECUTABLE_TARGETS simrender)
+endif()
+
+install(TARGETS ${SIMPHONY_EXECUTABLE_TARGETS} simphony_g4_deps
     EXPORT ${PROJECT_NAME}Targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

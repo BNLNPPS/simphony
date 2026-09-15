@@ -2,6 +2,28 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS multithreaded)
 find_program(BASH_EXECUTABLE bash REQUIRED)
 
+if(TARGET simrender)
+    add_test(NAME Unit.simrender.help COMMAND $<TARGET_FILE:simrender> --help)
+    set_tests_properties(Unit.simrender.help PROPERTIES LABELS "unit")
+
+    add_test(NAME Unit.simrender.controls COMMAND $<TARGET_FILE:simrender> --controls)
+    set_tests_properties(Unit.simrender.controls PROPERTIES
+        LABELS "unit"
+        PASS_REGULAR_EXPRESSION "5/6.*top/bottom"
+    )
+
+    add_test(
+        NAME Unit.simrender.rejects_invalid_size
+        COMMAND $<TARGET_FILE:simrender>
+                --gdml ${CMAKE_SOURCE_DIR}/tests/geom/raindrop.gdml
+                --width 0
+    )
+    set_tests_properties(Unit.simrender.rejects_invalid_size PROPERTIES
+        LABELS "unit"
+        WILL_FAIL TRUE
+    )
+endif()
+
 set(SIMPHONY_SIMG4OX_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox")
 
 function(add_simg4ox_integration_test TEST_CASE)
