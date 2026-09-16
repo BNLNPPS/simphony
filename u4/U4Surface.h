@@ -68,7 +68,8 @@ struct U4Surface
     static void    CollectRawNames( std::vector<std::string>& rawnames, const std::vector<const G4LogicalSurface*>& surfaces ); 
 
     static constexpr const char* PERMIT_UNSUPPORTED = "U4Surface__PERMIT_UNSUPPORTED";
-    static double Prop(const G4MaterialPropertiesTable* mpt, const char* key, bool lo = false);
+    static double Prop(const G4MaterialPropertiesTable* mpt, const char* key);
+    static bool AlwaysSpecular(const G4MaterialPropertiesTable* mpt, bool lobe);
     static void Check(const std::vector<const G4LogicalSurface*>& surfaces);
 
     static NPFold* MakeFold(const std::vector<const G4LogicalSurface*>& surfaces, const std::vector<std::string>& keys ); 
@@ -323,15 +324,30 @@ inline void U4Surface::CollectRawNames( std::vector<std::string>& rawnames, cons
     }
 }
 
-inline double U4Surface::Prop(const G4MaterialPropertiesTable* mpt, const char* key, bool lo)
+inline double U4Surface::Prop(const G4MaterialPropertiesTable* mpt, const char* key)
 {
     const G4MaterialPropertyVector* v = mpt->GetProperty(key);
-    if (v == nullptr || v->GetVectorLength() < 2)
+    if (v == nullptr)
         return 0.;
-    double p = (*v)[0];
-    for (std::size_t i = 1; i < v->GetVectorLength(); i++)
-        p = lo ? std::min(p, (*v)[i]) : std::max(p, (*v)[i]);
+    static const sdomain dom;
+    double               p = v->Value(dom.energy_eV[0] * eV);
+    for (int k = 1; k < dom.length; k++)
+        p = std::max(p, v->Value(dom.energy_eV[k] * eV));
     return p;
+}
+
+inline bool U4Surface::AlwaysSpecular(const G4MaterialPropertiesTable* mpt, bool lobe)
+{
+    const G4MaterialPropertyVector* ss = mpt->GetProperty("SPECULARSPIKECONSTANT");
+    const G4MaterialPropertyVector* sl = lobe ? mpt->GetProperty("SPECULARLOBECONSTANT") : nullptr;
+    static const sdomain            dom;
+    for (int k = 0; k < dom.length; k++)
+    {
+        const double e = dom.energy_eV[k] * eV;
+        if ((ss ? ss->Value(e) : 0.) + (sl ? sl->Value(e) : 0.) < 1.)
+            return false;
+    }
+    return true;
 }
 
 inline void U4Surface::Check(const std::vector<const G4LogicalSurface*>& surfaces)
@@ -371,17 +387,22 @@ inline void U4Surface::Check(const std::vector<const G4LogicalSurface*>& surface
         const G4MaterialPropertiesTable* mpt = os->GetMaterialPropertiesTable();
         if (mpt == nullptr)
         {
-            bad << sn << " : no material properties table, nothing to translate\n";
+            bad << sn << " : no material properties table, Geant4 uses the default REFLECTIVITY 1 and never absorbs, the payload absorbs every photon\n";
             continue;
         }
 
         const std::vector<G4String>& pname = mpt->GetMaterialPropertyNames();
+        bool                         stub = false;
         for (unsigned j = 0; j < pname.size(); j++)
         {
             const G4MaterialPropertyVector* v = mpt->GetProperty(pname[j]);
-            if (v && v->GetVectorLength() < 2)
-                approx << sn << " : " << pname[j] << " has a single node, so G4PhysicsVector::Value reads past it, 0 in practice, for Geant4 and the payload alike\n";
+            if (v == nullptr || v->GetVectorLength() > 1)
+                continue;
+            bad << sn << " : " << pname[j] << " has " << v->GetVectorLength() << " node(s), G4PhysicsVector::Value reads out of bounds\n";
+            stub = true;
         }
+        if (stub)
+            continue;
 
         const bool   painted = U4OpticalSurfaceFinish::IsPainted(finish);
         const bool   backpainted = finish == polishedbackpainted || finish == groundbackpainted;
@@ -389,6 +410,7 @@ inline void U4Surface::Check(const std::vector<const G4LogicalSurface*>& surface
         const double effi = Prop(mpt, "EFFICIENCY");
         const double refl = Prop(mpt, "REFLECTIVITY");
         const double tran = Prop(mpt, "TRANSMITTANCE");
+        const double rough = mpt->ConstPropertyExists("SURFACEROUGHNESS") ? mpt->GetConstProperty("SURFACEROUGHNESS") : 0.;
         const bool   sensor = effi > 0.;
         const bool   reflects = !sensor && refl > 0.;
         const bool   cplx = mpt->GetProperty("REALRINDEX") && mpt->GetProperty("IMAGINARYRINDEX");
@@ -396,13 +418,16 @@ inline void U4Surface::Check(const std::vector<const G4LogicalSurface*>& surface
         const double ss = Prop(mpt, "SPECULARSPIKECONSTANT");
         const double sl = Prop(mpt, "SPECULARLOBECONSTANT");
         const double bs = Prop(mpt, "BACKSCATTERCONSTANT");
-        const bool   g4spike = Prop(mpt, "SPECULARSPIKECONSTANT", true) >= 1. || (Prop(mpt, "SPECULARLOBECONSTANT", true) >= 1. && os->GetSigmaAlpha() == 0.);
+        const bool   g4spike = AlwaysSpecular(mpt, os->GetSigmaAlpha() == 0.);
 
         if (backpainted && mpt->GetProperty("RINDEX") == nullptr)
             bad << sn << " : " << U4OpticalSurfaceFinish::Name(finish) << " without RINDEX on the surface makes Geant4 kill every photon as NoRINDEX\n";
 
         if (dd && backpainted)
             bad << sn << " : " << U4OpticalSurfaceFinish::Name(finish) << " is a two interface stack, the payload has one interface\n";
+
+        if (rough != 0. && dd && !painted && !choose)
+            bad << sn << " : SURFACEROUGHNESS " << rough << " makes some Fresnel and total internal reflections Lambertian in Geant4, the payload ignores it\n";
 
         if (reflects && choose && (specular ? !g4spike : ss + sl + bs > 0.))
             bad << sn << " : unified " << U4OpticalSurfaceFinish::Name(finish) << " reflects by ChooseReflection with spike " << ss << " lobe " << sl << " backscatter " << bs
@@ -446,7 +471,7 @@ inline void U4Surface::Check(const std::vector<const G4LogicalSurface*>& surface
         << " [" << PERMIT_UNSUPPORTED << "=1 to translate anyway]\n"
         << sbad;
 
-    if (!ssys::getenvbool(PERMIT_UNSUPPORTED))
+    if (ssys::getenvint(PERMIT_UNSUPPORTED, 0) == 0)
         throw std::runtime_error(msg.str());
     std::cerr << msg.str();
 }
