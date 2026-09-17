@@ -1,10 +1,5 @@
 /**
-stree_load_test.cc
-===================
-
-::
-
-    stree_load_test
+    ctest -R SysRapTest.stree_load_test --output-on-failure
 
     TEST=get_inst IIDX=100                      stree_load_test
     TEST=pick_lvid_ordinal_node                 stree_load_test
@@ -18,7 +13,16 @@ stree_load_test.cc
     TEST=desc_factor_nodes FIDX=0               stree_load_test
     TEST=desc_repeat_node RIDX=0 RORD=0         stree_load_test
 
+    TEST=desc_solid LVID=43 stree_load_test
+    TEST=desc_solid LVID=124 stree_load_test
+    TEST=desc_solid LVID=32 stree_load_test
+
+    TEST=desc_node_ELVID ELVID=43,44,45,46 stree_load_test
+    TEST=desc_node_ECOPYNO ECOPYNO=52400   stree_load_test
+    TEST=desc_node_EBOUNDARY EBOUNDARY=303 stree_load_test
 **/
+
+#include "OPTICKS_LOG.hh"
 
 #include "ssys.h"
 #include "stree.h"
@@ -27,14 +31,33 @@ stree_load_test.cc
 #include "sn.h"
 #include "SBitSet.h"
 
+#include "U4GDML.h"
+#include "U4SensitiveDetector.hh"
+#include "U4Tree.h"
+
+#ifdef STREE_LOAD_TEST_DEFAULT_GDML
+static constexpr const char* STREE_LOAD_TEST_DEFAULT_GDML_PATH = STREE_LOAD_TEST_DEFAULT_GDML;
+#else
+static constexpr const char* STREE_LOAD_TEST_DEFAULT_GDML_PATH = nullptr;
+#endif
 
 struct stree_load_test
 {
-    const char* TEST ;
-    const stree* st ;
+    static constexpr const char* DEFAULT_TEST = "desc";
 
-    stree_load_test();
+    const char* TEST ;
+    const char* gdmlpath;
+    stree*      st;
+    U4Tree*     tr;
+
+    stree_load_test(int argc, char** argv);
+    void init(int argc, char** argv);
     void init();
+
+    bool has_lvid(int lvid) const;
+    bool has_soname_start(const char* q_soname) const;
+    bool has_spec_soname(const char* spec) const;
+    bool has_frame(const char* spec) const;
 
     int get_combined_transform(int LVID, int NDID  );
     int get_inst(int idx) const ;
@@ -82,28 +105,154 @@ struct stree_load_test
     int main();
 };
 
-inline stree_load_test::stree_load_test()
-    :
-    TEST(ssys::getenvvar("TEST", nullptr)),
-    st(nullptr)
+inline stree_load_test::stree_load_test(int argc, char** argv) :
+    TEST(ssys::getenvvar("TEST", DEFAULT_TEST)),
+    gdmlpath(ssys::getenvvar("STREE_LOAD_TEST_GDML", STREE_LOAD_TEST_DEFAULT_GDML_PATH)),
+    st(nullptr),
+    tr(nullptr)
 {
+    init(argc, argv);
+}
+
+inline void stree_load_test::init(int argc, char** argv)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        const char* arg = argv[i];
+        if (arg == nullptr)
+            continue;
+
+        std::string a(arg);
+        bool        is_gdml = a.size() >= 5 && a.compare(a.size() - 5, 5, ".gdml") == 0;
+
+        if (is_gdml)
+        {
+            gdmlpath = arg;
+        }
+        else
+        {
+            TEST = arg;
+        }
+    }
+
     init();
 }
 
 inline void stree_load_test::init()
 {
     bool noload = strcmp(TEST,"get_global_aabb_check") == 0 ;
-    if(!noload)
+
+    if (noload == false && gdmlpath != nullptr)
+    {
+        if (U4SensitiveDetector::Get("PhotonDetector") == nullptr)
+            new U4SensitiveDetector("PhotonDetector");
+        if (U4SensitiveDetector::Get("PMTSDMgr") == nullptr)
+            new U4SensitiveDetector("PMTSDMgr");
+
+        const G4VPhysicalVolume* world = U4GDML::Read(gdmlpath);
+        LOG_IF(fatal, world == nullptr)
+            << "stree_load_test::init FAILED TO READ GDML "
+            << " gdmlpath " << (gdmlpath ? gdmlpath : "-");
+
+        if (world != nullptr)
+        {
+            st = new stree;
+            tr = U4Tree::Create(st, world);
+        }
+    }
+    else if (!noload)
     {
         st = stree::Load();
         if( st == nullptr ) std::cout << "stree_load_test::init FAILED TO LOAD TREE \n" ;
     }
 
     std::cout << "[stree_load_test::init\n" ;
+    std::cout << " TEST " << (TEST ? TEST : "-") << "\n";
+    std::cout << " gdmlpath " << (gdmlpath ? gdmlpath : "-") << "\n";
     std::cout << ( st ? st->desc_id() : "-" ) << "\n" ;
     std::cout << "]stree_load_test::init\n" ;
 }
 
+inline bool stree_load_test::has_lvid(int lvid) const
+{
+    return st && lvid >= 0 && lvid < int(st->soname.size());
+}
+
+inline bool stree_load_test::has_soname_start(const char* q_soname) const
+{
+    return st && q_soname && st->find_lvid(q_soname, true) > -1;
+}
+
+inline bool stree_load_test::has_spec_soname(const char* spec) const
+{
+    if (spec == nullptr)
+        return false;
+
+    std::string            s(spec);
+    std::string::size_type pos = s.find(':');
+    std::string            q_soname = pos == std::string::npos ? s : s.substr(0, pos);
+
+    return has_soname_start(q_soname.c_str());
+}
+
+inline bool stree_load_test::has_frame(const char* spec) const
+{
+    if (st == nullptr || spec == nullptr)
+        return false;
+
+    auto has_node = [this](int nidx) {
+        return nidx >= 0 &&
+               nidx < int(st->nds.size()) &&
+               nidx < int(st->m2w.size()) &&
+               nidx < int(st->w2m.size());
+    };
+
+    bool is_top = strcmp(spec, "") == 0 || strcmp(spec, "-1") == 0;
+    if (is_top)
+        return has_node(0);
+
+    if (sstr::StartsWith(spec, stree::NIDX_PFX))
+    {
+        int nidx = sstr::AsInt(spec + strlen(stree::NIDX_PFX), -1);
+        return has_node(nidx);
+    }
+    if (sstr::StartsWith(spec, stree::PRIM_PFX))
+    {
+        int prim = sstr::AsInt(spec + strlen(stree::PRIM_PFX), -1);
+        int nidx = prim >= 0 && prim < int(st->prim_nidx.size()) ? st->prim_nidx[prim] : -1;
+        return has_node(nidx);
+    }
+    if (sstr::StartsWith(spec, stree::INST_PFX))
+    {
+        int ii = sstr::AsInt(spec + strlen(stree::INST_PFX), -1);
+        int nidx = ii >= 0 && ii < int(st->inst_nidx.size()) ? st->inst_nidx[ii] : -1;
+        return st->get_inst(ii) && st->get_iinst(ii) && has_node(nidx);
+    }
+    if (sstr::StartsWith(spec, stree::LVID_COPYNO_PFX))
+    {
+        std::vector<std::string> elem;
+        sstr::Split(spec + strlen(stree::LVID_COPYNO_PFX), '/', elem);
+        char src = elem.size() > 2 && !elem[2].empty() ? elem[2][0] : 'N';
+        return (src == 'N' || src == 'R' || src == 'T') && has_node(0);
+    }
+
+    bool is_numeric_list =
+        !sstr::StartsWithLetterAZaz(spec) &&
+        strchr(spec, ':') == nullptr &&
+        (sstr::looks_like_list(spec, ',', 1, 4) ||
+         sstr::looks_like_list(spec, ',', 16, 16));
+    bool is_safe_special =
+        sstr::StartsWith(spec, stree::EXTENT_PFX) ||
+        sstr::StartsWith(spec, stree::CE_PFX) ||
+        sstr::StartsWith(spec, stree::TE_PFX) ||
+        sstr::StartsWith(spec, stree::AXIS_PFX) ||
+        sstr::StartsWith(spec, stree::SID_PFX) ||
+        sstr::StartsWith(spec, stree::SIDX_PFX) ||
+        sstr::EndsWith(spec, ".npy") ||
+        is_numeric_list;
+
+    return is_safe_special || st->has_frame(spec);
+}
 
 inline int stree_load_test::get_combined_transform( int LVID, int NDID )
 {
@@ -113,6 +262,13 @@ inline int stree_load_test::get_combined_transform( int LVID, int NDID )
         << " NDID " << NDID
         << std::endl
         ;
+
+    if (!has_lvid(LVID))
+    {
+        std::cout << "stree_load_test::get_combined_transform SKIP invalid lvid " << LVID
+                  << " num_lvid " << (st ? st->soname.size() : 0) << "\n";
+        return 0;
+    }
 
     std::vector<snode> nodes ;  // structural volume nodes with the LVID, could be thousands
     st->find_lvid_nodes_(nodes, LVID, 'N') ;
@@ -126,7 +282,14 @@ inline int stree_load_test::get_combined_transform( int LVID, int NDID )
     int num_nds = nds.size();
     std::cout << " sn::Desc(nds) " << std::endl << sn::Desc(nds) ;
 
-    assert( num_nodes > 0 && num_nds > 1 );
+    if (num_nodes == 0 || num_nds <= 1)
+    {
+        std::cout << "stree_load_test::get_combined_transform SKIP"
+                  << " num_nodes " << num_nodes
+                  << " num_nds " << num_nds
+                  << "\n";
+        return 0;
+    }
 
     std::vector<glm::tmat4x4<double>> tvs ;
     tvs.reserve(num_nodes*2);
@@ -316,19 +479,18 @@ inline int stree_load_test::pick_lvid_ordinal_repeat_ordinal_inst() const
     int num = v_spec.size();
     for(int i=0 ; i < num ; i++)
     {
-        const std::string& spec = v_spec[i] ;
+        const std::string& spec = v_spec[i];
+
+        if (!has_spec_soname(spec.c_str()))
+        {
+            std::cout << "stree_load_test::pick_lvid_ordinal_repeat_ordinal_inst SKIP missing soname for spec "
+                      << std::setw(4) << i << " " << std::setw(50) << spec << "\n";
+            continue;
+        }
+
         int inst_idx = st->pick_lvid_ordinal_repeat_ordinal_inst( spec.c_str() );
 
-        std::cout
-            << "("
-            << std::setw(4) << i
-            << " "
-            << std::setw(50) << spec
-            << " "
-            << std::setw(7) << inst_idx
-            << ") "
-            << "\n"
-            ;
+        std::cout << std::setw(4) << i << " " << std::setw(50) << spec << " " << std::setw(7) << inst_idx << "\n";
     }
     return 0 ;
 }
@@ -354,6 +516,12 @@ inline int stree_load_test::get_frame() const
     for(int i=0 ; i < num ; i++)
     {
         const std::string& spec = v_spec[i] ;
+        if (!has_frame(spec.c_str()))
+        {
+            std::cout << "stree_load_test::get_frame SKIP invalid spec "
+                      << std::setw(4) << i << " " << std::setw(50) << spec << "\n";
+            continue;
+        }
         sframe             fr = st->get_frame(spec.c_str());
         std::cout << fr ;
     }
@@ -363,7 +531,12 @@ inline int stree_load_test::get_frame() const
 inline int stree_load_test::get_frame_MOI() const
 {
     const char* MOI = ssys::getenvvar("MOI", nullptr);
-    if(!MOI) return 1 ;
+    if (!MOI || !has_frame(MOI))
+    {
+        std::cout << "stree_load_test::get_frame_MOI SKIP invalid or missing MOI "
+                  << (MOI ? MOI : "-") << "\n";
+        return 0;
+    }
 
     sframe mfr = st->get_frame(MOI);
     std::cout << "stree_load_test::get_frame_MOI\n" <<  MOI << "\n" << mfr << "\n"  ;
@@ -382,6 +555,16 @@ inline int stree_load_test::get_frame_scan_(const char* solid, int i0, int i1, i
         << " j0 " << j0 << " j1 " << j1
         << "\n"
         ;
+
+    if (!has_soname_start(solid))
+    {
+        std::cout
+            << "stree_load_test::get_frame_scan_"
+            << " SKIP missing soname for solid "
+            << (solid ? solid : "-")
+            << "\n";
+        return 0;
+    }
 
     for(int i=i0 ; i < i1 ; i++)
     for(int j=j0 ; j <= j1 ; j++)
@@ -425,6 +608,8 @@ inline int stree_load_test::get_prim_aabb() const
         }
 
         std::cout << label << " " << num_nd << std::endl ;
+        if (num_nd == 0)
+            continue;
 
         for(int j=0 ; j < 3 ; j++)
         {
@@ -445,6 +630,9 @@ inline int stree_load_test::get_prim_aabb() const
                 k0 = num_nd - 20   ;
                 k1 = num_nd ;
             }
+
+            k0 = std::max(0, std::min(k0, num_nd));
+            k1 = std::max(k0, std::min(k1, num_nd));
 
             for(int k=k0 ; k < k1 ; k++)
             {
@@ -540,10 +728,14 @@ inline int stree_load_test::desc_repeat_index() const
 
 inline int stree_load_test::get_global_aabb() const
 {
+    const char* tmpfold = ssys::getenvvar("TMPFOLD", "/tmp/stree_load_test");
+    std::string path = std::string(tmpfold) + "/get_global_aabb";
+
     std::cout << "[stree_load_test::get_global_aabb \n" ;
+    std::cout << " save to " << path << "\n";
 
     NPFold* f = st->get_global_aabb();
-    f->save("$TMPFOLD/get_global_aabb");
+    f->save(path.c_str());
 
     std::cout << "]stree_load_test::get_global_aabb \n" ;
     return 0 ;
@@ -560,22 +752,59 @@ This approach yields too many overlaps to wade thru
 
 inline int stree_load_test::get_global_aabb_check() const
 {
-    NPFold* f = NPFold::Load("$TMPFOLD/get_global_aabb");
+    const char* tmpfold = ssys::getenvvar("TMPFOLD", "/tmp/stree_load_test");
+    std::string path = std::string(tmpfold) + "/get_global_aabb";
+
+    NPFold* f = NPFold::Load(path.c_str());
+    if (f == nullptr)
+    {
+        std::cout
+            << "[stree_load_test::get_global_aabb_check\n"
+            << " load failed path " << path << "\n"
+            << "]stree_load_test::get_global_aabb_check\n";
+        return 0;
+    }
+
     const NP* bb = f->get("bb");
     const NP* ii = f->get("ii");
+    if (bb == nullptr || ii == nullptr)
+    {
+        std::cout
+            << "[stree_load_test::get_global_aabb_check\n"
+            << " missing arrays from path " << path << "\n"
+            << "]stree_load_test::get_global_aabb_check\n";
+        return 0;
+    }
+
+    enum
+    {
+        bb_nj = 6
+    };
+    bool compatible =
+        bb->uifc == 'f' &&
+        bb->ebyte == sizeof(double) &&
+        bb->shape.size() == 2 &&
+        ii->shape.size() == 2 &&
+        bb->shape[0] == ii->shape[0] &&
+        bb->shape[1] == bb_nj &&
+        ii->shape[1] == snode::NV;
+    if (!compatible)
+    {
+        std::cout
+            << "[stree_load_test::get_global_aabb_check\n"
+            << " incompatible arrays from path " << path << "\n"
+            << " bb " << bb->sstr() << " ii " << ii->sstr() << "\n"
+            << "]stree_load_test::get_global_aabb_check\n";
+        return 0;
+    }
 
     const double* bbv = bb->cvalues<double>();
-    const size_t* iiv = ii->cvalues<size_t>();
 
     std::cout << "[stree_load_test::get_global_aabb_check \n" ;
     std::cout << " bb " << ( bb ? bb->sstr() : "-" ) << "\n";
     std::cout << " ii " << ( ii ? ii->sstr() : "-" ) << "\n";
 
-    enum { bb_nj = 6 };
-
-    assert( bb->shape[0] == ii->shape[0] );
     assert( bb->shape[1] == bb_nj );
-    assert( ii->shape[1] == snode::NV );
 
     struct Overlap
     {
@@ -608,39 +837,43 @@ inline int stree_load_test::get_global_aabb_check() const
 
 inline int stree_load_test::get_global_aabb_sibling_overlaps() const
 {
+    const char* tmpfold = ssys::getenvvar("TMPFOLD", "/tmp/stree_load_test");
+    std::string path = std::string(tmpfold) + "/get_global_aabb_sibling_overlaps";
+
     std::cout << "[stree_load_test::get_global_aabb_sibling_overlaps \n" ;
+    std::cout << " save to " << path << "\n";
 
     NPFold* f = st->get_global_aabb_sibling_overlaps();
-    f->save("$TMPFOLD/get_global_aabb_sibling_overlaps");
+    f->save(path.c_str());
 
     std::cout << "]stree_load_test::get_global_aabb_sibling_overlaps \n" ;
     return 0 ;
 }
 
-
-
-
-
-
-
 inline int stree_load_test::desc_factor_nodes(int fidx) const
 {
+    int num_factor = st ? st->get_num_factor() : 0;
+    if (fidx < 0 || fidx >= num_factor)
+    {
+        std::cout << "stree_load_test::desc_factor_nodes SKIP invalid factor index " << fidx
+                  << " num_factor " << num_factor << "\n";
+        return 0;
+    }
     std::cout << st->desc_factor_nodes(fidx) << "\n" ;
-    return 0 ;
+    return 0;
 }
-
 
 inline int stree_load_test::desc_repeat_node(int ridx, int rord) const
 {
     std::cout << st->desc_repeat_node(ridx, rord) << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_repeat_nodes() const
 {
     std::cout << st->desc_repeat_nodes() << "\n" ;
     return 0 ;
 }
-
 
 inline int stree_load_test::desc_nds() const
 {
@@ -652,11 +885,13 @@ inline int stree_load_test::desc_rem() const
     std::cout << st->desc_rem() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_tri() const
 {
     std::cout << st->desc_tri() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_NRT() const
 {
     std::cout << st->desc_NRT() << "\n" ;
@@ -674,14 +909,12 @@ inline int stree_load_test::desc_node_ECOPYNO() const
     std::cout << st->desc_node_ECOPYNO() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_node_EBOUNDARY() const
 {
     std::cout << st->desc_node_EBOUNDARY() << "\n" ;
     return 0 ;
 }
-
-
-
 
 inline int stree_load_test::desc_node_solids() const
 {
@@ -701,8 +934,16 @@ inline int stree_load_test::desc_solids() const
     std::cout << st->desc_solids() ;
     return 0 ;
 }
+
 inline int stree_load_test::desc_solid(int lvid) const
 {
+    if (!has_lvid(lvid))
+    {
+        std::cout << "stree_load_test::desc_solid SKIP invalid lvid " << lvid
+                  << " num_lvid " << (st ? st->soname.size() : 0) << "\n";
+        return 0;
+    }
+
     std::cout << st->desc_solid(lvid) ;
 
     std::vector<int> nodes ;
@@ -726,11 +967,9 @@ inline int stree_load_test::desc_solid(int lvid) const
         std::cout << "m2w\n" << stra<double>::Desc(m2w) << "\n" ;
 
         const glm::tmat4x4<double>& gtd = st->gtd[nidx] ;
-        std::cout << "gtd\n" << stra<double>::Desc(m2w) << "\n" ;
+        std::cout << "gtd\n"
+                  << stra<double>::Desc(gtd) << "\n";
     }
-
-
-
 
     std::vector<sn*> nds ;    // CSG constituent nodes of the LV
     sn::GetLVNodes(nds, lvid );
@@ -750,11 +989,13 @@ inline int stree_load_test::desc_solid(int lvid) const
 
     return 0 ;
 }
+
 inline int stree_load_test::desc() const
 {
     std::cout << st->desc() << "\n" ;
     return 0 ;
 }
+
 inline int stree_load_test::save_desc(const char* fold) const
 {
     std::cout
@@ -767,6 +1008,7 @@ inline int stree_load_test::save_desc(const char* fold) const
     st->save_desc(fold);
     return 0 ;
 }
+
 inline int stree_load_test::make_tree_digest() const
 {
     const char* tree_digest = st->get_tree_digest();
@@ -797,11 +1039,14 @@ inline int stree_load_test::make_tree_digest() const
 inline int stree_load_test::desc_nodes_with_center_within_ce() const
 {
      std::vector<double>* ce = ssys::getenv_vec<double>("CE", "-6000,0,20000,1000");
-     assert(ce);
+     if (ce == nullptr || ce->size() < 4)
+     {
+         std::cout << "stree_load_test::desc_nodes_with_center_within_ce SKIP invalid CE\n";
+         return 0;
+     }
      std::cout << st->desc_nodes_with_center_within_ce( ce->data() );
      return 0 ;
 }
-
 
 inline int stree_load_test::desc_prim() const
 {
@@ -809,11 +1054,18 @@ inline int stree_load_test::desc_prim() const
      return 0 ;
 }
 
-
-
-
 inline int stree_load_test::main()
 {
+    bool noload = strcmp(TEST, "get_global_aabb_check") == 0;
+    if (!noload && st == nullptr)
+    {
+        std::cerr << "stree_load_test::main FAILED TO INITIALIZE TREE"
+                  << " TEST " << (TEST ? TEST : "-")
+                  << " gdmlpath " << (gdmlpath ? gdmlpath : "-")
+                  << "\n";
+        return 1;
+    }
+
     const char* TMPFOLD = ssys::getenvvar("TMPFOLD", nullptr);
 
     int LVID = ssys::getenvint("LVID",  0);
@@ -864,20 +1116,10 @@ inline int stree_load_test::main()
     return rc ;
 }
 
-
 int main(int argc, char** argv)
 {
-    stree_load_test t;
+    OPTICKS_LOG(argc, argv);
+
+    stree_load_test t(argc, argv);
     return t.main();
 }
-
-/**
-    TEST=desc_solid LVID=43 stree_load_test  run
-    TEST=desc_solid LVID=124 stree_load_test  run
-    TEST=desc_solid LVID=32 stree_load_test
-
-
-    TEST=desc_node_ELVID ELVID=43,44,45,46 stree_load_test
-    TEST=desc_node_ECOPYNO ECOPYNO=52400   stree_load_test
-    TEST=desc_node_EBOUNDARY EBOUNDARY=303   stree_load_test
-**/

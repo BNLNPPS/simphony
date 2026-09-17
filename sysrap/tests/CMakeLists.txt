@@ -117,6 +117,10 @@ set(TEST_SOURCES
 
 )
 
+set(STREE_GDML_TEST_SOURCE
+   stree_load_test.cc
+)
+
 set(REPORT_SOURCES
    sreport.cc
 )
@@ -170,6 +174,19 @@ foreach(SRC ${BASH_RUN_TEST_SOURCES})
     add_test(
        NAME ${name}.${TGT} 
        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/STestRunner.sh ${CMAKE_CURRENT_BINARY_DIR}/${TGT}  
+    )
+endforeach()
+
+foreach(SRC ${STREE_GDML_TEST_SOURCE})
+    get_filename_component(TGT ${SRC} NAME_WE)
+    set(STREE_LOAD_TEST_GDML_PATH "${PROJECT_SOURCE_DIR}/tests/geom/sphere_leak.gdml")
+    add_executable(${TGT} ${SRC})
+    target_compile_definitions(${TGT} PRIVATE STREE_LOAD_TEST_DEFAULT_GDML="${STREE_LOAD_TEST_GDML_PATH}")
+    target_link_libraries(${TGT} U4 CUDA::cudart)
+    add_test(${name}.${TGT} ${TGT} desc "${STREE_LOAD_TEST_GDML_PATH}")
+    add_test(${name}.${TGT}.ALL ${TGT} ALL "${STREE_LOAD_TEST_GDML_PATH}")
+    set_tests_properties(${name}.${TGT}.ALL PROPERTIES
+        ENVIRONMENT "MOI=-1;LVID=0;NDID=0;IIDX=0;FIDX=0;RIDX=0;RORD=0;TMPFOLD=${CMAKE_CURRENT_BINARY_DIR}/${TGT}_output"
     )
 endforeach()
 
