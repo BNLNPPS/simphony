@@ -454,12 +454,17 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
     {
         float tmin = ( ctx.p.orient_boundary_flag & params.PropagateEpsilon0Mask ) ? params.tmin0 : params.tmin ;
 
+        unsigned rng_p = ( rng.ctr.x << 2 ) | ( rng.STATE & 3u ) ;
+
         // intersect query filling (quad2)prd
         switch(params.PropagateRefine)
         {
             case 0u: trace<false>( params.handle, ctx.p.pos, ctx.p.mom, tmin, params.tmax, prd, params.vizmask, params.PropagateRefineDistance );  break ;
             case 1u: trace<true>(  params.handle, ctx.p.pos, ctx.p.mom, tmin, params.tmax, prd, params.vizmask, params.PropagateRefineDistance );  break ;
         }
+
+        sim->rng->init( rng, sim->evt->index, photon_idx );
+        skipahead( (unsigned long long)( rng_p - ( ( rng.ctr.x << 2 ) | ( rng.STATE & 3u ) ) ), &rng ) ;
 
         if( prd->boundary() == 0xffffu ) break ; // SHOULD ONLY HAPPEN FOR PHOTONS STARTING OUTSIDE WORLD
         // propagate can do nothing meaningful without a boundary
