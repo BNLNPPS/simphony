@@ -55,7 +55,6 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
         $<$<CONFIG:Debug>:DEBUG_PIDX>
         $<$<CONFIG:Debug>:DEBUG_PIDXYZ>
         $<$<CONFIG:Release>:PRODUCTION>
-        RNG_PHILOX
         OPTICKS_OKCONF
         OPTICKS_QUDARAP
         NVCC)
