@@ -67,6 +67,8 @@ struct Params
     unsigned PropagateEpsilon0Mask; // default from SEventConfig TO,CK,SI,SC,RE
     float    PropagateRefineDistance;
     bool     PropagateRefine;
+    int      SerInterval;
+    int      SerHint;
 
     float      tmax ;
     float4     ZPROJ ;

@@ -593,6 +593,8 @@ void CSGOptiX::initSimulate()
 
     params->PropagateRefine = SEventConfig::PropagateRefine();
     params->PropagateRefineDistance = SEventConfig::PropagateRefineDistance(); // approx distance beyond which to refine intersect with 2nd trace
+    params->SerInterval = SEventConfig::SerInterval();
+    params->SerHint = SEventConfig::SerHint();
 
     params->tmin = SEventConfig::PropagateEpsilon(); // eg 0.1 0.05 to avoid self-intersection off boundaries
 

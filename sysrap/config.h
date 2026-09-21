@@ -96,6 +96,10 @@ class Config
     /// Flag mask selecting which bulk interactions use propagate_epsilon0.
     std::string propagate_epsilon0_mask{"TO,CK,SI,SC,RE"};
 
+    int ser_interval{8};
+
+    int ser_hint{0};
+
     storch torch{default_torch};
 
   private:

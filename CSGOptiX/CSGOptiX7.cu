@@ -454,6 +454,19 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
     {
         float tmin = ( ctx.p.orient_boundary_flag & params.PropagateEpsilon0Mask ) ? params.tmin0 : params.tmin ;
 
+#if OPTIX_VERSION >= 80000
+        if( params.SerInterval > 0 && ( bounce % params.SerInterval ) == 0 )
+        {
+            unsigned ser_key = 0u ;
+            switch( params.SerHint )
+            {
+                case 1: ser_key = bounce / params.SerInterval ; break ;
+                case 2: ser_key = ((ctx.p.boundary() & 7u) << 1) | (ctx.p.wavelength < 200.f ? 1u : 0u) ; break ;
+            }
+            optixReorder( ser_key, 4 );
+        }
+#endif
+
         // intersect query filling (quad2)prd
         switch(params.PropagateRefine)
         {
