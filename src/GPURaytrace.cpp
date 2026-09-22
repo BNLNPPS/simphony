@@ -42,7 +42,6 @@ struct ActionInitialization : public G4VUserActionInitialization
         SetUserAction(fG4App->prim_gen_);
         SetUserAction(fG4App->run_act_);
         SetUserAction(fG4App->event_act_);
-        SetUserAction(fG4App->tracking_);
         SetUserAction(fG4App->stepping_);
     }
 };

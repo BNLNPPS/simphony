@@ -26,7 +26,6 @@ Boundary class changes need to match in all the below::
 
 #include "NP.hh"
 #include "SPath.hh"
-#include "ssys.h"
 #include "ssolid.h"
 #include "SEvt.hh"
 #include "SLOG.hh"
@@ -1396,10 +1395,6 @@ void U4Recorder::UserSteppingAction_Optical(const G4Step* step)
     bool is_detect_flag = OpticksPhoton::IsDetectFlag(flag) ;  // SD
     // TODO: GPU side now using EC for the flagmask
 
-#ifndef PRODUCTION
-    if(is_boundary_flag) CollectBoundaryAux<T>(&current_aux) ;
-#endif
-
 /*
 #ifdef U4RECORDER_EXPENSIVE_IINDEX
     // doing replica number search for every step is very expensive and often pointless
@@ -1688,30 +1683,6 @@ const bool U4Recorder::UserSteppingAction_Optical_ClearNumberOfInteractionLength
 
 
 
-
-/**
-U4Recorder::CollectBoundaryAux
--------------------------------
-
-Templated use from U4Recorder::UserSteppingAction_Optical
-
-**/
-
-template <typename T>
-void U4Recorder::CollectBoundaryAux(quad4* )  // static
-{
-    LOG(LEVEL) << "generic do nothing" ;
-}
-
-
-/**
-U4Recorder::CollectBoundaryAux
---------------------------------
-
-Boundary aux collection is currently only specialized for the
-instrumented boundary-process path.
-
-**/
 
 /**
 U4Recorder::ClassifyFake
