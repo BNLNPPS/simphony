@@ -442,7 +442,7 @@ of doing this caching the result in the gasIdx_sbtOffset brings
 the time down to zero.
 
 HMM: Could make better use of instanceId, eg with bitpack gas_idx, ias_idx ?
-See note in InstanceId.h its not so easy due to bit limits.
+This is not so easy due to bit limits.
 But it doesnt matter much as can just do lookups CPU side based
 on simple indices from GPU side.
 

@@ -556,7 +556,7 @@ public:
 
     void checkPhotonLineage(const spho& sp) const ;
 
- .  // below methods handle gathering arrays and persisting, not array content
+    // Below methods handle gathering arrays and persisting, not array content.
 
     NP* gatherPho0() const ;   // unordered push_back as they come
     NP* gatherPho() const ;    // resized at genstep and slotted in
