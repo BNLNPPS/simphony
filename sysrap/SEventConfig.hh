@@ -263,8 +263,8 @@ struct SYSRAP_API SEventConfig
     static constexpr const char* kPropagateEpsilon0Mask = "OPTICKS_PROPAGATE_EPSILON0_MASK" ;
     static constexpr const char* kPropagateRefine = "OPTICKS_PROPAGATE_REFINE" ;
     static constexpr const char* kPropagateRefineDistance = "OPTICKS_PROPAGATE_REFINE_DISTANCE" ;
-    static constexpr const char* kSerInterval = "OPTICKS_SER_INTERVAL" ;
-    static constexpr const char* kSerHint = "OPTICKS_SER_HINT" ;
+    static constexpr const char* kSerInterval = "OPTICKS_SER_INTERVAL";
+    static constexpr const char* kSerHint = "OPTICKS_SER_HINT";
 
     static constexpr const char* kInputGenstep     = "OPTICKS_INPUT_GENSTEP" ;
     static constexpr const char* kInputGenstepSelection  = "OPTICKS_INPUT_GENSTEP_SELECTION" ;
@@ -476,8 +476,8 @@ struct SYSRAP_API SEventConfig
     static void SetPropagateEpsilon0Mask( const char* abrseq, char delim=',' ) ;
     static void SetPropagateRefineDistance( float refine_distance ) ;
     static void SetPropagateRefine( unsigned refine ) ;
-    static void SetSerInterval( int ser_interval ) ;
-    static void SetSerHint( int ser_hint ) ;
+    static void SetSerInterval(int ser_interval);
+    static void SetSerHint(int ser_hint);
 
     static void SetInputGenstep(const char* input_genstep);
     static void SetInputGenstepSelection(const char* input_genstep_selection);
@@ -556,8 +556,8 @@ struct SYSRAP_API SEventConfig
     static const char* _PropagateEpsilon0MaskDefault ;
     static float       _PropagateRefineDistanceDefault  ;
     static unsigned    _PropagateRefineDefault  ;
-    static int         _SerIntervalDefault ;
-    static int         _SerHintDefault ;
+    static int         _SerIntervalDefault;
+    static int         _SerHintDefault;
 
     static const char* _InputGenstepDefault ;
     static const char* _InputGenstepSelectionDefault ;
@@ -639,8 +639,8 @@ struct SYSRAP_API SEventConfig
     static unsigned _PropagateEpsilon0Mask ;
     static float _PropagateRefineDistance ;
     static unsigned _PropagateRefine ;
-    static int _SerInterval ;
-    static int _SerHint ;
+    static int      _SerInterval;
+    static int      _SerHint;
 
     static const char* _InputGenstep ;
     static const char* _InputGenstepSelection ;
