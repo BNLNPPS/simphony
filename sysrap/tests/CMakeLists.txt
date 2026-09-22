@@ -145,6 +145,10 @@ foreach(SRC ${TEST_SOURCES})
     add_test(${name}.${TGT} ${TGT})
 endforeach()
 
+add_test(
+    NAME ${name}.SUTest.presized
+    COMMAND ${CMAKE_COMMAND} -E env TEST=presized $<TARGET_FILE:SUTest>
+)
 
 foreach(SRC ${REPORT_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)

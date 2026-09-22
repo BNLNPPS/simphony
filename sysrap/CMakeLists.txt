@@ -30,7 +30,6 @@ set(SOURCES
     SMap.cc
     SCount.cc
     SDigest.cc
-    SDirect.cc
     SArrayDigest.cc
 
     SLauncher.cc
@@ -191,7 +190,6 @@ set(HEADERS
 
     
 
-    SDirect.hh
     sdirect.h
     SArrayDigest.hh
 
@@ -384,7 +382,6 @@ set(HEADERS
 
     CUDA_CHECK.h
     SCU.h 
-    SCU_.h 
     OPTIX_CHECK.h
  
 

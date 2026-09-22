@@ -114,8 +114,7 @@ SBT::createRaygen
 ------------------
 
 Raygen is typedef to SbtRecord<RaygenData>
-so this is setting up access to raygen data : but that
-is just a placeholder with most everything coming from params
+with empty raygen data; the launch parameters come from params.
 **/
 
 void SBT::createRaygen()
@@ -134,7 +133,6 @@ void SBT::destroyRaygen()
 void SBT::updateRaygen()
 {
     raygen->data = {};
-    raygen->data.placeholder = 42.0f ;
 
     CUDA_CHECK( cudaMemcpy(
                 reinterpret_cast<void*>( d_raygen ),
@@ -843,7 +841,7 @@ Analytic case
 ~~~~~~~~~~~~~~
 
 The hitgroup array has records for all active Prims of all active Solid.
-The records hold (numNode, nodeOffset) of all those active Prim.
+The records hold (nodeOffset, globalPrimIdx) of all those active Prim.
 
 For analytic geom all HitGroup SBT records have the same hitgroup_pg,
 different shapes are distinguished by program data not program code
@@ -976,7 +974,7 @@ void SBT::createHitgroup()
 
                 if( trimesh == false )  // analytic
                 {
-                    setPrimData( hg->data.prim, prim );  // copy numNode, nodeOffset from CSGPrim into hg->data
+                    setPrimData( hg->data.prim, prim );  // copy nodeOffset and globalPrimIdx into hg->data
                 }
                 else
                 {
@@ -1039,22 +1037,15 @@ Called from SBT::createHitgroup to populate HitGroupData for analytic geometry.
 
 void SBT::setPrimData( CustomPrim& cp, const CSGPrim* prim )
 {
-    cp.numNode = prim->numNode();
+    assert(prim->numNode() > 0);
     cp.nodeOffset = prim->nodeOffset();
     cp.globalPrimIdx = prim->globalPrimIdx();
 }
 
-void SBT::checkPrimData( CustomPrim& cp, const CSGPrim* prim)
-{
-    assert( cp.numNode == prim->numNode() );
-    assert( cp.nodeOffset == prim->nodeOffset() );
-
-}
 void SBT::dumpPrimData( const CustomPrim& cp ) const
 {
     std::cout
         << "SBT::dumpPrimData"
-        << " cp.numNode " << cp.numNode
         << " cp.nodeOffset " << cp.nodeOffset
         << std::endl
         ;

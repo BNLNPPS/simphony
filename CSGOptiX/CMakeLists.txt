@@ -36,7 +36,6 @@ target_include_directories(${OPTIX_PTX_TARGET} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/qudarap>)
 target_compile_definitions(${OPTIX_PTX_TARGET}
     PUBLIC
-        WITH_PRD
         WITH_SIMULATE
         WITH_SIMTRACE
         WITH_RENDER
@@ -75,7 +74,6 @@ message(STATUS "Configured PTX build for ${OPTIX_PTX_SRC}")
 add_library( ${name} SHARED ${SOURCES} ${HEADERS} )
 add_dependencies(${name} csgoptix_ptx)
 
-target_compile_definitions( ${name} PRIVATE WITH_PRD )  # using Pointer trick means can reduce attrib and payload to 2 
 target_compile_definitions( ${name} PUBLIC WITH_SIMULATE )
 target_compile_definitions( ${name} PUBLIC WITH_SIMTRACE )
 target_compile_definitions( ${name} PUBLIC WITH_RENDER )

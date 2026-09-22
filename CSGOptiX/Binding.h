@@ -2,15 +2,7 @@
 #include <stdint.h>
 #include <vector_types.h>
 
-/**
-TODO: try removing the placeholders
-
-**/
-
-struct RaygenData
-{
-    float placeholder ;
-};
+struct RaygenData {};
 
 struct MissData
 {
@@ -20,7 +12,6 @@ struct MissData
 
 struct CustomPrim
 {
-    int numNode ;
     int nodeOffset ;
     int globalPrimIdx ;
 };

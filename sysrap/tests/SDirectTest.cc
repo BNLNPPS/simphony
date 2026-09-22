@@ -18,7 +18,8 @@
  */
 
 
-#include "SDirect.hh"
+#include "sdirect.h"
+#include <cassert>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -34,17 +35,24 @@ void test_cout_cerr_redirect(const char* msg)
 {
     std::stringstream coutbuf;
     std::stringstream cerrbuf;
+    std::streambuf* original_cout = std::cout.rdbuf();
+    std::streambuf* original_cerr = std::cerr.rdbuf();
     {
-        cout_redirect out_(coutbuf.rdbuf());
-        cerr_redirect err_(cerrbuf.rdbuf());
+        sdirect::cout_ out_(coutbuf.rdbuf());
+        sdirect::cerr_ err_(cerrbuf.rdbuf());
         
-        SSys::Dump(msg); 
+        std::cout << "captured stdout\n";
+        std::cerr << "captured stderr\n";
         
         // dtors of the redirect structs reset back to standard cout/cerr streams  
     }        
 
     std::string out = coutbuf.str(); 
-    std::string err = cerrbuf.str(); 
+    std::string err = cerrbuf.str();
+    assert(out == "captured stdout\n");
+    assert(err == "captured stderr\n");
+    assert(std::cout.rdbuf() == original_cout);
+    assert(std::cerr.rdbuf() == original_cerr);
 
     LOG(info) << " captured cout " << out.size()  ; 
     std::cout << "[" << std::endl << out << "]" << std::endl  ; 
@@ -61,7 +69,7 @@ void method_expecting_to_write_to_file( std::ofstream& fp, std::vector<std::stri
     for(unsigned i=0 ; i < msgv.size() ; i++ )
     {
         const char* pt = msgv[i].c_str() ;
-        fp.write( const_cast<char*>(pt) , sizeof(pt)); 
+        fp.write(pt, msgv[i].size());
     }
 } 
 
@@ -70,13 +78,19 @@ void test_stream_redirect()
     std::ofstream fp("/dev/null", std::ios::out); 
     std::stringstream ss ;          
 
-    stream_redirect rdir(ss,fp); // stream_redirect such that writes to the file instead go to the stringstream 
+    std::ostream& stream = fp;
+    std::streambuf* original = stream.rdbuf();
 
     std::vector<std::string> msgv ; 
     msgv.push_back("hello"); 
     msgv.push_back("world"); 
  
-    method_expecting_to_write_to_file(fp, msgv);
+    {
+        sdirect::ostream_ rdir(ss, fp);
+        method_expecting_to_write_to_file(fp, msgv);
+    }
+    assert(ss.str() == "helloworld");
+    assert(stream.rdbuf() == original);
 
     std::cout <<  ss.str() << std::endl ; 
 }
@@ -91,7 +105,7 @@ int main(int argc, char** argv)
 
     SSys::Dump(argv[0]); 
 
-    //test_cout_cerr_redirect(argv[0]); 
+    test_cout_cerr_redirect(argv[0]);
     test_stream_redirect(); 
 
 
