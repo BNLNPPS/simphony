@@ -253,8 +253,5 @@ Ctx.h
 Properties.h
     holder of information gleaned from OptiX 7
 
-InstanceId.h
-    encode/decode identity info
-
 OPTIX_CHECK.h
     error check macro for optix 7 calls

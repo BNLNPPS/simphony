@@ -94,27 +94,6 @@ inline G4MaterialPropertyVector* S4MaterialPropertyVector::FromArrayData(const d
 
 
 
-#ifdef OLD
-inline G4MaterialPropertyVector* S4MaterialPropertyVector::FromArray(const NP* a ) // static
-{
-    assert( a->uifc == 'f' && a->ebyte == 8 );
-
-    size_t ni = a->shape[0] ;
-    size_t nj = a->shape[1] ;
-    assert( nj == 2 );
-
-    G4double* energy = new G4double[ni] ;
-    G4double* value = new G4double[ni] ;
-
-    for(int i=0 ; i < int(ni) ; i++)
-    {
-        energy[i] = a->get<double>(i,0) ;
-        value[i] = a->get<double>(i,1) ;
-    }
-    G4MaterialPropertyVector* vec = new G4MaterialPropertyVector(energy, value, ni);
-    return vec ;
-}
-#else
 inline G4MaterialPropertyVector* S4MaterialPropertyVector::FromArray(const NP* a ) // static
 {
     size_t ni = a->shape[0] ;
@@ -125,7 +104,6 @@ inline G4MaterialPropertyVector* S4MaterialPropertyVector::FromArray(const NP* a
     G4MaterialPropertyVector* vec = FromArrayData(aa, ni, nj );
     return vec ;
 }
-#endif
 
 
 
@@ -415,6 +393,5 @@ inline std::string S4MaterialPropertyVector::Desc_MIMSV(const std::map<int,std::
     std::string s = ss.str();
     return s ;
 }
-
 
 

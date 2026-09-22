@@ -420,13 +420,8 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
 
     qsim* sim = params.sim ;
 
-//#define OLD_WITHOUT_SKIPAHEAD 1
-#ifdef OLD_WITHOUT_SKIPAHEAD
-    RNG rng = sim->rngstate[photon_idx] ;
-#else
     RNG rng ;
     sim->rng->init( rng, sim->evt->index, photon_idx );
-#endif
 
     sctx ctx = {} ;
     ctx.evt = evt ;   // sevent.h
