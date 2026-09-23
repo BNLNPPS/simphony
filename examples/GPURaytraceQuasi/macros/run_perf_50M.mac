@@ -1,0 +1,12 @@
+# Performance test at ~50M photon scale.
+#   - single-thread (avoids the pre-existing eic-opticks MT crash on beamOn>1)
+#   - stackPhotons=false on both Cerenkov + Scintillation (Opticks-only mode)
+#   - beamOn 4000: ~14k Cerenkov photons per 1 GeV e- in raindrop
+#                  → ~56M photons total for cerenkov-only test
+#                  → ~80M+ photons for cerenkov+scintillation test
+/run/numberOfThreads 1
+/process/optical/cerenkov/setStackPhotons false
+/process/optical/scintillation/setStackPhotons false
+/run/verbose 0
+/run/initialize
+/run/beamOn 4000
