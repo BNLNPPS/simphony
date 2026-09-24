@@ -37,6 +37,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 NPHOTON=${1:-500000}
 SEED=${2:-42}
+SEED2=${3:-777}
+SEED3=${4:-888}
 BEAM="0,0,100,0,0.007,1,0.3,19.4"
 
 source /opt/simphony/simphony-env.sh 2>/dev/null || true
@@ -86,10 +88,16 @@ echo "[COMPARE] GPU vs G4 wall-absorption records..."
 echo ""
 
 python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
-    "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/synrad_g4_hits.npy" --nphoton "$NPHOTON"
+    "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/synrad_g4_hits.npy" --nphoton "$NPHOTON" --zwindow 500 49500
 
 mkdir -p "$RUN_DIR/unpaired"
-"$BUILD_DIR/synrad_g4" -g analytic -n "$NPHOTON" -s $((SEED + 1)) -I "$BEAM" -f 0 -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/g4.log" 2>&1
+"$BUILD_DIR/synrad_g4" -g analytic -n "$NPHOTON" -s "$SEED2" -I "$BEAM" -f 0 -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/g4.log" 2>&1
 python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
     "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/unpaired/synrad_g4_hits.npy" \
+    --nphoton "$NPHOTON" --zwindow 500 49500
+
+mkdir -p "$RUN_DIR/control"
+"$BUILD_DIR/synrad_g4" -g analytic -n "$NPHOTON" -s "$SEED3" -I "$BEAM" -f 0 -o "$RUN_DIR/control" > "$RUN_DIR/control/g4.log" 2>&1
+python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
+    "$RUN_DIR/unpaired/synrad_g4_hits.npy" "$RUN_DIR/control/synrad_g4_hits.npy" \
     --nphoton "$NPHOTON" --zwindow 500 49500

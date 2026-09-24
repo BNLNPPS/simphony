@@ -45,9 +45,10 @@ def load_hits(path):
     x = a[:, 0, 0]
     y = a[:, 0, 1]
     z = a[:, 0, 2]
+    dz = a[:, 1, 2]
     e = a[:, 2, 3]
     refl = (np.ascontiguousarray(a[:, 3, 3]).view(np.uint32) & BOUNDARY_REFLECT) != 0
-    return x, y, z, e, refl
+    return x, y, z, dz, e, refl
 
 
 def chi2_ndf(a, b, edges):
@@ -68,6 +69,8 @@ def banner(title):
 
 def marginal_test(name, a, b, nbin=101, ok=True):
     banner(f"TEST: {name} marginal of the absorption points")
+    a = np.round(a, 2)
+    b = np.round(b, 2)
     lo = min(np.percentile(a, 0.001), np.percentile(b, 0.001))
     hi = max(np.percentile(a, 99.999), np.percentile(b, 99.999))
     c2, ndf = chi2_ndf(a, b, np.linspace(lo, hi, nbin))
@@ -87,8 +90,8 @@ def main():
     ap.add_argument("--zwindow", nargs=2, type=float, default=None)
     args = ap.parse_args()
 
-    x_gpu, y_gpu, z_gpu, e_gpu, r_gpu = load_hits(args.gpu)
-    x_g4, y_g4, z_g4, e_g4, r_g4 = load_hits(args.g4)
+    x_gpu, y_gpu, z_gpu, dz_gpu, e_gpu, r_gpu = load_hits(args.gpu)
+    x_g4, y_g4, z_g4, dz_g4, e_g4, r_g4 = load_hits(args.g4)
     n_gpu, n_g4 = len(z_gpu), len(z_g4)
     n_in = args.nphoton if args.nphoton > 0 else max(n_gpu, n_g4)
     n_in2 = args.nphoton2 if args.nphoton2 > 0 else n_in
@@ -116,8 +119,8 @@ def main():
 
     if args.zwindow:
         zlo, zhi = args.zwindow
-        wg = (z_gpu > zlo) & (z_gpu < zhi)
-        w4 = (z_g4 > zlo) & (z_g4 < zhi)
+        wg = (z_gpu > zlo) & (z_gpu < zhi) & (dz_gpu > 0)
+        w4 = (z_g4 > zlo) & (z_g4 < zhi) & (dz_g4 > 0)
         x_gpu, y_gpu, z_gpu = x_gpu[wg], y_gpu[wg], z_gpu[wg]
         x_g4, y_g4, z_g4 = x_g4[w4], y_g4[w4], z_g4[w4]
 

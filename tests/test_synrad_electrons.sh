@@ -40,6 +40,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 NELECTRON=${1:-160000}
 SEED=${2:-42}
+SEED2=${3:-777}
+SEED3=${4:-888}
 
 source /opt/simphony/simphony-env.sh 2>/dev/null || true
 PREFIX="${SIMPHONY_PREFIX:-/opt/simphony}"
@@ -94,12 +96,20 @@ echo "[COMPARE] GPU vs G4 wall-absorption records..."
 echo ""
 
 python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
-    "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/synrad_g4_hits.npy" --nphoton "$NBIRTH"
+    "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/synrad_g4_hits.npy" --nphoton "$NBIRTH" --zwindow 500 49500
 
 mkdir -p "$RUN_DIR/unpaired"
-"$BUILD_DIR/synrad_g4" -g analytic -e "$NELECTRON" -B "$RUN_DIR/unpaired/sr_births.npy" -s $((SEED + 1)) -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/gen.log" 2>&1
-"$BUILD_DIR/synrad_g4" -g analytic -i "$RUN_DIR/unpaired/sr_births.npy" -s $((SEED + 1)) -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/g4.log" 2>&1
+"$BUILD_DIR/synrad_g4" -g analytic -e "$NELECTRON" -B "$RUN_DIR/unpaired/sr_births.npy" -s "$SEED2" -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/gen.log" 2>&1
+"$BUILD_DIR/synrad_g4" -g analytic -i "$RUN_DIR/unpaired/sr_births.npy" -s "$SEED2" -o "$RUN_DIR/unpaired" > "$RUN_DIR/unpaired/g4.log" 2>&1
 NBIRTH2=$(python3 -c "import numpy as np; print(np.load('$RUN_DIR/unpaired/sr_births.npy').shape[0])")
 python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
     "$RUN_DIR/synrad_hits.npy" "$RUN_DIR/unpaired/synrad_g4_hits.npy" \
     --nphoton "$NBIRTH" --nphoton2 "$NBIRTH2" --zwindow 500 49500
+
+mkdir -p "$RUN_DIR/control"
+"$BUILD_DIR/synrad_g4" -g analytic -e "$NELECTRON" -B "$RUN_DIR/control/sr_births.npy" -s "$SEED3" -o "$RUN_DIR/control" > "$RUN_DIR/control/gen.log" 2>&1
+"$BUILD_DIR/synrad_g4" -g analytic -i "$RUN_DIR/control/sr_births.npy" -s "$SEED3" -o "$RUN_DIR/control" > "$RUN_DIR/control/g4.log" 2>&1
+NBIRTH3=$(python3 -c "import numpy as np; print(np.load('$RUN_DIR/control/sr_births.npy').shape[0])")
+python3 "$REPO_DIR/optiphy/ana/synrad_test.py" \
+    "$RUN_DIR/unpaired/synrad_g4_hits.npy" "$RUN_DIR/control/synrad_g4_hits.npy" \
+    --nphoton "$NBIRTH2" --nphoton2 "$NBIRTH3" --zwindow 500 49500
