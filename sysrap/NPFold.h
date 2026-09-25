@@ -467,6 +467,7 @@ inline bool NPFold::HasPrefix( const char* k, const char* p )
     return k && p && strlen(p) <= strlen(k) && strncmp(k, p, strlen(p)) == 0 ;
 }
 
+
 /**
 NPFold::BareKey
 ----------------
@@ -3373,7 +3374,7 @@ Entries from "site:SEvt::endMeta" onwards are written from SEvt::endOfEvent/SEvt
 with::
 
     SEvt::setMeta
-    SEvt::setMetaProf
+    SEvt::setMetaTiming
 
 Both the above methods append to the SEvt::meta string.
 SEvt::meta is assigned to the NPFold by SEvt::gather_metadata
@@ -3996,5 +3997,3 @@ inline std::string NPFold::DescCommonKV(
     std::string str = ss.str();
     return str ;
 }
-
-

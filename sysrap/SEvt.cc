@@ -7,7 +7,6 @@
 #include "squad.h"
 #include "squadx.h"
 #include "sstamp.h"
-#include "sprof.h"
 
 #include "sphoton.h"
 #include "sphotonlite.h"
@@ -1599,24 +1598,6 @@ void SEvt::SetRunMetaString(const char* k, const char* v ) // static
 }
 
 
-/*
-void SEvt::SetRunProf(const char* k, const sprof& v) // static
-{
-    SetRunMeta<std::string>( k, sprof::Serialize(v) );
-}
-void SEvt::SetRunProf(const char* k)   // static
-{
-    SetRunMeta<std::string>( k, sprof::Now() );
-}
-void SEvt::setRunProf_Annotated(const char* hdr) const
-{
-    std::string eid = getIndexString_(hdr) ;
-    SetRunMeta<std::string>( eid.c_str(), sprof::Now() );
-}
-*/
-
-
-
 /**
 SEvt::IsSaveNothing
 --------------------
@@ -1695,13 +1676,10 @@ void SEvt::setMetaString(const char* k, const char* v)
     NP::SetMeta<std::string>(meta, k, v );
 }
 
-void SEvt::setMetaProf(const char* k, const sprof& v)
+void SEvt::setMetaTiming(const char* k, const EventTimingSample& v)
 {
-    NP::SetMeta<std::string>(meta, k, sprof::Serialize(v) );
-}
-void SEvt::setMetaProf(const char* k)
-{
-    NP::SetMeta<std::string>(meta, k, sprof::Now() );
+    if(EventTimingProfile::Enabled())
+        NP::SetMeta<std::string>(meta, k, v.serialize() );
 }
 
 
@@ -1780,7 +1758,11 @@ void SEvt::beginOfEvent(int eventID)
     if(eventID == 0) SProf::Add( isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU" ) ;
 
     setStage(SEvt__beginOfEvent);
-    sprof::Stamp(p_SEvt__beginOfEvent_0);
+    if(EventTimingProfile::Enabled())
+        p_SEvt__beginOfEvent_0 = EventTimingSample::Capture(
+            EventTimingCapture::Monotonic |
+            EventTimingCapture::Wall |
+            EventTimingCapture::Memory);
 
     LOG(LEVEL) << " eventID " << eventID ;   // 0-based
     setIndex(eventID);
@@ -1814,7 +1796,11 @@ void SEvt::beginOfEvent(int eventID)
         << " MaxBounce " << evt->max_bounce
         ;
 
-    sprof::Stamp(p_SEvt__beginOfEvent_1);
+    if(EventTimingProfile::Enabled())
+        p_SEvt__beginOfEvent_1 = EventTimingSample::Capture(
+            EventTimingCapture::Monotonic |
+            EventTimingCapture::Wall |
+            EventTimingCapture::Memory);
 }
 
 
@@ -1838,7 +1824,11 @@ void SEvt::endOfEvent(int eventID)
 
     setStage(SEvt__endOfEvent);
     LOG_IF(info, LIFECYCLE) << id() ;
-    sprof::Stamp(p_SEvt__endOfEvent_0);
+    if(EventTimingProfile::Enabled())
+        p_SEvt__endOfEvent_0 = EventTimingSample::Capture(
+            EventTimingCapture::Monotonic |
+            EventTimingCapture::Wall |
+            EventTimingCapture::Memory);
 
     endIndex(eventID);   // eventID is 0-based
     endMeta();
@@ -1856,7 +1846,6 @@ void SEvt::endOfEvent(int eventID)
     bool is_last_eventID = SEventConfig::IsLastEvent(eventID) ;
     if(is_last_eventID)
     {
-        //SetRunProf( isEGPU() ? "SEvt__endOfEvent_LAST_EGPU" : "SEvt__endOfEvent_LAST_ECPU" ) ;
         bool is_last_evt_instance = isLastEvtInstance() ;
 
         LOG(LEVEL)
@@ -1885,10 +1874,9 @@ void SEvt::endMeta()
     setMeta<int>("index", index);
     setMeta<int>("instance", instance);
 
-    setMetaProf("SEvt__beginOfEvent_0", p_SEvt__beginOfEvent_0);
-    setMetaProf("SEvt__beginOfEvent_1", p_SEvt__beginOfEvent_1);
-    setMetaProf("SEvt__endOfEvent_0",   p_SEvt__endOfEvent_0);
-    //setMetaProf("SEvt__endOfEvent_1",   p_SEvt__endOfEvent_1);
+    setMetaTiming("SEvt__beginOfEvent_0", p_SEvt__beginOfEvent_0);
+    setMetaTiming("SEvt__beginOfEvent_1", p_SEvt__beginOfEvent_1);
+    setMetaTiming("SEvt__endOfEvent_0",   p_SEvt__endOfEvent_0);
 
     setMeta<uint64_t>("t_BeginOfEvent", t_BeginOfEvent );
 
@@ -2130,7 +2118,6 @@ void SEvt::setIndex(int index_arg)
     index = SEventConfig::EventIndex(index_arg) ;
     t_BeginOfEvent = sstamp::Now();                // moved here from the static
 
-    //setRunProf_Annotated("SEvt__setIndex_" );
     SProf::Add("SEvt__setIndex");
 }
 void SEvt::endIndex(int index_arg)
@@ -2146,7 +2133,6 @@ void SEvt::endIndex(int index_arg)
     assert( consistent );
     t_EndOfEvent = sstamp::Now();
 
-    //setRunProf_Annotated("SEvt__endIndex_" );
     SProf::Add("SEvt__endIndex");
 }
 

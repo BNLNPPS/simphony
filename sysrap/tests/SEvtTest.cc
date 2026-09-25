@@ -6,7 +6,7 @@
 
 #include "scuda.h"
 #include "spath.h"
-#include "sprof.h"
+#include "EventTiming.hh"
 #include "stran.h"
 #include "sdirectory.h"
 #include "ssys.h"
@@ -28,7 +28,7 @@ struct SEvtTest
     static int InputPhoton();
     static int getSaveDir();
     static int getDir();
-    static int setMetaProf();
+    static int setMetaTiming();
     static int hostside_running_resize_();
     static int CountNibbles();
     static int makeGenstepArrayFromVector();
@@ -242,15 +242,40 @@ int SEvtTest::getDir()
 }
 
 
-int SEvtTest::setMetaProf()
+int SEvtTest::setMetaTiming()
 {
     SEvt* evt = SEvt::Create(0);
+    const char* keys[] = {
+        "SEvt__beginOfEvent_0",
+        "SEvt__beginOfEvent_1",
+        "SEvt__endOfEvent_0"
+    };
+    const EventTimingCapture capture =
+        EventTimingCapture::Monotonic |
+        EventTimingCapture::Wall |
+        EventTimingCapture::Memory;
 
-    sprof prof = {} ;
-    sprof::Stamp(prof);
-    evt->setMetaProf("test_setMeta", prof );
+    unsetenv("EventTiming__PROFILE");
+    for (const char* key : keys)
+        evt->setMetaTiming(key, EventTimingSample::Capture(capture));
+    for (const char* key : keys)
+        assert(NP::GetMeta<std::string>(evt->meta, key, "").empty());
 
-    std::cout << "evt->meta" << std::endl << evt->meta << std::endl ;
+    evt->meta.clear();
+    setenv("EventTiming__PROFILE", "1", 1);
+    for (const char* key : keys)
+        evt->setMetaTiming(key, EventTimingSample::Capture(capture));
+    for (const char* key : keys)
+    {
+        const std::string serialized =
+            NP::GetMeta<std::string>(evt->meta, key, "");
+        assert(EventTimingSample::looksLikeSerialized(serialized));
+        const EventTimingSample sample = EventTimingSample::parse(serialized);
+        assert(sample.has(EventTimingCapture::Monotonic));
+        assert(sample.has(EventTimingCapture::Wall));
+        assert(sample.has(EventTimingCapture::Memory));
+    }
+    unsetenv("EventTiming__PROFILE");
     return 0 ;
 }
 
@@ -272,9 +297,12 @@ int SEvtTest::hostside_running_resize_()
     SEvt::Create_EGPU() ;
     SEvt* evt = SEvt::Get_EGPU();
 
-    sprof p0, p1, p2  ;
+    const EventTimingCapture capture =
+        EventTimingCapture::Monotonic |
+        EventTimingCapture::Wall |
+        EventTimingCapture::Memory;
 
-    sprof::Stamp(p0);
+    const EventTimingSample p0 = EventTimingSample::Capture(capture);
 
     evt->setNumPhoton(num);
 
@@ -286,20 +314,24 @@ int SEvtTest::hostside_running_resize_()
 
     evt->hostside_running_resize_() ;
 
-    sprof::Stamp(p1);
+    const EventTimingSample p1 = EventTimingSample::Capture(capture);
     std::cout
-        << "sprof::Desc(p0, p1) : before and after setNumPhoton+hostside_running_resize_ : to " << num << std::endl
-        << sprof::Desc(p0, p1 )
+        << "EventTimingSample : before and after setNumPhoton+hostside_running_resize_ : to " << num << std::endl
+        << " elapsed_ns " << EventTimingSample::elapsedNs(p0, p1)
+        << " delta_rss_kb " << EventTimingSample::deltaRssKb(p0, p1)
+        << std::endl
         ;
 
     evt->clear_output() ;
 
-    sprof::Stamp(p2);
+    const EventTimingSample p2 = EventTimingSample::Capture(capture);
     std::cout
-        << "sprof::Desc(p1,p2) : before and after : SEvt::clear_vectors  " << std::endl
+        << "EventTimingSample : before and after : SEvt::clear_vectors  " << std::endl
         << "SMALL DELTA INDICATES THE RESIZE TO ZERO : DID NOT DEALLOCATE MEMORY " << std::endl
         << "FIND THAT NEED shrink = true TO GET THE DEALLOC TO HAPPEN " << std::endl
-        << sprof::Desc(p1, p2 )
+        << " elapsed_ns " << EventTimingSample::elapsedNs(p1, p2)
+        << " delta_rss_kb " << EventTimingSample::deltaRssKb(p1, p2)
+        << std::endl
         ;
 
     return 0 ;
@@ -403,7 +435,7 @@ int SEvtTest::Main(int argc, char** argv)
     if(ALL||strcmp(TEST, "InputPhoton") == 0 )  rc += InputPhoton();
     if(ALL||strcmp(TEST, "getSaveDir") == 0 )   rc += getSaveDir();
     if(ALL||strcmp(TEST, "getDir") == 0 )       rc += getDir();
-    if(ALL||strcmp(TEST, "setMetaProf") == 0 )  rc += setMetaProf();
+    if(ALL||strcmp(TEST, "setMetaTiming") == 0 )  rc += setMetaTiming();
     if(ALL||strcmp(TEST, "hostside_running_resize_") == 0 ) rc += hostside_running_resize_();
     if(ALL||strcmp(TEST, "CountNibbles") == 0 )  rc += CountNibbles();
     if(ALL||strcmp(TEST, "makeGenstepArrayFromVector") == 0 ) rc += makeGenstepArrayFromVector();
