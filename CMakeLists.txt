@@ -62,6 +62,8 @@ add_subdirectory(CSGOptiX)
 add_subdirectory(u4)
 add_subdirectory(g4cx)
 add_subdirectory(src)
+add_subdirectory(examples/viztracks)
+add_subdirectory(examples/AlignGpuCpuTracks)
 
 if(BUILD_TESTING)
     add_subdirectory(sysrap/tests)
