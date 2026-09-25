@@ -17,6 +17,7 @@ set(SOURCES
 
     SSys.cc
     SProf.cc
+    EventTiming.cc
     SMeta.cc
 
     SPath.cc
@@ -110,6 +111,7 @@ set(HEADERS
     sproc.h
     sprof.h
     SProf.hh
+    EventTiming.hh
     SMeta.hh
     smeta.h
 
