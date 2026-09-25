@@ -166,11 +166,15 @@ inline void U4SurfaceArray::addSurface(int i, const G4LogicalSurface* ls)
     bool is_specular = U4OpticalSurfaceFinish::IsPolished( finish ); 
 
     G4MaterialPropertiesTable* mpt = os->GetMaterialPropertiesTable() ;
-    assert( mpt ); 
     //if( mpt == nullptr ) std::cerr << "U4Surface::MakeStandardArray NO MPT " << name << std::endl ; 
 
     G4MaterialPropertyVector* EFFICIENCY = mpt ? mpt->GetProperty("EFFICIENCY") : nullptr ; 
     G4MaterialPropertyVector* REFLECTIVITY = mpt ? mpt->GetProperty("REFLECTIVITY") : nullptr ; 
+
+    if (EFFICIENCY && EFFICIENCY->GetVectorLength() < 2)
+        EFFICIENCY = nullptr;
+    if (REFLECTIVITY && REFLECTIVITY->GetVectorLength() < 2)
+        REFLECTIVITY = nullptr;
 
     double max_effi = 0. ; 
     double max_refl = 0. ; 
