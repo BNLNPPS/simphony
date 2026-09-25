@@ -1,8 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
+#include <initializer_list>
+#include <istream>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #include "SYSRAP_API_EXPORT.hh"
 
@@ -58,4 +63,56 @@ struct SYSRAP_API EventTimingSample
         const EventTimingSample& end);
 
     bool operator==(const EventTimingSample&) const = default;
+};
+
+struct EventTimingProfileRecord
+{
+    std::string name;
+    EventTimingSample sample;
+    std::string metadata;
+};
+
+enum class EventTimingWriteMode
+{
+    Replace,
+    Append
+};
+
+class SYSRAP_API EventTimingProfile
+{
+  public:
+    static bool Enabled();
+    static EventTimingSample Mark(
+        std::string_view name,
+        std::string_view metadata = {});
+    static void Add(
+        std::string_view name,
+        const EventTimingSample& sample,
+        std::string_view metadata = {});
+
+    static void SetTag(int index, std::string_view format = "A%0.3d_");
+    static bool HasTag();
+    static std::string Tag();
+    static void UnsetTag();
+
+    static std::string Annotation(
+        std::initializer_list<std::pair<std::string_view, std::uint64_t>> values);
+    static std::int64_t DeltaRssKb();
+    static std::int64_t RangeRssKb();
+
+    static void Clear();
+    static std::size_t Size();
+    static std::vector<EventTimingProfileRecord> Records();
+    static std::string Describe();
+
+    static std::string SerializeCsv(
+        const std::vector<EventTimingProfileRecord>& records);
+    static std::vector<EventTimingProfileRecord> ParseCsv(
+        std::istream& input,
+        const std::filesystem::path& source);
+    static std::vector<EventTimingProfileRecord> ReadFile(
+        const std::filesystem::path& path);
+
+    static std::filesystem::path Path();
+    static void Write(EventTimingWriteMode mode = EventTimingWriteMode::Replace);
 };
