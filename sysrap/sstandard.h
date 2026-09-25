@@ -83,10 +83,10 @@ In the old X4/GGeo workflow, the bnd buffer was created with::
 
 #include "NPFold.h"
 #include "NPX.h"
-#include "sproplist.h"
 #include "sdomain.h"
 #include "smatsur.h"
 #include "snam.h"
+#include "sprop.h"
 
 struct sstandard
 {
@@ -144,9 +144,6 @@ struct sstandard
     );
 
     static void column_range(int4& mn, int4& mx,  const std::vector<int4>& vbd) ;
-    static NP* unused_mat(const std::vector<std::string>& names, const NPFold* fold );
-    static NP* unused_sur(const std::vector<std::string>& names, const NPFold* fold );
-    static NP* unused_create(const sproplist* pl,  const std::vector<std::string>& names, const NPFold* fold );
 };
 
 inline sstandard::sstandard() :
@@ -568,107 +565,4 @@ inline void sstandard::column_range(int4& mn, int4& mx,  const std::vector<int4>
         if(b.w < mn.w) mn.w = b.w ;
     }
 }
-
-/**
-sstandard::unused_mat
--------------------------
-
-This now done at U4Tree.h level with U4Material::MakeStandardArray
-to allow use of Geant4 interpolation.
-
-This operates from the NPFold props using NP interpolation.
-In principal it should give equivalent results to Geant4 interpolation.
-However its simpler to just use Geant4 interpolation from U4Tree level.
-
-**/
-inline NP* sstandard::unused_mat( const std::vector<std::string>& names, const NPFold* fold )
-{
-    assert(0);
-    const sproplist* pl = sproplist::Material() ;
-    return unused_create(pl, names, fold );
-}
-
-/**
-sstandard::unused_sur
------------------------
-
-This is now done with U4Tree::initSurfaces_Serialize using U4SurfaceArray
-
-Note that because the sur array is not a one-to-one from properties
-like the mat array this approach is anyhow unworkable as it stands.
-
-**/
-
-inline NP* sstandard::unused_sur( const std::vector<std::string>& names, const NPFold* fold )
-{
-    assert(0);
-    const sproplist* pl = sproplist::Surface() ;
-    return unused_create(pl, names, fold );
-}
-
-/**
-sstandard::unused_create
---------------------------
-
-This assumes simple one-to-one relationship between the props
-and the array content. That is true for "mat" but not for "sur"
-
-**/
-
-inline NP* sstandard::unused_create(const sproplist* pl, const std::vector<std::string>& names, const NPFold* fold )
-{
-    assert(0);
-    sdomain dom ;
-
-    int ni = names.size() ;
-    int nj = sprop::NUM_PAYLOAD_GRP ;
-    int nk = dom.length ;
-    int nl = sprop::NUM_PAYLOAD_VAL ;
-
-    NP* sta = NP::Make<double>(ni, nj, nk, nl) ;
-    sta->set_names(names);
-    double* sta_v = sta->values<double>();
-
-    std::cout << "sstandard::create sta.sstr " << sta->sstr() << std::endl ;
-
-    for(int i=0 ; i < ni ; i++ )               // names
-    {
-        const char* name = names[i].c_str() ;
-        NPFold* sub = fold->get_subfold(name) ;
-
-        std::cout
-            << std::setw(4) << i
-            << " : "
-            << std::setw(60) << name
-            << " : "
-            << sub->stats()
-            << std::endl
-            ;
-
-        for(int j=0 ; j < nj ; j++)           // payload groups
-        {
-            for(int k=0 ; k < nk ; k++)       // wavelength
-            {
-                //double wavelength_nm = dom.wavelength_nm[k] ;
-                double energy_eV = dom.energy_eV[k] ;
-                double energy = energy_eV * 1.e-6 ;  // Geant4 actual energy unit is MeV
-
-                for(int l=0 ; l < nl ; l++)   // payload values
-                {
-                    const sprop* prop = pl->get(j,l) ;
-                    assert( prop );
-
-                    const char* pn = prop->name ;
-                    const NP* a = sub->get(pn) ;
-                    double value = a ? a->interp( energy ) : prop->def ;
-
-                    int index = i*nj*nk*nl + j*nk*nl + k*nl + l ;
-                    sta_v[index] = value ;
-                }
-            }
-        }
-    }
-    return sta ;
-}
-
 

@@ -57,8 +57,6 @@ CSGTargetTest.cc
 
 CUTest.cc
 
-GeoTest.cc
-
 TranTest.cc
 
 

@@ -13,7 +13,7 @@ def mesh(tri, vtx, visible=True):
     return faces, edges
 
 
-def rays(rec, single_trace=True):
+def rays(rec):
     positions = rec[:, :, 0, :3]
     mask = ~np.all(positions == 0, axis=2)
     positions = positions[mask]

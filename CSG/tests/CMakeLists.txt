@@ -60,10 +60,6 @@ set(TEST_SOURCES
     CSGClassifyTest.cc
 )
 
-set( DEFERRED_TEST_SOURCES
-    CSGGeometryFromGeocacheTest.cc
-)
-
 set(GEOM raindrop)
 set(SIMPHONY_GEOM_FILE ${CMAKE_SOURCE_DIR}/tests/geom/${GEOM}.gdml)
 set(GDML_BOOTSTRAP_SOURCE CSGFoundry_GDMLBootstrap.cc)

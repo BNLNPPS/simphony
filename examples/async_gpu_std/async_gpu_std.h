@@ -52,7 +52,6 @@
 #include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
-#include "G4UserTrackingAction.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VProcess.hh"
 #include "G4VUserDetectorConstruction.hh"
@@ -1015,27 +1014,6 @@ struct SteppingAction : G4UserSteppingAction
 };
 
 // ============================================================================
-// Tracking action
-// ============================================================================
-
-struct TrackingAction : G4UserTrackingAction
-{
-    SEvt* sev;
-    TrackingAction(SEvt* sev) :
-        sev(sev)
-    {
-    }
-
-    void PreUserTrackingAction(const G4Track*) override
-    {
-    }
-
-    void PostUserTrackingAction(const G4Track*) override
-    {
-    }
-};
-
-// ============================================================================
 // G4App — wires everything together
 // ============================================================================
 
@@ -1049,7 +1027,6 @@ struct G4App
     EventAction*                   event_act_;
     RunAction*                     run_act_;
     SteppingAction*                stepping_;
-    TrackingAction*                tracking_;
 
     G4App(std::filesystem::path gdml_file, bool enable_async = true) :
         sev(SEvt::CreateOrReuse_EGPU()),
@@ -1058,8 +1035,7 @@ struct G4App
         prim_gen_(new PrimaryGenerator(sev)),
         event_act_(new EventAction(sev)),
         run_act_(new RunAction(event_act_, gpu_task_mgr_)),
-        stepping_(new SteppingAction(sev, gpu_task_mgr_)),
-        tracking_(new TrackingAction(sev))
+        stepping_(new SteppingAction(sev, gpu_task_mgr_))
     {
         if (gpu_task_mgr_)
             G4cout << "G4App [std]: async GPU mode (threshold="

@@ -24,10 +24,8 @@
 #include "G4ThreeVector.hh"
 #include "G4Track.hh"
 #include "G4TrackStatus.hh"
-#include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
-#include "G4UserTrackingAction.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VProcess.hh"
 #include "G4VUserDetectorConstruction.hh"
@@ -312,23 +310,6 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
     }
 };
 
-struct EventAction : G4UserEventAction
-{
-    SEvt *sev;
-
-    EventAction(SEvt *sev) : sev(sev)
-    {
-    }
-
-    void BeginOfEventAction(const G4Event *event) override
-    {
-    }
-
-    void EndOfEventAction(const G4Event *event) override
-    {
-    }
-};
-
 struct RunAction : G4UserRunAction
 {
     RunAction()
@@ -511,36 +492,14 @@ struct SteppingAction : G4UserSteppingAction
     }
 };
 
-struct TrackingAction : G4UserTrackingAction
-{
-    const G4Track *transient_fSuspend_track = nullptr;
-    SEvt *sev;
-
-    TrackingAction(SEvt *sev) : sev(sev)
-    {
-    }
-
-    void PreUserTrackingAction_Optical_FabricateLabel(const G4Track *track)
-    {
-    }
-
-    void PreUserTrackingAction(const G4Track *track) override
-    {
-    }
-
-    void PostUserTrackingAction(const G4Track *track) override
-    {
-    }
-};
-
 struct G4App
 {
-    G4App(std::filesystem::path gdml_file)
-        : sev(SEvt::CreateOrReuse_EGPU()), det_cons_(new DetectorConstruction(gdml_file)),
-          prim_gen_(new PrimaryGenerator(sev)), event_act_(new EventAction(sev)), run_act_(new RunAction()),
-          stepping_(new SteppingAction(sev)),
-
-          tracking_(new TrackingAction(sev))
+    G4App(std::filesystem::path gdml_file) :
+        sev(SEvt::CreateOrReuse_EGPU()),
+        det_cons_(new DetectorConstruction(gdml_file)),
+        prim_gen_(new PrimaryGenerator(sev)),
+        run_act_(new RunAction()),
+        stepping_(new SteppingAction(sev))
     {
     }
 
@@ -551,8 +510,6 @@ struct G4App
 
     G4VUserDetectorConstruction *det_cons_;
     G4VUserPrimaryGeneratorAction *prim_gen_;
-    EventAction *event_act_;
     RunAction *run_act_;
     SteppingAction *stepping_;
-    TrackingAction *tracking_;
 };

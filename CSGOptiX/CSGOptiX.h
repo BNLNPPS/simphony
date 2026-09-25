@@ -31,7 +31,6 @@ struct SGLM ;
 struct SSim ;
 
 struct CSGFoundry ;
-struct CSGView ;
 
 template <typename T> struct Tran ;
 struct QSim ;

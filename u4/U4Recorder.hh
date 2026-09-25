@@ -47,7 +47,6 @@ class G4StepPoint ;
 struct U4Tree ;
 struct NP ;
 struct spho ;
-struct quad4 ;
 struct SEvt ;
 struct stimer ;
 
@@ -215,10 +214,6 @@ public:
     static const bool UserSteppingAction_Optical_ClearNumberOfInteractionLengthLeft ;
 
 
-    template <typename T>
-    static void CollectBoundaryAux(quad4* current_aux );
-
-
     static const double EPSILON ;
     static const bool ClassifyFake_FindPV_r ;
     static stimer* TIMER ;
@@ -229,7 +224,6 @@ public:
     static std::vector<std::string>* FAKES ;       // envvar U4Recorder__FAKES
     static bool                      FAKES_SKIP ;  // envvar U4Recorder__FAKES_SKIP
 
-    static bool IsListed( const std::vector<std::string>* LIST, const char* spec ) ;
     static bool IsListedFake( const char* spec );
     static std::string DescFakes();
 

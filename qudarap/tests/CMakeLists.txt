@@ -32,10 +32,6 @@ set(KNOWN_FAIL_TEST_SOURCES
    QBndTest.cc 
 )
 
-set(OTHER_TEST_SOURCES
-   QCKTest.cc
-)
-
 set(QUDARAP_INPUT_PHOTON_NAMES
    CubeCorners
    CubeCorners10x10
