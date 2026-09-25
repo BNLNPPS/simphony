@@ -1,6 +1,6 @@
 // NP_delete_test
 
-#include "sprof.h"
+#include "EventTiming.hh"
 #include "sstr.h"
 #include "sstamp.h"
 
@@ -38,14 +38,15 @@ IN A LOOP AND LOOK FOR VARIATIONS, SEE BELOW.
 
 void NP_delete_test::t0()
 {
-    sprof p0, p1, p2 ; 
+    const EventTimingCapture capture =
+        EventTimingCapture::Monotonic | EventTimingCapture::Memory;
 
-    sprof::Stamp(p0);  
+    const EventTimingSample p0 = EventTimingSample::Capture(capture);
 
     NP* a = NP::Make<float>( 1*M, 4, 4 ) ; 
     std::cout << a->descSize() << std::endl ; 
 
-    sprof::Stamp(p1);  
+    const EventTimingSample p1 = EventTimingSample::Capture(capture);
 
     //a->clear() ; 
 
@@ -54,10 +55,12 @@ void NP_delete_test::t0()
     //delete a ; 
     //a = nullptr ; 
 
-    sprof::Stamp(p2);  
+    const EventTimingSample p2 = EventTimingSample::Capture(capture);
 
-    std::cout << sprof::Desc(p0,p1) << std::endl ;  
-    std::cout << sprof::Desc(p1,p2) << std::endl ;  
+    std::cout << "allocate elapsed_ns " << EventTimingSample::elapsedNs(p0, p1)
+              << " delta_rss_kb " << EventTimingSample::deltaRssKb(p0, p1) << std::endl;
+    std::cout << "release elapsed_ns " << EventTimingSample::elapsedNs(p1, p2)
+              << " delta_rss_kb " << EventTimingSample::deltaRssKb(p1, p2) << std::endl;
 }
 
 
@@ -92,7 +95,7 @@ void NP_delete_test::t1()
     for(int idx=0 ; idx < 10 ; idx++)
     {
         std::string head = U::FormName_("head_", idx, nullptr, 3 ) ; 
-        run->set_meta<std::string>(head.c_str(), sprof::Now() ); 
+        run->set_meta<uint64_t>(head.c_str(), sstamp::Now() );
 
         int num = (*nums)[idx] ; 
         rr[idx] = num ;  
@@ -100,20 +103,20 @@ void NP_delete_test::t1()
         NP* a = NP::Make<float>( num, 4, 4 ) ; 
 
         std::string body = U::FormName_("body_", idx, nullptr, 3 ) ; 
-        run->set_meta<std::string>(body.c_str(), sprof::Now() ); 
+        run->set_meta<uint64_t>(body.c_str(), sstamp::Now() );
  
         if(CLEAR) a->clear() ;     
         if(DELETE) delete a ; 
 
         std::string tail = U::FormName_("tail_", idx, nullptr, 3 ) ; 
-        run->set_meta<std::string>(tail.c_str(), sprof::Now() ); 
+        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now() );
 
         sstamp::sleep_us(100000); 
     }
 
     NPFold* fold = new NPFold ;  
     fold->add( "run", run ); 
-    fold->add( "runprof", run->makeMetaKVProfileArray() ); 
+    fold->add( "runprof", NP::Make<int64_t>(1, 4) );
     fold->save("$FOLD"); 
 }
 
@@ -163,14 +166,14 @@ void NP_delete_test::t2()
 
         std::string head = U::FormName_("head_", idx, nullptr, 3 ) ; 
         sstamp::sleep_us(100000); 
-        run->set_meta<std::string>(head.c_str(), sprof::Now() ); 
+        run->set_meta<uint64_t>(head.c_str(), sstamp::Now() );
 
         NP* a = NP::Make<float>( num, 4, 4 ) ; 
 
 
         std::string body = U::FormName_("body_", idx, nullptr, 3 ) ; 
         sstamp::sleep_us(100000); 
-        run->set_meta<std::string>(body.c_str(), sprof::Now() ); 
+        run->set_meta<uint64_t>(body.c_str(), sstamp::Now() );
 
         if(CLEAR) a->clear() ;     
         if(DELETE) delete a ; 
@@ -178,12 +181,12 @@ void NP_delete_test::t2()
 
         std::string tail = U::FormName_("tail_", idx, nullptr, 3 ) ; 
         sstamp::sleep_us(100000); 
-        run->set_meta<std::string>(tail.c_str(), sprof::Now() ); 
+        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now() );
     }
 
     NPFold* fold = new NPFold ;  
     fold->add( "run", run ); 
-    fold->add( "runprof", run->makeMetaKVProfileArray() ); 
+    fold->add( "runprof", NP::Make<int64_t>(1, 4) );
     fold->save("$FOLD"); 
 
 }
@@ -201,7 +204,6 @@ void NP_delete_test::main()
         case 0: t0() ; break ; 
         case 1: t1() ; break ; 
         case 2: t2() ; break ; 
-        case 3: t3() ; break ; 
     }
 }
 

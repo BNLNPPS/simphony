@@ -507,10 +507,6 @@ struct NP
     typedef std::vector<int64_t> VT ;
 
 
-    static NP* MakeMetaKVProfileArray(const std::string& meta, const char* ptn=nullptr);
-    static void GetMetaKV_( const char* metadata    , VS* keys, VS* vals, bool only_with_profile, const char* ptn=nullptr );
-    static void GetMetaKV(  const std::string& meta , VS* keys, VS* vals, bool only_with_profile, const char* ptn=nullptr );
-
     template<typename T> static T    GetMeta( const std::string& mt, const char* key, T fallback );
 
     template<typename T> static T    get_meta_(const char* metadata, const char* key, T fallback=0) ;  // for T=std::string must set fallback to ""
@@ -6210,121 +6206,6 @@ inline std::string NP::get_meta_string(const std::string& meta, const char* key)
     return get_meta_string_( metadata, key );
 }
 
-/**
-NP::MakeMetaKVProfileArray
-----------------------------
-
-::
-
-    (ok) A[blyth@localhost ALL1_Debug_Philox_ref1]$ grep Index SProf.txt
-    A000_SEvt__setIndex:1760707886287057,7316444,1222084
-    A000_SEvt__endIndex:1760707886541457,8373000,1334844
-
-1. finds metadata lines looking like profile stamps with keys containing the ptn (eg "Index"), nullptr matches all lines
-2. create (N,3) int64_t array filled with the stamps (t[us],vm[kb],rs[kb])
-
-**/
-
-inline NP* NP::MakeMetaKVProfileArray(const std::string& meta, const char* ptn)
-{
-    std::vector<std::string> keys ;
-    std::vector<std::string> vals ;
-    bool only_with_profile = true ;
-    GetMetaKV(meta, &keys, &vals, only_with_profile, ptn );
-    assert( keys.size() == vals.size() );
-    INT num_key = keys.size();
-
-    INT ni = num_key ;
-    INT nj = 3 ;
-    bool dump = false ;
-
-    NP* prof = ni > 0 ? NP::Make<int64_t>(ni, nj ) : nullptr  ;
-    int64_t* pp = prof ? prof->values<int64_t>() : nullptr ;
-    if(prof)
-    {
-        prof->labels = new std::vector<std::string> {"st[us]", "vm[kb]", "rs[kb]" } ;
-        prof->meta = meta ;
-    }
-
-    for(INT i=0 ; i < ni ; i++)
-    {
-        const char* k = keys[i].c_str();
-        const char* v = vals[i].c_str();
-        bool looks_like_prof  = U::LooksLikeProfileTriplet(v);
-        assert( looks_like_prof );
-        if(!looks_like_prof) continue ;
-
-        char* end = nullptr ;
-        int64_t st = strtoll( v,   &end, 10 ) ;
-        int64_t vm = strtoll( end+1, &end , 10 ) ;
-        int64_t rs = strtoll( end+1, &end , 10 ) ;
-
-        if(dump) std::cout
-            << "NP::makeMetaKVProfileArray"
-            << " k " << ( k ? k : "-" )
-            << " v " << ( v ? v : "-" )
-            << " st " << st
-            << " vm " << vm
-            << " rs " << rs
-            << std::endl
-            ;
-
-        pp[nj*i + 0 ] = st ;
-        pp[nj*i + 1 ] = vm ;
-        pp[nj*i + 2 ] = rs ;
-        prof->names.push_back(k) ;
-    }
-    return prof ;
-}
-
-inline void NP::GetMetaKV_(
-    const char* metadata,
-    std::vector<std::string>* keys,
-    std::vector<std::string>* vals,
-    bool only_with_profile,
-    const char* ptn
-    ) // static
-{
-    if(metadata == nullptr) return ;
-    std::stringstream ss;
-    ss.str(metadata);
-    std::string s;
-    char delim = ':' ;
-
-    while (std::getline(ss, s))
-    {
-        size_t pos = s.find(delim);
-        if( pos != std::string::npos )
-        {
-            std::string _k = s.substr(0, pos);
-            std::string _v = s.substr(pos+1);
-            const char* k = _k.c_str();
-            const char* v = _v.c_str();
-            bool match_ptn = ptn ? strstr( k, ptn ) != nullptr : true  ;
-            bool looks_like_profile = U::LooksLikeProfileTriplet(v);
-            bool select = only_with_profile ? looks_like_profile && match_ptn : match_ptn ;
-            if(!select) continue ;
-
-            if(keys) keys->push_back(k);
-            if(vals) vals->push_back(v);
-        }
-    }
-}
-
-inline void NP::GetMetaKV(
-    const std::string& meta,
-    std::vector<std::string>* keys,
-    std::vector<std::string>* vals,
-    bool only_with_profile,
-    const char* ptn)  // static
-{
-    const char* metadata = meta.empty() ? nullptr : meta.c_str() ;
-    return GetMetaKV_( metadata, keys, vals, only_with_profile, ptn  );
-}
-
-
-
-
 template<typename T> inline T NP::GetMeta(const std::string& mt, const char* key, T fallback) // static
 {
     if(mt.empty()) return fallback ;
@@ -7338,7 +7219,7 @@ inline std::string NP::DescMetaKV(const std::string& meta, const char* juncture_
     std::vector<std::string> keys ;
     std::vector<std::string> vals ;
     bool only_with_profile = false ;
-    GetMetaKV(meta, &keys, &vals, only_with_profile );
+    U::GetMetaKVS(meta, &keys, &vals, nullptr, only_with_profile );
     assert( keys.size() == vals.size() );
     INT num_keys = keys.size();
 
@@ -7352,10 +7233,8 @@ inline std::string NP::DescMetaKV(const std::string& meta, const char* juncture_
     {
         const char* v = vals[i].c_str();
         bool looks_like_stamp = U::LooksLikeStampInt(v);
-        bool looks_like_prof  = U::LooksLikeProfileTriplet(v);
         int64_t t = 0 ;
         if(looks_like_stamp) t = U::To<int64_t>(v) ;
-        if(looks_like_prof)  t = strtoll(v, nullptr, 10);
         tt.push_back(t);
         ii.push_back(i);
         if(t > 0 && t < t0) t0 = t ;
