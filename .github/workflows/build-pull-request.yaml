@@ -31,22 +31,35 @@ jobs:
       - name: Verify installed wheel
         run: |
           artifact_dir=$(mktemp -d)
-          project_python="$PWD/.venv/bin/python"
+          wheel_venv=$(mktemp -d)
+          project_root="$PWD"
           uv build --out-dir "$artifact_dir"
-          uv pip install --python "$project_python" --reinstall --no-deps "$artifact_dir"/*.whl
+          uv venv "$wheel_venv"
+          uv pip install --python "$wheel_venv/bin/python" "$artifact_dir"/*.whl
           cd /tmp
-          "$project_python" -I - <<'PY'
+          PROJECT_ROOT="$project_root" "$wheel_venv/bin/python" -I - <<'PY'
           import importlib
           import importlib.metadata
+          import os
           from pathlib import Path
 
           distribution = importlib.metadata.distribution("optiphy")
           package_root = Path(distribution.locate_file("optiphy"))
-          modules = [
+          source_root = Path(os.environ["PROJECT_ROOT"]) / "optiphy"
+          expected_modules = {
+              ".".join(path.relative_to(source_root.parent).with_suffix("").parts)
+              for path in source_root.rglob("*.py")
+              if path.relative_to(source_root).parts[0] != "test"
+          }
+          installed_modules = {
               ".".join(path.relative_to(package_root.parent).with_suffix("").parts)
               for path in package_root.rglob("*.py")
-          ]
-          for module in modules:
+          }
+          assert installed_modules == expected_modules, {
+              "missing": sorted(expected_modules - installed_modules),
+              "unexpected": sorted(installed_modules - expected_modules),
+          }
+          for module in sorted(installed_modules):
               importlib.import_module(module)
 
           scripts = {
