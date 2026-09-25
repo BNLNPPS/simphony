@@ -41,7 +41,7 @@
 #include "OpticksPhoton.h"
 #include "OpticksPhoton.hh"
 #include "SComp.h"
-#include "SProf.hh"
+#include "EventTiming.hh"
 #include "SRecord.h"
 
 
@@ -94,9 +94,9 @@ SEvt::Init_RUN_META
 As this is a static it happens just as libSysRap is loaded,
 very soon after starting the executable.
 
-Now using SProf for profile stamps, previously included with run_meta.txt::
+Now using EventTimingProfile for profile stamps, previously included with run_meta.txt::
 
-   run_meta->set_meta<std::string>("SEvt__Init_RUN_META", sprof::Now() );
+   run_meta->set_meta<std::string>("SEvt__Init_RUN_META", EventTimingSample::Capture(...).serialize() );
 
 **/
 
@@ -104,7 +104,7 @@ Now using SProf for profile stamps, previously included with run_meta.txt::
 NP* SEvt::Init_RUN_META() // static
 {
     NP* run_meta = NP::Make<float>(1);
-    SProf::Add("SEvt__Init_RUN_META");
+    EventTimingProfile::Mark("SEvt__Init_RUN_META");
     return run_meta ;
 }
 
@@ -1561,8 +1561,8 @@ void SEvt::SaveGenstepLabels(const char* dir, const char* name)
 
 void SEvt::BeginOfRun()
 {
-    SProf::Add("SEvt__BeginOfRun");
-    SProf::Write();
+    EventTimingProfile::Mark("SEvt__BeginOfRun");
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 
 
@@ -1570,8 +1570,8 @@ void SEvt::BeginOfRun()
 
 void SEvt::EndOfRun()
 {
-    SProf::Add("SEvt__EndOfRun");
-    SProf::Write();
+    EventTimingProfile::Mark("SEvt__EndOfRun");
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 
 
@@ -1634,7 +1634,7 @@ can be controlled by::
 When save into the RunDir one level above the event folders A000 etc..
 
 When SEvt__SAVE_RUNDIR is not defined save into the invoking directory
-together with the logfile and SProf.txt
+together with the logfile and EventTimingProfile.csv
 This simple approach makes more sense in production when event arrays
 are not saved.
 
@@ -1755,7 +1755,7 @@ as still need to collect the gensteps.
 void SEvt::beginOfEvent(int eventID)
 {
     if(isFirstEvtInstance() && eventID == 0) BeginOfRun() ;
-    if(eventID == 0) SProf::Add( isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU" ) ;
+    if(eventID == 0) EventTimingProfile::Mark( isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU" ) ;
 
     setStage(SEvt__beginOfEvent);
     if(EventTimingProfile::Enabled())
@@ -2118,7 +2118,7 @@ void SEvt::setIndex(int index_arg)
     index = SEventConfig::EventIndex(index_arg) ;
     t_BeginOfEvent = sstamp::Now();                // moved here from the static
 
-    SProf::Add("SEvt__setIndex");
+    EventTimingProfile::Mark("SEvt__setIndex");
 }
 void SEvt::endIndex(int index_arg)
 {
@@ -2133,7 +2133,7 @@ void SEvt::endIndex(int index_arg)
     assert( consistent );
     t_EndOfEvent = sstamp::Now();
 
-    SProf::Add("SEvt__endIndex");
+    EventTimingProfile::Mark("SEvt__endIndex");
 }
 
 /**
@@ -3974,7 +3974,7 @@ This is because QEvt::getMeta returns SEvt::meta for from
 the associated QEvt::sev (SEvt) instance.
 
 Note that because SEvt::save is typically not done in production,
-the SProf.hh metadata data recording is more generally useful.
+the EventTimingProfile metadata recording is more generally useful.
 
 **/
 

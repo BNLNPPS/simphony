@@ -15,7 +15,7 @@
 #include "sstr.h"
 #include "ssys.h"
 #include "sproc.h"
-#include "SProf.hh"
+#include "EventTiming.hh"
 
 #include "smeta.h"
 #include "SSim.hh"
@@ -3138,7 +3138,7 @@ bool CSGFoundry::Load_saveAlt = ssys::getenvbool("CSGFoundry_Load_saveAlt") ;
 
 CSGFoundry* CSGFoundry::Load() // static
 {
-    SProf::Add("CSGFoundry__Load_HEAD");
+    EventTimingProfile::Mark("CSGFoundry__Load_HEAD");
 
 
 
@@ -3174,7 +3174,7 @@ CSGFoundry* CSGFoundry::Load() // static
     //AfterLoadOrCreate();  // TRY TO REPLACE WITH SSim::afterLoadOrCreate
 
     LOG(LEVEL) << "] argumentless " ;
-    SProf::Add("CSGFoundry__Load_TAIL");
+    EventTimingProfile::Mark("CSGFoundry__Load_TAIL");
     return dst ;
 }
 

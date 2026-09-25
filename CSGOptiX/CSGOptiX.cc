@@ -21,7 +21,7 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include "ssys.h"
 #include "spath.h"
 #include "smeta.h"
-#include "SProf.hh"
+#include "EventTiming.hh"
 
 #include "NP.hh"
 #include "SCAM.h"
@@ -147,15 +147,15 @@ CSGOptiX::SimulateMain
 
 int CSGOptiX::SimulateMain() // static
 {
-    SProf::Add("CSGOptiX__SimulateMain_HEAD");
+    EventTimingProfile::Mark("CSGOptiX__SimulateMain_HEAD");
     SEventConfig::SetRGModeSimulate();
     CSGFoundry* fd = CSGFoundry::Load();
     CSGOptiX* cx = CSGOptiX::Create(fd) ;
     bool reset = true ;
     for(int i=0 ; i < SEventConfig::NumEvent() ; i++) cx->simulate(i, reset);
-    SProf::UnsetTag();
-    SProf::Add("CSGOptiX__SimulateMain_TAIL");
-    SProf::Write();
+    EventTimingProfile::UnsetTag();
+    EventTimingProfile::Mark("CSGOptiX__SimulateMain_TAIL");
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
     cx->write_Ctx_log();
     delete cx ;
     return 0 ;
@@ -306,7 +306,7 @@ within the ctor ?
 
 CSGOptiX* CSGOptiX::Create(CSGFoundry* fd )
 {
-    SProf::Add("CSGOptiX__Create_HEAD");
+    EventTimingProfile::Mark("CSGOptiX__Create_HEAD");
     LOG(LEVEL) << "[ fd.descBase " << ( fd ? fd->descBase() : "-" ) ;
 
     SSim* ssim = const_cast<SSim*>(fd->sim) ;
@@ -327,7 +327,7 @@ CSGOptiX* CSGOptiX::Create(CSGFoundry* fd )
 
 
     LOG(LEVEL) << "]" ;
-    SProf::Add("CSGOptiX__Create_TAIL");
+    EventTimingProfile::Mark("CSGOptiX__Create_TAIL");
     return cx ;
 }
 

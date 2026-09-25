@@ -6,7 +6,7 @@
 #include "ssys.h"
 #include "sstamp.h"
 #include "spath.h"
-#include "SProf.hh"
+#include "EventTiming.hh"
 
 #include "SComp.h"
 #include "SEvt.hh"
@@ -468,7 +468,7 @@ bool QSim::KEEP_SUBFOLD = ssys::getenvbool(QSim__simulate_KEEP_SUBFOLD);
 
 double QSim::simulate(int eventID, bool reset_)
 {
-    SProf::SetTag(eventID, "A%0.3d_" ) ;
+    EventTimingProfile::SetTag(eventID, "A%0.3d_" ) ;
 
     assert( SEventConfig::IsRGModeSimulate() );
 
@@ -483,7 +483,7 @@ double QSim::simulate(int eventID, bool reset_)
     int64_t tot_idt = 0 ;
     int64_t tot_gdt = 0 ;
 
-    int64_t t_HEAD = SProf::Add("QSim__simulate_HEAD");
+    const EventTimingSample t_HEAD = EventTimingProfile::Mark("QSim__simulate_HEAD");
 
     LOG_IF(info, SEvt::LIFECYCLE) << "[ eventID " << eventID ;
     if( qev == nullptr ) return -1. ;
@@ -517,11 +517,11 @@ double QSim::simulate(int eventID, bool reset_)
         ;
 
 
-    int64_t t_LBEG = SProf::Add("QSim__simulate_LBEG");
+    const EventTimingSample t_LBEG = EventTimingProfile::Mark("QSim__simulate_LBEG");
 
     for(int i=0 ; i < num_slice ; i++)
     {
-        SProf::Add("QSim__simulate_PRUP");
+        EventTimingProfile::Mark("QSim__simulate_PRUP");
 
         const sslice& sl = igs_slice[i] ;
 
@@ -538,7 +538,7 @@ double QSim::simulate(int eventID, bool reset_)
             ;
 
 
-        SProf::Add("QSim__simulate_PREL");
+        EventTimingProfile::Mark("QSim__simulate_PREL");
 
         sev->t_PreLaunch = sstamp::Now() ;
 
@@ -559,19 +559,22 @@ double QSim::simulate(int eventID, bool reset_)
             << " slice " << sl.idx_desc(i)
             ;
 
-        int64_t t_POST = SProf::Add("QSim__simulate_POST");
+        const EventTimingSample t_POST = EventTimingProfile::Mark("QSim__simulate_POST");
 
         sev->gather();  // gather into *fold* just added to *topfold*
 
-        int64_t t_DOWN = SProf::Add("QSim__simulate_DOWN");
+        const EventTimingSample t_DOWN = EventTimingProfile::Mark("QSim__simulate_DOWN");
 
-        tot_gdt += ( t_DOWN - t_POST ) ;
+        tot_gdt += EventTimingSample::elapsedNs(t_POST, t_DOWN) ;
     }
 
 
     size_t max_slot_M = SEventConfig::MaxSlot()/M;
-    std::string anno = SProf::Annotation("slice",num_slice, "max_slot_M", max_slot_M);
-    int64_t t_LEND = SProf::Add("QSim__simulate_LEND", anno.c_str());
+    const std::string annotation = EventTimingProfile::Annotation({
+        {"slice", static_cast<std::uint64_t>(num_slice)},
+        {"max_slot_M", static_cast<std::uint64_t>(max_slot_M)}
+    });
+    const EventTimingSample t_LEND = EventTimingProfile::Mark("QSim__simulate_LEND", annotation);
 
     std::stringstream ss ;
     std::ostream* out = CONCAT ? &ss : nullptr ;
@@ -595,7 +598,7 @@ double QSim::simulate(int eventID, bool reset_)
 
     if(!KEEP_SUBFOLD) sev->topfold->clear_subfold();
 
-    int64_t t_PCAT = SProf::Add("QSim__simulate_PCAT");
+    const EventTimingSample t_PCAT = EventTimingProfile::Mark("QSim__simulate_PCAT");
 
     int tot_ht = sev->getNumHit() ;  // NB from fold, so requires hits array gathering to be configured to get non-zero
     std::string counts = sev->getCounts();  // collect counts before reset
@@ -614,26 +617,31 @@ double QSim::simulate(int eventID, bool reset_)
 
     assert( tot_ph == tot_ph_0 );
 
-    int64_t t_BRES  = SProf::Add("QSim__simulate_BRES", counts.c_str() );
+    const EventTimingSample t_BRES = EventTimingProfile::Mark("QSim__simulate_BRES", counts);
     if(reset_) reset(eventID) ;
 
-    int64_t t_TAIL  = SProf::Add("QSim__simulate_TAIL");
+    const EventTimingSample t_TAIL = EventTimingProfile::Mark("QSim__simulate_TAIL");
 
-    SProf::Write(); // per-event write, so have something in case of crash
+    EventTimingProfile::Write(EventTimingWriteMode::Replace); // per-event write, so have something in case of crash
+
+    const auto seconds = [](const EventTimingSample& begin, const EventTimingSample& end)
+    {
+        return 1e-9 * static_cast<double>(EventTimingSample::elapsedNs(begin, end));
+    };
 
     LOG_IF(info, SEvt::MINTIME) << "\n"
         << SEvt::SEvt__MINTIME
         << "\n"
-        << " (TAIL - HEAD)/M " << std::setw(10) << std::fixed << std::setprecision(6) << float( t_TAIL - t_HEAD )/M
+        << " TAIL - HEAD [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_HEAD, t_TAIL)
         << " (head to tail of QSim::simulate method) "
         << "\n"
-        << " (LEND - LBEG)/M " << std::setw(10) << std::fixed << std::setprecision(6) << float( t_LEND - t_LBEG )/M
+        << " LEND - LBEG [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_LBEG, t_LEND)
         << " (multilaunch loop begin to end) "
         << "\n"
-        << " (PCAT - LEND)/M " << std::setw(10) << std::fixed << std::setprecision(6) << float( t_PCAT - t_LEND )/M
+        << " PCAT - LEND [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_LEND, t_PCAT)
         << " (topfold concat and clear subfold) "
         << "\n"
-        << " (TAIL - BRES)/M " << std::setw(10) << std::fixed << std::setprecision(6) << float( t_TAIL - t_BRES )/M
+        << " TAIL - BRES [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_BRES, t_TAIL)
         << " (QSim::reset which saves hits) "
         << "\n"
         << " tot_idt/M       " << std::setw(10) << std::fixed << std::setprecision(6) << float(tot_idt)/M
@@ -643,8 +651,8 @@ double QSim::simulate(int eventID, bool reset_)
         << " int(tot_dt*M)   " << std::setw(10) << int64_t(tot_dt*M)
         << " (sum of kernel execution double chrono stamp differences in seconds, and scaled to ms) "
         << "\n"
-        << " tot_gdt/M       " << std::setw(10) << std::fixed << std::setprecision(6) << float(tot_gdt)/M
-        << " (sum of SEvt::gather int64_t stamp differences in microseconds)"
+        << " tot_gdt [s]     " << std::setw(10) << std::fixed << std::setprecision(6) << 1e-9*static_cast<double>(tot_gdt)
+        << " (sum of SEvt::gather monotonic stamp differences)"
         << "\n"
         ;
 
@@ -876,11 +884,11 @@ to enable copying from the gathered arrays into non-Opticks collections.
 **/
 void QSim::reset(int eventID)
 {
-    SProf::Add("QSim__reset_HEAD");
+    EventTimingProfile::Mark("QSim__reset_HEAD");
     qev->clear();
     sev->endOfEvent(eventID);
     LOG_IF(info, SEvt::LIFECYCLE) << "] eventID " << eventID ;
-    SProf::Add("QSim__reset_TAIL");
+    EventTimingProfile::Mark("QSim__reset_TAIL");
 }
 
 

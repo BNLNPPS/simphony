@@ -13,7 +13,7 @@ U4HitTest.cc
 #include "SEvt.hh"
 #include "ssys.h"
 #include "SSim.hh"
-#include "SProf.hh"
+#include "EventTiming.hh"
 #include "spath.h"
 
 #include "CSGFoundry.h"
@@ -43,8 +43,8 @@ struct U4HitTest
     sphoton local_alt = {}  ;
 
 
-    int32_t delta_rs ;
-    int32_t range_rs ;
+    std::int64_t delta_rs ;
+    std::int64_t range_rs ;
     unsigned hit_idx ;
 
     std::string desc() const ;
@@ -138,8 +138,8 @@ inline std::string U4HitTest::smry() const
     ss << "U4HitTest::smry" << std::endl
        << " METHOD " << METHOD
        << " num_hit " << num_hit
-       << " SProf::Range_RS " << range_rs
-       << " SProf::Range_RS/num_hit " << std::setw(10) << std::fixed << std::setprecision(4) << double(range_rs)/double(num_hit)
+       << " EventTimingProfile::RangeRssKb " << range_rs
+       << " EventTimingProfile::RangeRssKb/num_hit " << std::setw(10) << std::fixed << std::setprecision(4) << double(range_rs)/double(num_hit)
        << std::endl
        ;
     std::string str = ss.str();
@@ -149,42 +149,42 @@ inline std::string U4HitTest::smry() const
 
 inline void U4HitTest::convertHit(unsigned hidx, bool is_repeat)
 {
-    SProf::SetTag(hidx);
-    SProf::Add("Head");
+    EventTimingProfile::SetTag(hidx);
+    EventTimingProfile::Mark("Head");
 
     sev->getHit(global, hidx);
     sev->getLocalHit( ht, local,  hidx);
 
     U4HitGet::ConvertFromPhoton(hit,global,local, ht);
 
-    SProf::Add("Tail");
-    delta_rs = SProf::Delta_RS();
-    range_rs = SProf::Range_RS();
+    EventTimingProfile::Mark("Tail");
+    delta_rs = EventTimingProfile::DeltaRssKb();
+    range_rs = EventTimingProfile::RangeRssKb();
     //LOG_IF(info, delta_rs > 0) << dump() ;
     LOG_IF(info, delta_rs > 0 || is_repeat) << brief() ;
 }
 
 inline void U4HitTest::convertHit_LEAKY(unsigned hidx, bool is_repeat)
 {
-    SProf::SetTag(hidx);
-    SProf::Add("Head");
+    EventTimingProfile::SetTag(hidx);
+    EventTimingProfile::Mark("Head");
 
     sev->getHit(global, hidx);
     sev->getLocalHit_LEAKY( ht_alt, local_alt,  hidx);
 
     U4HitGet::ConvertFromPhoton(hit,global,local_alt, ht_alt);
 
-    SProf::Add("Tail");
-    delta_rs = SProf::Delta_RS();
-    range_rs = SProf::Range_RS();
+    EventTimingProfile::Mark("Tail");
+    delta_rs = EventTimingProfile::DeltaRssKb();
+    range_rs = EventTimingProfile::RangeRssKb();
     //LOG_IF(info, delta_rs > 0) << dump() ;
     LOG_IF(info, delta_rs > 0 || is_repeat) << brief() ;
 }
 
 inline void U4HitTest::convertHit_COMPARE(unsigned hidx, bool is_repeat)
 {
-    SProf::SetTag(hidx);
-    SProf::Add("Head");
+    EventTimingProfile::SetTag(hidx);
+    EventTimingProfile::Mark("Head");
 
     sev->getHit(global, hidx);
     sev->getLocalHit( ht, local,  hidx);
@@ -217,9 +217,9 @@ inline void U4HitTest::convertHit_COMPARE(unsigned hidx, bool is_repeat)
 
     U4HitGet::ConvertFromPhoton(hit,global,local, ht);
 
-    SProf::Add("Tail");
-    delta_rs = SProf::Delta_RS();
-    range_rs = SProf::Range_RS();
+    EventTimingProfile::Mark("Tail");
+    delta_rs = EventTimingProfile::DeltaRssKb();
+    range_rs = EventTimingProfile::RangeRssKb();
     //LOG_IF(info, delta_rs > 0) << dump() ;
     LOG_IF(info, delta_rs > 0 || is_repeat) << brief() ;
 
@@ -261,10 +261,9 @@ inline void U4HitTest::convertHits()
 
 inline void U4HitTest::save() const
 {
-    bool append = false ;
     //const char* _path = "$TMP/U4HitTest/U4HitTest.txt" ;
     //const char* path = spath::Resolve(_path) ;
-    SProf::Write(append);
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 
 int main(int argc, char** argv)
@@ -291,4 +290,3 @@ int main(int argc, char** argv)
 
     return 0 ;
 }
-

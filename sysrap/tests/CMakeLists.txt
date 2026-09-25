@@ -104,7 +104,6 @@ set(TEST_SOURCES
 
    SNameTest.cc
 
-   SProfTest.cc
    EventTimingSampleTest.cc
    EventTimingProfileTest.cc
    EventTimingRecorderTest.cc
