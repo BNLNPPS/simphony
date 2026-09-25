@@ -16,6 +16,27 @@ permissions:
 
 jobs:
 
+  python-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Check lock file
+        run: uv lock --check
+
+      - name: Run Python tests
+        run: uv run pytest
+
+      - name: Verify installed wheel
+        run: |
+          wheel_dir=$(mktemp -d)
+          target_dir=$(mktemp -d)
+          uv build --wheel --out-dir "$wheel_dir"
+          python -m pip install --no-deps --target "$target_dir" "$wheel_dir"/*.whl
+          cd /tmp
+          PYTHONPATH="$target_dir" python -c 'import importlib.util; names = ["optiphy.geant4_version", "optiphy.tools.generate_input_photons", "optiphy.tools.plot_csg", "optiphy.tools.run_performance"]; missing = [name for name in names if importlib.util.find_spec(name) is None]; assert not missing, missing'
+
   cpp-linter:
     runs-on: ubuntu-latest
     permissions:
