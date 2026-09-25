@@ -116,3 +116,86 @@ class SYSRAP_API EventTimingProfile
     static std::filesystem::path Path();
     static void Write(EventTimingWriteMode mode = EventTimingWriteMode::Replace);
 };
+
+struct EventTimingMetadata
+{
+    std::string geometry;
+    std::string config;
+    std::string macro;
+    std::string simphony_version;
+    std::string geant4_version;
+    std::string primary_particle{"opticalphoton"};
+    double primary_momentum_gev_c{0.0};
+    int primary_multiplicity{0};
+    long random_seed{-1};
+    std::string gpu_name;
+    int gpu_device_id{-1};
+    std::uint64_t gpu_memory_bytes{0};
+    int cuda_driver_version{0};
+    int cuda_runtime_version{0};
+};
+
+class SYSRAP_API EventTimingRecorder
+{
+  public:
+    using SampleProvider = EventTimingSample (*)(EventTimingCapture);
+
+    explicit EventTimingRecorder(
+        std::filesystem::path output = {},
+        SampleProvider provider = nullptr);
+
+    bool enabled() const;
+    const std::filesystem::path& output() const;
+    void BeginRun();
+    void BeginEvent(int event_id);
+    void SubmitGpu(std::int64_t num_gensteps, std::int64_t num_photons);
+    void BeginGpu();
+    void EndGpu();
+    void EndEvent(std::size_t num_gpu_hits, std::size_t num_g4_hits);
+    void Write(const EventTimingMetadata& metadata) const;
+
+  private:
+    enum class State
+    {
+        Idle,
+        CpuPre,
+        GpuQueued,
+        GpuRunning,
+        CpuPost
+    };
+
+    struct Row
+    {
+        int event_id{-1};
+        std::int64_t num_gensteps{0};
+        std::int64_t num_photons{0};
+        std::size_t num_gpu_hits{0};
+        std::size_t num_g4_hits{0};
+        EventTimingSample event_start;
+        EventTimingSample gpu_submit;
+        EventTimingSample gpu_start;
+        EventTimingSample gpu_end;
+        EventTimingSample event_end;
+    };
+
+    EventTimingSample Capture() const;
+    static const char* StateName(State state);
+    Row& ActiveRow();
+    const Row& ActiveRow() const;
+    void RequireState(State expected, std::string_view operation) const;
+    void RequireOrdered(
+        const EventTimingSample& begin,
+        const EventTimingSample& end,
+        std::string_view operation) const;
+    std::string SerializeCsv(const EventTimingMetadata& metadata) const;
+    std::string SerializeManifest(const EventTimingMetadata& metadata) const;
+    std::filesystem::path ManifestPath() const;
+
+    std::filesystem::path output_;
+    SampleProvider provider_{nullptr};
+    State state_{State::Idle};
+    bool run_started_{false};
+    int active_event_id_{-1};
+    EventTimingSample run_origin_;
+    std::vector<Row> rows_;
+};

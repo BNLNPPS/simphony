@@ -18,6 +18,7 @@
 #include "G4Version.hh"
 
 #include "sysrap/OPTICKS_LOG.hh"
+#include "sysrap/EventTiming.hh"
 #include "sysrap/SEventConfig.hh"
 
 #include "config.h"

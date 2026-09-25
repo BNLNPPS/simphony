@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "sproc.h"
+#include "SMeta.hh"
 
 namespace
 {
@@ -340,6 +341,60 @@ std::filesystem::path TemporaryPath(const std::filesystem::path& destination)
     return destination.string() + ".tmp." + std::to_string(static_cast<long long>(::getpid()))
          + "." + std::to_string(sequence);
 }
+
+std::string UtcNow()
+{
+    const std::time_t now = std::time(nullptr);
+    std::tm utc{};
+    gmtime_r(&now, &utc);
+    std::ostringstream out;
+    out << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+    return out.str();
+}
+
+double Seconds(std::int64_t nanoseconds)
+{
+    return static_cast<double>(nanoseconds) * 1e-9;
+}
+
+double CpuSeconds(
+    const EventTimingSample& begin,
+    const EventTimingSample& end,
+    EventTimingCapture field)
+{
+    if (!begin.has(field) || !end.has(field))
+        return 0.0;
+    const std::int64_t delta = field == EventTimingCapture::ProcessCpu
+        ? end.process_cpu_ns - begin.process_cpu_ns
+        : end.thread_cpu_ns - begin.thread_cpu_ns;
+    return Seconds(delta);
+}
+
+void WriteChecked(const std::filesystem::path& path, std::string_view content)
+{
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output)
+        throw std::runtime_error("Unable to open timing output: " + path.string());
+    output << content;
+    output.flush();
+    if (!output)
+        throw std::runtime_error("Unable to write timing output: " + path.string());
+    output.close();
+    if (!output)
+        throw std::runtime_error("Unable to close timing output: " + path.string());
+}
+
+void ReplaceFile(
+    const std::filesystem::path& temporary,
+    const std::filesystem::path& destination)
+{
+    std::error_code error;
+    std::filesystem::rename(temporary, destination, error);
+    if (error)
+        throw std::runtime_error(
+            "Unable to replace timing output " + destination.string() + ": " + error.message());
+}
+
 }
 
 EventTimingSample EventTimingSample::Capture(EventTimingCapture mask)
@@ -776,6 +831,317 @@ void EventTimingProfile::Write(EventTimingWriteMode mode)
     {
         std::error_code ignored;
         std::filesystem::remove(temporary, ignored);
+        throw;
+    }
+}
+
+EventTimingRecorder::EventTimingRecorder(
+    std::filesystem::path output,
+    SampleProvider provider)
+    :
+    output_(std::move(output)),
+    provider_(provider)
+{
+}
+
+bool EventTimingRecorder::enabled() const
+{
+    return !output_.empty();
+}
+
+const std::filesystem::path& EventTimingRecorder::output() const
+{
+    return output_;
+}
+
+const char* EventTimingRecorder::StateName(State state)
+{
+    switch (state)
+    {
+        case State::Idle: return "idle";
+        case State::CpuPre: return "cpu-pre";
+        case State::GpuQueued: return "gpu-queued";
+        case State::GpuRunning: return "gpu-running";
+        case State::CpuPost: return "cpu-post";
+    }
+    return "unknown";
+}
+
+EventTimingSample EventTimingRecorder::Capture() const
+{
+    constexpr EventTimingCapture mask =
+        EventTimingCapture::Monotonic
+        | EventTimingCapture::ProcessCpu
+        | EventTimingCapture::ThreadCpu;
+    return provider_ == nullptr ? EventTimingSample::Capture(mask) : provider_(mask);
+}
+
+EventTimingRecorder::Row& EventTimingRecorder::ActiveRow()
+{
+    if (rows_.empty() || active_event_id_ < 0)
+        throw std::logic_error("EventTimingRecorder has no active event");
+    return rows_.back();
+}
+
+const EventTimingRecorder::Row& EventTimingRecorder::ActiveRow() const
+{
+    if (rows_.empty() || active_event_id_ < 0)
+        throw std::logic_error("EventTimingRecorder has no active event");
+    return rows_.back();
+}
+
+void EventTimingRecorder::RequireState(State expected, std::string_view operation) const
+{
+    if (state_ == expected)
+        return;
+    throw std::logic_error(
+        "EventTimingRecorder event " + std::to_string(active_event_id_)
+        + " cannot " + std::string(operation)
+        + " in state " + StateName(state_)
+        + "; expected " + StateName(expected));
+}
+
+void EventTimingRecorder::RequireOrdered(
+    const EventTimingSample& begin,
+    const EventTimingSample& end,
+    std::string_view operation) const
+{
+    if (EventTimingSample::elapsedNs(begin, end) >= 0)
+        return;
+    throw std::logic_error(
+        "EventTimingRecorder event " + std::to_string(active_event_id_)
+        + " monotonic clock moved backwards during " + std::string(operation));
+}
+
+void EventTimingRecorder::BeginRun()
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "begin run");
+    if (active_event_id_ >= 0)
+        throw std::logic_error("EventTimingRecorder cannot begin run with an active event");
+    rows_.clear();
+    run_origin_ = Capture();
+    run_started_ = true;
+}
+
+void EventTimingRecorder::BeginEvent(int event_id)
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "begin event");
+    if (!run_started_)
+        throw std::logic_error("EventTimingRecorder BeginEvent requires BeginRun");
+
+    Row row{};
+    row.event_id = event_id;
+    row.event_start = Capture();
+    active_event_id_ = event_id;
+    RequireOrdered(run_origin_, row.event_start, "event start");
+    rows_.push_back(row);
+    state_ = State::CpuPre;
+}
+
+void EventTimingRecorder::SubmitGpu(
+    std::int64_t num_gensteps,
+    std::int64_t num_photons)
+{
+    if (!enabled())
+        return;
+    RequireState(State::CpuPre, "submit GPU work");
+    const EventTimingSample sample = Capture();
+    Row& row = ActiveRow();
+    RequireOrdered(row.event_start, sample, "GPU submission");
+    row.num_gensteps = num_gensteps;
+    row.num_photons = num_photons;
+    row.gpu_submit = sample;
+    state_ = State::GpuQueued;
+}
+
+void EventTimingRecorder::BeginGpu()
+{
+    if (!enabled())
+        return;
+    RequireState(State::GpuQueued, "begin GPU work");
+    const EventTimingSample sample = Capture();
+    Row& row = ActiveRow();
+    RequireOrdered(row.gpu_submit, sample, "GPU start");
+    row.gpu_start = sample;
+    state_ = State::GpuRunning;
+}
+
+void EventTimingRecorder::EndGpu()
+{
+    if (!enabled())
+        return;
+    RequireState(State::GpuRunning, "end GPU work");
+    const EventTimingSample sample = Capture();
+    Row& row = ActiveRow();
+    RequireOrdered(row.gpu_start, sample, "GPU end");
+    row.gpu_end = sample;
+    state_ = State::CpuPost;
+}
+
+void EventTimingRecorder::EndEvent(
+    std::size_t num_gpu_hits,
+    std::size_t num_g4_hits)
+{
+    if (!enabled())
+        return;
+    RequireState(State::CpuPost, "end event");
+    const EventTimingSample sample = Capture();
+    Row& row = ActiveRow();
+    RequireOrdered(row.gpu_end, sample, "event end");
+    row.num_gpu_hits = num_gpu_hits;
+    row.num_g4_hits = num_g4_hits;
+    row.event_end = sample;
+    state_ = State::Idle;
+    active_event_id_ = -1;
+}
+
+std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadata) const
+{
+    std::ostringstream csv;
+    csv << "scenario,dispatch_mode,event_id,"
+           "start_time,end_time,cpu_start_time,cpu_end_time,cpu_pre_start_time,cpu_pre_end_time,"
+           "gpu_submit_time,gpu_start_time,gpu_end_time,gpu_wait_start_time,gpu_wait_end_time,"
+           "cpu_post_start_time,cpu_post_end_time,"
+           "start_offset_s,end_offset_s,cpu_start_time_offset_s,cpu_end_time_offset_s,"
+           "cpu_pre_start_time_offset_s,cpu_pre_end_time_offset_s,gpu_submit_time_offset_s,"
+           "gpu_start_time_offset_s,gpu_end_time_offset_s,gpu_wait_start_time_offset_s,"
+           "gpu_wait_end_time_offset_s,cpu_post_start_time_offset_s,"
+           "cpu_post_end_time_offset_s,runtime_s,cpu_pre_runtime_s,cpu_post_runtime_s,cpu_runtime_s,"
+           "gpu_queue_delay_s,gpu_runtime_s,gpu_wait_runtime_s,"
+           "primary_particle,primary_momentum_gev_c,primary_multiplicity,"
+           "num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,"
+           "process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s\n";
+
+    csv << std::setprecision(12);
+    for (const Row& row : rows_)
+    {
+        const auto absolute = [](const EventTimingSample& sample)
+        {
+            return Seconds(sample.steady_time_ns);
+        };
+        const auto offset = [this](const EventTimingSample& sample)
+        {
+            return Seconds(EventTimingSample::elapsedNs(run_origin_, sample));
+        };
+        const auto duration = [](const EventTimingSample& begin, const EventTimingSample& end)
+        {
+            return Seconds(EventTimingSample::elapsedNs(begin, end));
+        };
+
+        const double cpu_pre_runtime = duration(row.event_start, row.gpu_submit);
+        const double cpu_post_runtime = duration(row.gpu_end, row.event_end);
+        const double gpu_queue = duration(row.gpu_submit, row.gpu_start);
+        const double gpu_runtime = duration(row.gpu_start, row.gpu_end);
+        const double gpu_wait = duration(row.gpu_submit, row.gpu_end);
+        const double process_pre = CpuSeconds(
+            row.event_start, row.gpu_submit, EventTimingCapture::ProcessCpu);
+        const double process_post = CpuSeconds(
+            row.gpu_end, row.event_end, EventTimingCapture::ProcessCpu);
+        const double thread_pre = CpuSeconds(
+            row.event_start, row.gpu_submit, EventTimingCapture::ThreadCpu);
+        const double thread_post = CpuSeconds(
+            row.gpu_end, row.event_end, EventTimingCapture::ThreadCpu);
+
+        csv << "simg4ox_blocking,blocking," << row.event_id << ','
+            << absolute(row.event_start) << ',' << absolute(row.event_end) << ','
+            << absolute(row.event_start) << ',' << absolute(row.event_end) << ','
+            << absolute(row.event_start) << ',' << absolute(row.gpu_submit) << ','
+            << absolute(row.gpu_submit) << ',' << absolute(row.gpu_start) << ','
+            << absolute(row.gpu_end) << ',' << absolute(row.gpu_submit) << ','
+            << absolute(row.gpu_end) << ',' << absolute(row.gpu_end) << ','
+            << absolute(row.event_end) << ','
+            << offset(row.event_start) << ',' << offset(row.event_end) << ','
+            << offset(row.event_start) << ',' << offset(row.event_end) << ','
+            << offset(row.event_start) << ',' << offset(row.gpu_submit) << ','
+            << offset(row.gpu_submit) << ',' << offset(row.gpu_start) << ','
+            << offset(row.gpu_end) << ',' << offset(row.gpu_submit) << ','
+            << offset(row.gpu_end) << ',' << offset(row.gpu_end) << ','
+            << offset(row.event_end) << ','
+            << duration(row.event_start, row.event_end) << ','
+            << cpu_pre_runtime << ',' << cpu_post_runtime << ','
+            << cpu_pre_runtime + cpu_post_runtime << ','
+            << gpu_queue << ',' << gpu_runtime << ',' << gpu_wait << ','
+            << CsvField(metadata.primary_particle) << ','
+            << metadata.primary_momentum_gev_c << ',' << metadata.primary_multiplicity << ','
+            << row.num_gensteps << ',' << row.num_photons << ','
+            << row.num_gpu_hits << ',' << row.num_g4_hits << ','
+            << process_pre << ',' << process_post << ',' << process_pre + process_post << ','
+            << thread_pre << ',' << thread_post << ',' << thread_pre + thread_post << '\n';
+    }
+    return csv.str();
+}
+
+std::string EventTimingRecorder::SerializeManifest(const EventTimingMetadata& metadata) const
+{
+    SMeta manifest;
+    manifest.js["schema_version"] = 2;
+    manifest.js["created_utc"] = UtcNow();
+    manifest.js["application"] = "simg4ox";
+    manifest.js["dispatch_mode"] = "blocking";
+    manifest.js["clock"] = "std::chrono::steady_clock";
+    manifest.js["geometry"] = metadata.geometry;
+    manifest.js["config"] = metadata.config;
+    manifest.js["macro"] = metadata.macro;
+    manifest.js["simphony_version"] = metadata.simphony_version;
+    manifest.js["geant4_version"] = metadata.geant4_version;
+    manifest.js["primary_particle"] = metadata.primary_particle;
+    manifest.js["primary_momentum_gev_c"] = metadata.primary_momentum_gev_c;
+    manifest.js["primary_multiplicity"] = metadata.primary_multiplicity;
+    manifest.js["random_seed"] = metadata.random_seed;
+    manifest.js["gpu_name"] = metadata.gpu_name;
+    manifest.js["gpu_device_id"] = metadata.gpu_device_id;
+    manifest.js["gpu_memory_bytes"] = metadata.gpu_memory_bytes;
+    manifest.js["cuda_driver_version"] = metadata.cuda_driver_version;
+    manifest.js["cuda_runtime_version"] = metadata.cuda_runtime_version;
+    manifest.js["event_count"] = rows_.size();
+    return manifest.js.dump(2) + '\n';
+}
+
+std::filesystem::path EventTimingRecorder::ManifestPath() const
+{
+    std::filesystem::path manifest = output_;
+    manifest.replace_extension(".manifest.json");
+    return manifest;
+}
+
+void EventTimingRecorder::Write(const EventTimingMetadata& metadata) const
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "write output");
+    if (active_event_id_ >= 0)
+        throw std::logic_error("EventTimingRecorder cannot write with an active event");
+
+    const std::filesystem::path manifest = ManifestPath();
+    const std::filesystem::path parent = output_.parent_path();
+    if (!parent.empty())
+    {
+        std::error_code directory_error;
+        std::filesystem::create_directories(parent, directory_error);
+        if (directory_error)
+            throw std::runtime_error(
+                "Unable to create timing output directory for " + output_.string()
+                + ": " + directory_error.message());
+    }
+
+    const std::filesystem::path csv_temporary = TemporaryPath(output_);
+    const std::filesystem::path manifest_temporary = TemporaryPath(manifest);
+    try
+    {
+        WriteChecked(csv_temporary, SerializeCsv(metadata));
+        WriteChecked(manifest_temporary, SerializeManifest(metadata));
+        ReplaceFile(csv_temporary, output_);
+        ReplaceFile(manifest_temporary, manifest);
+    }
+    catch (...)
+    {
+        std::error_code ignored;
+        std::filesystem::remove(csv_temporary, ignored);
+        std::filesystem::remove(manifest_temporary, ignored);
         throw;
     }
 }

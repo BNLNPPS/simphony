@@ -67,7 +67,7 @@
 #include "u4/U4Track.h"
 
 #include "config.h"
-#include "EventTiming.hh"
+#include "sysrap/EventTiming.hh"
 #include "torch.h"
 
 struct PrimaryParticleConfig

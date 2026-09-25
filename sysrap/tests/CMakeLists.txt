@@ -107,6 +107,7 @@ set(TEST_SOURCES
    SProfTest.cc
    EventTimingSampleTest.cc
    EventTimingProfileTest.cc
+   EventTimingRecorderTest.cc
 
    SEvt_test.cc
    smath_test.cc
