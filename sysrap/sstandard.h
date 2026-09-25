@@ -83,10 +83,10 @@ In the old X4/GGeo workflow, the bnd buffer was created with::
 
 #include "NPFold.h"
 #include "NPX.h"
-#include "sprop.h"
 #include "sdomain.h"
 #include "smatsur.h"
 #include "snam.h"
+#include "sprop.h"
 
 struct sstandard
 {

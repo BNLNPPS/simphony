@@ -83,7 +83,6 @@ inline int unsigned_as_int( unsigned value )
    return uif.i ;
 }
 
-
 /**
 squad.h/quad2
 --------------

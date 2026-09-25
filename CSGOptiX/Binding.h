@@ -2,7 +2,9 @@
 #include <stdint.h>
 #include <vector_types.h>
 
-struct RaygenData {};
+struct RaygenData
+{
+};
 
 struct MissData
 {

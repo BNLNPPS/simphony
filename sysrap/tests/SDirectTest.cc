@@ -17,15 +17,14 @@
  * limitations under the License.
  */
 
-
 #include "sdirect.h"
 #include <cassert>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
 #include <sstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "SSys.hh"
 #include "OPTICKS_LOG.hh"
@@ -35,19 +34,19 @@ void test_cout_cerr_redirect(const char* msg)
 {
     std::stringstream coutbuf;
     std::stringstream cerrbuf;
-    std::streambuf* original_cout = std::cout.rdbuf();
-    std::streambuf* original_cerr = std::cerr.rdbuf();
+    std::streambuf*   original_cout = std::cout.rdbuf();
+    std::streambuf*   original_cerr = std::cerr.rdbuf();
     {
         sdirect::cout_ out_(coutbuf.rdbuf());
         sdirect::cerr_ err_(cerrbuf.rdbuf());
-        
+
         std::cout << "captured stdout\n";
         std::cerr << "captured stderr\n";
-        
-        // dtors of the redirect structs reset back to standard cout/cerr streams  
-    }        
 
-    std::string out = coutbuf.str(); 
+        // dtors of the redirect structs reset back to standard cout/cerr streams
+    }
+
+    std::string out = coutbuf.str();
     std::string err = cerrbuf.str();
     assert(out == "captured stdout\n");
     assert(err == "captured stderr\n");
@@ -75,16 +74,16 @@ void method_expecting_to_write_to_file( std::ofstream& fp, std::vector<std::stri
 
 void test_stream_redirect()
 {
-    std::ofstream fp("/dev/null", std::ios::out); 
-    std::stringstream ss ;          
+    std::ofstream     fp("/dev/null", std::ios::out);
+    std::stringstream ss;
 
-    std::ostream& stream = fp;
+    std::ostream&   stream = fp;
     std::streambuf* original = stream.rdbuf();
 
-    std::vector<std::string> msgv ; 
-    msgv.push_back("hello"); 
-    msgv.push_back("world"); 
- 
+    std::vector<std::string> msgv;
+    msgv.push_back("hello");
+    msgv.push_back("world");
+
     {
         sdirect::ostream_ rdir(ss, fp);
         method_expecting_to_write_to_file(fp, msgv);
@@ -100,10 +99,9 @@ int main(int argc, char** argv)
 {
     OPTICKS_LOG(argc, argv);
 
+    LOG(info) << argv[0];
 
-    LOG(info) << argv[0] ; 
-
-    SSys::Dump(argv[0]); 
+    SSys::Dump(argv[0]);
 
     test_cout_cerr_redirect(argv[0]);
     test_stream_redirect(); 

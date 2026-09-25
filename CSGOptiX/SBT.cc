@@ -108,7 +108,6 @@ void SBT::destroy()
     destroyHitgroup();
 }
 
-
 /**
 SBT::createRaygen
 ------------------
@@ -447,7 +446,6 @@ But it doesnt matter much as can just do lookups CPU side based
 on simple indices from GPU side.
 
 **/
-
 
 void SBT::collectInstances( const std::vector<qat4>& ias_inst )
 {
@@ -831,8 +829,6 @@ std::string SBT::descGAS() const
     return str ;
 }
 
-
-
 /**
 SBT::createHitgroup
 ---------------------
@@ -880,7 +876,6 @@ Note tri/ana structural difference
 +----------------+-----------------------------------------+
 
 **/
-
 
 void SBT::createHitgroup()
 {
@@ -974,7 +969,7 @@ void SBT::createHitgroup()
 
                 if( trimesh == false )  // analytic
                 {
-                    setPrimData( hg->data.prim, prim );  // copy nodeOffset and globalPrimIdx into hg->data
+                    setPrimData(hg->data.prim, prim); // copy nodeOffset and globalPrimIdx into hg->data
                 }
                 else
                 {

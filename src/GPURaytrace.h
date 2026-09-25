@@ -613,10 +613,13 @@ struct SteppingAction : G4UserSteppingAction
 
 struct G4App
 {
-    G4App(std::filesystem::path gdml_file)
-        : sev(SEvt::CreateOrReuse_EGPU()), det_cons_(new DetectorConstruction(gdml_file)),
-          prim_gen_(new PrimaryGenerator(sev)), event_act_(new EventAction(sev)), run_act_(new RunAction(event_act_)),
-          stepping_(new SteppingAction(sev))
+    G4App(std::filesystem::path gdml_file) :
+        sev(SEvt::CreateOrReuse_EGPU()),
+        det_cons_(new DetectorConstruction(gdml_file)),
+        prim_gen_(new PrimaryGenerator(sev)),
+        event_act_(new EventAction(sev)),
+        run_act_(new RunAction(event_act_)),
+        stepping_(new SteppingAction(sev))
     {
     }
 
