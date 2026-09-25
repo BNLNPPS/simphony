@@ -62,8 +62,8 @@ void TestCaptureMasks()
     for (const EventTimingCapture requested : optional_fields)
     {
         const EventTimingSample sample = requested == EventTimingCapture::Memory
-            ? EventTimingSample::Capture(requested, SuccessfulMemoryQuery)
-            : EventTimingSample::Capture(requested);
+                                             ? EventTimingSample::Capture(requested, SuccessfulMemoryQuery)
+                                             : EventTimingSample::Capture(requested);
 
         assert(sample.has(EventTimingCapture::Monotonic));
         for (const EventTimingCapture field : optional_fields)
@@ -80,9 +80,7 @@ void TestCaptureMasks()
 void TestSerializationRoundTrip()
 {
     EventTimingSample sample{};
-    sample.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic)
-                      | EventTimingSample::bit(EventTimingCapture::Wall)
-                      | EventTimingSample::bit(EventTimingCapture::Memory);
+    sample.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic) | EventTimingSample::bit(EventTimingCapture::Wall) | EventTimingSample::bit(EventTimingCapture::Memory);
     sample.wall_time_us = 1'760'000'000'000'000;
     sample.steady_time_ns = 42'000;
     sample.vm_kb = 1234;
@@ -111,8 +109,7 @@ void TestMalformedSerialization()
 void TestDeltas()
 {
     EventTimingSample begin{};
-    begin.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic)
-                     | EventTimingSample::bit(EventTimingCapture::Memory);
+    begin.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic) | EventTimingSample::bit(EventTimingCapture::Memory);
     begin.steady_time_ns = 100;
     begin.vm_kb = 1000;
     begin.rss_kb = 500;
@@ -127,12 +124,24 @@ void TestDeltas()
     assert(EventTimingSample::deltaRssKb(begin, end) == 7);
 
     EventTimingSample missing{};
-    bool elapsed_threw = false;
-    bool memory_threw = false;
-    try { (void)EventTimingSample::elapsedNs(missing, end); }
-    catch (const std::logic_error&) { elapsed_threw = true; }
-    try { (void)EventTimingSample::deltaRssKb(missing, end); }
-    catch (const std::logic_error&) { memory_threw = true; }
+    bool              elapsed_threw = false;
+    bool              memory_threw = false;
+    try
+    {
+        (void)EventTimingSample::elapsedNs(missing, end);
+    }
+    catch (const std::logic_error&)
+    {
+        elapsed_threw = true;
+    }
+    try
+    {
+        (void)EventTimingSample::deltaRssKb(missing, end);
+    }
+    catch (const std::logic_error&)
+    {
+        memory_threw = true;
+    }
     assert(elapsed_threw);
     assert(memory_threw);
 }
@@ -140,7 +149,7 @@ void TestDeltas()
 void TestMemoryFailureWarnsOnce()
 {
     std::ostringstream captured;
-    std::streambuf* original = std::cerr.rdbuf(captured.rdbuf());
+    std::streambuf*    original = std::cerr.rdbuf(captured.rdbuf());
 
     const EventTimingCapture mask =
         EventTimingCapture::Monotonic | EventTimingCapture::Memory;
@@ -152,7 +161,7 @@ void TestMemoryFailureWarnsOnce()
     assert(!second.has(EventTimingCapture::Memory));
     assert(CountOccurrences(captured.str(), "memory sample failed") == 1u);
 }
-}
+} // namespace
 
 int main()
 {

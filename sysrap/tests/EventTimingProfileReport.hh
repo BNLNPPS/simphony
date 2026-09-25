@@ -32,10 +32,10 @@ inline NP* MakeEventTimingProfileArray(
     for (std::size_t index = 0; index < records.size(); ++index)
     {
         const EventTimingProfileRecord& record = records[index];
-        values[4*index + 0] = record.sample.wall_time_us;
-        values[4*index + 1] = record.sample.steady_time_ns;
-        values[4*index + 2] = record.sample.vm_kb;
-        values[4*index + 3] = record.sample.rss_kb;
+        values[4 * index + 0] = record.sample.wall_time_us;
+        values[4 * index + 1] = record.sample.steady_time_ns;
+        values[4 * index + 2] = record.sample.vm_kb;
+        values[4 * index + 3] = record.sample.rss_kb;
         profile->names.push_back(record.name);
     }
     return profile;
@@ -44,7 +44,7 @@ inline NP* MakeEventTimingProfileArray(
 inline NP* MakeEventTimingRanges(
     const std::vector<EventTimingProfileRecord>& records)
 {
-    std::vector<std::string> keys;
+    std::vector<std::string>  keys;
     std::vector<std::int64_t> steady_time_us;
     keys.reserve(records.size());
     steady_time_us.reserve(records.size());
@@ -55,4 +55,4 @@ inline NP* MakeEventTimingRanges(
     }
     return NP::MakeMetaKVS_ranges2(keys, steady_time_us, RANGES);
 }
-}
+} // namespace EventTimingProfileReport

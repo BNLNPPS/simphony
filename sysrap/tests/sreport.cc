@@ -54,9 +54,9 @@ output with where it comes from to speedup understanding+debug.
 
 **/
 
-#include "NPFold.h"
 #include "EventTiming.hh"
 #include "EventTimingProfileReport.hh"
+#include "NPFold.h"
 
 #define WITH_SUBMETA 1
 
@@ -338,7 +338,6 @@ inline sreport_Creator::sreport_Creator( const char* dirp_ )
     std::cout << "]sreport_Creator::sreport_Creator" << std::endl ;
 }
 
-
 /**
 sreport_Creator::init
 -----------------------
@@ -347,7 +346,6 @@ sreport_Creator::init
 2. construct subfold derived arrays and fold
 
 **/
-
 
 inline void sreport_Creator::init()
 {
@@ -374,7 +372,7 @@ the raw four-column profile plus the existing microsecond range table.
 
 inline void sreport_Creator::init_EventTimingProfile()
 {
-    std::cout << "[sreport_Creator::init_EventTimingProfile\n" ;
+    std::cout << "[sreport_Creator::init_EventTimingProfile\n";
 
     const std::filesystem::path path =
         std::filesystem::path(dirp) / "EventTimingProfile.csv";
@@ -384,19 +382,19 @@ inline void sreport_Creator::init_EventTimingProfile()
             : std::vector<EventTimingProfileRecord>{};
 
     report->runprof = records.empty()
-        ? nullptr
-        : EventTimingProfileReport::MakeEventTimingProfileArray(records);
-    std::cout << "-sreport_Creator::init_EventTimingProfile.runprof :" << ( report->runprof ? report->runprof->sstr() : "-" ) << std::endl ;
+                          ? nullptr
+                          : EventTimingProfileReport::MakeEventTimingProfileArray(records);
+    std::cout << "-sreport_Creator::init_EventTimingProfile.runprof :" << (report->runprof ? report->runprof->sstr() : "-") << std::endl;
 
     report->run     = run ? run->copy() : nullptr ;
-    std::cout << "-sreport_Creator::init_EventTimingProfile.run :" << ( report->run ? report->run->sstr() : "-" ) << std::endl ;
+    std::cout << "-sreport_Creator::init_EventTimingProfile.run :" << (report->run ? report->run->sstr() : "-") << std::endl;
 
     report->ranges = records.empty()
-        ? nullptr
-        : EventTimingProfileReport::MakeEventTimingRanges(records);
-    std::cout << "-sreport_Creator::init_EventTimingProfile.ranges :" << ( report->ranges ?  report->ranges->sstr() : "-" ) <<  std::endl ;
+                         ? nullptr
+                         : EventTimingProfileReport::MakeEventTimingRanges(records);
+    std::cout << "-sreport_Creator::init_EventTimingProfile.ranges :" << (report->ranges ? report->ranges->sstr() : "-") << std::endl;
 
-    std::cout << "]sreport_Creator::init_EventTimingProfile\n" ;
+    std::cout << "]sreport_Creator::init_EventTimingProfile\n";
 }
 
 /**
@@ -538,7 +536,7 @@ inline std::string sreport_Creator::desc_run() const
 
 int main(int argc, char** argv)
 {
-    if(argc == 3 && strcmp(argv[1], "--event-timing-profile") == 0)
+    if (argc == 3 && strcmp(argv[1], "--event-timing-profile") == 0)
     {
         const std::vector<EventTimingProfileRecord> records =
             EventTimingProfile::ReadFile(argv[2]);

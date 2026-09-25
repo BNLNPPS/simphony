@@ -7,19 +7,19 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unistd.h>
 #include <unordered_map>
 #include <vector>
-#include <unistd.h>
 
-#include "nlohmann/json.hpp"
 #include "EventTiming.hh"
+#include "nlohmann/json.hpp"
 
 namespace
 {
 namespace fs = std::filesystem;
 
 std::vector<EventTimingSample> sequence;
-std::size_t sequence_index = 0;
+std::size_t                    sequence_index = 0;
 
 EventTimingSample TimedSample(
     std::int64_t steady_ns,
@@ -27,9 +27,7 @@ EventTimingSample TimedSample(
     std::int64_t thread_cpu_ns)
 {
     EventTimingSample sample{};
-    sample.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic)
-                      | EventTimingSample::bit(EventTimingCapture::ProcessCpu)
-                      | EventTimingSample::bit(EventTimingCapture::ThreadCpu);
+    sample.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic) | EventTimingSample::bit(EventTimingCapture::ProcessCpu) | EventTimingSample::bit(EventTimingCapture::ThreadCpu);
     sample.steady_time_ns = steady_ns;
     sample.process_cpu_ns = process_cpu_ns;
     sample.thread_cpu_ns = thread_cpu_ns;
@@ -54,13 +52,13 @@ void SetSequence(std::initializer_list<EventTimingSample> samples)
 fs::path TestDirectory()
 {
     return fs::temp_directory_path() /
-        ("EventTimingRecorderTest-" + std::to_string(static_cast<long long>(::getpid())));
+           ("EventTimingRecorderTest-" + std::to_string(static_cast<long long>(::getpid())));
 }
 
 std::vector<std::string> Split(std::string_view text, char delimiter)
 {
     std::vector<std::string> fields;
-    std::size_t start = 0;
+    std::size_t              start = 0;
     for (std::size_t index = 0; index <= text.size(); ++index)
     {
         if (index == text.size() || text[index] == delimiter)
@@ -192,9 +190,9 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
     AssertNear(value("thread_cpu_post_s"), 0.0002);
 
     const fs::path manifest_path = directory / "events.manifest.json";
-    std::ifstream manifest_input(manifest_path);
+    std::ifstream  manifest_input(manifest_path);
     assert(manifest_input);
-    const nlohmann::json manifest = nlohmann::json::parse(manifest_input);
+    const nlohmann::json      manifest = nlohmann::json::parse(manifest_input);
     const EventTimingMetadata metadata = Metadata();
     assert(manifest.at("schema_version") == 2);
     assert(manifest.at("application") == "simg4ox");
@@ -212,13 +210,16 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
 }
 
 void ExpectLogicError(
-    const fs::path& output,
+    const fs::path&                                  output,
     const std::function<void(EventTimingRecorder&)>& action)
 {
     EventTimingRecorder recorder(output);
     recorder.BeginRun();
     bool threw = false;
-    try { action(recorder); }
+    try
+    {
+        action(recorder);
+    }
     catch (const std::logic_error& error)
     {
         threw = std::string(error.what()).find("EventTimingRecorder") != std::string::npos;
@@ -232,43 +233,37 @@ void ExpectLogicError(
 
 void TestInvalidTransitions(const fs::path& directory)
 {
-    int index = 0;
+    int        index = 0;
     const auto path = [&] { return directory / ("invalid-" + std::to_string(index++) + ".csv"); };
 
     ExpectLogicError(path(), [](EventTimingRecorder& recorder) { recorder.SubmitGpu(1, 2); });
     ExpectLogicError(path(), [](EventTimingRecorder& recorder) { recorder.BeginGpu(); });
     ExpectLogicError(path(), [](EventTimingRecorder& recorder) { recorder.EndGpu(); });
     ExpectLogicError(path(), [](EventTimingRecorder& recorder) { recorder.EndEvent(1, 2); });
-    ExpectLogicError(path(), [](EventTimingRecorder& recorder)
-    {
+    ExpectLogicError(path(), [](EventTimingRecorder& recorder) {
         recorder.BeginEvent(0);
         recorder.BeginEvent(1);
     });
-    ExpectLogicError(path(), [](EventTimingRecorder& recorder)
-    {
+    ExpectLogicError(path(), [](EventTimingRecorder& recorder) {
         recorder.BeginEvent(0);
         recorder.BeginGpu();
     });
-    ExpectLogicError(path(), [](EventTimingRecorder& recorder)
-    {
+    ExpectLogicError(path(), [](EventTimingRecorder& recorder) {
         recorder.BeginEvent(0);
         recorder.SubmitGpu(1, 2);
         recorder.EndGpu();
     });
-    ExpectLogicError(path(), [](EventTimingRecorder& recorder)
-    {
+    ExpectLogicError(path(), [](EventTimingRecorder& recorder) {
         recorder.BeginEvent(0);
         recorder.SubmitGpu(1, 2);
         recorder.BeginGpu();
         recorder.EndEvent(1, 2);
     });
-    ExpectLogicError(path(), [](EventTimingRecorder& recorder)
-    {
+    ExpectLogicError(path(), [](EventTimingRecorder& recorder) {
         recorder.BeginEvent(0);
         recorder.Write(Metadata());
     });
-    ExpectLogicError(path(), [](EventTimingRecorder& recorder)
-    {
+    ExpectLogicError(path(), [](EventTimingRecorder& recorder) {
         recorder.BeginEvent(0);
         recorder.BeginRun();
     });
@@ -288,13 +283,19 @@ void TestClockInversion(const fs::path& directory)
         TimedSample(200, 0, 0),
         TimedSample(150, 0, 0),
     });
-    const fs::path output = directory / "inversion.csv";
+    const fs::path      output = directory / "inversion.csv";
     EventTimingRecorder recorder(output, &NextSample);
     recorder.BeginRun();
     recorder.BeginEvent(3);
     bool threw = false;
-    try { recorder.SubmitGpu(1, 2); }
-    catch (const std::logic_error&) { threw = true; }
+    try
+    {
+        recorder.SubmitGpu(1, 2);
+    }
+    catch (const std::logic_error&)
+    {
+        threw = true;
+    }
     assert(threw);
     assert(!fs::exists(output));
 }
@@ -306,12 +307,15 @@ void TestIoFailure(const fs::path& directory)
         std::ofstream output(regular_file);
         output << "file";
     }
-    const fs::path destination = regular_file / "events.csv";
+    const fs::path      destination = regular_file / "events.csv";
     EventTimingRecorder recorder(destination);
     CompleteOneEvent(recorder);
 
     bool threw = false;
-    try { recorder.Write(Metadata()); }
+    try
+    {
+        recorder.Write(Metadata());
+    }
     catch (const std::runtime_error& error)
     {
         threw = std::string(error.what()).find(destination.string()) != std::string::npos;
@@ -319,7 +323,7 @@ void TestIoFailure(const fs::path& directory)
     assert(threw);
     assert(!fs::exists(destination));
 }
-}
+} // namespace
 
 int main()
 {

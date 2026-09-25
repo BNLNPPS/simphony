@@ -13,11 +13,11 @@
 
 enum class EventTimingCapture : std::uint32_t
 {
-    Monotonic  = 1u << 0,
-    Wall       = 1u << 1,
+    Monotonic = 1u << 0,
+    Wall = 1u << 1,
     ProcessCpu = 1u << 2,
-    ThreadCpu  = 1u << 3,
-    Memory     = 1u << 4
+    ThreadCpu = 1u << 3,
+    Memory = 1u << 4
 };
 
 constexpr EventTimingCapture operator|(EventTimingCapture a, EventTimingCapture b)
@@ -31,12 +31,12 @@ struct SYSRAP_API EventTimingSample
     using MemoryQuery = int (*)(std::int32_t&, std::int32_t&);
 
     std::uint32_t valid_mask{0};
-    std::int64_t steady_time_ns{0};
-    std::int64_t wall_time_us{0};
-    std::int64_t process_cpu_ns{0};
-    std::int64_t thread_cpu_ns{0};
-    std::int64_t vm_kb{0};
-    std::int64_t rss_kb{0};
+    std::int64_t  steady_time_ns{0};
+    std::int64_t  wall_time_us{0};
+    std::int64_t  process_cpu_ns{0};
+    std::int64_t  thread_cpu_ns{0};
+    std::int64_t  vm_kb{0};
+    std::int64_t  rss_kb{0};
 
     static constexpr std::uint32_t bit(EventTimingCapture field)
     {
@@ -67,9 +67,9 @@ struct SYSRAP_API EventTimingSample
 
 struct EventTimingProfileRecord
 {
-    std::string name;
+    std::string       name;
     EventTimingSample sample;
-    std::string metadata;
+    std::string       metadata;
 };
 
 enum class EventTimingWriteMode
@@ -86,9 +86,9 @@ class SYSRAP_API EventTimingProfile
         std::string_view name,
         std::string_view metadata = {});
     static void Add(
-        std::string_view name,
+        std::string_view         name,
         const EventTimingSample& sample,
-        std::string_view metadata = {});
+        std::string_view         metadata = {});
 
     static void SetTag(int index, std::string_view format = "A%0.3d_");
     static bool HasTag();
@@ -108,7 +108,7 @@ class SYSRAP_API EventTimingProfile
     static std::string SerializeCsv(
         const std::vector<EventTimingProfileRecord>& records);
     static std::vector<EventTimingProfileRecord> ParseCsv(
-        std::istream& input,
+        std::istream&                input,
         const std::filesystem::path& source);
     static std::vector<EventTimingProfileRecord> ReadFile(
         const std::filesystem::path& path);
@@ -119,20 +119,20 @@ class SYSRAP_API EventTimingProfile
 
 struct EventTimingMetadata
 {
-    std::string geometry;
-    std::string config;
-    std::string macro;
-    std::string simphony_version;
-    std::string geant4_version;
-    std::string primary_particle{"opticalphoton"};
-    double primary_momentum_gev_c{0.0};
-    int primary_multiplicity{0};
-    long random_seed{-1};
-    std::string gpu_name;
-    int gpu_device_id{-1};
+    std::string   geometry;
+    std::string   config;
+    std::string   macro;
+    std::string   simphony_version;
+    std::string   geant4_version;
+    std::string   primary_particle{"opticalphoton"};
+    double        primary_momentum_gev_c{0.0};
+    int           primary_multiplicity{0};
+    long          random_seed{-1};
+    std::string   gpu_name;
+    int           gpu_device_id{-1};
     std::uint64_t gpu_memory_bytes{0};
-    int cuda_driver_version{0};
-    int cuda_runtime_version{0};
+    int           cuda_driver_version{0};
+    int           cuda_runtime_version{0};
 };
 
 class SYSRAP_API EventTimingRecorder
@@ -142,7 +142,7 @@ class SYSRAP_API EventTimingRecorder
 
     explicit EventTimingRecorder(
         std::filesystem::path output = {},
-        SampleProvider provider = nullptr);
+        SampleProvider        provider = nullptr);
 
     bool enabled() const;
     const std::filesystem::path& output() const;
@@ -166,11 +166,11 @@ class SYSRAP_API EventTimingRecorder
 
     struct Row
     {
-        int event_id{-1};
-        std::int64_t num_gensteps{0};
-        std::int64_t num_photons{0};
-        std::size_t num_gpu_hits{0};
-        std::size_t num_g4_hits{0};
+        int               event_id{-1};
+        std::int64_t      num_gensteps{0};
+        std::int64_t      num_photons{0};
+        std::size_t       num_gpu_hits{0};
+        std::size_t       num_g4_hits{0};
         EventTimingSample event_start;
         EventTimingSample gpu_submit;
         EventTimingSample gpu_start;
@@ -186,16 +186,16 @@ class SYSRAP_API EventTimingRecorder
     void RequireOrdered(
         const EventTimingSample& begin,
         const EventTimingSample& end,
-        std::string_view operation) const;
+        std::string_view         operation) const;
     std::string SerializeCsv(const EventTimingMetadata& metadata) const;
     std::string SerializeManifest(const EventTimingMetadata& metadata) const;
     std::filesystem::path ManifestPath() const;
 
     std::filesystem::path output_;
-    SampleProvider provider_{nullptr};
-    State state_{State::Idle};
-    bool run_started_{false};
-    int active_event_id_{-1};
-    EventTimingSample run_origin_;
-    std::vector<Row> rows_;
+    SampleProvider        provider_{nullptr};
+    State                 state_{State::Idle};
+    bool                  run_started_{false};
+    int                   active_event_id_{-1};
+    EventTimingSample     run_origin_;
+    std::vector<Row>      rows_;
 };

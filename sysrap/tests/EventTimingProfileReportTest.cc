@@ -19,7 +19,7 @@ int FindRange(const NP* ranges, const char* prefix)
             return static_cast<int>(index);
     return -1;
 }
-}
+} // namespace
 
 int main()
 {
@@ -27,7 +27,7 @@ int main()
         EventTimingProfile::ReadFile(EVENT_TIMING_PROFILE_FIXTURE);
     assert(records.size() == 15u);
 
-    std::vector<std::string> keys;
+    std::vector<std::string>  keys;
     std::vector<std::int64_t> timestamps;
     for (const EventTimingProfileRecord& record : records)
     {
@@ -48,8 +48,8 @@ int main()
     const int launch = FindRange(ranges, "A000_QSim__simulate_PREL");
     assert(load >= 0);
     assert(launch >= 0);
-    assert(ranges->values<std::int64_t>()[5*load + 2] == 300'000);
-    assert(ranges->values<std::int64_t>()[5*launch + 2] == 250'000);
+    assert(ranges->values<std::int64_t>()[5 * load + 2] == 300'000);
+    assert(ranges->values<std::int64_t>()[5 * launch + 2] == 250'000);
 
     for (EventTimingProfileRecord& record : records)
         record.sample.wall_time_us += 987'654'321;

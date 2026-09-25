@@ -1,8 +1,8 @@
 // NP_delete_test
 
 #include "EventTiming.hh"
-#include "sstr.h"
 #include "sstamp.h"
+#include "sstr.h"
 
 #include "NPFold.h"
 
@@ -43,8 +43,8 @@ void NP_delete_test::t0()
 
     const EventTimingSample p0 = EventTimingSample::Capture(capture);
 
-    NP* a = NP::Make<float>( 1*M, 4, 4 ) ; 
-    std::cout << a->descSize() << std::endl ; 
+    NP* a = NP::Make<float>(1 * M, 4, 4);
+    std::cout << a->descSize() << std::endl;
 
     const EventTimingSample p1 = EventTimingSample::Capture(capture);
 
@@ -52,8 +52,8 @@ void NP_delete_test::t0()
 
     a->data.clear() ; 
     a->data.shrink_to_fit();
-    //delete a ; 
-    //a = nullptr ; 
+    // delete a ;
+    // a = nullptr ;
 
     const EventTimingSample p2 = EventTimingSample::Capture(capture);
 
@@ -94,29 +94,31 @@ void NP_delete_test::t1()
 
     for(int idx=0 ; idx < 10 ; idx++)
     {
-        std::string head = U::FormName_("head_", idx, nullptr, 3 ) ; 
-        run->set_meta<uint64_t>(head.c_str(), sstamp::Now() );
+        std::string head = U::FormName_("head_", idx, nullptr, 3);
+        run->set_meta<uint64_t>(head.c_str(), sstamp::Now());
 
-        int num = (*nums)[idx] ; 
-        rr[idx] = num ;  
+        int num = (*nums)[idx];
+        rr[idx] = num;
 
-        NP* a = NP::Make<float>( num, 4, 4 ) ; 
+        NP* a = NP::Make<float>(num, 4, 4);
 
-        std::string body = U::FormName_("body_", idx, nullptr, 3 ) ; 
-        run->set_meta<uint64_t>(body.c_str(), sstamp::Now() );
- 
-        if(CLEAR) a->clear() ;     
-        if(DELETE) delete a ; 
+        std::string body = U::FormName_("body_", idx, nullptr, 3);
+        run->set_meta<uint64_t>(body.c_str(), sstamp::Now());
 
-        std::string tail = U::FormName_("tail_", idx, nullptr, 3 ) ; 
-        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now() );
+        if (CLEAR)
+            a->clear();
+        if (DELETE)
+            delete a;
+
+        std::string tail = U::FormName_("tail_", idx, nullptr, 3);
+        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now());
 
         sstamp::sleep_us(100000); 
     }
 
-    NPFold* fold = new NPFold ;  
-    fold->add( "run", run ); 
-    fold->add( "runprof", NP::Make<int64_t>(1, 4) );
+    NPFold* fold = new NPFold;
+    fold->add("run", run);
+    fold->add("runprof", NP::Make<int64_t>(1, 4));
     fold->save("$FOLD"); 
 }
 
@@ -160,33 +162,33 @@ void NP_delete_test::t2()
 
     for(int idx=0 ; idx < num_event  ; idx++)
     {
-        int num = (*nums)[idx] ; 
-        rr[idx] = num ;  
-        std::cout << std::setw(4) << idx << " : " << num << std::endl ; 
+        int num = (*nums)[idx];
+        rr[idx] = num;
+        std::cout << std::setw(4) << idx << " : " << num << std::endl;
 
-        std::string head = U::FormName_("head_", idx, nullptr, 3 ) ; 
-        sstamp::sleep_us(100000); 
-        run->set_meta<uint64_t>(head.c_str(), sstamp::Now() );
+        std::string head = U::FormName_("head_", idx, nullptr, 3);
+        sstamp::sleep_us(100000);
+        run->set_meta<uint64_t>(head.c_str(), sstamp::Now());
 
-        NP* a = NP::Make<float>( num, 4, 4 ) ; 
+        NP* a = NP::Make<float>(num, 4, 4);
 
+        std::string body = U::FormName_("body_", idx, nullptr, 3);
+        sstamp::sleep_us(100000);
+        run->set_meta<uint64_t>(body.c_str(), sstamp::Now());
 
-        std::string body = U::FormName_("body_", idx, nullptr, 3 ) ; 
-        sstamp::sleep_us(100000); 
-        run->set_meta<uint64_t>(body.c_str(), sstamp::Now() );
+        if (CLEAR)
+            a->clear();
+        if (DELETE)
+            delete a;
 
-        if(CLEAR) a->clear() ;     
-        if(DELETE) delete a ; 
-
-
-        std::string tail = U::FormName_("tail_", idx, nullptr, 3 ) ; 
-        sstamp::sleep_us(100000); 
-        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now() );
+        std::string tail = U::FormName_("tail_", idx, nullptr, 3);
+        sstamp::sleep_us(100000);
+        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now());
     }
 
-    NPFold* fold = new NPFold ;  
-    fold->add( "run", run ); 
-    fold->add( "runprof", NP::Make<int64_t>(1, 4) );
+    NPFold* fold = new NPFold;
+    fold->add("run", run);
+    fold->add("runprof", NP::Make<int64_t>(1, 4));
     fold->save("$FOLD"); 
 
 }

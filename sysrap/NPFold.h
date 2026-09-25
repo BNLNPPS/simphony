@@ -87,8 +87,8 @@ Hid fts.h usage behind WITH_FTS as getting compilation error on Linux::
 #include <sstream>
 #include <iomanip>
 
-#include "NPX.h"
 #include "EventTiming.hh"
+#include "NPX.h"
 
 struct NPFold
 {
@@ -467,7 +467,6 @@ inline bool NPFold::HasPrefix( const char* k, const char* p )
 {
     return k && p && strlen(p) <= strlen(k) && strncmp(k, p, strlen(p)) == 0 ;
 }
-
 
 /**
 NPFold::BareKey
@@ -2965,16 +2964,20 @@ inline void NPFold::getMetaKV(
     bool only_with_profile ) const
 {
     std::stringstream stream(meta);
-    std::string line;
-    while(std::getline(stream, line))
+    std::string       line;
+    while (std::getline(stream, line))
     {
         const std::size_t delimiter = line.find(':');
-        if(delimiter == std::string::npos) continue;
+        if (delimiter == std::string::npos)
+            continue;
         const std::string key = line.substr(0, delimiter);
         const std::string value = line.substr(delimiter + 1);
-        if(only_with_profile && !EventTimingSample::looksLikeSerialized(value)) continue;
-        if(keys) keys->push_back(key);
-        if(vals) vals->push_back(value);
+        if (only_with_profile && !EventTimingSample::looksLikeSerialized(value))
+            continue;
+        if (keys)
+            keys->push_back(key);
+        if (vals)
+            vals->push_back(value);
     }
 }
 
@@ -3314,7 +3317,6 @@ inline NP* NPFold::submeta(const char* prefix, const char* column_key ) const
     return a ;
 }
 
-
 /**
 NPFold::substamp
 --------------------
@@ -3515,8 +3517,6 @@ inline NPFold* NPFold::substamp(const char* prefix, const char* keyname) const
     return out ;
 }
 
-
-
 /**
 NPFold::subprofile
 --------------------
@@ -3560,7 +3560,7 @@ inline NPFold* NPFold::subprofile(const char* prefix, const char* keyname) const
 
     int ni = num_sub ;
     int nj = num_prof0 ;
-    int nk = 6 ;
+    int nk = 6;
 
     NP* t = NP::Make<int64_t>( ni, nj, nk ) ;
     int64_t* tt = t->values<int64_t>() ;
@@ -3613,12 +3613,12 @@ inline NPFold* NPFold::subprofile(const char* prefix, const char* keyname) const
         for(int j=0 ; j < nj ; j++)
         {
             const EventTimingSample sample = EventTimingSample::parse(vals[j]);
-            tt[i*nj*nk+j*nk+0] = sample.wall_time_us;
-            tt[i*nj*nk+j*nk+1] = sample.steady_time_ns;
-            tt[i*nj*nk+j*nk+2] = sample.process_cpu_ns;
-            tt[i*nj*nk+j*nk+3] = sample.thread_cpu_ns;
-            tt[i*nj*nk+j*nk+4] = sample.vm_kb;
-            tt[i*nj*nk+j*nk+5] = sample.rss_kb;
+            tt[i * nj * nk + j * nk + 0] = sample.wall_time_us;
+            tt[i * nj * nk + j * nk + 1] = sample.steady_time_ns;
+            tt[i * nj * nk + j * nk + 2] = sample.process_cpu_ns;
+            tt[i * nj * nk + j * nk + 3] = sample.thread_cpu_ns;
+            tt[i * nj * nk + j * nk + 4] = sample.vm_kb;
+            tt[i * nj * nk + j * nk + 5] = sample.rss_kb;
         }
         t->names.push_back(subpath);
     }

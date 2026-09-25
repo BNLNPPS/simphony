@@ -5,8 +5,8 @@
 #include <argparse/argparse.hpp>
 
 #include "FTFP_BERT.hh"
-#include "G4OpticalPhysics.hh"
 #include "G4OpticalParameters.hh"
+#include "G4OpticalPhysics.hh"
 #include "G4RunManager.hh"
 #include "G4RunManagerFactory.hh"
 #include "G4VModularPhysicsList.hh"
@@ -14,11 +14,11 @@
 
 #include "G4UIExecutive.hh"
 #include "G4UImanager.hh"
-#include "G4VisExecutive.hh"
 #include "G4Version.hh"
+#include "G4VisExecutive.hh"
 
-#include "sysrap/OPTICKS_LOG.hh"
 #include "sysrap/EventTiming.hh"
+#include "sysrap/OPTICKS_LOG.hh"
 #include "sysrap/SEventConfig.hh"
 
 #include "config.h"
@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 
     if (timing.enabled())
     {
-        int device = 0;
+        int            device = 0;
         cudaDeviceProp properties{};
         if (cudaGetDevice(&device) == cudaSuccess && cudaGetDeviceProperties(&properties, device) == cudaSuccess)
         {

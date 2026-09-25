@@ -17,11 +17,11 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include <glm/glm.hpp>
 
 // sysrap
+#include "EventTiming.hh"
+#include "smeta.h"
+#include "spath.h"
 #include "sproc.h"
 #include "ssys.h"
-#include "spath.h"
-#include "smeta.h"
-#include "EventTiming.hh"
 
 #include "NP.hh"
 #include "SCAM.h"

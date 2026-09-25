@@ -3,10 +3,10 @@
 
 #include "SLOG.hh"
 
-#include "ssys.h"
-#include "sstamp.h"
-#include "spath.h"
 #include "EventTiming.hh"
+#include "spath.h"
+#include "sstamp.h"
+#include "ssys.h"
 
 #include "SComp.h"
 #include "SEvt.hh"
@@ -468,7 +468,7 @@ bool QSim::KEEP_SUBFOLD = ssys::getenvbool(QSim__simulate_KEEP_SUBFOLD);
 
 double QSim::simulate(int eventID, bool reset_)
 {
-    EventTimingProfile::SetTag(eventID, "A%0.3d_" ) ;
+    EventTimingProfile::SetTag(eventID, "A%0.3d_");
 
     assert( SEventConfig::IsRGModeSimulate() );
 
@@ -516,7 +516,6 @@ double QSim::simulate(int eventID, bool reset_)
         << " num_slice " << num_slice
         ;
 
-
     const EventTimingSample t_LBEG = EventTimingProfile::Mark("QSim__simulate_LBEG");
 
     for(int i=0 ; i < num_slice ; i++)
@@ -536,7 +535,6 @@ double QSim::simulate(int eventID, bool reset_)
             << " SEventConfig::ALLOC " << ( SEventConfig::ALLOC  ? "YES" : "NO " )
             << ( SEventConfig::ALLOC ? SEventConfig::ALLOC->desc() : "-" )
             ;
-
 
         EventTimingProfile::Mark("QSim__simulate_PREL");
 
@@ -565,15 +563,13 @@ double QSim::simulate(int eventID, bool reset_)
 
         const EventTimingSample t_DOWN = EventTimingProfile::Mark("QSim__simulate_DOWN");
 
-        tot_gdt += EventTimingSample::elapsedNs(t_POST, t_DOWN) ;
+        tot_gdt += EventTimingSample::elapsedNs(t_POST, t_DOWN);
     }
 
 
     size_t max_slot_M = SEventConfig::MaxSlot()/M;
-    const std::string annotation = EventTimingProfile::Annotation({
-        {"slice", static_cast<std::uint64_t>(num_slice)},
-        {"max_slot_M", static_cast<std::uint64_t>(max_slot_M)}
-    });
+    const std::string       annotation = EventTimingProfile::Annotation({{"slice", static_cast<std::uint64_t>(num_slice)},
+                                                                         {"max_slot_M", static_cast<std::uint64_t>(max_slot_M)}});
     const EventTimingSample t_LEND = EventTimingProfile::Mark("QSim__simulate_LEND", annotation);
 
     std::stringstream ss ;
@@ -624,37 +620,35 @@ double QSim::simulate(int eventID, bool reset_)
 
     EventTimingProfile::Write(EventTimingWriteMode::Replace); // per-event write, so have something in case of crash
 
-    const auto seconds = [](const EventTimingSample& begin, const EventTimingSample& end)
-    {
+    const auto seconds = [](const EventTimingSample& begin, const EventTimingSample& end) {
         return 1e-9 * static_cast<double>(EventTimingSample::elapsedNs(begin, end));
     };
 
     LOG_IF(info, SEvt::MINTIME) << "\n"
-        << SEvt::SEvt__MINTIME
-        << "\n"
-        << " TAIL - HEAD [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_HEAD, t_TAIL)
-        << " (head to tail of QSim::simulate method) "
-        << "\n"
-        << " LEND - LBEG [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_LBEG, t_LEND)
-        << " (multilaunch loop begin to end) "
-        << "\n"
-        << " PCAT - LEND [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_LEND, t_PCAT)
-        << " (topfold concat and clear subfold) "
-        << "\n"
-        << " TAIL - BRES [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_BRES, t_TAIL)
-        << " (QSim::reset which saves hits) "
-        << "\n"
-        << " tot_idt/M       " << std::setw(10) << std::fixed << std::setprecision(6) << float(tot_idt)/M
-        << " (sum of kernel execution int64_t stamp differences in microseconds)"
-        << "\n"
-        << " tot_dt          " << std::setw(10) << std::fixed << std::setprecision(6) << tot_dt
-        << " int(tot_dt*M)   " << std::setw(10) << int64_t(tot_dt*M)
-        << " (sum of kernel execution double chrono stamp differences in seconds, and scaled to ms) "
-        << "\n"
-        << " tot_gdt [s]     " << std::setw(10) << std::fixed << std::setprecision(6) << 1e-9*static_cast<double>(tot_gdt)
-        << " (sum of SEvt::gather monotonic stamp differences)"
-        << "\n"
-        ;
+                                << SEvt::SEvt__MINTIME
+                                << "\n"
+                                << " TAIL - HEAD [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_HEAD, t_TAIL)
+                                << " (head to tail of QSim::simulate method) "
+                                << "\n"
+                                << " LEND - LBEG [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_LBEG, t_LEND)
+                                << " (multilaunch loop begin to end) "
+                                << "\n"
+                                << " PCAT - LEND [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_LEND, t_PCAT)
+                                << " (topfold concat and clear subfold) "
+                                << "\n"
+                                << " TAIL - BRES [s] " << std::setw(10) << std::fixed << std::setprecision(6) << seconds(t_BRES, t_TAIL)
+                                << " (QSim::reset which saves hits) "
+                                << "\n"
+                                << " tot_idt/M       " << std::setw(10) << std::fixed << std::setprecision(6) << float(tot_idt) / M
+                                << " (sum of kernel execution int64_t stamp differences in microseconds)"
+                                << "\n"
+                                << " tot_dt          " << std::setw(10) << std::fixed << std::setprecision(6) << tot_dt
+                                << " int(tot_dt*M)   " << std::setw(10) << int64_t(tot_dt * M)
+                                << " (sum of kernel execution double chrono stamp differences in seconds, and scaled to ms) "
+                                << "\n"
+                                << " tot_gdt [s]     " << std::setw(10) << std::fixed << std::setprecision(6) << 1e-9 * static_cast<double>(tot_gdt)
+                                << " (sum of SEvt::gather monotonic stamp differences)"
+                                << "\n";
 
     return tot_dt ;
 }

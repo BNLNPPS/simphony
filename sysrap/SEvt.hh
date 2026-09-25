@@ -58,17 +58,17 @@ index and photon offset in addition to  gentype/trackid/matline/numphotons
 #include <sstream>
 #include "plog/Severity.h"
 
+#include "EventTiming.hh"
+#include "sctx.h"
 #include "scuda.h"
-#include "squad.h"
-#include "sphoton.h"
+#include "sevent.h"
 #include "sphit.h"
-#include "sstate.h"
+#include "sphoton.h"
+#include "squad.h"
 #include "srec.h"
 #include "sseq.h"
+#include "sstate.h"
 #include "stag.h"
-#include "sevent.h"
-#include "sctx.h"
-#include "EventTiming.hh"
 
 #include "squad.h"
 
@@ -174,9 +174,9 @@ struct SYSRAP_API SEvt : public SCompProvider
     int stage ;
     int gather_metadata_notopfold ;
 
-    EventTimingSample p_SEvt__beginOfEvent_0 ;
-    EventTimingSample p_SEvt__beginOfEvent_1 ;
-    EventTimingSample p_SEvt__endOfEvent_0 ;
+    EventTimingSample p_SEvt__beginOfEvent_0;
+    EventTimingSample p_SEvt__beginOfEvent_1;
+    EventTimingSample p_SEvt__endOfEvent_0;
 
     uint64_t t_BeginOfEvent ;
 #ifndef PRODUCTION

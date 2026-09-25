@@ -10,8 +10,8 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <vector>
 #include <unistd.h>
+#include <vector>
 
 #include "EventTiming.hh"
 
@@ -26,9 +26,7 @@ EventTimingSample KnownSample(
     std::int64_t rss_kb)
 {
     EventTimingSample sample{};
-    sample.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic)
-                      | EventTimingSample::bit(EventTimingCapture::Wall)
-                      | EventTimingSample::bit(EventTimingCapture::Memory);
+    sample.valid_mask = EventTimingSample::bit(EventTimingCapture::Monotonic) | EventTimingSample::bit(EventTimingCapture::Wall) | EventTimingSample::bit(EventTimingCapture::Memory);
     sample.steady_time_ns = steady_ns;
     sample.wall_time_us = wall_us;
     sample.vm_kb = vm_kb;
@@ -39,7 +37,7 @@ EventTimingSample KnownSample(
 fs::path TestDirectory()
 {
     return fs::temp_directory_path() /
-        ("EventTimingProfileTest-" + std::to_string(static_cast<long long>(::getpid())));
+           ("EventTimingProfileTest-" + std::to_string(static_cast<long long>(::getpid())));
 }
 
 void WriteText(const fs::path& path, const std::string& text)
@@ -62,8 +60,7 @@ void ExpectCsvError(const fs::path& path, const std::string& text, std::size_t l
     catch (const std::runtime_error& error)
     {
         const std::string message = error.what();
-        threw = message.find(path.string()) != std::string::npos
-             && message.find("line " + std::to_string(line)) != std::string::npos;
+        threw = message.find(path.string()) != std::string::npos && message.find("line " + std::to_string(line)) != std::string::npos;
     }
     assert(threw);
 }
@@ -127,12 +124,10 @@ void TestCollectionTagsAndRss()
     assert(EventTimingProfile::DeltaRssKb() == 20);
     assert(EventTimingProfile::RangeRssKb() == 20);
     assert(EventTimingProfile::Describe().find("A007_tail") != std::string::npos);
-    assert(EventTimingProfile::Annotation({{"slice", 2}, {"max_slot_M", 16}})
-        == "slice=2,max_slot_M=16");
+    assert(EventTimingProfile::Annotation({{"slice", 2}, {"max_slot_M", 16}}) == "slice=2,max_slot_M=16");
 
     std::atomic<bool> child_has_tag{false};
-    std::thread child([&child_has_tag]
-    {
+    std::thread       child([&child_has_tag] {
         child_has_tag = EventTimingProfile::HasTag();
         EventTimingProfile::SetTag(3, "T%02d_");
         assert(EventTimingProfile::Tag() == "T03_");
@@ -146,16 +141,16 @@ void TestCollectionTagsAndRss()
 
 void TestCsvRoundTripAndErrors(const fs::path& directory)
 {
-    const std::string annotation = "slice=2,\"quoted\"\nsecond line";
+    const std::string              annotation = "slice=2,\"quoted\"\nsecond line";
     const EventTimingProfileRecord record{
         "A000_QSim__simulate_LEND",
         KnownSample(1'234'567, 1'760'000'000'000'000, 4000, 2000),
         annotation,
     };
 
-    const std::string csv = EventTimingProfile::SerializeCsv({record});
+    const std::string  csv = EventTimingProfile::SerializeCsv({record});
     std::istringstream input(csv);
-    const auto parsed = EventTimingProfile::ParseCsv(input, "round-trip.csv");
+    const auto         parsed = EventTimingProfile::ParseCsv(input, "round-trip.csv");
     assert(parsed.size() == 1u);
     assert(parsed[0].name == record.name);
     assert(parsed[0].sample == record.sample);
@@ -224,8 +219,14 @@ void TestSnapshotsAndPaths(const fs::path& directory)
     setenv("EventTiming__PROFILE_PATH_INDEX", "not-an-integer", 1);
     setenv("EventTiming__PROFILE_PATH", "profile_%d.csv", 1);
     bool bad_index_threw = false;
-    try { (void)EventTimingProfile::Path(); }
-    catch (const std::invalid_argument&) { bad_index_threw = true; }
+    try
+    {
+        (void)EventTimingProfile::Path();
+    }
+    catch (const std::invalid_argument&)
+    {
+        bad_index_threw = true;
+    }
     assert(bad_index_threw);
 }
 
@@ -235,13 +236,12 @@ void TestConcurrentMarksAndSnapshots()
     EventTimingProfile::Clear();
     EventTimingProfile::UnsetTag();
 
-    std::atomic<bool> start{false};
-    std::atomic<int> complete{0};
+    std::atomic<bool>        start{false};
+    std::atomic<int>         complete{0};
     std::vector<std::thread> threads;
     for (int thread_index = 0; thread_index < 4; ++thread_index)
     {
-        threads.emplace_back([thread_index, &start, &complete]
-        {
+        threads.emplace_back([thread_index, &start, &complete] {
             while (!start.load(std::memory_order_acquire))
                 std::this_thread::yield();
             EventTimingProfile::SetTag(thread_index, "T%02d_");
@@ -263,10 +263,10 @@ void TestConcurrentMarksAndSnapshots()
     start.store(true, std::memory_order_release);
     while (complete.load(std::memory_order_acquire) != 4)
     {
-        const auto snapshot = EventTimingProfile::Records();
-        const std::string csv = EventTimingProfile::SerializeCsv(snapshot);
+        const auto         snapshot = EventTimingProfile::Records();
+        const std::string  csv = EventTimingProfile::SerializeCsv(snapshot);
         std::istringstream input(csv);
-        const auto parsed = EventTimingProfile::ParseCsv(input, "snapshot.csv");
+        const auto         parsed = EventTimingProfile::ParseCsv(input, "snapshot.csv");
         assert(parsed.size() == snapshot.size());
     }
     for (std::thread& thread : threads)
@@ -285,7 +285,7 @@ void TestConcurrentMarksAndSnapshots()
     assert(prefixes == std::set<std::string>({"T00_", "T01_", "T02_", "T03_"}));
     assert(!EventTimingProfile::HasTag());
 }
-}
+} // namespace
 
 int main()
 {

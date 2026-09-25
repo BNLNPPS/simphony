@@ -4,12 +4,12 @@
 #include "OPTICKS_LOG.hh"
 #include "OpticksGenstep.h"
 
-#include "scuda.h"
-#include "spath.h"
 #include "EventTiming.hh"
-#include "stran.h"
+#include "scuda.h"
 #include "sdirectory.h"
+#include "spath.h"
 #include "ssys.h"
+#include "stran.h"
 
 #include "SEvent.hh"
 #include "SEventConfig.hh"
@@ -241,15 +241,13 @@ int SEvtTest::getDir()
     return 0 ;
 }
 
-
 int SEvtTest::setMetaTiming()
 {
     SEvt* evt = SEvt::Create(0);
     const char* keys[] = {
         "SEvt__beginOfEvent_0",
         "SEvt__beginOfEvent_1",
-        "SEvt__endOfEvent_0"
-    };
+        "SEvt__endOfEvent_0"};
     const EventTimingCapture capture =
         EventTimingCapture::Monotonic |
         EventTimingCapture::Wall |
@@ -319,8 +317,7 @@ int SEvtTest::hostside_running_resize_()
         << "EventTimingSample : before and after setNumPhoton+hostside_running_resize_ : to " << num << std::endl
         << " elapsed_ns " << EventTimingSample::elapsedNs(p0, p1)
         << " delta_rss_kb " << EventTimingSample::deltaRssKb(p0, p1)
-        << std::endl
-        ;
+        << std::endl;
 
     evt->clear_output() ;
 
@@ -331,8 +328,7 @@ int SEvtTest::hostside_running_resize_()
         << "FIND THAT NEED shrink = true TO GET THE DEALLOC TO HAPPEN " << std::endl
         << " elapsed_ns " << EventTimingSample::elapsedNs(p1, p2)
         << " delta_rss_kb " << EventTimingSample::deltaRssKb(p1, p2)
-        << std::endl
-        ;
+        << std::endl;
 
     return 0 ;
 }
@@ -435,7 +431,8 @@ int SEvtTest::Main(int argc, char** argv)
     if(ALL||strcmp(TEST, "InputPhoton") == 0 )  rc += InputPhoton();
     if(ALL||strcmp(TEST, "getSaveDir") == 0 )   rc += getSaveDir();
     if(ALL||strcmp(TEST, "getDir") == 0 )       rc += getDir();
-    if(ALL||strcmp(TEST, "setMetaTiming") == 0 )  rc += setMetaTiming();
+    if (ALL || strcmp(TEST, "setMetaTiming") == 0)
+        rc += setMetaTiming();
     if(ALL||strcmp(TEST, "hostside_running_resize_") == 0 ) rc += hostside_running_resize_();
     if(ALL||strcmp(TEST, "CountNibbles") == 0 )  rc += CountNibbles();
     if(ALL||strcmp(TEST, "makeGenstepArrayFromVector") == 0 ) rc += makeGenstepArrayFromVector();

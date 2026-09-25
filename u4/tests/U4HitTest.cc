@@ -9,12 +9,12 @@ U4HitTest.cc
 
 **/
 
+#include "EventTiming.hh"
 #include "OPTICKS_LOG.hh"
 #include "SEvt.hh"
-#include "ssys.h"
 #include "SSim.hh"
-#include "EventTiming.hh"
 #include "spath.h"
+#include "ssys.h"
 
 #include "CSGFoundry.h"
 
@@ -42,9 +42,8 @@ struct U4HitTest
     sphit ht_alt = {}  ;
     sphoton local_alt = {}  ;
 
-
-    std::int64_t delta_rs ;
-    std::int64_t range_rs ;
+    std::int64_t delta_rs;
+    std::int64_t range_rs;
     unsigned hit_idx ;
 
     std::string desc() const ;
@@ -139,9 +138,8 @@ inline std::string U4HitTest::smry() const
        << " METHOD " << METHOD
        << " num_hit " << num_hit
        << " EventTimingProfile::RangeRssKb " << range_rs
-       << " EventTimingProfile::RangeRssKb/num_hit " << std::setw(10) << std::fixed << std::setprecision(4) << double(range_rs)/double(num_hit)
-       << std::endl
-       ;
+       << " EventTimingProfile::RangeRssKb/num_hit " << std::setw(10) << std::fixed << std::setprecision(4) << double(range_rs) / double(num_hit)
+       << std::endl;
     std::string str = ss.str();
     return str ;
 }

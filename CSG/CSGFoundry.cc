@@ -12,10 +12,10 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "EventTiming.hh"
+#include "sproc.h"
 #include "sstr.h"
 #include "ssys.h"
-#include "sproc.h"
-#include "EventTiming.hh"
 
 #include "smeta.h"
 #include "SSim.hh"
@@ -3143,8 +3143,6 @@ bool CSGFoundry::Load_saveAlt = ssys::getenvbool("CSGFoundry_Load_saveAlt") ;
 CSGFoundry* CSGFoundry::Load() // static
 {
     EventTimingProfile::Mark("CSGFoundry__Load_HEAD");
-
-
 
     LOG(LEVEL) << "[ argumentless " ;
     CSGFoundry* src = CSGFoundry::Load_() ;

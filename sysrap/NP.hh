@@ -7219,7 +7219,7 @@ inline std::string NP::DescMetaKV(const std::string& meta, const char* juncture_
     std::vector<std::string> keys ;
     std::vector<std::string> vals ;
     bool only_with_profile = false ;
-    U::GetMetaKVS(meta, &keys, &vals, nullptr, only_with_profile );
+    U::GetMetaKVS(meta, &keys, &vals, nullptr, only_with_profile);
     assert( keys.size() == vals.size() );
     INT num_keys = keys.size();
 

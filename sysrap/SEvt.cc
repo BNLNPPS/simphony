@@ -29,21 +29,20 @@
 #include "ssys.h"
 #include "SLOG.hh"
 
+#include "EventTiming.hh"
 #include "NP.hh"
-#include "NPX.h"
 #include "NPFold.h"
-#include "SEvt.hh"
-#include "SEvent.hh"
-#include "SSim.hh"
-#include "SEventConfig.hh"
-#include "SFrameGenstep.hh"
+#include "NPX.h"
 #include "OpticksGenstep.h"
 #include "OpticksPhoton.h"
 #include "OpticksPhoton.hh"
 #include "SComp.h"
-#include "EventTiming.hh"
+#include "SEvent.hh"
+#include "SEventConfig.hh"
+#include "SEvt.hh"
+#include "SFrameGenstep.hh"
 #include "SRecord.h"
-
+#include "SSim.hh"
 
 bool SEvt::NPFOLD_VERBOSE = ssys::getenvbool(SEvt__NPFOLD_VERBOSE) ;
 bool SEvt::GATHER = ssys::getenvbool(SEvt__GATHER) ;
@@ -86,7 +85,6 @@ double SEvt::TimerDone(){ return TIMER->done() ; }
 uint64_t SEvt::TimerStartCount(){ return TIMER->start_count() ; }
 std::string SEvt::TimerDesc(){ return TIMER->desc() ; }
 
-
 /**
 SEvt::Init_RUN_META
 ---------------------
@@ -99,7 +97,6 @@ Now using EventTimingProfile for profile stamps, previously included with run_me
    run_meta->set_meta<std::string>("SEvt__Init_RUN_META", EventTimingSample::Capture(...).serialize() );
 
 **/
-
 
 NP* SEvt::Init_RUN_META() // static
 {
@@ -1615,8 +1612,6 @@ bool SEvt::IsSaveNothing() // static
     return SEventConfig::IsMinimalOrNothing() && SAVE_NOTHING ;
 }
 
-
-
 /**
 SEvt::SaveRunMeta
 -------------------
@@ -1678,8 +1673,8 @@ void SEvt::setMetaString(const char* k, const char* v)
 
 void SEvt::setMetaTiming(const char* k, const EventTimingSample& v)
 {
-    if(EventTimingProfile::Enabled())
-        NP::SetMeta<std::string>(meta, k, v.serialize() );
+    if (EventTimingProfile::Enabled())
+        NP::SetMeta<std::string>(meta, k, v.serialize());
 }
 
 
@@ -1755,10 +1750,11 @@ as still need to collect the gensteps.
 void SEvt::beginOfEvent(int eventID)
 {
     if(isFirstEvtInstance() && eventID == 0) BeginOfRun() ;
-    if(eventID == 0) EventTimingProfile::Mark( isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU" ) ;
+    if (eventID == 0)
+        EventTimingProfile::Mark(isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU");
 
     setStage(SEvt__beginOfEvent);
-    if(EventTimingProfile::Enabled())
+    if (EventTimingProfile::Enabled())
         p_SEvt__beginOfEvent_0 = EventTimingSample::Capture(
             EventTimingCapture::Monotonic |
             EventTimingCapture::Wall |
@@ -1773,7 +1769,7 @@ void SEvt::beginOfEvent(int eventID)
     // Normal Geant4 integration collects quad6 gensteps before EGPU
     // beginOfEvent. Do not try to add a configured input-photon/torch
     // genstep when that generated workload is already present.
-    if( addGenstep_array == 0 && numgenstep_collected == 0 )
+    if (addGenstep_array == 0 && numgenstep_collected == 0)
     {
         addInputGenstep();  // does genstep setup for simtrace, input photon and torch running
     }
@@ -1781,7 +1777,7 @@ void SEvt::beginOfEvent(int eventID)
     {
         LOG(LEVEL)
             << "skip addInputGenstep as addGenstep_array " << addGenstep_array
-            << " numgenstep_collected " << numgenstep_collected ;
+            << " numgenstep_collected " << numgenstep_collected;
     }
 
 
@@ -1796,7 +1792,7 @@ void SEvt::beginOfEvent(int eventID)
         << " MaxBounce " << evt->max_bounce
         ;
 
-    if(EventTimingProfile::Enabled())
+    if (EventTimingProfile::Enabled())
         p_SEvt__beginOfEvent_1 = EventTimingSample::Capture(
             EventTimingCapture::Monotonic |
             EventTimingCapture::Wall |
@@ -1824,7 +1820,7 @@ void SEvt::endOfEvent(int eventID)
 
     setStage(SEvt__endOfEvent);
     LOG_IF(info, LIFECYCLE) << id() ;
-    if(EventTimingProfile::Enabled())
+    if (EventTimingProfile::Enabled())
         p_SEvt__endOfEvent_0 = EventTimingSample::Capture(
             EventTimingCapture::Monotonic |
             EventTimingCapture::Wall |
@@ -1876,7 +1872,7 @@ void SEvt::endMeta()
 
     setMetaTiming("SEvt__beginOfEvent_0", p_SEvt__beginOfEvent_0);
     setMetaTiming("SEvt__beginOfEvent_1", p_SEvt__beginOfEvent_1);
-    setMetaTiming("SEvt__endOfEvent_0",   p_SEvt__endOfEvent_0);
+    setMetaTiming("SEvt__endOfEvent_0", p_SEvt__endOfEvent_0);
 
     setMeta<uint64_t>("t_BeginOfEvent", t_BeginOfEvent );
 
@@ -3956,7 +3952,6 @@ void SEvt::gather_components()   // *GATHER*
         ;
 }
 
-
 /**
 SEvt::gather_metadata
 ----------------------
@@ -3977,7 +3972,6 @@ Note that because SEvt::save is typically not done in production,
 the EventTimingProfile metadata recording is more generally useful.
 
 **/
-
 
 void SEvt::gather_metadata()
 {

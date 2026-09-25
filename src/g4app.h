@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cassert>
+#include <cmath>
 #include <condition_variable>
 #include <cstring>
-#include <cmath>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -20,8 +20,8 @@
 #include "G4Cerenkov.hh"
 #include "G4DynamicParticle.hh"
 #include "G4Event.hh"
-#include "G4Exception.hh"
 #include "G4EventManager.hh"
+#include "G4Exception.hh"
 #include "G4GDMLParser.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4OpBoundaryProcess.hh"
@@ -60,8 +60,8 @@
 #include "sysrap/STrackInfo.h"
 #include "sysrap/spho.h"
 #include "sysrap/sphoton.h"
-#include "u4/U4Random.hh"
 #include "u4/U4.hh"
+#include "u4/U4Random.hh"
 #include "u4/U4StepPoint.hh"
 #include "u4/U4Touchable.h"
 #include "u4/U4Track.h"
@@ -257,14 +257,14 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
             if (!definition)
                 throw std::runtime_error("Unknown Geant4 particle: " + primary.particle);
 
-            const G4double momentum = primary.momentum_gev_c * GeV;
-            const G4double mass = definition->GetPDGMass();
-            const G4double kinetic_energy = std::sqrt(momentum * momentum + mass * mass) - mass;
+            const G4double      momentum = primary.momentum_gev_c * GeV;
+            const G4double      mass = definition->GetPDGMass();
+            const G4double      kinetic_energy = std::sqrt(momentum * momentum + mass * mass) - mass;
             const G4ThreeVector direction = primary.direction.unit();
 
             for (int i = 0; i < primary.multiplicity; ++i)
             {
-                G4PrimaryVertex* vertex = new G4PrimaryVertex(primary.position_mm, 0.0);
+                G4PrimaryVertex*   vertex = new G4PrimaryVertex(primary.position_mm, 0.0);
                 G4PrimaryParticle* particle = new G4PrimaryParticle(definition);
                 particle->SetKineticEnergy(kinetic_energy);
                 particle->SetMomentumDirection(direction);
@@ -648,11 +648,11 @@ struct SteppingAction : G4UserSteppingAction
 
             if (process->GetProcessName() == "Cerenkov")
             {
-                G4Cerenkov* cerenkov = dynamic_cast<G4Cerenkov*>(process);
-                const G4Material* material = track->GetMaterial();
+                G4Cerenkov*                cerenkov = dynamic_cast<G4Cerenkov*>(process);
+                const G4Material*          material = track->GetMaterial();
                 G4MaterialPropertiesTable* properties = material ? material->GetMaterialPropertiesTable() : nullptr;
-                G4MaterialPropertyVector* rindex = properties ? properties->GetProperty(kRINDEX) : nullptr;
-                const G4int num_photons = cerenkov ? cerenkov->GetNumPhotons() : 0;
+                G4MaterialPropertyVector*  rindex = properties ? properties->GetProperty(kRINDEX) : nullptr;
+                const G4int                num_photons = cerenkov ? cerenkov->GetNumPhotons() : 0;
                 if (!cerenkov || !rindex || rindex->GetVectorLength() == 0 || num_photons <= 0)
                     continue;
 
@@ -673,16 +673,16 @@ struct SteppingAction : G4UserSteppingAction
             else if (process->GetProcessName() == "Scintillation")
             {
                 G4Scintillation* scintillation = dynamic_cast<G4Scintillation*>(process);
-                const G4int num_photons = scintillation ? scintillation->GetNumPhotons() : 0;
+                const G4int      num_photons = scintillation ? scintillation->GetNumPhotons() : 0;
                 if (!scintillation || num_photons <= 0)
                     continue;
 
-                const G4Material* material = track->GetMaterial();
+                const G4Material*          material = track->GetMaterial();
                 G4MaterialPropertiesTable* properties = material ? material->GetMaterialPropertiesTable() : nullptr;
-                const G4double decay_time =
+                const G4double             decay_time =
                     properties && properties->ConstPropertyExists(kSCINTILLATIONTIMECONSTANT1)
-                        ? properties->GetConstProperty(kSCINTILLATIONTIMECONSTANT1)
-                        : 0.0;
+                                    ? properties->GetConstProperty(kSCINTILLATIONTIMECONSTANT1)
+                                    : 0.0;
                 U4::CollectGenstep_Scintillation(track, step, num_photons, 1, decay_time);
             }
         }
@@ -898,8 +898,8 @@ struct ActionInitialization : G4VUserActionInitialization
         // process-global. Keep the full CPU history recorder in serial mode;
         // MT workers still perform normal Geant4 tracking and collect SD hits.
         SEvt* sev = multithreaded ? nullptr
-                                 : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
-                                                    : SEvt::CreateOrReuse_ECPU());
+                                  : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
+                                                     : SEvt::CreateOrReuse_ECPU());
 
         SetUserAction(new PrimaryGenerator(cfg, sev, primary, timing));
         SetUserAction(new RunAction(cfg, shared_state, timing, timing_metadata));

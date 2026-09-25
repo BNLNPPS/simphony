@@ -81,9 +81,9 @@ inline void SEV::gather_components()
 
 inline void SEV::save(const char* dir)
 {
-    gather_components(); 
-    bool shallow = true ;   // no ownership, just copy pointers 
-    NPFold* save_fold = shallow ? fold->shallowcopy(SAVE_COMP) : fold->deepcopy(SAVE_COMP) ;
+    gather_components();
+    bool    shallow = true; // no ownership, just copy pointers
+    NPFold* save_fold = shallow ? fold->shallowcopy(SAVE_COMP) : fold->deepcopy(SAVE_COMP);
     save_fold->save(dir);
 }
 inline void SEV::clear()
@@ -121,33 +121,32 @@ void NPFold_clear_test::t0()
 
     for(int idx=0 ; idx < num_event  ; idx++)
     {
-        ev->idx = idx ; 
-        int num = SEV::GetNum(idx); 
-        rr[idx] = num ;  
-        std::cout << std::setw(4) << idx << " : " << num << std::endl ; 
+        ev->idx = idx;
+        int num = SEV::GetNum(idx);
+        rr[idx] = num;
+        std::cout << std::setw(4) << idx << " : " << num << std::endl;
 
-        std::string head = U::FormName_("head_", idx, nullptr, 3 ) ; 
-        sstamp::sleep_us(100000); 
-        run->set_meta<uint64_t>(head.c_str(), sstamp::Now() );
+        std::string head = U::FormName_("head_", idx, nullptr, 3);
+        sstamp::sleep_us(100000);
+        run->set_meta<uint64_t>(head.c_str(), sstamp::Now());
 
-        std::string dir = sstr::FormatIndexDefault_( idx, "$FOLD/");  
-        ev->save(dir.c_str()) ;  
+        std::string dir = sstr::FormatIndexDefault_(idx, "$FOLD/");
+        ev->save(dir.c_str());
 
-        std::string body = U::FormName_("body_", idx, nullptr, 3 ) ; 
-        sstamp::sleep_us(100000); 
-        run->set_meta<uint64_t>(body.c_str(), sstamp::Now() );
+        std::string body = U::FormName_("body_", idx, nullptr, 3);
+        sstamp::sleep_us(100000);
+        run->set_meta<uint64_t>(body.c_str(), sstamp::Now());
 
-        ev->clear();      
+        ev->clear();
 
-        std::string tail = U::FormName_("tail_", idx, nullptr, 3 ) ; 
-        sstamp::sleep_us(100000); 
-        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now() );
+        std::string tail = U::FormName_("tail_", idx, nullptr, 3);
+        sstamp::sleep_us(100000);
+        run->set_meta<uint64_t>(tail.c_str(), sstamp::Now());
     }
 
-
-    NPFold* out = new NPFold ;  
-    out->add( "run", run ); 
-    out->add( "runprof", NP::Make<int64_t>(1, 4) );
+    NPFold* out = new NPFold;
+    out->add("run", run);
+    out->add("runprof", NP::Make<int64_t>(1, 4));
     out->save("$FOLD"); 
 }
 

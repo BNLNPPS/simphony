@@ -15,18 +15,18 @@
 #include <sstream>
 #include <stdexcept>
 #include <system_error>
-#include <vector>
 #include <time.h>
 #include <unistd.h>
+#include <vector>
 
-#include "sproc.h"
 #include "SMeta.hh"
+#include "sproc.h"
 
 namespace
 {
-std::atomic_flag memory_warning_emitted = ATOMIC_FLAG_INIT;
+std::atomic_flag           memory_warning_emitted = ATOMIC_FLAG_INIT;
 std::atomic<std::uint64_t> temporary_sequence{0};
-thread_local std::string profile_tag;
+thread_local std::string   profile_tag;
 
 std::mutex& ProfileMutex()
 {
@@ -42,8 +42,7 @@ std::vector<EventTimingProfileRecord>& ProfileRecords()
 
 std::int64_t TimespecNs(const timespec& value)
 {
-    return static_cast<std::int64_t>(value.tv_sec) * 1'000'000'000ll
-         + static_cast<std::int64_t>(value.tv_nsec);
+    return static_cast<std::int64_t>(value.tv_sec) * 1'000'000'000ll + static_cast<std::int64_t>(value.tv_nsec);
 }
 
 std::int64_t ParseInteger(std::string_view field, std::string_view name)
@@ -52,9 +51,9 @@ std::int64_t ParseInteger(std::string_view field, std::string_view name)
         throw std::invalid_argument("EventTimingSample missing " + std::string(name));
 
     std::int64_t value = 0;
-    const char* begin = field.data();
-    const char* end = begin + field.size();
-    const auto result = std::from_chars(begin, end, value);
+    const char*  begin = field.data();
+    const char*  end = begin + field.size();
+    const auto   result = std::from_chars(begin, end, value);
     if (result.ec != std::errc{} || result.ptr != end)
         throw std::invalid_argument("EventTimingSample invalid " + std::string(name));
     return value;
@@ -63,8 +62,8 @@ std::int64_t ParseInteger(std::string_view field, std::string_view name)
 std::array<std::string_view, 6> SplitFields(std::string_view text)
 {
     std::array<std::string_view, 6> fields{};
-    std::size_t field_index = 0;
-    std::size_t field_start = 0;
+    std::size_t                     field_index = 0;
+    std::size_t                     field_start = 0;
 
     for (std::size_t index = 0; index <= text.size(); ++index)
     {
@@ -84,8 +83,8 @@ std::array<std::string_view, 6> SplitFields(std::string_view text)
 
 std::string OptionalValue(
     const EventTimingSample& sample,
-    EventTimingCapture field,
-    std::int64_t value)
+    EventTimingCapture       field,
+    std::int64_t             value)
 {
     return sample.has(field) ? std::to_string(value) : std::string{};
 }
@@ -104,9 +103,8 @@ bool EnvironmentEnabled(const char* name)
 
     std::string normalized(value);
     std::transform(normalized.begin(), normalized.end(), normalized.begin(),
-        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return normalized == "1" || normalized == "true"
-        || normalized == "yes" || normalized == "on";
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
 }
 
 int ParseIndex(const char* text)
@@ -114,9 +112,9 @@ int ParseIndex(const char* text)
     if (text == nullptr || *text == '\0')
         return 0;
 
-    int value = 0;
+    int         value = 0;
     const char* end = text + std::char_traits<char>::length(text);
-    const auto result = std::from_chars(text, end, value);
+    const auto  result = std::from_chars(text, end, value);
     if (result.ec != std::errc{} || result.ptr != end)
         throw std::invalid_argument("EventTiming profile path index is not an integer");
     return value;
@@ -127,11 +125,11 @@ std::string PadInteger(int index, int width, int precision, bool zero_fill, char
     if (conversion == 'u' && index < 0)
         throw std::invalid_argument("EventTiming unsigned index cannot be negative");
 
-    const bool negative = index < 0;
+    const bool          negative = index < 0;
     const std::uint64_t magnitude = negative
-        ? static_cast<std::uint64_t>(-static_cast<std::int64_t>(index))
-        : static_cast<std::uint64_t>(index);
-    std::string digits = std::to_string(magnitude);
+                                        ? static_cast<std::uint64_t>(-static_cast<std::int64_t>(index))
+                                        : static_cast<std::uint64_t>(index);
+    std::string         digits = std::to_string(magnitude);
 
     const int numeric_width = precision >= 0 ? precision : (zero_fill ? width : 0);
     if (numeric_width > static_cast<int>(digits.size()))
@@ -147,7 +145,7 @@ std::string PadInteger(int index, int width, int precision, bool zero_fill, char
 std::string FormatIndex(std::string_view pattern, int index)
 {
     std::string result;
-    int conversions = 0;
+    int         conversions = 0;
 
     for (std::size_t cursor = 0; cursor < pattern.size();)
     {
@@ -175,8 +173,7 @@ std::string FormatIndex(std::string_view pattern, int index)
         }
 
         int width = 0;
-        while (cursor < pattern.size()
-            && pattern[cursor] >= '0' && pattern[cursor] <= '9')
+        while (cursor < pattern.size() && pattern[cursor] >= '0' && pattern[cursor] <= '9')
         {
             if (width > 10000)
                 throw std::invalid_argument("EventTiming format width is too large");
@@ -189,8 +186,7 @@ std::string FormatIndex(std::string_view pattern, int index)
             ++cursor;
             precision = 0;
             const std::size_t precision_start = cursor;
-            while (cursor < pattern.size()
-                && pattern[cursor] >= '0' && pattern[cursor] <= '9')
+            while (cursor < pattern.size() && pattern[cursor] >= '0' && pattern[cursor] <= '9')
             {
                 if (precision > 10000)
                     throw std::invalid_argument("EventTiming format precision is too large");
@@ -200,8 +196,7 @@ std::string FormatIndex(std::string_view pattern, int index)
                 throw std::invalid_argument("EventTiming format precision requires digits");
         }
 
-        if (cursor >= pattern.size()
-            || (pattern[cursor] != 'd' && pattern[cursor] != 'i' && pattern[cursor] != 'u'))
+        if (cursor >= pattern.size() || (pattern[cursor] != 'd' && pattern[cursor] != 'i' && pattern[cursor] != 'u'))
             throw std::invalid_argument("EventTiming format contains an unsupported conversion");
 
         const char conversion = pattern[cursor++];
@@ -234,33 +229,32 @@ std::string CsvField(std::string_view value)
 struct CsvRow
 {
     std::vector<std::string> fields;
-    std::size_t line{1};
+    std::size_t              line{1};
 };
 
 [[noreturn]] void CsvError(
     const std::filesystem::path& source,
-    std::size_t line,
-    std::string_view message)
+    std::size_t                  line,
+    std::string_view             message)
 {
     throw std::runtime_error(
         source.string() + ": line " + std::to_string(line) + ": " + std::string(message));
 }
 
 std::vector<CsvRow> ParseRows(
-    std::istream& input,
+    std::istream&                input,
     const std::filesystem::path& source)
 {
-    std::vector<CsvRow> rows;
+    std::vector<CsvRow>      rows;
     std::vector<std::string> fields;
-    std::string field;
-    std::size_t line = 1;
-    std::size_t record_line = 1;
-    bool in_quotes = false;
-    bool after_quote = false;
-    bool row_has_data = false;
+    std::string              field;
+    std::size_t              line = 1;
+    std::size_t              record_line = 1;
+    bool                     in_quotes = false;
+    bool                     after_quote = false;
+    bool                     row_has_data = false;
 
-    auto finish_row = [&]
-    {
+    auto finish_row = [&] {
         fields.push_back(field);
         field.clear();
         rows.push_back({fields, record_line});
@@ -338,14 +332,13 @@ std::vector<CsvRow> ParseRows(
 std::filesystem::path TemporaryPath(const std::filesystem::path& destination)
 {
     const std::uint64_t sequence = temporary_sequence.fetch_add(1);
-    return destination.string() + ".tmp." + std::to_string(static_cast<long long>(::getpid()))
-         + "." + std::to_string(sequence);
+    return destination.string() + ".tmp." + std::to_string(static_cast<long long>(::getpid())) + "." + std::to_string(sequence);
 }
 
 std::string UtcNow()
 {
     const std::time_t now = std::time(nullptr);
-    std::tm utc{};
+    std::tm           utc{};
     gmtime_r(&now, &utc);
     std::ostringstream out;
     out << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
@@ -360,13 +353,13 @@ double Seconds(std::int64_t nanoseconds)
 double CpuSeconds(
     const EventTimingSample& begin,
     const EventTimingSample& end,
-    EventTimingCapture field)
+    EventTimingCapture       field)
 {
     if (!begin.has(field) || !end.has(field))
         return 0.0;
     const std::int64_t delta = field == EventTimingCapture::ProcessCpu
-        ? end.process_cpu_ns - begin.process_cpu_ns
-        : end.thread_cpu_ns - begin.thread_cpu_ns;
+                                   ? end.process_cpu_ns - begin.process_cpu_ns
+                                   : end.thread_cpu_ns - begin.thread_cpu_ns;
     return Seconds(delta);
 }
 
@@ -395,7 +388,7 @@ void ReplaceFile(
             "Unable to replace timing output " + destination.string() + ": " + error.message());
 }
 
-}
+} // namespace
 
 EventTimingSample EventTimingSample::Capture(EventTimingCapture mask)
 {
@@ -477,7 +470,7 @@ std::string EventTimingSample::serialize() const
 
 EventTimingSample EventTimingSample::parse(std::string_view text)
 {
-    const auto fields = SplitFields(text);
+    const auto        fields = SplitFields(text);
     EventTimingSample sample{};
 
     sample.steady_time_ns = ParseInteger(fields[1], "steady_time_ns");
@@ -577,17 +570,15 @@ EventTimingSample EventTimingProfile::Mark(
         return EventTimingSample::Capture(EventTimingCapture::Monotonic);
 
     const EventTimingSample sample = EventTimingSample::Capture(
-        EventTimingCapture::Monotonic
-        | EventTimingCapture::Wall
-        | EventTimingCapture::Memory);
+        EventTimingCapture::Monotonic | EventTimingCapture::Wall | EventTimingCapture::Memory);
     Add(name, sample, metadata);
     return sample;
 }
 
 void EventTimingProfile::Add(
-    std::string_view name,
+    std::string_view         name,
     const EventTimingSample& sample,
-    std::string_view metadata)
+    std::string_view         metadata)
 {
     if (!Enabled())
         return;
@@ -625,7 +616,7 @@ std::string EventTimingProfile::Annotation(
     std::initializer_list<std::pair<std::string_view, std::uint64_t>> values)
 {
     std::ostringstream out;
-    bool first = true;
+    bool               first = true;
     for (const auto& [name, value] : values)
     {
         if (!first)
@@ -639,7 +630,7 @@ std::string EventTimingProfile::Annotation(
 std::int64_t EventTimingProfile::DeltaRssKb()
 {
     std::lock_guard<std::mutex> lock(ProfileMutex());
-    const auto& records = ProfileRecords();
+    const auto&                 records = ProfileRecords();
     if (records.size() < 2u)
         return -1;
     const auto& begin = records[records.size() - 2u].sample;
@@ -652,7 +643,7 @@ std::int64_t EventTimingProfile::DeltaRssKb()
 std::int64_t EventTimingProfile::RangeRssKb()
 {
     std::lock_guard<std::mutex> lock(ProfileMutex());
-    const auto& records = ProfileRecords();
+    const auto&                 records = ProfileRecords();
     if (records.empty())
         return -1;
     const auto& begin = records.front().sample;
@@ -712,10 +703,10 @@ std::string EventTimingProfile::SerializeCsv(
 }
 
 std::vector<EventTimingProfileRecord> EventTimingProfile::ParseCsv(
-    std::istream& input,
+    std::istream&                input,
     const std::filesystem::path& source)
 {
-    const std::vector<CsvRow> rows = ParseRows(input, source);
+    const std::vector<CsvRow>      rows = ParseRows(input, source);
     const std::vector<std::string> header = {
         "name", "wall_time_us", "steady_time_ns", "vm_kb", "rss_kb", "metadata"};
     if (rows.empty() || rows.front().fields != header)
@@ -768,10 +759,10 @@ std::vector<EventTimingProfileRecord> EventTimingProfile::ReadFile(
 
 std::filesystem::path EventTimingProfile::Path()
 {
-    const char* configured = std::getenv("EventTiming__PROFILE_PATH");
+    const char*       configured = std::getenv("EventTiming__PROFILE_PATH");
     const std::string pattern = configured == nullptr
-        ? std::string("EventTimingProfile.csv")
-        : std::string(configured);
+                                    ? std::string("EventTimingProfile.csv")
+                                    : std::string(configured);
     if (pattern.empty())
         throw std::invalid_argument("EventTiming profile path is empty");
     if (pattern.find('%') == std::string::npos)
@@ -786,7 +777,7 @@ void EventTimingProfile::Write(EventTimingWriteMode mode)
     if (!Enabled())
         return;
 
-    const std::filesystem::path destination = Path();
+    const std::filesystem::path           destination = Path();
     std::vector<EventTimingProfileRecord> records = Records();
     if (mode == EventTimingWriteMode::Append && std::filesystem::exists(destination))
     {
@@ -802,8 +793,7 @@ void EventTimingProfile::Write(EventTimingWriteMode mode)
         std::filesystem::create_directories(parent, directory_error);
         if (directory_error)
             throw std::runtime_error(
-                "Unable to create EventTiming profile directory for "
-                + destination.string() + ": " + directory_error.message());
+                "Unable to create EventTiming profile directory for " + destination.string() + ": " + directory_error.message());
     }
 
     const std::filesystem::path temporary = TemporaryPath(destination);
@@ -824,8 +814,7 @@ void EventTimingProfile::Write(EventTimingWriteMode mode)
         std::filesystem::rename(temporary, destination, rename_error);
         if (rename_error)
             throw std::runtime_error(
-                "Unable to replace EventTiming profile " + destination.string()
-                + ": " + rename_error.message());
+                "Unable to replace EventTiming profile " + destination.string() + ": " + rename_error.message());
     }
     catch (...)
     {
@@ -837,8 +826,7 @@ void EventTimingProfile::Write(EventTimingWriteMode mode)
 
 EventTimingRecorder::EventTimingRecorder(
     std::filesystem::path output,
-    SampleProvider provider)
-    :
+    SampleProvider        provider) :
     output_(std::move(output)),
     provider_(provider)
 {
@@ -858,11 +846,16 @@ const char* EventTimingRecorder::StateName(State state)
 {
     switch (state)
     {
-        case State::Idle: return "idle";
-        case State::CpuPre: return "cpu-pre";
-        case State::GpuQueued: return "gpu-queued";
-        case State::GpuRunning: return "gpu-running";
-        case State::CpuPost: return "cpu-post";
+    case State::Idle:
+        return "idle";
+    case State::CpuPre:
+        return "cpu-pre";
+    case State::GpuQueued:
+        return "gpu-queued";
+    case State::GpuRunning:
+        return "gpu-running";
+    case State::CpuPost:
+        return "cpu-post";
     }
     return "unknown";
 }
@@ -870,9 +863,7 @@ const char* EventTimingRecorder::StateName(State state)
 EventTimingSample EventTimingRecorder::Capture() const
 {
     constexpr EventTimingCapture mask =
-        EventTimingCapture::Monotonic
-        | EventTimingCapture::ProcessCpu
-        | EventTimingCapture::ThreadCpu;
+        EventTimingCapture::Monotonic | EventTimingCapture::ProcessCpu | EventTimingCapture::ThreadCpu;
     return provider_ == nullptr ? EventTimingSample::Capture(mask) : provider_(mask);
 }
 
@@ -895,22 +886,18 @@ void EventTimingRecorder::RequireState(State expected, std::string_view operatio
     if (state_ == expected)
         return;
     throw std::logic_error(
-        "EventTimingRecorder event " + std::to_string(active_event_id_)
-        + " cannot " + std::string(operation)
-        + " in state " + StateName(state_)
-        + "; expected " + StateName(expected));
+        "EventTimingRecorder event " + std::to_string(active_event_id_) + " cannot " + std::string(operation) + " in state " + StateName(state_) + "; expected " + StateName(expected));
 }
 
 void EventTimingRecorder::RequireOrdered(
     const EventTimingSample& begin,
     const EventTimingSample& end,
-    std::string_view operation) const
+    std::string_view         operation) const
 {
     if (EventTimingSample::elapsedNs(begin, end) >= 0)
         return;
     throw std::logic_error(
-        "EventTimingRecorder event " + std::to_string(active_event_id_)
-        + " monotonic clock moved backwards during " + std::string(operation));
+        "EventTimingRecorder event " + std::to_string(active_event_id_) + " monotonic clock moved backwards during " + std::string(operation));
 }
 
 void EventTimingRecorder::BeginRun()
@@ -950,7 +937,7 @@ void EventTimingRecorder::SubmitGpu(
         return;
     RequireState(State::CpuPre, "submit GPU work");
     const EventTimingSample sample = Capture();
-    Row& row = ActiveRow();
+    Row&                    row = ActiveRow();
     RequireOrdered(row.event_start, sample, "GPU submission");
     row.num_gensteps = num_gensteps;
     row.num_photons = num_photons;
@@ -964,7 +951,7 @@ void EventTimingRecorder::BeginGpu()
         return;
     RequireState(State::GpuQueued, "begin GPU work");
     const EventTimingSample sample = Capture();
-    Row& row = ActiveRow();
+    Row&                    row = ActiveRow();
     RequireOrdered(row.gpu_submit, sample, "GPU start");
     row.gpu_start = sample;
     state_ = State::GpuRunning;
@@ -976,7 +963,7 @@ void EventTimingRecorder::EndGpu()
         return;
     RequireState(State::GpuRunning, "end GPU work");
     const EventTimingSample sample = Capture();
-    Row& row = ActiveRow();
+    Row&                    row = ActiveRow();
     RequireOrdered(row.gpu_start, sample, "GPU end");
     row.gpu_end = sample;
     state_ = State::CpuPost;
@@ -990,7 +977,7 @@ void EventTimingRecorder::EndEvent(
         return;
     RequireState(State::CpuPost, "end event");
     const EventTimingSample sample = Capture();
-    Row& row = ActiveRow();
+    Row&                    row = ActiveRow();
     RequireOrdered(row.gpu_end, sample, "event end");
     row.num_gpu_hits = num_gpu_hits;
     row.num_g4_hits = num_g4_hits;
@@ -1019,16 +1006,13 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
     csv << std::setprecision(12);
     for (const Row& row : rows_)
     {
-        const auto absolute = [](const EventTimingSample& sample)
-        {
+        const auto absolute = [](const EventTimingSample& sample) {
             return Seconds(sample.steady_time_ns);
         };
-        const auto offset = [this](const EventTimingSample& sample)
-        {
+        const auto offset = [this](const EventTimingSample& sample) {
             return Seconds(EventTimingSample::elapsedNs(run_origin_, sample));
         };
-        const auto duration = [](const EventTimingSample& begin, const EventTimingSample& end)
-        {
+        const auto duration = [](const EventTimingSample& begin, const EventTimingSample& end) {
             return Seconds(EventTimingSample::elapsedNs(begin, end));
         };
 
@@ -1124,8 +1108,7 @@ void EventTimingRecorder::Write(const EventTimingMetadata& metadata) const
         std::filesystem::create_directories(parent, directory_error);
         if (directory_error)
             throw std::runtime_error(
-                "Unable to create timing output directory for " + output_.string()
-                + ": " + directory_error.message());
+                "Unable to create timing output directory for " + output_.string() + ": " + directory_error.message());
     }
 
     const std::filesystem::path csv_temporary = TemporaryPath(output_);
