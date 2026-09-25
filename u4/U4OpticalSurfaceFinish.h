@@ -30,10 +30,12 @@ struct U4OpticalSurfaceFinish
 {
     static bool IsPolished(unsigned finish); 
     static bool IsGround(  unsigned finish); 
+    static bool IsPainted(unsigned finish);
 
     static const char* Name(unsigned finish); 
     static unsigned   Finish(const char* name);
    
+    static constexpr const char* unsupported_ = "UNSUPPORTED_FINISH";
     static constexpr const char* polished_             = "polished" ;              // smooth perfectly polished surface
     static constexpr const char* polishedfrontpainted_ = "polishedfrontpainted" ;  // smooth top-layer (front) paint
     static constexpr const char* polishedbackpainted_  = "polishedbackpainted"  ;  // same is 'polished' but with a back-paint
@@ -50,9 +52,13 @@ inline bool U4OpticalSurfaceFinish::IsGround(unsigned finish)
 {
     return finish == ground || finish == groundfrontpainted || finish == groundbackpainted ; 
 }
+inline bool U4OpticalSurfaceFinish::IsPainted(unsigned finish)
+{
+    return finish == polishedfrontpainted || finish == polishedbackpainted || finish == groundfrontpainted || finish == groundbackpainted;
+}
 inline const char* U4OpticalSurfaceFinish::Name(unsigned finish)
 {
-    const char* n = nullptr ; 
+    const char* n = unsupported_;
     switch(finish)
     {
         case polished:              n = polished_             ; break ;  
@@ -62,7 +68,6 @@ inline const char* U4OpticalSurfaceFinish::Name(unsigned finish)
         case groundfrontpainted:    n = groundfrontpainted_   ; break ;  
         case groundbackpainted:     n = groundbackpainted_    ; break ;  
     }
-    assert(n); 
     return n ; 
 }
 
