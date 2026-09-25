@@ -30,12 +30,40 @@ jobs:
 
       - name: Verify installed wheel
         run: |
-          wheel_dir=$(mktemp -d)
-          target_dir=$(mktemp -d)
-          uv build --wheel --out-dir "$wheel_dir"
-          python -m pip install --no-deps --target "$target_dir" "$wheel_dir"/*.whl
+          artifact_dir=$(mktemp -d)
+          project_python="$PWD/.venv/bin/python"
+          uv build --out-dir "$artifact_dir"
+          uv pip install --python "$project_python" --reinstall --no-deps "$artifact_dir"/*.whl
           cd /tmp
-          PYTHONPATH="$target_dir" python -c 'import importlib.util; names = ["optiphy.geant4_version", "optiphy.tools.generate_input_photons", "optiphy.tools.plot_csg", "optiphy.tools.run_performance"]; missing = [name for name in names if importlib.util.find_spec(name) is None]; assert not missing, missing'
+          "$project_python" -I - <<'PY'
+          import importlib
+          import importlib.metadata
+          from pathlib import Path
+
+          distribution = importlib.metadata.distribution("optiphy")
+          package_root = Path(distribution.locate_file("optiphy"))
+          modules = [
+              ".".join(path.relative_to(package_root.parent).with_suffix("").parts)
+              for path in package_root.rglob("*.py")
+          ]
+          for module in modules:
+              importlib.import_module(module)
+
+          scripts = {
+              entry_point.name: entry_point
+              for entry_point in distribution.entry_points
+              if entry_point.group == "console_scripts"
+          }
+          expected_scripts = {
+              "geant4-version",
+              "generate-input-photons",
+              "plot-csg",
+              "run-performance",
+          }
+          assert scripts.keys() == expected_scripts, scripts.keys()
+          for entry_point in scripts.values():
+              assert callable(entry_point.load()), entry_point
+          PY
 
   cpp-linter:
     runs-on: ubuntu-latest
