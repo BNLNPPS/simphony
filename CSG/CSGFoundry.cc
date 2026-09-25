@@ -3102,9 +3102,13 @@ Instanciation grabs the (SSim)sim instance
 
 CSGFoundry* CSGFoundry::CreateFromSim()
 {
+    // Keep the established geometry-materialization range names for both
+    // persisted loads and live Geant4-to-CSG imports.
+    EventTimingProfile::Mark("CSGFoundry__Load_HEAD");
     assert(SSim::Get() != nullptr);
     CSGFoundry* fd = new CSGFoundry ;
     fd->importSim();
+    EventTimingProfile::Mark("CSGFoundry__Load_TAIL");
     return fd ;
 }
 

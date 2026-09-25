@@ -44,7 +44,9 @@ an integration check, not a benchmark.
 
 `simg4ox` can write event-level timing data suitable for CPU/GPU scheduling
 studies. `--timing-output` enables a CSV with one row per event and a JSON run
-manifest beside it. The CSV records:
+manifest beside it. This typed event recorder is independent of the optional
+detailed process profiler: requesting `--timing-output` always records the
+timeline, while `EventTiming__PROFILE` remains opt-in. The event CSV records:
 
 - the basket-forming Geant4 interval before GPU dispatch and the CPU
   collection/reset interval afterward;
@@ -53,8 +55,50 @@ manifest beside it. The CSV records:
 - wall-clock, process-CPU, and event-thread CPU durations; and
 - generated genstep/photon counts and CPU/GPU hit counts.
 
-All timeline offsets use a monotonic run-local clock. They are intended for
-interval comparison within one run, not as timestamps shared across jobs.
+The recorder samples the monotonic, process-CPU, and calling-thread CPU clocks
+at the run origin and five event boundaries: event start, GPU submission, GPU
+start, GPU end, and event end. It does not inspect `/proc`. All timeline
+offsets use a monotonic run-local clock and are intended for interval
+comparison within one run, not as timestamps shared across jobs. The recorder
+is deliberately single-threaded; do not call one recorder concurrently from
+multiple Geant4 worker threads.
+
+The exact event CSV header is:
+
+```text
+scenario,dispatch_mode,event_id,start_time,end_time,cpu_start_time,cpu_end_time,cpu_pre_start_time,cpu_pre_end_time,gpu_submit_time,gpu_start_time,gpu_end_time,gpu_wait_start_time,gpu_wait_end_time,cpu_post_start_time,cpu_post_end_time,start_offset_s,end_offset_s,cpu_start_time_offset_s,cpu_end_time_offset_s,cpu_pre_start_time_offset_s,cpu_pre_end_time_offset_s,gpu_submit_time_offset_s,gpu_start_time_offset_s,gpu_end_time_offset_s,gpu_wait_start_time_offset_s,gpu_wait_end_time_offset_s,cpu_post_start_time_offset_s,cpu_post_end_time_offset_s,runtime_s,cpu_pre_runtime_s,cpu_post_runtime_s,cpu_runtime_s,gpu_queue_delay_s,gpu_runtime_s,gpu_wait_runtime_s,primary_particle,primary_momentum_gev_c,primary_multiplicity,num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s
+```
+
+All `*_time`, `*_offset_s`, `*_runtime_s`, `*_delay_s`, and CPU values are
+seconds derived from monotonic or CPU clocks. Momentum is GeV/c; the remaining
+workload columns are counts.
+
+Set `EventTiming__PROFILE=1` when lifecycle-level timestamps and memory samples
+are also needed. Each detailed mark captures wall time in microseconds,
+monotonic time in nanoseconds, and virtual/resident memory in KiB. This path
+queries `/proc`, appends to synchronized in-memory storage, and periodically
+rewrites the crash-safe profile snapshot, so it has more overhead than the
+five-boundary event recorder. Its exact CSV header is:
+
+```text
+name,wall_time_us,steady_time_ns,vm_kb,rss_kb,metadata
+```
+
+The default filename is `EventTimingProfile.csv`. Configure a literal path or
+an indexed path with one safe integer conversion:
+
+```bash
+export EventTiming__PROFILE=1
+export EventTiming__PROFILE_PATH=/tmp/pfrich/EventTimingProfile_%05d.csv
+export EventTiming__PROFILE_PATH_INDEX=7
+```
+
+`sreport` reads `EventTimingProfile.csv` from a selected run directory. It can
+also analyze only a profile, without loading an event directory:
+
+```bash
+build/sysrap/tests/sreport --event-timing-profile /tmp/pfrich/EventTimingProfile.csv
+```
 
 The bundled pfrich baseline runs three single-threaded Geant4 events with one
 negative muon at 5 GeV/c per event. Its position and forward direction come
@@ -65,6 +109,11 @@ and transported by Opticks on the GPU.
 ```bash
 cmake --build build --target simg4ox
 SIMG4OX_BIN="$PWD/build/src/simg4ox" scripts/run_pfrich_timing.sh
+
+# Add the optional lifecycle/memory profile.
+EventTiming__PROFILE=1 \
+SIMG4OX_BIN="$PWD/build/src/simg4ox" \
+scripts/run_pfrich_timing.sh /tmp/simphony-pfrich-profiled
 ```
 
 The runner creates `pfrich_timing/events.csv`,
@@ -74,8 +123,9 @@ The CSV follows the timeline columns used by teerex: `scenario`,
 boundaries, run-local offsets, and measured durations. Producer-specific
 particle, genstep, photon, and hit columns are retained.
 
-Use teerex's marimo notebook to compare this measured run with simulated
-blocking and asynchronous scheduling:
+Use the teerex marimo notebook at
+`third_party/teerex/notebooks/simload.py` to compare this measured run with
+simulated blocking and asynchronous scheduling:
 
 ```bash
 cd third_party/teerex
@@ -88,6 +138,14 @@ through its input control. The first event includes CUDA and OptiX warm-up, so
 steady-state comparisons should report it separately or exclude it explicitly.
 This small run matches the table's pfrich particle and momentum, but not its
 `10^5`-muon statistics.
+
+For an automated, headless busy-lane plot with numerical makespan and CPU/GPU
+busy totals:
+
+```bash
+cd third_party/teerex
+MPLBACKEND=Agg uv run python -c 'from pathlib import Path; from teerex.analysis import read_many_csv, plot_run_timeline; p=Path("/tmp/simphony-pfrich-profiled/events.csv"); df=read_many_csv([p]); plot_run_timeline(df, run="simg4ox_blocking", outdir=p.parent, filename="cpu_gpu_busy_timeline.png")'
+```
 
 ## Debug analysis with `optiphy/ana/photon_history_summary.py`
 

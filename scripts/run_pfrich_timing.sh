@@ -8,12 +8,17 @@ SIMG4OX_BIN=${SIMG4OX_BIN:-simg4ox}
 OUTPUT_DIR=${1:-${REPO_DIR}/pfrich_timing}
 
 mkdir -p "${OUTPUT_DIR}"
+OUTPUT_DIR=$(cd "${OUTPUT_DIR}" && pwd -P)
 
 export OPTICKS_HOME="${REPO_DIR}"
 export SIMPHONY_CONFIG_DIR="${SIMPHONY_CONFIG_DIR:-${REPO_DIR}/config}"
 export OPTICKS_EVENT_MODE=Minimal
 export PYTHONPATH="${REPO_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
+
+if [[ "${EventTiming__PROFILE:-0}" == "1" ]]; then
+    export EventTiming__PROFILE_PATH="${EventTiming__PROFILE_PATH:-${OUTPUT_DIR}/EventTimingProfile.csv}"
+fi
 
 cd "${OUTPUT_DIR}"
 
@@ -39,3 +44,8 @@ python3 "${REPO_DIR}/tests/check_simg4ox_timing.py" \
     --events 3 \
     --particle mu- \
     --require-photons
+
+if [[ "${EventTiming__PROFILE:-0}" == "1" ]]; then
+    python3 "${REPO_DIR}/tests/check_event_timing_profile.py" \
+        "${EventTiming__PROFILE_PATH}"
+fi
