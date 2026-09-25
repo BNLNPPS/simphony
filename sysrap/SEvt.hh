@@ -59,9 +59,7 @@ index and photon offset in addition to  gentype/trackid/matline/numphotons
 #include "plog/Severity.h"
 
 #include "EventTiming.hh"
-#include "sctx.h"
 #include "scuda.h"
-#include "sevent.h"
 #include "sphit.h"
 #include "sphoton.h"
 #include "squad.h"
@@ -69,6 +67,11 @@ index and photon offset in addition to  gentype/trackid/matline/numphotons
 #include "sseq.h"
 #include "sstate.h"
 #include "stag.h"
+
+#include "sevent.h"
+
+// sctx contains sevent and the instrumentation types above by value.
+#include "sctx.h"
 
 #include "squad.h"
 
