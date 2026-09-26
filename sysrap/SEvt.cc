@@ -7,7 +7,6 @@
 #include "squad.h"
 #include "squadx.h"
 #include "sstamp.h"
-#include "sprof.h"
 
 #include "sphoton.h"
 #include "sphotonlite.h"
@@ -30,21 +29,20 @@
 #include "ssys.h"
 #include "SLOG.hh"
 
+#include "EventTiming.hh"
 #include "NP.hh"
-#include "NPX.h"
 #include "NPFold.h"
-#include "SEvt.hh"
-#include "SEvent.hh"
-#include "SSim.hh"
-#include "SEventConfig.hh"
-#include "SFrameGenstep.hh"
+#include "NPX.h"
 #include "OpticksGenstep.h"
 #include "OpticksPhoton.h"
 #include "OpticksPhoton.hh"
 #include "SComp.h"
-#include "SProf.hh"
+#include "SEvent.hh"
+#include "SEventConfig.hh"
+#include "SEvt.hh"
+#include "SFrameGenstep.hh"
 #include "SRecord.h"
-
+#include "SSim.hh"
 
 bool SEvt::NPFOLD_VERBOSE = ssys::getenvbool(SEvt__NPFOLD_VERBOSE) ;
 bool SEvt::GATHER = ssys::getenvbool(SEvt__GATHER) ;
@@ -87,7 +85,6 @@ double SEvt::TimerDone(){ return TIMER->done() ; }
 uint64_t SEvt::TimerStartCount(){ return TIMER->start_count() ; }
 std::string SEvt::TimerDesc(){ return TIMER->desc() ; }
 
-
 /**
 SEvt::Init_RUN_META
 ---------------------
@@ -95,17 +92,16 @@ SEvt::Init_RUN_META
 As this is a static it happens just as libSysRap is loaded,
 very soon after starting the executable.
 
-Now using SProf for profile stamps, previously included with run_meta.txt::
+Now using EventTimingProfile for profile stamps, previously included with run_meta.txt::
 
-   run_meta->set_meta<std::string>("SEvt__Init_RUN_META", sprof::Now() );
+   run_meta->set_meta<std::string>("SEvt__Init_RUN_META", EventTimingSample::Capture(...).serialize() );
 
 **/
-
 
 NP* SEvt::Init_RUN_META() // static
 {
     NP* run_meta = NP::Make<float>(1);
-    SProf::Add("SEvt__Init_RUN_META");
+    EventTimingProfile::Mark("SEvt__Init_RUN_META");
     return run_meta ;
 }
 
@@ -1562,8 +1558,8 @@ void SEvt::SaveGenstepLabels(const char* dir, const char* name)
 
 void SEvt::BeginOfRun()
 {
-    SProf::Add("SEvt__BeginOfRun");
-    SProf::Write();
+    EventTimingProfile::Mark("SEvt__BeginOfRun");
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 
 
@@ -1571,8 +1567,8 @@ void SEvt::BeginOfRun()
 
 void SEvt::EndOfRun()
 {
-    SProf::Add("SEvt__EndOfRun");
-    SProf::Write();
+    EventTimingProfile::Mark("SEvt__EndOfRun");
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 
 
@@ -1599,24 +1595,6 @@ void SEvt::SetRunMetaString(const char* k, const char* v ) // static
 }
 
 
-/*
-void SEvt::SetRunProf(const char* k, const sprof& v) // static
-{
-    SetRunMeta<std::string>( k, sprof::Serialize(v) );
-}
-void SEvt::SetRunProf(const char* k)   // static
-{
-    SetRunMeta<std::string>( k, sprof::Now() );
-}
-void SEvt::setRunProf_Annotated(const char* hdr) const
-{
-    std::string eid = getIndexString_(hdr) ;
-    SetRunMeta<std::string>( eid.c_str(), sprof::Now() );
-}
-*/
-
-
-
 /**
 SEvt::IsSaveNothing
 --------------------
@@ -1633,8 +1611,6 @@ bool SEvt::IsSaveNothing() // static
 {
     return SEventConfig::IsMinimalOrNothing() && SAVE_NOTHING ;
 }
-
-
 
 /**
 SEvt::SaveRunMeta
@@ -1653,7 +1629,7 @@ can be controlled by::
 When save into the RunDir one level above the event folders A000 etc..
 
 When SEvt__SAVE_RUNDIR is not defined save into the invoking directory
-together with the logfile and SProf.txt
+together with the logfile and EventTimingProfile.csv
 This simple approach makes more sense in production when event arrays
 are not saved.
 
@@ -1695,13 +1671,10 @@ void SEvt::setMetaString(const char* k, const char* v)
     NP::SetMeta<std::string>(meta, k, v );
 }
 
-void SEvt::setMetaProf(const char* k, const sprof& v)
+void SEvt::setMetaTiming(const char* k, const EventTimingSample& v)
 {
-    NP::SetMeta<std::string>(meta, k, sprof::Serialize(v) );
-}
-void SEvt::setMetaProf(const char* k)
-{
-    NP::SetMeta<std::string>(meta, k, sprof::Now() );
+    if (EventTimingProfile::Enabled())
+        NP::SetMeta<std::string>(meta, k, v.serialize());
 }
 
 
@@ -1777,10 +1750,15 @@ as still need to collect the gensteps.
 void SEvt::beginOfEvent(int eventID)
 {
     if(isFirstEvtInstance() && eventID == 0) BeginOfRun() ;
-    if(eventID == 0) SProf::Add( isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU" ) ;
+    if (eventID == 0)
+        EventTimingProfile::Mark(isEGPU() ? "SEvt__beginOfEvent_FIRST_EGPU" : "SEvt__beginOfEvent_FIRST_ECPU");
 
     setStage(SEvt__beginOfEvent);
-    sprof::Stamp(p_SEvt__beginOfEvent_0);
+    if (EventTimingProfile::Enabled())
+        p_SEvt__beginOfEvent_0 = EventTimingSample::Capture(
+            EventTimingCapture::Monotonic |
+            EventTimingCapture::Wall |
+            EventTimingCapture::Memory);
 
     LOG(LEVEL) << " eventID " << eventID ;   // 0-based
     setIndex(eventID);
@@ -1788,13 +1766,18 @@ void SEvt::beginOfEvent(int eventID)
     LOG_IF(info, LIFECYCLE) << id() ;
 
     clear_output();   // output vectors and fold : excluding gensteps as thats input
-    if( addGenstep_array == 0 )
+    // Normal Geant4 integration collects quad6 gensteps before EGPU
+    // beginOfEvent. Do not try to add a configured input-photon/torch
+    // genstep when that generated workload is already present.
+    if (addGenstep_array == 0 && numgenstep_collected == 0)
     {
         addInputGenstep();  // does genstep setup for simtrace, input photon and torch running
     }
     else
     {
-        LOG(LEVEL) << "skip addInputGenstep as addGenstep_array " << addGenstep_array ;
+        LOG(LEVEL)
+            << "skip addInputGenstep as addGenstep_array " << addGenstep_array
+            << " numgenstep_collected " << numgenstep_collected;
     }
 
 
@@ -1809,7 +1792,11 @@ void SEvt::beginOfEvent(int eventID)
         << " MaxBounce " << evt->max_bounce
         ;
 
-    sprof::Stamp(p_SEvt__beginOfEvent_1);
+    if (EventTimingProfile::Enabled())
+        p_SEvt__beginOfEvent_1 = EventTimingSample::Capture(
+            EventTimingCapture::Monotonic |
+            EventTimingCapture::Wall |
+            EventTimingCapture::Memory);
 }
 
 
@@ -1833,7 +1820,11 @@ void SEvt::endOfEvent(int eventID)
 
     setStage(SEvt__endOfEvent);
     LOG_IF(info, LIFECYCLE) << id() ;
-    sprof::Stamp(p_SEvt__endOfEvent_0);
+    if (EventTimingProfile::Enabled())
+        p_SEvt__endOfEvent_0 = EventTimingSample::Capture(
+            EventTimingCapture::Monotonic |
+            EventTimingCapture::Wall |
+            EventTimingCapture::Memory);
 
     endIndex(eventID);   // eventID is 0-based
     endMeta();
@@ -1851,7 +1842,6 @@ void SEvt::endOfEvent(int eventID)
     bool is_last_eventID = SEventConfig::IsLastEvent(eventID) ;
     if(is_last_eventID)
     {
-        //SetRunProf( isEGPU() ? "SEvt__endOfEvent_LAST_EGPU" : "SEvt__endOfEvent_LAST_ECPU" ) ;
         bool is_last_evt_instance = isLastEvtInstance() ;
 
         LOG(LEVEL)
@@ -1880,10 +1870,9 @@ void SEvt::endMeta()
     setMeta<int>("index", index);
     setMeta<int>("instance", instance);
 
-    setMetaProf("SEvt__beginOfEvent_0", p_SEvt__beginOfEvent_0);
-    setMetaProf("SEvt__beginOfEvent_1", p_SEvt__beginOfEvent_1);
-    setMetaProf("SEvt__endOfEvent_0",   p_SEvt__endOfEvent_0);
-    //setMetaProf("SEvt__endOfEvent_1",   p_SEvt__endOfEvent_1);
+    setMetaTiming("SEvt__beginOfEvent_0", p_SEvt__beginOfEvent_0);
+    setMetaTiming("SEvt__beginOfEvent_1", p_SEvt__beginOfEvent_1);
+    setMetaTiming("SEvt__endOfEvent_0", p_SEvt__endOfEvent_0);
 
     setMeta<uint64_t>("t_BeginOfEvent", t_BeginOfEvent );
 
@@ -2125,8 +2114,7 @@ void SEvt::setIndex(int index_arg)
     index = SEventConfig::EventIndex(index_arg) ;
     t_BeginOfEvent = sstamp::Now();                // moved here from the static
 
-    //setRunProf_Annotated("SEvt__setIndex_" );
-    SProf::Add("SEvt__setIndex");
+    EventTimingProfile::Mark("SEvt__setIndex");
 }
 void SEvt::endIndex(int index_arg)
 {
@@ -2141,8 +2129,7 @@ void SEvt::endIndex(int index_arg)
     assert( consistent );
     t_EndOfEvent = sstamp::Now();
 
-    //setRunProf_Annotated("SEvt__endIndex_" );
-    SProf::Add("SEvt__endIndex");
+    EventTimingProfile::Mark("SEvt__endIndex");
 }
 
 /**
@@ -3965,7 +3952,6 @@ void SEvt::gather_components()   // *GATHER*
         ;
 }
 
-
 /**
 SEvt::gather_metadata
 ----------------------
@@ -3983,10 +3969,9 @@ This is because QEvt::getMeta returns SEvt::meta for from
 the associated QEvt::sev (SEvt) instance.
 
 Note that because SEvt::save is typically not done in production,
-the SProf.hh metadata data recording is more generally useful.
+the EventTimingProfile metadata recording is more generally useful.
 
 **/
-
 
 void SEvt::gather_metadata()
 {

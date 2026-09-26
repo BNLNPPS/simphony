@@ -87,7 +87,7 @@ inline sleak_Creator::sleak_Creator( const char* dirp_ )
     leak(new sleak)
 {
     leak->run = run->copy() ;  //  HUH: if dont copy get SEGV om saving (presumably due to NoData)
-    leak->runprof = leak->run ? run->makeMetaKVProfileArray("Index") : nullptr ; 
+    leak->runprof = leak->run ? NP::Make<int64_t>(1, 4) : nullptr;
 }
 
 inline std::string sleak_Creator::desc() const 
@@ -125,6 +125,4 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
-
 

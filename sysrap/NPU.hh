@@ -638,8 +638,6 @@ struct U
     template<typename T>
     static bool LooksLikeTimestamp( T value );
 
-    static bool LooksLikeProfileTriplet(const char* str);
-
     static std::string Format(uint64_t t=0, const char* fmt="%FT%T.", int _wsubsec=3 );
 
     static constexpr const char* LOG_FMT = "%Y-%m-%d %H:%M:%S" ;
@@ -1976,38 +1974,6 @@ inline bool U::LooksLikeTimestamp( T value )
 }
 
 
-/**
-U::LooksLikeProfileTriplet
------------------------------
-
-Follows sprof::LooksLikeProf, repeated hear for convenience.
-Returns true for comma delimited list of three integers where
-the first has 16 digits, eg::
-
-    1111111111111111,2222,3333
-
-**/
-
-inline bool U::LooksLikeProfileTriplet(const char* str) // static
-{
-    int len = str ? int(strlen(str)) : 0 ;
-    int count_delim = 0 ;
-    int count_non_digit = 0 ;
-    int first_field_digits = 0 ;
-
-    for(int i=0 ; i < len ; i++ )
-    {
-        char c = str[i] ;
-        bool is_digit = c >= '0' && c <= '9' ;
-        bool is_delim = c == ',' ;
-        if(!is_digit) count_non_digit += 1 ;
-        if(count_delim == 0 && is_digit ) first_field_digits += 1 ;
-        if(is_delim) count_delim += 1 ;
-    }
-    bool heuristic = count_delim == 2 && count_non_digit == count_delim && first_field_digits == 16 ;
-    return heuristic ;
-}
-
 
 inline std::string U::FormatLog(const char* msg) // static
 {
@@ -2187,10 +2153,8 @@ inline void U::GetMetaKVS_(
             const char* v = _v.c_str();
             bool disqualify_key = strlen(k) > 0 && k[0] == '_' ;
             bool looks_like_stamp = U::LooksLikeStampInt(v);
-            bool looks_like_prof  = U::LooksLikeProfileTriplet(v);
             int64_t t = 0 ;
             if(looks_like_stamp) t = U::To<int64_t>(v) ;
-            if(looks_like_prof)  t = strtoll(v, nullptr, 10);
             bool select = only_with_stamp ? ( t > 0 && !disqualify_key )  : true ;
             if(!select) continue ;
 
