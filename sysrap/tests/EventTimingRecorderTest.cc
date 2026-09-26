@@ -76,10 +76,13 @@ std::unordered_map<std::string, std::string> ReadSingleRow(const fs::path& path)
     assert(input);
     std::string header;
     std::string values;
-    assert(static_cast<bool>(std::getline(input, header)));
-    assert(static_cast<bool>(std::getline(input, values)));
+    const bool  read_header = static_cast<bool>(std::getline(input, header));
+    const bool  read_values = static_cast<bool>(std::getline(input, values));
+    assert(read_header);
+    assert(read_values);
     std::string extra;
-    assert(!std::getline(input, extra));
+    const bool  read_extra = static_cast<bool>(std::getline(input, extra));
+    assert(!read_extra);
 
     const auto names = Split(header, ',');
     const auto fields = Split(values, ',');
@@ -145,7 +148,8 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
     std::ifstream csv(output);
     assert(csv);
     std::string header;
-    assert(static_cast<bool>(std::getline(csv, header)));
+    const bool  read_header = static_cast<bool>(std::getline(csv, header));
+    assert(read_header);
     const std::string expected_header =
         "scenario,dispatch_mode,event_id,start_time,end_time,cpu_start_time,cpu_end_time,"
         "cpu_pre_start_time,cpu_pre_end_time,gpu_submit_time,gpu_start_time,gpu_end_time,"
