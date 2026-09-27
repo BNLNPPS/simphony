@@ -23,7 +23,6 @@ struct sphoton ;
 struct qscint
 {
     cudaTextureObject_t scint_tex ;
-    quad4*              scint_meta ; // HUH: not used ?
     unsigned            hd_factor ;
 
 #if defined(__CUDACC__) || defined(__CUDABE__) || defined(MOCK_CURAND) || defined(MOCK_CUDA)

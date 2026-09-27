@@ -107,7 +107,6 @@ struct SBT
     void checkHitgroup();
 
     void setPrimData( CustomPrim& cp, const CSGPrim* prim);
-    void checkPrimData( CustomPrim& cp, const CSGPrim* prim);
     void dumpPrimData( const CustomPrim& cp ) const ;
 
     void setMeshData( TriMesh& tm, const SCUDA_MeshGroup* cmg, int j, int boundary, unsigned globalPrimIdx );

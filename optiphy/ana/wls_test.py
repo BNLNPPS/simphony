@@ -20,14 +20,14 @@ Exits 0 on PASS, 1 on FAIL.
 """
 import argparse
 import math
-import os
 import sys
 
 import numpy as np
 
-# Reuse ks_test_2sample from the diagnostic script in the same directory.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from wls_diagnostic import ks_test_2sample  # noqa: E402
+if __package__:
+    from .wls_diagnostic import ks_test_2sample
+else:
+    from wls_diagnostic import ks_test_2sample
 
 
 WLS_THRESHOLD_NM = 380.0

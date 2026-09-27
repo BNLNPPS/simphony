@@ -87,7 +87,7 @@ WORKDIR $SIMPHONY_HOME
 # Install Python dependencies
 COPY pyproject.toml uv.lock $SIMPHONY_HOME/
 COPY optiphy $SIMPHONY_HOME/optiphy
-RUN uv sync --python "${PYTHON_VERSION}" --managed-python
+RUN uv sync --locked --no-dev --python "${PYTHON_VERSION}"
 
 
 FROM base AS devenv

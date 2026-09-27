@@ -16,13 +16,18 @@ struct U4SurfaceType
     static constexpr const char* dielectric_dichroic_ = "dielectric_dichroic" ;     
     static constexpr const char* firsov_ = "firsov" ;                 
     static constexpr const char* x_ray_ = "x_ray" ;                  
+    static constexpr const char* coated_ = "coated";
+    static constexpr const char* unsupported_ = "UNSUPPORTED_TYPE";
 
     static const char* Name(unsigned type); 
 };
 
 inline const char* U4SurfaceType::Name(unsigned type)
 {
-    const char* s = nullptr ; 
+    if (type == coated)
+        return coated_;
+
+    const char* s = unsupported_;
     switch(type)
     {
         case dielectric_metal:      s = dielectric_metal_      ; break ; 

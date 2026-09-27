@@ -548,43 +548,6 @@ def print_output_path_help():
     print()
 
 
-def check_event_mode():
-    """Check that OPTICKS_EVENT_MODE is set to a mode that saves output arrays."""
-    valid_modes = ("HitPhoton", "HitPhotonSeq", "DebugLite", "DebugHeavy")
-    mode = os.environ.get("OPTICKS_EVENT_MODE")
-    if mode is None:
-        print("ERROR: OPTICKS_EVENT_MODE environment variable is not set.")
-        print()
-        print("This script requires saved photon arrays. Use DebugLite or")
-        print("DebugHeavy when record.npy step traces are needed.")
-        print("Set OPTICKS_EVENT_MODE to one of:")
-        print()
-        for m in valid_modes:
-            print(f"    export OPTICKS_EVENT_MODE={m}")
-        print()
-        print("The default mode (Minimal) gathers hits into memory but does")
-        print("NOT save photon.npy, record.npy, or other arrays to disk.")
-        print()
-        print("Set the variable before running the simulation, e.g.:")
-        print()
-        print("    OPTICKS_EVENT_MODE=DebugLite GPUPhotonSourceMinimal -g geo.gdml -c cfg -m run.mac")
-        print()
-        print_output_path_help()
-        sys.exit(1)
-    if mode not in valid_modes:
-        print(f"ERROR: OPTICKS_EVENT_MODE={mode} may not save photon output arrays.")
-        print()
-        print("Use one of:")
-        print()
-        for m in valid_modes:
-            print(f"    export OPTICKS_EVENT_MODE={m}")
-        print()
-        print(f"Current value '{mode}' may not save photon.npy, seq.npy, or record.npy.")
-        print()
-        print_output_path_help()
-        sys.exit(1)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Opticks GPU simulation output analysis",

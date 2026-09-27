@@ -3,11 +3,10 @@
 QPMTTest.h
 =============
 
-NB this header is used by three QPMT tests:
+NB this header is used by two QPMT tests:
 
 1. standard om built QPMTTest (CUDA)
-2. standalone QPMT_Test built QPMT_Test (CUDA)
-3. standalone QPMT_MockTest built QPMT_MockTest (MOCK_CURAND using CPU only)
+2. standalone QPMT_MockTest built QPMT_MockTest (MOCK_CURAND using CPU only)
 
 **/
 

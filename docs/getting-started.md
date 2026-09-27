@@ -221,13 +221,3 @@ For MT, use the absolute macro path
 
 Use `singularity` in place of `apptainer` on systems that provide the older
 command name.
-
-## Run a test job at NERSC
-
-To try Simphony on Perlmutter, start with the repository's [batch-job
-example](../scripts/submit.sh). Review the email address, allocation, image, and
-command, then submit the job:
-
-```shell
-sbatch scripts/submit.sh
-```

@@ -6,8 +6,6 @@ U4MaterialPropertyVector.h
 NB there is also a sysrap clone of this  S4MaterialPropertyVector.h
 that is convenient to allow only depending on sysrap rather than u4 
 
-TODO: migrate to using this clone and remove X4MaterialPropertyVector.h 
-
 After X4MaterialPropertyVector.hh
 
 **/
@@ -234,6 +232,3 @@ inline std::string U4MaterialPropertyVector::Desc_MIMSV(const std::map<int,std::
     std::string s = ss.str(); 
     return s ; 
 }
-
-
-

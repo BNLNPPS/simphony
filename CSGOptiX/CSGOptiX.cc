@@ -43,7 +43,6 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 // csg
 #include "CSGPrim.h"
 #include "CSGFoundry.h"
-#include "CSGView.h"
 
 // qudarap
 #include "qrng.h"

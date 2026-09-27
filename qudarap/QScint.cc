@@ -52,7 +52,6 @@ qscint* QScint::MakeInstance(const QTex<float>* tex) // static
 {
     qscint* scint = new qscint ; 
     scint->scint_tex = tex->texObj ; 
-    scint->scint_meta = tex->d_meta ;
     bool qscint_disable_hd = ssys::getenvbool("QSCINT_DISABLE_HD"); 
     scint->hd_factor = qscint_disable_hd ? 0u : tex->getHDFactor() ;
     return scint ; 
