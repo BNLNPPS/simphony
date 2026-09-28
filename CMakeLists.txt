@@ -18,11 +18,72 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CUDA_STANDARD 17)
+# 20 not 17: headers shared between C++ and CUDA (e.g. sysrap/torch.h) use
+# C++20 designated initializers, which GNU-mode nvcc tolerates in C++17 as an
+# extension but MSVC-host nvcc rejects.
+set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+if(MSVC)
+    # MSVC's <cmath> defines M_PI and friends only under this macro
+    add_compile_definitions(_USE_MATH_DEFINES)
+    # windows.h min/max macros break std::min/std::max wherever a header
+    # (e.g. optix_stubs.h) includes windows.h ahead of sysrap/s_windows.h
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
 set(CMAKE_CUDA_EXTENSIONS OFF)
 
-set(BUILD_SHARED_LIBS ON)
+# Build only the GPU core packages (SysRap, CSG, QUDArap, CSGOptiX), omitting
+# the packages that require Geant4 (u4, g4cx, src). Selection must happen at
+# configure time, not by choosing a target: u4 and src call
+# find_package(Geant4 REQUIRED), so a full configure fails outright where
+# Geant4 is absent. Defaults ON where Geant4 is not available in this stack.
+if(WIN32)
+    set(_simphony_core_only_default ON)
+else()
+    set(_simphony_core_only_default OFF)
+endif()
+option(SIMPHONY_CORE_ONLY
+    "Build only the GPU core packages, omitting the Geant4-dependent ones"
+    ${_simphony_core_only_default})
+
+# The interactive visualisation support in SysRap (SGLFW*, SGLM*, SGLDisplay)
+# is header-only: no library source compiles it, so GLEW and GLFW are link
+# dependencies of consumers, not of the core libraries themselves. A headless
+# worker needs neither. Off with the core-only build, on otherwise.
+if(SIMPHONY_CORE_ONLY)
+    set(_simphony_with_viz_default OFF)
+else()
+    set(_simphony_with_viz_default ON)
+endif()
+option(SIMPHONY_WITH_VIZ
+    "Link the OpenGL/GLFW interactive visualisation dependencies"
+    ${_simphony_with_viz_default})
+
+# Shared libraries by default. Windows builds static: exporting these packages
+# from DLLs would mean carrying templates, STL members and static data across
+# the boundary, and the coprocessor worker ships as one self-contained
+# executable regardless. Setting BUILD_SHARED_LIBS ON explicitly on Windows is
+# still supported: it defines SIMPHONY_SHARED_LIBS, which switches the
+# *_API_EXPORT.hh headers to __declspec.
+if(NOT DEFINED BUILD_SHARED_LIBS)
+    if(WIN32)
+        set(BUILD_SHARED_LIBS OFF)
+    else()
+        set(BUILD_SHARED_LIBS ON)
+    endif()
+endif()
+if(WIN32 AND BUILD_SHARED_LIBS)
+    add_compile_definitions(SIMPHONY_SHARED_LIBS)
+endif()
+
+if(MSVC)
+    # The utility layer uses the POSIX spellings (strdup, fopen, getenv) that
+    # the Windows CRT marks deprecated in favour of its own _-prefixed and
+    # _s variants. The functions are present and correct; only the warnings
+    # are unwanted.
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE)
+endif()
 
 include(GNUInstallDirs)
 # Keep CTest included even when BUILD_TESTING=OFF so external drivers can run
@@ -59,22 +120,31 @@ add_subdirectory(sysrap)
 add_subdirectory(CSG)
 add_subdirectory(qudarap)
 add_subdirectory(CSGOptiX)
-add_subdirectory(u4)
-add_subdirectory(g4cx)
-add_subdirectory(src)
+if(NOT SIMPHONY_CORE_ONLY)
+    add_subdirectory(u4)
+    add_subdirectory(g4cx)
+    add_subdirectory(src)
+endif()
 
 if(BUILD_TESTING)
     add_subdirectory(sysrap/tests)
     add_subdirectory(CSG/tests)
     add_subdirectory(qudarap/tests)
     add_subdirectory(CSGOptiX/tests)
-    add_subdirectory(u4/tests)
-    add_subdirectory(g4cx/tests)
-    add_subdirectory(tests)
+    # u4/g4cx tests follow their packages; the top-level integration test
+    # drives the simg4ox target from src and shells out through bash.
+    if(NOT SIMPHONY_CORE_ONLY)
+        add_subdirectory(u4/tests)
+        add_subdirectory(g4cx/tests)
+        add_subdirectory(tests)
+    endif()
 endif()
 
-# Optional DD4hep integration plugins
-find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
+# Optional DD4hep integration plugins -- these link Geant4, so they follow
+# the Geant4-dependent packages.
+if(NOT SIMPHONY_CORE_ONLY)
+    find_package(DD4hep QUIET COMPONENTS DDG4 DDCore)
+endif()
 if(DD4hep_FOUND)
     message(STATUS "DD4hep found -- building dd4hepplugins")
     add_subdirectory(dd4hepplugins)

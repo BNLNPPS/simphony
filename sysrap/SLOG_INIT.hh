@@ -53,10 +53,21 @@ SLOG\_INIT macros are used in two situations:
 
 
 
+/**
+The self-append guards below handle the fully static build, where the plog
+instance in a package's translation units and the main-executable instance
+passed in as app1 are the same object: adding a logger to itself as an
+appender makes every record recurse without terminating. In shared-library
+builds the instances are distinct and the guards change nothing.
+**/
+
 #define SLOG_INIT0(level, app1, app2 ) \
 { \
     plog::IAppender* appender1 = app1 ? static_cast<plog::IAppender*>(app1) : NULL ; \
     plog::IAppender* appender2 = app2 ? static_cast<plog::IAppender*>(app2) : NULL ; \
+    plog::IAppender* self = static_cast<plog::IAppender*>(plog::get()) ; \
+    if( self && appender1 == self ) appender1 = NULL ; \
+    if( self && appender2 == self ) appender2 = NULL ; \
     plog::Severity severity = static_cast<plog::Severity>(level) ; \
     plog::init( severity ,  appender1 ); \
     if(appender2) \
@@ -68,6 +79,9 @@ SLOG\_INIT macros are used in two situations:
 { \
     plog::IAppender* appender1 = static_cast<plog::IAppender*>(app1) ; \
     plog::IAppender* appender2 = static_cast<plog::IAppender*>(app2) ; \
+    plog::IAppender* self = static_cast<plog::IAppender*>(plog::get()) ; \
+    if( self && appender1 == self ) appender1 = NULL ; \
+    if( self && appender2 == self ) appender2 = NULL ; \
     plog::Severity severity = static_cast<plog::Severity>(level) ; \
     plog::init( severity ,  appender1 ); \
     if(appender2) \
@@ -80,6 +94,9 @@ SLOG\_INIT macros are used in two situations:
 { \
     plog::IAppender* appender1 = static_cast<plog::IAppender*>(app1) ; \
     plog::IAppender* appender2 = static_cast<plog::IAppender*>(app2) ; \
+    plog::IAppender* self = static_cast<plog::IAppender*>(plog::get<IDX>()) ; \
+    if( self && appender1 == self ) appender1 = NULL ; \
+    if( self && appender2 == self ) appender2 = NULL ; \
     plog::Severity severity = static_cast<plog::Severity>(level) ; \
     plog::init<IDX>( severity ,  appender1 ); \
     if(appender2) \

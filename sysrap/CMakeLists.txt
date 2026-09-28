@@ -3,8 +3,10 @@ set(desc "System Level Utilities depending")
 
 find_package(nlohmann_json REQUIRED)
 find_package(plog REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glfw3 REQUIRED)
+if(SIMPHONY_WITH_VIZ)
+    find_package(GLEW REQUIRED)
+    find_package(glfw3 REQUIRED)
+endif()
 find_package(glm REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
@@ -444,6 +446,8 @@ set(HEADERS
     NPX.h
     NPFold.h
     SSim.hh
+    SSimulator.h
+    s_windows.h
     SPropMockup.h
 
     S4MaterialPropertyVector.h
@@ -482,10 +486,16 @@ target_link_libraries(${name}
     plog::plog
     nlohmann_json::nlohmann_json
     CUDA::cudart
-    GLEW::GLEW
-    glfw
     glm::glm
 )
+
+# Consumers of the header-only SGLFW*/SGLM* viz code link these themselves.
+if(SIMPHONY_WITH_VIZ)
+    target_link_libraries(${name}
+        GLEW::GLEW
+        glfw
+    )
+endif()
 
 target_include_directories( ${name} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -536,9 +546,12 @@ target_compile_definitions( ${name}
       $<$<CONFIG:Release>:CONFIG_Release>
       $<$<CONFIG:MinSizeRel>:CONFIG_MinSizeRel>
 
-      OPTICKS_SYSRAP 
+      OPTICKS_SYSRAP
       GLM_ENABLE_EXPERIMENTAL
-      PLOG_LOCAL
+      # PLOG_LOCAL gives each shared library its own plog instance; in a
+      # static build it splits the logger between library and executable
+      # translation units, which on Windows produced non-terminating logging
+      $<$<BOOL:${BUILD_SHARED_LIBS}>:PLOG_LOCAL>
 
       $<$<CONFIG:Debug>:DEBUG_TAG>
       $<$<CONFIG:Debug>:DEBUG_PIDX>

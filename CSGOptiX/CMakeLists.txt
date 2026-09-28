@@ -49,7 +49,7 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
         $<$<CONFIG:Release>:CONFIG_Release>
         $<$<CONFIG:MinSizeRel>:CONFIG_MinSizeRel>
         OPTICKS_SYSRAP
-        PLOG_LOCAL
+        $<$<BOOL:${BUILD_SHARED_LIBS}>:PLOG_LOCAL>
         $<$<CONFIG:Debug>:DEBUG_TAG>
         $<$<CONFIG:Debug>:DEBUG_PIDX>
         $<$<CONFIG:Debug>:DEBUG_PIDXYZ>
@@ -71,7 +71,9 @@ add_dependencies(csgoptix_ptx ${OPTIX_PTX_TARGET})
 
 message(STATUS "Configured PTX build for ${OPTIX_PTX_SRC}")
 
-add_library( ${name} SHARED ${SOURCES} ${HEADERS} )
+# no SHARED keyword: honor BUILD_SHARED_LIBS, which the top-level CMakeLists
+# sets OFF on Windows (static core) and ON elsewhere
+add_library( ${name} ${SOURCES} ${HEADERS} )
 add_dependencies(${name} csgoptix_ptx)
 
 target_compile_definitions( ${name} PRIVATE WITH_PRD )  # using Pointer trick means can reduce attrib and payload to 2 

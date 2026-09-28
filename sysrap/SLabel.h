@@ -63,7 +63,7 @@ inline bool SLabel::IsIdxLabelListed(const std::vector<std::string>& label, unsi
 
 
 
-SLabel* SLabel::Load(const char* path_)
+inline SLabel* SLabel::Load(const char* path_)
 {
     const char* path = spath::Resolve(path_); 
     if(path == nullptr) 

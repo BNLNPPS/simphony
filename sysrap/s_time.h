@@ -9,7 +9,11 @@ measuring durations. See schrono.h or stimer.h for that.
 
 **/
 
+#if defined(_MSC_VER)
+#include "s_windows.h"    // gettimeofday, struct timeval
+#else
 #include <sys/time.h>
+#endif
 #include <string>
 #include <iomanip>
 #include <sstream>
@@ -49,7 +53,12 @@ namespace s_time
 
     inline void localtime_s(struct tm* t, const time_t* time)
     {
-        ::localtime_r(time, t); 
+#if defined(_MSC_VER)
+        // CRT localtime_s already has the (tm*, time_t*) argument order
+        ::localtime_s(t, time);
+#else
+        ::localtime_r(time, t);
+#endif
     }
 
     struct Time
@@ -69,8 +78,8 @@ namespace s_time
 
     inline std::string Desc(Time* stamp)
     {
-         tm t ; 
-         localtime_s(&t, &stamp->time) ; 
+         tm t ;
+         s_time::localtime_s(&t, &stamp->time) ;
 
          std::stringstream ss ; 
          ss 

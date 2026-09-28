@@ -23,7 +23,13 @@ Note that strings like "1e-9" parse ok into float/double.
 #include "sstr.h"
 #include "spath.h"
 
+#if defined(_MSC_VER)
+// The CRT names the environment table _environ, declared in <cstdlib>;
+// the POSIX spelling maps onto it, matching the s_windows.h convention.
+#define environ _environ
+#else
 extern char **environ;
+#endif
 
 struct ssys
 {
@@ -148,6 +154,12 @@ inline std::string ssys::popen(const char* cmd, bool chomp, int* rc)
 {
     std::stringstream ss ;
     FILE *fp = ::popen(cmd, "r");
+    if(fp == nullptr)
+    {
+        std::cerr << "ssys::popen failed to run [" << ( cmd ? cmd : "-" ) << "]" << std::endl ;
+        if(rc) *rc = -1 ;
+        return "" ;
+    }
     char line[512];
     while (fgets(line, sizeof(line), fp) != NULL)
     {
@@ -189,7 +201,12 @@ inline std::string ssys::which(const char* script)
 {
     bool chomp = true ;
     int rc(0);
+#if defined(_MSC_VER)
+    // "where" is the Windows equivalent of "which"; the null device is "nul".
+    std::string path = ssys::popen("where 2>nul", script, chomp, &rc );
+#else
     std::string path = ssys::popen("which 2>/dev/null", script, chomp, &rc );
+#endif
 
     if(VERBOSE) std::cerr
          << " script " << script
@@ -1155,8 +1172,10 @@ inline std::string ssys::PWD()  // static
     return getenvvar("PWD");    // note no newline
 }
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
 extern char **environ;
+#endif
 
 
 inline void ssys::getenv_with_prefix(std::vector<std::pair<std::string,std::string>>& kvs, const char* prefix)

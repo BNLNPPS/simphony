@@ -28,6 +28,14 @@ For persisting srec arrays use::
 #if defined(__CUDACC__) || defined(__CUDABE__)
 #define FFS(x)   (__ffs(x))
 #define FFSLL(x) (__ffsll(x))
+#elif defined(_MSC_VER)
+#include <intrin.h>
+// ffs semantics from the MSVC intrinsics: 1-based index of the least
+// significant set bit, 0 when no bit is set
+inline int sseq_ffs_(int x){ unsigned long i ; return _BitScanForward(&i, static_cast<unsigned long>(x)) ? static_cast<int>(i) + 1 : 0 ; }
+inline long long sseq_ffsll_(long long x){ unsigned long i ; return _BitScanForward64(&i, static_cast<unsigned __int64>(x)) ? static_cast<long long>(i) + 1 : 0ll ; }
+#define FFS(x)   (sseq_ffs_(x))
+#define FFSLL(x) (sseq_ffsll_(x))
 #else
 #define FFS(x)   (ffs(x))
 #define FFSLL(x) (ffsll(x))

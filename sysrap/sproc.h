@@ -41,7 +41,11 @@ Survey usage, mostly ExecutableName::
 #include <cstring>
 #include <cstdlib>
 #include <limits.h>
+#if defined(_MSC_VER)
+#include "s_windows.h"
+#else
 #include <unistd.h>
+#endif
 
 
 
@@ -86,11 +90,45 @@ inline int32_t sproc::parseLine(char* line){
 
 // https://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
 
+#if defined(_MSC_VER)
+
+/**
+Windows has no /proc/self/status. GetProcessMemoryInfo reports the same two
+quantities: PrivateUsage is the commit charge, the closest analogue of VmSize,
+and WorkingSetSize is the resident set. Both are bytes here and kB in
+/proc/self/status, so they are converted to keep the units of this interface.
+**/
+
+inline int sproc::Query(int32_t& virtual_size, int32_t& resident_size )
+{
+    PROCESS_MEMORY_COUNTERS_EX pmc ;
+    pmc.cb = sizeof(pmc) ;
+    BOOL ok = GetProcessMemoryInfo(
+                  GetCurrentProcess(),
+                  reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc),
+                  sizeof(pmc) ) ;
+    if(!ok)
+    {
+        std::cerr << "sproc::Query GetProcessMemoryInfo failed, GetLastError " << GetLastError() << std::endl ;
+        return 1 ;
+    }
+    virtual_size  = static_cast<int32_t>( pmc.PrivateUsage / 1024 ) ;
+    resident_size = static_cast<int32_t>( pmc.WorkingSetSize / 1024 ) ;
+    return 0 ;
+}
+
+#else
+
 inline int sproc::Query(int32_t& virtual_size, int32_t& resident_size )
 {
     FILE* file = fopen("/proc/self/status", "r");
+    if(file == nullptr)
+    {
+        std::cerr << "sproc::Query failed to open /proc/self/status" << std::endl ;
+        return 1 ;
+    }
     char line[128];
-    int found = 0 ; 
+    int found = 0 ;
     while (fgets(line, 128, file) != NULL){
         if (strncmp(line, "VmSize:", 7) == 0){
             virtual_size = parseLine(line);   // value in Kb 
@@ -103,8 +141,10 @@ inline int sproc::Query(int32_t& virtual_size, int32_t& resident_size )
         }
     }
     fclose(file);
-    return found == 2 ? 0 : 1 ; 
+    return found == 2 ? 0 : 1 ;
 }
+
+#endif
 
 
 
@@ -153,12 +193,39 @@ sproc::ExecutablePath
 
 inline char* sproc::ExecutablePath(bool basename)
 {
+#if defined(_MSC_VER)
+    // GetModuleFileNameA with a NULL module gives the path of the running
+    // executable, the counterpart of /proc/self/exe.
+    char buf[PATH_MAX];
+    DWORD len = GetModuleFileNameA(NULL, buf, sizeof(buf));
+    if(len == 0)
+    {
+        std::cerr << "sproc::ExecutablePath GetModuleFileNameA failed, GetLastError " << GetLastError() << std::endl ;
+        buf[0] = '\0' ;
+    }
+    else if(len >= sizeof(buf))
+    {
+        std::cerr << "sproc::ExecutablePath executable path truncated at " << sizeof(buf) << " chars" << std::endl ;
+        buf[sizeof(buf)-1] = '\0' ;
+    }
+
+    // Windows paths use backslash; accept forward slash too, as the CRT does.
+    char* s = NULL ;
+    if(basename)
+    {
+        char* bs = strrchr(buf, '\\') ;
+        char* fs = strrchr(buf, '/') ;
+        s = ( bs && fs ) ? ( bs > fs ? bs : fs ) : ( bs ? bs : fs ) ;
+    }
+    return s ? _strdup(s+1) : _strdup(buf) ;
+#else
     char buf[PATH_MAX];
     ssize_t len = ::readlink("/proc/self/exe", buf, sizeof(buf)-1);
     if (len != -1) buf[len] = '\0';
 
-    char* s = basename ? strrchr(buf, '/') : NULL ;  
-    return s ? strdup(s+1) : strdup(buf) ; 
+    char* s = basename ? strrchr(buf, '/') : NULL ;
+    return s ? strdup(s+1) : strdup(buf) ;
+#endif
 }
 
 

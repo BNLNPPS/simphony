@@ -31,9 +31,14 @@
 #include <cstdio>
 #include <errno.h>
 
-// Linux-specific implementation.
 #include <sys/stat.h>
+#include <filesystem>
+#include <system_error>
+#if defined(_MSC_VER)
+#include "s_windows.h"    // chdir, getcwd, mkdir
+#else
 #include <unistd.h>    // for chdir
+#endif
 
 #include <iomanip>
 
@@ -77,12 +82,16 @@ bool SPath::IsReadable(const char* base, const char* name)  // static
     std::string s = ss.str(); 
     return IsReadable(s.c_str()); 
 }
-bool SPath::IsReadable(const char* path)  // static 
+bool SPath::IsReadable(const char* path)  // static
 {
+    // directories: ifstream-opening a directory succeeds on Linux (glibc)
+    // but always fails on Windows, so answer for directories directly
+    std::error_code ec ;
+    if( std::filesystem::is_directory(path ? path : "", ec) ) return true ;
     std::ifstream fp(path, std::ios::in|std::ios::binary);
-    bool readable = !fp.fail(); 
-    fp.close(); 
-    return readable ; 
+    bool readable = !fp.fail();
+    fp.close();
+    return readable ;
 }
 
 const char* SPath::GetHomePath(const char* rel)  // static 
@@ -426,11 +435,13 @@ void SPath::MakeEmpty(const char* path_)
     std::ofstream fp(path);
 }
 
-bool SPath::Exists(const char* path_) // static 
+bool SPath::Exists(const char* path_) // static
 {
-    const char* path = SPath::Resolve(path_, FILEPATH); 
+    const char* path = SPath::Resolve(path_, FILEPATH);
+    std::error_code ec ;
+    if( std::filesystem::is_directory(path ? path : "", ec) ) return true ;
     std::ifstream fp(path, std::ios::in|std::ios::binary);
-    return fp.fail() ? false : true ; 
+    return fp.fail() ? false : true ;
 }
 
 bool SPath::Exists(const char* base, const char* relf) // static 

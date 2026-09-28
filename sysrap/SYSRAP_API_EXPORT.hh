@@ -20,4 +20,16 @@
 
 #pragma once
 
-#define SYSRAP_API __attribute__((visibility("default")))
+#if defined(_MSC_VER)
+#  if defined(SIMPHONY_SHARED_LIBS)
+#    if defined(SysRap_EXPORTS)
+#      define SYSRAP_API __declspec(dllexport)
+#    else
+#      define SYSRAP_API __declspec(dllimport)
+#    endif
+#  else
+#    define SYSRAP_API
+#  endif
+#else
+#  define SYSRAP_API __attribute__((visibility("default")))
+#endif

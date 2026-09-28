@@ -2,6 +2,15 @@ set(name CSGOptiXTest)
 
 find_package(CUDAToolkit REQUIRED)
 
+# The static core (Windows) embeds cudart_static via CMake's default runtime
+# for static CUDA targets; also linking shared cudart collides at the exe
+# link (LNK2005). Match the core's runtime flavor.
+if(WIN32 AND NOT BUILD_SHARED_LIBS)
+    set(CUDART CUDA::cudart_static)
+else()
+    set(CUDART CUDA::cudart)
+endif()
+
 #[=[
 Promote sources to ctests by moving to lower list
 generally the problem is required environment
@@ -39,10 +48,11 @@ set(TEST_SOURCES
 foreach(SRC ${SINGLE_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
     add_executable(${TGT} ${SRC})
-    target_link_libraries(${TGT} CSGOptiX CUDA::cudart)
+    target_link_libraries(${TGT} CSGOptiX ${CUDART})
 endforeach()
 
 
+if(SIMPHONY_WITH_VIZ)
 find_package(GLEW)
 find_package(glfw3)
 find_package(OpenGL)
@@ -55,14 +65,15 @@ foreach(SRC ${VIZ_SOURCES})
           OpenGL::GL
           GLEW::GLEW
           glfw
-          CUDA::cudart
+          ${CUDART}
          )
 endforeach()
+endif()
 
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
     add_executable(${TGT} ${SRC})
-    target_link_libraries(${TGT} CSGOptiX CUDA::cudart)
+    target_link_libraries(${TGT} CSGOptiX ${CUDART})
 
     add_test(
        NAME ${name}.${TGT} 

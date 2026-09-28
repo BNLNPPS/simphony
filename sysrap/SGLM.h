@@ -726,7 +726,7 @@ struct SYSRAP_API SGLM : public SCMD
 SGLM* SGLM::INSTANCE = nullptr ;
 SGLM* SGLM::Get(){  return INSTANCE ? INSTANCE : new SGLM  ; }
 
-const char* SGLM::TITLE = ssys::getenvvar(kTITLE, "TITLE") ;
+inline const char* SGLM::TITLE = ssys::getenvvar(kTITLE, "TITLE") ;
 glm::ivec2 SGLM::WH = EVec2i(kWH,"1920,1080") ;
 
 glm::vec4  SGLM::CE = EVec4(kCE,"0,0,0,100", 100.f) ;

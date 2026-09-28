@@ -18,7 +18,11 @@ are more flexible than this old school approach, see::
 #include <iomanip>
 
 #include <cstddef>
+#if defined(_MSC_VER)
+#include "s_windows.h"    // gettimeofday, struct timeval
+#else
 #include <sys/time.h>
+#endif
 
 struct ssystime
 {

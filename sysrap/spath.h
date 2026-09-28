@@ -17,7 +17,13 @@ A: ResolvePath accepts only a single string element whereas Resolve accepts
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <filesystem>
+#include <system_error>
+#if defined(_MSC_VER)
+#include "s_windows.h"
+#else
 #include <unistd.h>
+#endif
 
 
 #include "sproc.h"
@@ -1109,6 +1115,10 @@ inline bool spath::is_readable(const char* path_)  // static
 {
     const char* path = path_ ? spath::Resolve(path_) : nullptr ;
     if( path == nullptr ) return false ;
+    // directories: ifstream-opening a directory succeeds on Linux (glibc)
+    // but always fails on Windows, so answer for directories directly
+    std::error_code ec ;
+    if( std::filesystem::is_directory(path, ec) ) return true ;
     std::ifstream fp(path, std::ios::in|std::ios::binary);
     bool readable = !fp.fail();
     fp.close();
