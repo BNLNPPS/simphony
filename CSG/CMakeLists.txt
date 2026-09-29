@@ -20,7 +20,6 @@ list(APPEND SOURCES
     CSGScan.cc
     CSGScan.cu
 
-    CSGView.cc
     CSGGrid.cc
     CSGQuery.cc
     CSGGeometry.cc
@@ -51,7 +50,6 @@ list(APPEND CSG_HEADERS
     CSGImport.h
     CSGTarget.h
     CSGScan.h
-    CSGView.h
     CSGGrid.h
     CSGQuery.h
     CSGGeometry.h

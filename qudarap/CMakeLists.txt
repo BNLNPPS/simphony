@@ -1,9 +1,5 @@
 set(name QUDARap)
 
-set(DEV_SOURCES
-    QSim_cerenkov_dev.cu
-)
-
 set(SOURCES
     QUDARAP_LOG.cc
 

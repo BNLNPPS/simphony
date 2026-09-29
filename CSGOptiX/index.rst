@@ -228,9 +228,6 @@ Params.h
 Frame.h
     render pixels holder  
 
-BI.h
-    wrapper for OptixBuildInput 
-
 Binding.h
     GPU/CPU types, including SbtRecord : RaygenData, MissData, HitGroupData (effectively Prim)
 
@@ -255,9 +252,6 @@ Ctx.h
 
 Properties.h
     holder of information gleaned from OptiX 7
-
-InstanceId.h
-    encode/decode identity info
 
 OPTIX_CHECK.h
     error check macro for optix 7 calls

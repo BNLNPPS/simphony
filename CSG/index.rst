@@ -66,35 +66,13 @@ CSGGrid.h
 Dead? OR should be rearranged
 -------------------------------
 
-InstanceId.h
-    simple bit packing of ins_idx and gas_idx
- 
-    * PROBABLY DEAD
-
 Sys.h
     simple union conversions : unsigned_as_float , float_as_unsigned 
-
-CSGGenstep.h .cc
-     const CSGFoundry ctor argumnent
-
-     * TODO: suspect this has been superceeded by sysrap equiv 
 
 CSGEnum.h
     solid type enum
 
     * TODO: eliminate or consolidate with CSGSolid.h
-
-old_sutil_vec_math.h
-   HUH: now comes from scuda.h, DEAD? 
-
-
-CSGView.h .cc
-    glm based eye, look, up projection transform maths
-
-    * HMM: no CSG dependency, this can and should be done at lower sysrap level
-    * TODO: review users and check for duplicated functionality  
-
-
 
 Testing 
 ---------
@@ -197,5 +175,4 @@ csg_stack.h
 
 f4_stack.h
    struct F4_Stack using float4 as micro stack
-
 

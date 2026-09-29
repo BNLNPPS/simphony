@@ -102,18 +102,6 @@ SSEQ_METHOD void sseq::SetNibble(unsigned long long& seq, unsigned slot, unsigne
     seq =  ( seq & ~( 0xfull << 4*slot )) | ( (value & 0xfull) << 4*slot ) ;
 }
 
-/*
-SSEQ_METHOD unsigned sseq::get_flag(unsigned slot) const
-{
-    unsigned f = GetNibble(seqhis, slot) ;
-    return  f == 0 ? 0 : 0x1ull << (f - 1) ;
-}
-SSEQ_METHOD void sseq::set_flag(unsigned slot, unsigned flag)
-{
-    SetNibble(seqhis, slot, FFS(flag)) ;
-}
-*/
-
 SSEQ_METHOD unsigned sseq::get_flag(unsigned slot) const
 {
     unsigned iseq = slot/SLOTMAX ;
@@ -260,5 +248,3 @@ struct std::hash<sseq>
 
 
 #endif
-
-

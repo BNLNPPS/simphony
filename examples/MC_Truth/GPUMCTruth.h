@@ -28,7 +28,6 @@
 #include "G4UserEventAction.hh"
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
-#include "G4UserTrackingAction.hh"
 #include "G4VHit.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VProcess.hh"
@@ -613,29 +612,6 @@ struct SteppingAction : G4UserSteppingAction
     }
 };
 
-struct TrackingAction : G4UserTrackingAction
-{
-    const G4Track* transient_fSuspend_track = nullptr;
-    SEvt*          sev;
-
-    TrackingAction(SEvt* sev) :
-        sev(sev)
-    {
-    }
-
-    void PreUserTrackingAction_Optical_FabricateLabel(const G4Track* track)
-    {
-    }
-
-    void PreUserTrackingAction(const G4Track* track) override
-    {
-    }
-
-    void PostUserTrackingAction(const G4Track* track) override
-    {
-    }
-};
-
 struct G4App
 {
     G4App(std::filesystem::path gdml_file) :
@@ -644,9 +620,7 @@ struct G4App
         prim_gen_(new PrimaryGenerator(sev)),
         event_act_(new EventAction(sev)),
         run_act_(new RunAction(event_act_)),
-        stepping_(new SteppingAction(sev)),
-
-        tracking_(new TrackingAction(sev))
+        stepping_(new SteppingAction(sev))
     {
     }
 
@@ -660,5 +634,4 @@ struct G4App
     EventAction*                   event_act_;
     RunAction*                     run_act_;
     SteppingAction*                stepping_;
-    TrackingAction*                tracking_;
 };
