@@ -91,7 +91,8 @@ float SEventConfig::_PropagateEpsilon0Default = 0.05f ;
 const char* SEventConfig::_PropagateEpsilon0MaskDefault = "TO,CK,SI,SC,RE" ; // THESE MOSTLY HAPPEN AWAY FROM BOUNDARIES
 unsigned SEventConfig::_PropagateRefineDefault = 0u ;
 float SEventConfig::_PropagateRefineDistanceDefault = 5000.f ;
-
+int         SEventConfig::_SerIntervalDefault = 0;
+int         SEventConfig::_SerHintDefault = 0;
 
 const char* SEventConfig::_InputGenstepDefault = nullptr ;
 const char* SEventConfig::_InputGenstepSelectionDefault = nullptr ;
@@ -287,6 +288,8 @@ unsigned SEventConfig::_PropagateEpsilon0Mask  = OpticksPhoton::GetFlagMask(ssys
 std::string SEventConfig::PropagateEpsilon0MaskLabel(){  return OpticksPhoton::FlagMaskLabel( _PropagateEpsilon0Mask ) ; }
 unsigned SEventConfig::_PropagateRefine = ssys::getenvunsigned(kPropagateRefine, _PropagateRefineDefault ) ;
 float SEventConfig::_PropagateRefineDistance = ssys::getenvfloat(kPropagateRefineDistance, _PropagateRefineDistanceDefault ) ;
+int      SEventConfig::_SerInterval = ssys::getenvint(kSerInterval, _SerIntervalDefault);
+int      SEventConfig::_SerHint = ssys::getenvint(kSerHint, _SerHintDefault);
 
 const char* SEventConfig::_InputGenstep = ssys::getenvvar(kInputGenstep, _InputGenstepDefault );
 const char* SEventConfig::_InputGenstepSelection = ssys::getenvvar(kInputGenstepSelection, _InputGenstepSelectionDefault );
@@ -412,7 +415,14 @@ float SEventConfig::PropagateEpsilon0(){ return _PropagateEpsilon0 ; }
 unsigned SEventConfig::PropagateEpsilon0Mask(){ return _PropagateEpsilon0Mask ; }
 unsigned SEventConfig::PropagateRefine(){         return _PropagateRefine ; }
 float    SEventConfig::PropagateRefineDistance(){ return _PropagateRefineDistance ; }
-
+int SEventConfig::SerInterval()
+{
+    return _SerInterval;
+}
+int SEventConfig::SerHint()
+{
+    return _SerHint;
+}
 
 /**
 SEventConfig::_InputGenstepPath
@@ -642,6 +652,14 @@ void SEventConfig::SetPropagateEpsilon0(float eps){ _PropagateEpsilon0 = eps ; L
 void SEventConfig::SetPropagateEpsilon0Mask(const char* abrseq, char delim){ _PropagateEpsilon0Mask = OpticksPhoton::GetFlagMask(abrseq,delim) ; }
 void SEventConfig::SetPropagateRefine(        unsigned refine){       _PropagateRefine         = refine ; LIMIT_Check() ; }
 void SEventConfig::SetPropagateRefineDistance(float refine_distance){ _PropagateRefineDistance = refine_distance ; LIMIT_Check() ; }
+void SEventConfig::SetSerInterval(int ser_interval)
+{
+    _SerInterval = ser_interval;
+}
+void SEventConfig::SetSerHint(int ser_hint)
+{
+    _SerHint = ser_hint;
+}
 
 void SEventConfig::SetInputGenstep(const char* ig){   _InputGenstep = ig ? strdup(ig) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetInputGenstepSelection(const char* igsel){   _InputGenstepSelection = igsel ? strdup(igsel) : nullptr ; LIMIT_Check() ; }

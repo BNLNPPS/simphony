@@ -334,6 +334,14 @@ void Config::ReadConfig(std::string filepath)
             Assign(event_, "propagate_epsilon0", propagate_epsilon0);
             Assign(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
         }
+
+        if (const auto it = json.find("ser"); it != json.end())
+        {
+            const nlohmann::json& ser_ = *it;
+
+            Assign(ser_, "interval", ser_interval);
+            Assign(ser_, "hint", ser_hint);
+        }
     }
     catch (nlohmann::json::exception& e)
     {
@@ -362,6 +370,8 @@ void Config::Apply() const
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
+    SEventConfig::SetSerInterval(ser_interval);
+    SEventConfig::SetSerHint(ser_hint);
 }
 
 } // namespace simphony
