@@ -1,6 +1,6 @@
 #pragma once
 /**
-SBT : OptiX 7 RG,MS,HG program data preparation
+SBT : OptiX RG,MS,HG program data preparation
 =================================================
 
 Aim to minimize geometry specifics in here while keeping one

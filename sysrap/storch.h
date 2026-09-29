@@ -162,15 +162,13 @@ inline std::string storch::desc() const
 }
 #endif
 
-
-
 /**
 storch::generate
 -----------------
 
 On GPU this is invoked by::
 
-   CSGOptiX7.cu:simulate
+   CSGOptiX.cu:simulate
    qsim::generate_photon
 
 On CPU this is invoked using MOCK_CURAND with for example::

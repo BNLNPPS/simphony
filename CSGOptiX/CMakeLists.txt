@@ -1,10 +1,10 @@
 set(name CSGOptiX)
 
-find_package(OptiX 7 REQUIRED)
+find_package(OptiX REQUIRED)
 
 set(SOURCES)
-set(OPTIX_PTX_SRC CSGOptiX7.cu)
-set(OPTIX_PTX_TARGET CSGOptiX7_ptx)
+set(OPTIX_PTX_SRC CSGOptiX.cu)
+set(OPTIX_PTX_TARGET CSGOptiX_ptx)
 
 
 list(APPEND SOURCES

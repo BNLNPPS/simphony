@@ -19,8 +19,10 @@ approach for current OptiX- and Geant4-based simulation workflows.
 
 ### Build from source
 
-If CUDA 12.1+, NVIDIA OptiX 7+, Geant4 11.3+, CMake 3.22+, and Python 3.10+
-are already installed, you can build and test Simphony directly:
+If CUDA 12.1+, NVIDIA OptiX 8+, a compatible NVIDIA driver, Geant4 11.3+,
+CMake 3.22+, and Python 3.10+ are already installed, you can build and test
+Simphony directly. OptiX 8.0 requires an R535-or-newer driver; newer OptiX
+versions may require newer drivers.
 
 ```shell
 git clone https://github.com/BNLNPPS/simphony.git

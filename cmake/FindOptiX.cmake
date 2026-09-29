@@ -98,6 +98,13 @@ find_package_handle_standard_args(OptiX
         "OptiX installation not found. Please use CMAKE_PREFIX_PATH or OptiX_INSTALL_DIR to locate 'include/optix.h'."
 )
 
+if(OptiX_FOUND AND OPTIX_VERSION VERSION_LESS 8.0.0)
+    message(WARNING
+        "Found OptiX ${OPTIX_VERSION}. Simphony supports OptiX 8.0.0 and newer; "
+        "older SDKs are not rejected, but they are unsupported."
+    )
+endif()
+
 set(OptiX_INCLUDE_DIR ${OptiX_ROOT_DIR}/include)
 
 add_library(OptiX::OptiX INTERFACE IMPORTED)

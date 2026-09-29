@@ -5,9 +5,8 @@ sctx.h : holding "thread local" state
 
 Canonical usage from GPU and CPU:
 
-1. CSGOptiX/CSGOptiX7.cu:simulate
+1. CSGOptiX/CSGOptiX.cu:simulate
 2. sysrap/SEvt::pointPhoton
-
 
 Q: why not keep such state in sevent.h *evt* ?
 A: this state must be "thread" local, whereas the evt instance
