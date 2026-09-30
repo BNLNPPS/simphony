@@ -4,23 +4,71 @@ U4HitTest.cc
 
 ::
 
-    U4HitTest run_cat
+    U4HitTest --config u4hit_profile
+    U4HitTest --check-config [--config NAME]
 
 
 **/
 
+#include <filesystem>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+
+#include "EventTiming.hh"
 #include "OPTICKS_LOG.hh"
 #include "SEvt.hh"
-#include "ssys.h"
 #include "SSim.hh"
-#include "SProf.hh"
+#include "config.h"
 #include "spath.h"
+#include "ssys.h"
 
 #include "CSGFoundry.h"
 
 #include "U4Hit.h"
 #include "U4HitGet.h"
 
+namespace
+{
+struct U4HitTestOptions
+{
+    std::string config_name{"u4hit_profile"};
+    bool        check_config{false};
+
+    static U4HitTestOptions Parse(int argc, char** argv)
+    {
+        U4HitTestOptions options;
+        for (int index = 1; index < argc; ++index)
+        {
+            const std::string_view argument{argv[index]};
+            if (argument == "--check-config")
+            {
+                options.check_config = true;
+            }
+            else if (argument == "--config" || argument == "-c")
+            {
+                if (++index >= argc)
+                    throw std::invalid_argument("U4HitTest --config requires a name");
+                options.config_name = argv[index];
+            }
+        }
+        return options;
+    }
+};
+
+int CheckConfig(const simphony::Config& config)
+{
+    const std::filesystem::path expected_filename{"event_timing_profile.csv"};
+    const bool                  valid = config.event_timing_profile_enabled &&
+                       EventTimingProfile::Enabled() &&
+                       config.event_timing_profile_output.filename() == expected_filename &&
+                       EventTimingProfile::Path() == config.event_timing_profile_output;
+    if (!valid)
+        std::cerr << "U4HitTest timing profile is not enabled with event_timing_profile.csv\n";
+    return valid ? 0 : 1;
+}
+} // namespace
 
 struct U4HitTest
 {
@@ -42,9 +90,8 @@ struct U4HitTest
     sphit ht_alt = {}  ;
     sphoton local_alt = {}  ;
 
-
-    int32_t delta_rs ;
-    int32_t range_rs ;
+    std::int64_t delta_rs;
+    std::int64_t range_rs;
     unsigned hit_idx ;
 
     std::string desc() const ;
@@ -138,10 +185,9 @@ inline std::string U4HitTest::smry() const
     ss << "U4HitTest::smry" << std::endl
        << " METHOD " << METHOD
        << " num_hit " << num_hit
-       << " SProf::Range_RS " << range_rs
-       << " SProf::Range_RS/num_hit " << std::setw(10) << std::fixed << std::setprecision(4) << double(range_rs)/double(num_hit)
-       << std::endl
-       ;
+       << " EventTimingProfile::RangeRssKb " << range_rs
+       << " EventTimingProfile::RangeRssKb/num_hit " << std::setw(10) << std::fixed << std::setprecision(4) << double(range_rs) / double(num_hit)
+       << std::endl;
     std::string str = ss.str();
     return str ;
 }
@@ -149,42 +195,42 @@ inline std::string U4HitTest::smry() const
 
 inline void U4HitTest::convertHit(unsigned hidx, bool is_repeat)
 {
-    SProf::SetTag(hidx);
-    SProf::Add("Head");
+    EventTimingProfile::SetTag(hidx);
+    EventTimingProfile::Mark("Head");
 
     sev->getHit(global, hidx);
     sev->getLocalHit( ht, local,  hidx);
 
     U4HitGet::ConvertFromPhoton(hit,global,local, ht);
 
-    SProf::Add("Tail");
-    delta_rs = SProf::Delta_RS();
-    range_rs = SProf::Range_RS();
+    EventTimingProfile::Mark("Tail");
+    delta_rs = EventTimingProfile::DeltaRssKb();
+    range_rs = EventTimingProfile::RangeRssKb();
     //LOG_IF(info, delta_rs > 0) << dump() ;
     LOG_IF(info, delta_rs > 0 || is_repeat) << brief() ;
 }
 
 inline void U4HitTest::convertHit_LEAKY(unsigned hidx, bool is_repeat)
 {
-    SProf::SetTag(hidx);
-    SProf::Add("Head");
+    EventTimingProfile::SetTag(hidx);
+    EventTimingProfile::Mark("Head");
 
     sev->getHit(global, hidx);
     sev->getLocalHit_LEAKY( ht_alt, local_alt,  hidx);
 
     U4HitGet::ConvertFromPhoton(hit,global,local_alt, ht_alt);
 
-    SProf::Add("Tail");
-    delta_rs = SProf::Delta_RS();
-    range_rs = SProf::Range_RS();
+    EventTimingProfile::Mark("Tail");
+    delta_rs = EventTimingProfile::DeltaRssKb();
+    range_rs = EventTimingProfile::RangeRssKb();
     //LOG_IF(info, delta_rs > 0) << dump() ;
     LOG_IF(info, delta_rs > 0 || is_repeat) << brief() ;
 }
 
 inline void U4HitTest::convertHit_COMPARE(unsigned hidx, bool is_repeat)
 {
-    SProf::SetTag(hidx);
-    SProf::Add("Head");
+    EventTimingProfile::SetTag(hidx);
+    EventTimingProfile::Mark("Head");
 
     sev->getHit(global, hidx);
     sev->getLocalHit( ht, local,  hidx);
@@ -217,9 +263,9 @@ inline void U4HitTest::convertHit_COMPARE(unsigned hidx, bool is_repeat)
 
     U4HitGet::ConvertFromPhoton(hit,global,local, ht);
 
-    SProf::Add("Tail");
-    delta_rs = SProf::Delta_RS();
-    range_rs = SProf::Range_RS();
+    EventTimingProfile::Mark("Tail");
+    delta_rs = EventTimingProfile::DeltaRssKb();
+    range_rs = EventTimingProfile::RangeRssKb();
     //LOG_IF(info, delta_rs > 0) << dump() ;
     LOG_IF(info, delta_rs > 0 || is_repeat) << brief() ;
 
@@ -261,16 +307,21 @@ inline void U4HitTest::convertHits()
 
 inline void U4HitTest::save() const
 {
-    bool append = false ;
     //const char* _path = "$TMP/U4HitTest/U4HitTest.txt" ;
     //const char* path = spath::Resolve(_path) ;
-    SProf::Write(append);
+    EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 
 int main(int argc, char** argv)
 {
+    const U4HitTestOptions options = U4HitTestOptions::Parse(argc, argv);
+
     OPTICKS_LOG(argc, argv);
     LOG(info) ;
+
+    const simphony::Config config(options.config_name);
+    if (options.check_config)
+        return CheckConfig(config);
 
     // SSim Create/Load needed before CSGFoundry::Load
 
@@ -291,4 +342,3 @@ int main(int argc, char** argv)
 
     return 0 ;
 }
-

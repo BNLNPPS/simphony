@@ -33,6 +33,8 @@ add_simg4ox_integration_test(drich_direct_sensor)
 add_simg4ox_integration_test(drich_aerogel)
 add_simg4ox_integration_test(drich_mirror)
 add_simg4ox_integration_test(sibling_pair)
+add_simg4ox_integration_test(preinit_macro)
+add_simg4ox_integration_test(finite_rise_time)
 
 set(SIMPHONY_SIMG4OX_MULTIEVENT_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_multievent")
 file(MAKE_DIRECTORY "${SIMPHONY_SIMG4OX_MULTIEVENT_TEST_WORKDIR}")

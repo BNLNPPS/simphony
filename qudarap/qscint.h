@@ -66,7 +66,11 @@ inline QSCINT_METHOD void qscint::generate(
     p.pos = gs.pos + fraction*gs.DeltaPosition ;
 
     float u4 = curand_uniform(&rng) ;
-    float deltaTime = fraction*gs.step_length/gs.meanVelocity - gs.ScintillationTime*logf(u4) ;
+    float transportTime =
+        gs.step_length > 0.f && gs.meanVelocity > 0.f
+            ? fraction * gs.step_length / gs.meanVelocity
+            : 0.f;
+    float deltaTime = transportTime - gs.ScintillationTime * logf(u4);
 
     p.time = gs.time + deltaTime ;
     p.zero_flags();
@@ -228,5 +232,4 @@ inline QSCINT_METHOD float qscint::wavelength_hd20(const float& u0) const
 
 
 #endif
-
 
