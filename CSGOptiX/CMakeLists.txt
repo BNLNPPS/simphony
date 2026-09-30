@@ -6,6 +6,7 @@ set(SOURCES)
 set(OPTIX_PTX_SRC CSGOptiX.cu)
 set(OPTIX_PTX_TARGET CSGOptiX_ptx)
 
+option(SIMPHONY_RNG_REBUILD "Rebuild the Philox RNG state after each trace instead of carrying it live (experimental)" OFF)
 
 list(APPEND SOURCES
     Params.cc 
@@ -56,7 +57,8 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
         $<$<CONFIG:Release>:PRODUCTION>
         OPTICKS_OKCONF
         OPTICKS_QUDARAP
-        NVCC)
+        NVCC
+        $<$<BOOL:${SIMPHONY_RNG_REBUILD}>:SIMPHONY_RNG_REBUILD>)
 target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
 
 get_filename_component(ptx_stem "${OPTIX_PTX_SRC}" NAME_WE)
