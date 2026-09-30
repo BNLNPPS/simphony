@@ -1,5 +1,5 @@
 /**
-CSGOptiX7.cu
+CSGOptiX.cu
 ===================
 
 NB: ONLY CODE THAT MUST BE HERE DUE TO OPTIX DEPENDENCY SHOULD BE HERE
@@ -30,14 +30,11 @@ simtrace
 __raygen__rg
     calls one of the above raygen functions depending on params.raygenmode
 
-setPayload
-    mechanics of communication when not using WITH_PRD
-
 __miss_ms
-    default quad2 prd OR payload for rays that miss
+    default quad2 prd for rays that miss
 
 __closesthit__ch
-    populate quad2 prd OR payload for rays that intersect
+    populate quad2 prd for rays that intersect
 
 __intersection__is
     converts OptiX HitGroupData into corresponding CSGNode and calls intersect_prim
@@ -79,10 +76,8 @@ __intersection__is
 #include "Params.h"
 #include "CSGOptiXHelpers.h"
 
-#ifdef WITH_PRD
 #include "scuda_pointer.h"
 #include "SOPTIX_getPRD.h"
-#endif
 
 extern "C" { __constant__ Params params ;  }
 
@@ -100,12 +95,9 @@ refine:true
     by doing a 2nd closer intersect.
 
 
-Outcome of trace is to populate *prd* by payload and attribute passing.
-When WITH_PRD macro is defined only 2 32-bit payload values are used to
-pass the 64-bit  pointer, otherwise more payload and attributes values
-are used to pass the contents IS->CH->RG.
-
-See __closesthit__ch to see where the payload p0-p7 comes from.
+Outcome of trace is to populate *prd* using two 32-bit payload values to
+pass its 64-bit pointer between the raygen, intersection, closest-hit
+and miss programs.
 **/
 
 template<bool refine>
@@ -125,7 +117,6 @@ static __forceinline__ __device__ void trace(
     const unsigned SBToffset = 0u ;
     const unsigned SBTstride = 1u ;
     const unsigned missSBTIndex = 0u ;
-#ifdef WITH_PRD
     uint32_t p0, p1 ;
     packPointer( prd, p0, p1 ); // scuda_pointer.h : pack prd addr from RG program into two uint32_t passed as payload
 
@@ -188,32 +179,6 @@ static __forceinline__ __device__ void trace(
         }
     }
 
-#else
-    uint32_t p0, p1, p2, p3, p4, p5, p6, p7  ;
-    optixTrace(
-            handle,
-            ray_origin,
-            ray_direction,
-            tmin,
-            tmax,
-            rayTime,
-            visibilityMask,
-            rayFlags,
-            SBToffset,
-            SBTstride,
-            missSBTIndex,
-            p0, p1, p2, p3, p4, p5, p6, p7
-            );
-    // unclear where the uint_as_float CUDA device function is defined, seems CUDA intrinsic without header ?
-    prd->q0.f.x = __uint_as_float( p0 );
-    prd->q0.f.y = __uint_as_float( p1 );
-    prd->q0.f.z = __uint_as_float( p2 );
-    prd->q0.f.w = __uint_as_float( p3 );
-    prd->set_identity(p4) ;
-    prd->set_globalPrimIdx_boundary_(p5) ;
-    prd->set_lposcost(__uint_as_float(p6)) ;   // trace.not-WITH_PRD
-    prd->set_iindex(p7) ;
-#endif
 }
 
 //#if !defined(PRODUCTION) && defined(WITH_RENDER)
@@ -254,7 +219,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
 {
 
 #if defined(DEBUG_PIDX)
-    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render idx(%d,%d,%d) dim(%d,%d,%d) \n", idx.x, idx.y, idx.z, dim.x, dim.y, dim.z );
+    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render idx(%d,%d,%d) dim(%d,%d,%d) \n", idx.x, idx.y, idx.z, dim.x, dim.y, dim.z );
 #endif
 
     float2 d = 2.0f * make_float2(
@@ -281,7 +246,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
     );
 
 #if defined(DEBUG_PIDX)
-    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render prd.distance(%7.3f)  prd.lposcost(%7.3f)  \n", prd->distance(), prd->lposcost()  );
+    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render prd.distance(%7.3f)  prd.lposcost(%7.3f)  \n", prd->distance(), prd->lposcost()  );
 #endif
 
 
@@ -291,7 +256,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
     const float3* normal = prd->normal();
 
 #if defined(DEBUG_PIDX)
-    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render normal(%7.3f,%7.3f,%7.3f)  \n", normal->x, normal->y, normal->z );
+    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render normal(%7.3f,%7.3f,%7.3f)  \n", normal->x, normal->y, normal->z );
 #endif
 
     float3 diddled_normal = normalize(*normal)*0.5f + 0.5f ; // diddling lightens the render, with mid-grey "pedestal"
@@ -311,7 +276,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
     if(params.pixels)
     {
 #if defined(DEBUG_PIDX)
-        //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render/params.pixels diddled_normal(%7.3f,%7.3f,%7.3f)  \n", diddled_normal.x, diddled_normal.y, diddled_normal.z );
+        //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render/params.pixels diddled_normal(%7.3f,%7.3f,%7.3f)  \n", diddled_normal.x, diddled_normal.y, diddled_normal.z );
 #endif
         params.pixels[index] = params.rendertype == 0 ? make_normal_pixel( diddled_normal, zdepth ) : make_zdepth_pixel( zdepth ) ;
     }
@@ -420,13 +385,8 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
 
     qsim* sim = params.sim ;
 
-//#define OLD_WITHOUT_SKIPAHEAD 1
-#ifdef OLD_WITHOUT_SKIPAHEAD
-    RNG rng = sim->rngstate[photon_idx] ;
-#else
     RNG rng ;
     sim->rng->init( rng, sim->evt->index, photon_idx );
-#endif
 
     sctx ctx = {} ;
     ctx.evt = evt ;   // sevent.h
@@ -444,7 +404,7 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
     // q0.u.z. TORCH and FRAME use that slot for a genstep id, so leave the
     // carried line invalid for all other genstep types.
     const unsigned gentype = gs.q0.u.x;
-    const bool carries_matline = CSGOptiX7_GenstepCarriesMaterialLine(gentype);
+    const bool carries_matline = CSGOptiX_GenstepCarriesMaterialLine(gentype);
     ctx.current_matline = carries_matline ? gs.q0.u.z : 0xFFFFFFFFu;
 
     FlowAction command = FlowAction::Start;
@@ -550,7 +510,7 @@ static __forceinline__ __device__ void simtrace( const uint3& launch_idx, const 
     // photon_idx same as idx for first launch, offset beyond first for multi-launch
 
 #if defined(DEBUG_PIDX)
-    if(photon_idx == 0) printf("//CSGOptiX7.cu : simtrace idx %d photon_idx %d  genstep_idx %d evt->num_simtrace %ld \n", idx, photon_idx, genstep_idx, evt->num_simtrace );
+    if(photon_idx == 0) printf("//CSGOptiX.cu : simtrace idx %d photon_idx %d  genstep_idx %d evt->num_simtrace %ld \n", idx, photon_idx, genstep_idx, evt->num_simtrace );
 #endif
 
     const quad6& gs = evt->genstep[genstep_idx] ;
@@ -569,7 +529,7 @@ static __forceinline__ __device__ void simtrace( const uint3& launch_idx, const 
 
 
 #if defined(DEBUG_PIDX)
-    if(photon_idx == 0) printf("//CSGOptiX7.cu : simtrace idx %d pos.xyz %7.3f,%7.3f,%7.3f mom.xyz %7.3f,%7.3f,%7.3f  \n", idx, pos.x, pos.y, pos.z, mom.x, mom.y, mom.z );
+    if(photon_idx == 0) printf("//CSGOptiX.cu : simtrace idx %d pos.xyz %7.3f,%7.3f,%7.3f mom.xyz %7.3f,%7.3f,%7.3f  \n", idx, pos.x, pos.y, pos.z, mom.x, mom.y, mom.z );
 #endif
 
     switch(params.PropagateRefine)
@@ -620,31 +580,6 @@ extern "C" __global__ void __raygen__rg()
 }
 
 
-#ifdef WITH_PRD
-#else
-/**
-*setPayload* is used from __closesthit__ and __miss__ providing communication to __raygen__ optixTrace call
-
-NB THESE QWN NEED NOT BE THE SAME AS THE ATTRIB USED TO COMMUNICATE BETWEEN __intersection__is and __closesthit__ch
-
-**/
-static __forceinline__ __device__ void setPayload(
-     float    normal_x,        float normal_y,                  float normal_z, float distance,
-     unsigned iindex_identity, unsigned globalPrimIdx_boundary, float lposcost, float lposfphi )
-{
-    optixSetPayload_0( __float_as_uint( normal_x ) );
-    optixSetPayload_1( __float_as_uint( normal_y ) );
-    optixSetPayload_2( __float_as_uint( normal_z ) );
-    optixSetPayload_3( __float_as_uint( distance ) );
-    optixSetPayload_4( iindex_identity );
-    optixSetPayload_5( globalPrimIdx_boundary );
-    optixSetPayload_6( lposcost );
-    optixSetPayload_7( lposfphi );
-
-    // num_payload_values PIP::PIP must match the payload slots used up to maximum of 8
-    // NB : payload is distinct from attributes
-}
-#endif
 
 /**
 __miss__ms
@@ -666,7 +601,6 @@ extern "C" __global__ void __miss__ms()
     const float lposcost = 0.f ;
     const float lposfphi = 0.f ;
 
-#ifdef WITH_PRD
     quad2* prd = SOPTIX_getPRD<quad2>();
 
     prd->q0.f.x = ms->r ;
@@ -681,14 +615,11 @@ extern "C" __global__ void __miss__ms()
 
     prd->set_iindex_identity_(ii_id);
     prd->set_globalPrimIdx_boundary_(gp_bd);
-    prd->set_lpos(lposcost, lposfphi);   // __miss__ms.WITH_PRD
-#else
-    setPayload( ms->r, ms->g, ms->b, 0.f, ii_id, gp_bd, lposcost, lposfphi );  // communicate from ms->rg
-#endif
+    prd->set_lpos(lposcost, lposfphi);   // __miss__ms
 }
 
 /**
-__closesthit__ch : pass attributes from __intersection__ into setPayload
+__closesthit__ch : complete the per-ray data after intersection
 ============================================================================
 
 optixGetInstanceIndex (aka iindex)
@@ -803,7 +734,6 @@ extern "C" __global__ void __closesthit__ch()
         float lposfphi = normalize_fphi(P);
 
 
-#ifdef WITH_PRD
         quad2* prd = SOPTIX_getPRD<quad2>();
 
         prd->q0.f.x = N.x ;
@@ -813,42 +743,18 @@ extern "C" __global__ void __closesthit__ch()
 
         prd->set_iindex_identity_( iindex_identity ) ;
         prd->set_globalPrimIdx_boundary_(  globalPrimIdx_boundary ) ;
-        prd->set_lpos(lposcost, lposfphi);   // __closesthit__ch.WITH_PRD.TRIANGLE
+        prd->set_lpos(lposcost, lposfphi);   // __closesthit__ch.TRIANGLE
 
-#else
-        setPayload( N.x, N.y, N.z, t, iindex_identity, globalPrimIdx_boundary, lposcost, lposfphi );  // communicate from ch->rg
-#endif
     }
     else if(type == OPTIX_PRIMITIVE_TYPE_CUSTOM)
     {
         //const CustomPrim& cpr = hg->prim ;
-#ifdef WITH_PRD
         quad2* prd = SOPTIX_getPRD<quad2>();
 
         prd->set_iindex_identity_( iindex_identity ) ;
 
         float3* normal = prd->normal();
         *normal = optixTransformNormalFromObjectToWorldSpace( *normal ) ;
-#else
-
-        // NB SEE
-        const float3 local_normal =    // geometry object frame normal at intersection point
-            make_float3(
-                    __uint_as_float( optixGetAttribute_0() ),
-                    __uint_as_float( optixGetAttribute_1() ),
-                    __uint_as_float( optixGetAttribute_2() )
-                    );
-
-        const float distance = __uint_as_float(  optixGetAttribute_3() ) ;
-        unsigned globalPrimIdx_boundary = optixGetAttribute_4() ;
-        const float lposcost = __uint_as_float( optixGetAttribute_5() ) ;
-        const float lposfphi = 0.f ; // NOT IMPL WHEN NOT:WITH_PRD
-
-        float3 normal = optixTransformNormalFromObjectToWorldSpace( local_normal ) ;
-
-        setPayload( normal.x, normal.y, normal.z, distance, iindex_identity, globalPrimIdx_boundary, lposcost, lposfphi );  // communicate from ch->rg
-                //   p0       p1        p2        p3        p4               p5                      p6        p7
-#endif
     }
 }
 
@@ -856,7 +762,7 @@ extern "C" __global__ void __closesthit__ch()
 __intersection__is
 ----------------------
 
-HitGroupData provides the numNode and nodeOffset of the intersected CSGPrim.
+HitGroupData provides the nodeOffset and globalPrimIdx of the intersected CSGPrim.
 Which Prim gets intersected relies on the CSGPrim::setSbtIndexOffset
 
 Note that optixReportIntersection returns a bool, but that is
@@ -864,11 +770,7 @@ only relevant when using anyHit as it provides a way to ignore hits.
 But Opticks does not use anyHit so the returned bool should
 always be true.
 
-The attributes passed into optixReportIntersection are
-available within the CH (and AH) programs.
-
-HMM: notice that HitGroupData::numNode is not used here, must be looking that up ?
-COULD: reduce HitGroupData to just the nodeOffset
+The intersection program stores hit data directly in the shared per-ray data.
 
 **/
 
@@ -920,30 +822,15 @@ extern "C" __global__ void __intersection__is()
         // This one-ULP ordering change cannot overstep a representable physical
         // gap. Keep the unbiased isect.w in the PRD for position advancement.
         const float cosI = dot(ray_direction, make_float3(isect.x, isect.y, isect.z));
-        const float t_report = CSGOptiX7_ReportedIntersectionDistance(isect.w, params.raygenmode, cosI);
+        const float t_report = CSGOptiX_ReportedIntersectionDistance(isect.w, params.raygenmode, cosI);
 
-#ifdef WITH_PRD
         if (optixReportIntersection(t_report, hitKind))
         {
             quad2* prd = SOPTIX_getPRD<quad2>(); // access prd addr from RG program
             prd->q0.f = isect ;  // .w:distance and .xyz:normal which starts as the local frame one
             prd->set_globalPrimIdx_boundary_(globalPrimIdx_boundary) ;
-            prd->set_lpos(lposcost, lposfphi);    // __intersection__is.WITH_PRD.CUSTOM
+            prd->set_lpos(lposcost, lposfphi);    // __intersection__is.CUSTOM
         }
-#else
-       // TODO: REMOVE NOT:WITH_PRD
-        unsigned a0, a1, a2, a3, a4, a5  ; // MUST CORRESPOND TO num_attribute_values in PIP::PIP
-        a0 = __float_as_uint( isect.x );     // isect.xyz is object frame normal of geometry at intersection point
-        a1 = __float_as_uint( isect.y );
-        a2 = __float_as_uint( isect.z );
-        a3 = __float_as_uint( isect.w ) ;
-        a4 = globalPrimIdx_boundary ;
-        a5 = __float_as_uint( lposcost );
-        optixReportIntersection(t_report, hitKind, a0, a1, a2, a3, a4, a5);
-
-        // IS:optixReportIntersection writes the attributes that can be read in CH and AH programs
-        // max 8 attribute registers, see PIP::PIP, communicate to __closesthit__ch
-#endif
 
    }
 

@@ -83,7 +83,6 @@ inline int unsigned_as_int( unsigned value )
    return uif.i ;
 }
 
-
 /**
 squad.h/quad2
 --------------
@@ -107,10 +106,9 @@ Current::
     Rearranged to squeeze in f:lposfphi, as that can avoid transform lookups with future photonlite/hitlite,
     as no post-sim CPU transforms would then be needed to get "muon" hits.
 
-
 f:lposcost
     Local frame position cos(theta) of intersect,
-    canonically calculated in CSGOptiX7.cu:__intersection__is
+    canonically calculated in CSGOptiX.cu:__intersection__is
     scuda.h:normalize_cost(ray_origin + isect.w*ray_direction )
     where scuda.h:normalize_cost is v.z/sqrtf(dot(v, v))
 
@@ -122,13 +120,12 @@ f:lposfphi
     Local frame position normalized phi fraction,
     obtained from scuda.h:normalize_fphi
 
-
 u:iindex
-    see cx:CSGOptiX7.cu:__closesthit__ch
+    see cx:CSGOptiX.cu:__closesthit__ch
     0-based index within IAS (optixGetInstanceIndex)
 
 u:identity
-    see cx:CSGOptiX7.cu:__closesthit__ch
+    see cx:CSGOptiX.cu:__closesthit__ch
 
     749 extern "C" __global__ void __closesthit__ch()
     750 {
@@ -139,7 +136,7 @@ u:identity
 
     808         prd->set_iindex_identity_( iindex_identity ) ;
     809         prd->set_globalPrimIdx_boundary_(  globalPrimIdx_boundary ) ;
-    810         prd->set_lpos(lposcost, lposfphi);   // __closesthit__ch.WITH_PRD.TRIANGLE
+    810         prd->set_lpos(lposcost, lposfphi);   // __closesthit__ch.TRIANGLE
     811
 
 

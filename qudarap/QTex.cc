@@ -27,7 +27,6 @@ QTex<T>::QTex(size_t width_, size_t height_ , const void* src_, char filterMode_
     src(src_),
     filterMode(filterMode_),
     normalizedCoords(normalizedCoords_), 
-    origin(nullptr),
     a(a_),
 #if defined(MOCK_TEXTURE) || defined(MOCK_CUDA)
 #else
@@ -39,17 +38,6 @@ QTex<T>::QTex(size_t width_, size_t height_ , const void* src_, char filterMode_
     d_meta(nullptr)
 {
     init(); 
-}
-
-template<typename T>
-void QTex<T>::setOrigin(const void* origin_) 
-{
-    origin = origin_  ; 
-}
-template<typename T>
-const void* QTex<T>::getOrigin() const  
-{
-    return origin ; 
 }
 
 template<typename T>

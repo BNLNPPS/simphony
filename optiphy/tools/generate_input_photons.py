@@ -3,7 +3,7 @@
 from collections import OrderedDict as odict
 import argparse, logging, os, json
 import numpy as np
-from optiphy.ana.sample import sample_trig, sample_normals, sample_reject, sample_linear, sample_linspace, sample_disc
+from optiphy.ana.sample import sample_trig, sample_linear, sample_linspace, sample_disc
 from optiphy.ana.sample import xy_grid_coordinates
 
 log = logging.getLogger(__name__)

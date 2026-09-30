@@ -64,7 +64,6 @@ QTex<float4>* QTexMaker::Make2d_f4_( const NP* a, char filterMode, bool normaliz
     // is a more appropriate ordering than the usual contrary convention  
     
     QTex<float4>* tex = new QTex<float4>( width, height, src, filterMode, normalizedCoords, a  );
-    tex->setOrigin(a); 
 
     return tex ; 
 }

@@ -28,9 +28,7 @@ struct QUDARAP_API QTex
     const void*  src ;
     char         filterMode ;  // 'L':cudaFilterModeLinear OR 'P':cudaFilterModePoint 
     bool         normalizedCoords ; 
-    const void*  origin ;  // typically an NP array 
     const NP*    a ; 
-    // TODO: remove the duplication here, why not just use a ?
 
 #if defined(MOCK_TEXTURE) || defined(MOCK_CUDA)
 #else
@@ -47,9 +45,6 @@ struct QUDARAP_API QTex
     void     setMetaDomainX( const quad* domx ); 
     void     setMetaDomainY( const quad* domy ); 
     void     uploadMeta(); 
-
-    void           setOrigin(const void* origin_) ; 
-    const void*    getOrigin() const ; 
 
     void     setHDFactor(unsigned hd_factor_) ; 
     unsigned getHDFactor() const ; 

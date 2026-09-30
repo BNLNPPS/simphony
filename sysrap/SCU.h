@@ -3,9 +3,6 @@
 SCU.h
 =======
 
-TODO: merge in SCU_.h 
-
-
 **/
 
 #include <cstddef>

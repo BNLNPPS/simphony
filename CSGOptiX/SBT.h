@@ -1,6 +1,6 @@
 #pragma once
 /**
-SBT : OptiX 7 RG,MS,HG program data preparation
+SBT : OptiX RG,MS,HG program data preparation
 =================================================
 
 Aim to minimize geometry specifics in here while keeping one
@@ -107,7 +107,6 @@ struct SBT
     void checkHitgroup();
 
     void setPrimData( CustomPrim& cp, const CSGPrim* prim);
-    void checkPrimData( CustomPrim& cp, const CSGPrim* prim);
     void dumpPrimData( const CustomPrim& cp ) const ;
 
     void setMeshData( TriMesh& tm, const SCUDA_MeshGroup* cmg, int j, int boundary, unsigned globalPrimIdx );

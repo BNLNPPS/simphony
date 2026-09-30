@@ -15,7 +15,6 @@ struct SUTest
     static unsigned populate( quad4* pp, unsigned num_p, unsigned mask );
     static void     dump( const quad4* pp, unsigned num_p, unsigned mask );
 
-    static int monolithic();
     static int presized();
     static int copy_host_to_device_sizeof();
     static int upload_array_sizeof();
@@ -34,7 +33,6 @@ inline int SUTest::main(int argc, char** argv)
     std::cout << argv[0] << " TEST[" << TEST << "]\n" ;
 
     int rc = 0 ;
-    if(ALL||0==strcmp(TEST,"monolithic"))                 rc += monolithic() ;
     if(ALL||0==strcmp(TEST,"presized"))                   rc += presized() ;
     if(ALL||0==strcmp(TEST,"copy_host_to_device_sizeof")) rc += copy_host_to_device_sizeof() ;
     if(ALL||0==strcmp(TEST,"upload_array_sizeof"))        rc += upload_array_sizeof() ;
@@ -96,40 +94,6 @@ void SUTest::dump( const quad4* pp, unsigned num_p, unsigned mask )
 }
 
 
-
-/**
-SUTest::monolithic
------------------
-
-1. populate pp
-2. *SU::upload*
-3. *SU::deprecated_select_copy_device_to_host*
-
-**/
-
-int SUTest::monolithic()
-{
-    std::vector<quad4> pp(10) ;
-    unsigned mask = 0xbeefcafe ;
-    unsigned x_num_hit = populate(pp.data(), pp.size(), mask);
-
-    unsigned num_p = pp.size();
-    quad4* d_pp = SU::upload(pp.data(), num_p);
-
-    quad4* hit ;
-    unsigned num_hit ;
-    qselector<quad4> selector(mask);
-
-    SU::deprecated_select_copy_device_to_host( &hit, num_hit, d_pp, num_p, selector );
-
-    bool num_hit_expect = x_num_hit == num_hit ;
-    assert( num_hit_expect );
-    if(!num_hit_expect) std::raise(SIGINT);
-
-    dump( hit, num_hit, mask );
-
-    return 0;
-}
 
 /**
 SUTest::presized

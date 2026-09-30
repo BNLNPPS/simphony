@@ -86,9 +86,7 @@ struct CSG_API CSGPrim
     PRIM_METHOD void setNumNode(   int numNode){    q0.i.x = numNode ; }
     PRIM_METHOD void setNodeOffset(int nodeOffset){ q0.i.y = nodeOffset ; }
 
-
-
-    // --------- sbtIndexOffset is essential for OptiX 7 SBT PrimSpec machinery, but otherwise not relevant to the geometrical meaning
+    // --------- sbtIndexOffset is essential for the OptiX SBT PrimSpec machinery, but otherwise not relevant to the geometrical meaning
 
     PRIM_METHOD unsigned  sbtIndexOffset()    const { return  q1.u.x ; }
     PRIM_METHOD void   setSbtIndexOffset(unsigned sbtIndexOffset){  q1.u.x = sbtIndexOffset ; }

@@ -26,7 +26,7 @@ Users of sevent.h
 qudarap/QU.cc
     template instanciations of QU::UploadArray QU::device_alloc QU::copy_host_to_device
 
-CSGOptiX/CSGOptiX7.cu
+CSGOptiX/CSGOptiX.cu
     simulate : reads params.evt, sets sctx.evt
     reads evt.seed evt.genstep evt.max_bounce
     writes evt.photon
@@ -58,9 +58,8 @@ qudarap/QEvt.hh qudarap/QEvt.cc
 
     * updates device d_evt by copying from evt
 
-
 qudarap/qsim.h
-    qsim::mock_propagate mocks the CSGOptiX7.cu:simulate
+    qsim::mock_propagate mocks the CSGOptiX.cu:simulate
     qsim::generate_photon uses evt to read input photons from buffer
 
 qudarap/QSim.cu
