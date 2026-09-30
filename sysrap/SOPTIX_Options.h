@@ -21,13 +21,10 @@ struct SOPTIX_Options
     static constexpr const char* SOPTIX_Options_optLevel = "SOPTIX_Options_optLevel" ; 
     static constexpr const char* SOPTIX_Options_debugLevel = "SOPTIX_Options_debugLevel" ; 
     static constexpr const char* SOPTIX_Options_exceptionFlags = "SOPTIX_Options_exceptionFlags" ; 
-    static constexpr const char* SOPTIX_Options_link_debugLevel = "SOPTIX_Options_link_debugLevel" ; 
 
     const char* _optLevel ; 
     const char* _debugLevel ; 
     const char* _exceptionFlags ; 
-    const char* _link_debugLevel ; 
-
 
     unsigned _numPayloadValues ;   
     unsigned _numAttributeValues ; 
@@ -71,7 +68,6 @@ inline std::string SOPTIX_Options::desc() const
     ss << " _optLevel " << _optLevel << std::endl ;
     ss << " _debugLevel " << _debugLevel << std::endl ;
     ss << " _exceptionFlags " << _exceptionFlags << std::endl ;
-    ss << " _link_debugLevel " << _link_debugLevel << std::endl ;
     ss << Desc_moduleCompileOptions(moduleCompileOptions) ;  
     ss << Desc_pipelineCompileOptions(pipelineCompileOptions) ;  
     ss << Desc_pipelineLinkOptions(pipelineLinkOptions) ;  
@@ -85,7 +81,6 @@ inline SOPTIX_Options::SOPTIX_Options()
     _optLevel(   ssys::getenvvar(SOPTIX_Options_optLevel, "DEFAULT" ) ), 
     _debugLevel( ssys::getenvvar(SOPTIX_Options_debugLevel, "DEFAULT" ) ),
     _exceptionFlags( ssys::getenvvar(SOPTIX_Options_exceptionFlags, "STACK_OVERFLOW" ) ),
-    _link_debugLevel( ssys::getenvvar(SOPTIX_Options_link_debugLevel, "DEFAULT" )),
     _numPayloadValues(2),  
     _numAttributeValues(2),  
     _maxTraceDepth(ssys::getenvunsigned(SOPTIX_Options_maxTraceDepth, 2))
@@ -197,10 +192,6 @@ inline void SOPTIX_Options::init_pipelineLinkOptions()
     OptixPayloadType* payloadType = nullptr ; 
     programGroupOptions.payloadType = payloadType ; 
 
-#if OPTIX_VERSION <= 70600
-    OptixCompileDebugLevel debugLevel = SOPTIX_OPT::DebugLevel(_link_debugLevel)  ;
-    pipelineLinkOptions.debugLevel = debugLevel ;
-#endif
     pipelineLinkOptions.maxTraceDepth = _maxTraceDepth ; 
 }
 
@@ -211,10 +202,6 @@ inline std::string SOPTIX_Options::Desc_pipelineLinkOptions(const OptixPipelineL
        << "[SOPTIX_Options::Desc_pipelineLinkOptions" << std::endl
        << " pipeline_link_options.maxTraceDepth   " << pipeline_link_options.maxTraceDepth  << std::endl
        << std::endl
-#if OPTIX_VERSION <= 70600
-       << " pipeline_link_options.debugLevel      " << pipeline_link_options.debugLevel  
-       << " " << SOPTIX_OPT::DebugLevel_( pipeline_link_options.debugLevel )
-#endif
        << "]SOPTIX_Options::Desc_pipelineLinkOptions" << std::endl
        ;
     std::string str = ss.str() ;

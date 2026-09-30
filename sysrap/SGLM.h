@@ -2203,7 +2203,7 @@ float SGLM::zdepth0( const float& z_eye ) const
 SGLM::zdepth1
 --------------
 
-Compare with CSGOptiX7.cu:render::
+Compare with CSGOptiX.cu:render::
 
     235     float eye_z = -prd->distance()*dot(params.WNORM, direction) ;
     236     const float& A = params.ZPROJ.z ;

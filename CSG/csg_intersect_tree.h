@@ -677,8 +677,8 @@ void intersect_tree( bool& valid_isect, float4& isect, const CSGNode* node, cons
 intersect_prim
 ----------------
 
-Canonically invoked from CSGOptiX/CSGOptiX7.cu:__intersection__is 
-with object frame ray_origin and ray_direction 
+Canonically invoked from CSGOptiX/CSGOptiX.cu:__intersection__is
+with object frame ray_origin and ray_direction
 
 **/
 

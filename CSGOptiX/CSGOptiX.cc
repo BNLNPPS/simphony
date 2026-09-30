@@ -2,7 +2,7 @@
 CSGOptiX.cc
 ============
 
-OptiX 7+ implementation of CSGFoundry geometry upload and launch.
+OptiX implementation of CSGFoundry geometry upload and launch.
 
 **/
 
@@ -376,7 +376,7 @@ CSGOptiX::CSGOptiX(const CSGFoundry* foundry_) :
     flight(SGeoConfig::FlightConfig()),
     foundry(foundry_),
     outdir(SEventConfig::OutFold()),
-    optixpath(spath::Resolve(simphony::Config::PtxPath("CSGOptiX7.ptx").c_str())),
+    optixpath(spath::Resolve(simphony::Config::PtxPath("CSGOptiX.ptx").c_str())),
     tmin_model(ssys::getenvfloat("TMIN", 0.1)), // CAUTION: tmin very different in rendering and simulation
     kernel_count(0),
     raygenmode(SEventConfig::RGMode()),
@@ -979,12 +979,11 @@ void CSGOptiX::prepareParam()
     LOG_IF(level, !flight) << params->detail();
 }
 
-
 /**
 CSGOptiX::launch
 -------------------
 
-For what happens next, see CSGOptiX7.cu::__raygen__rg.
+For what happens next, see CSGOptiX.cu::__raygen__rg.
 Depending on params.raygenmode the "render" or "simulate" method is called.
 
 Formerly followed an OptiX 7 SDK example, creating a stream for the launch::
@@ -1081,8 +1080,6 @@ double CSGOptiX::launch()
     return kernel_dt ;
 }
 
-
-
 /**
 CSGOptiX::render_launch CSGOptiX::simtrace_launch CSGOptiX::simulate_launch
 --------------------------------------------------------------------------------
@@ -1094,7 +1091,7 @@ MUST BE invoked from QSim::simulate and QSim::simtrace.
 This is because genstep preparations are needed prior to launch.
 
 These three methods currently all call *CSGOptiX::launch*
-with params.raygenmode switch function inside OptiX7Test.cu:__raygen__rg
+with params.raygenmode switch function inside CSGOptiX.cu:__raygen__rg
 As it is likely better to instead have multiple raygen entry points
 are retaining the distinct methods up here.
 

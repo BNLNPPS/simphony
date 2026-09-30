@@ -3081,7 +3081,7 @@ Invoked from U4Recorder::UserSteppingAction_Optical to cause the
 current photon to be recorded into record vector.
 
 The pointPhoton and finalPhoton methods need to do the hostside equivalent of
-what CSGOptiX/CSGOptiX7.cu:simulate does device side, so have setup the environment to match:
+what CSGOptiX/CSGOptiX.cu:simulate does device side, so have setup the environment to match:
 
 ctx.point looks like it is populating sevent arrays, but actually are also populating
 the vectors thanks to setting of the sevent pointers in SEvt::hostside_running_resize
