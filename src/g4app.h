@@ -423,6 +423,9 @@ struct EventAction : G4UserEventAction
         cudaDeviceSynchronize();
 
         SEvt* sev_gpu = SEvt::Get_EGPU();
+        const auto num_gpu_photons = sev_gpu->getNumPhotonCollected();
+        G4cout << "EventAction::SimulateOnGPU: Event " << event_id
+               << ": Simulated GPU photons: " << num_gpu_photons << G4endl;
         auto  gpu_hits = CollectGPUHits(sev_gpu);
         gx->reset(event_id);
 
