@@ -138,6 +138,16 @@ The full suite includes GPU-backed tests. You can build without a GPU, but
 running those tests requires a compatible NVIDIA driver and GPU access from the
 container.
 
+### CMake build options
+
+Set supported build options when configuring the CMake build tree. Re-run the
+configure command after changing an option, then rebuild the affected targets.
+
+| Option | Default | Scope | Description |
+|---|---|---|---|
+| `SIMPHONY_RNG_REBUILD` | `OFF` | CSGOptiX PTX | Reconstruct the Philox RNG state after each OptiX trace instead of carrying it live. |
+
+
 ## Build directly on the host
 
 If you prefer to manage the toolchain yourself, install:

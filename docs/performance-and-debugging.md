@@ -26,6 +26,11 @@ docker run --rm -t -v /tmp/out:/tmp/out simphony:release \
     run-performance -g tests/geom/opticks_raindrop.gdml -o /tmp/out/release
 ```
 
+To benchmark the experimental CSGOptiX RNG-state rebuild variant, see the
+[`SIMPHONY_RNG_REBUILD` CMake option](getting-started.md#cmake-build-options).
+It is a compile-time choice, so reconfigure and rebuild the PTX target before
+measuring each variant.
+
 ### Interpreting `simg4ox` MT timings
 
 `simg4ox --threads N` parallelizes Geant4 CPU tracking of its configured torch

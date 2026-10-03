@@ -8,19 +8,27 @@ REPO_DIR=${REPO_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}
 SIMG4OX_BIN=${SIMG4OX_BIN:-simg4ox}
 PYTHON=${PYTHON:-python3}
 RUN_LOG="${PWD}/simg4ox-multievent.log"
+CHECK_SUMMARY="${PWD}/simg4ox-multievent-summary.txt"
+SIMG4OX_SEED=${SIMG4OX_SEED:-}
 
 export OPTICKS_HOME="${REPO_DIR}"
 export SIMPHONY_CONFIG_DIR="${SIMPHONY_CONFIG_DIR:-${REPO_DIR}/config}"
 export PYTHONPATH="${REPO_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
-rm -f "${PWD}/g_hits.npy" "${PWD}/s_hits.npy" "${RUN_LOG}"
+rm -f "${PWD}/g_hits.npy" "${PWD}/s_hits.npy" "${RUN_LOG}" "${CHECK_SUMMARY}"
 
-"${SIMG4OX_BIN}" \
-    -g "${REPO_DIR}/tests/geom/opticks_raindrop.gdml" \
-    -m "${REPO_DIR}/tests/run_5evt.mac" \
-    -c dev 2>&1 | tee "${RUN_LOG}"
+simg4ox_args=(
+    -g "${REPO_DIR}/tests/geom/opticks_raindrop.gdml"
+    -m "${REPO_DIR}/tests/run_5evt.mac"
+    -c dev
+)
+if [[ -n "${SIMG4OX_SEED}" ]]; then
+    simg4ox_args+=(-s "${SIMG4OX_SEED}")
+fi
+
+"${SIMG4OX_BIN}" "${simg4ox_args[@]}" 2>&1 | tee "${RUN_LOG}"
 
 "${PYTHON}" "${REPO_DIR}/tests/check_simg4ox_multievent.py" \
     --log "${RUN_LOG}" \
     --output-dir "${PWD}" \
-    --events 5
+    --events 5 | tee "${CHECK_SUMMARY}"
