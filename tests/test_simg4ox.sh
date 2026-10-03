@@ -27,6 +27,7 @@ usage() {
     echo "  sibling_pair" >&2
     echo "  preinit_macro" >&2
     echo "  finite_rise_time" >&2
+    echo "  optical_particle_rejected" >&2
 }
 
 if [[ $# -gt 1 ]]; then
@@ -161,6 +162,17 @@ case "${TEST_CASE}" in
             exit 1
         fi
         grep -Fq 'Finite scintillation rise time cannot be represented' "${run_log}"
+        ;;
+    optical_particle_rejected)
+        run_log="${PWD}/simg4ox.log"
+        rm -f "${run_log}"
+        if "${SIMG4OX_BIN}" --particle opticalphoton > "${run_log}" 2>&1; then
+            echo "Expected optical-photon particle-source mode to be rejected" >&2
+            exit 1
+        fi
+        grep -Fq -- \
+            "--particle opticalphoton is unsupported; omit --particle to use the optical-photon torch source" \
+            "${run_log}"
         ;;
     *)
         echo "Unknown simg4ox test case: ${TEST_CASE}" >&2

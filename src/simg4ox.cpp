@@ -97,6 +97,14 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    if (program.is_used("--particle") && particle_name == "opticalphoton")
+    {
+        cerr << "--particle opticalphoton is unsupported; "
+                "omit --particle to use the optical-photon torch source"
+             << endl;
+        return EXIT_FAILURE;
+    }
+
 #ifndef G4MULTITHREADED
     if (num_threads > 1)
     {

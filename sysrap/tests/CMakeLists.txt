@@ -168,6 +168,15 @@ foreach(SRC ${REPORT_SOURCES})
     target_link_libraries(${TGT} SysRap)
 endforeach()
 
+add_executable(sleak_test sleak_test.cc)
+target_link_libraries(sleak_test SysRap)
+add_dependencies(sleak_test sleak)
+add_test(
+    NAME ${name}.sleak_test
+    COMMAND sleak_test
+            $<TARGET_FILE:sleak>
+            ${CMAKE_CURRENT_SOURCE_DIR}/EventTimingProfileFixture.csv
+)
 
 set(TEST_COLORS 
     red
