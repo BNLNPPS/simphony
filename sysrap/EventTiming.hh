@@ -134,6 +134,7 @@ struct SYSRAP_API EventTimingSample
      * CPU time, VM, and RSS. Invalid optional fields are emitted empty.
      *
      * @return stable metadata representation of this sample
+     * @throws std::logic_error if the monotonic timestamp is invalid
      */
     std::string serialize() const;
     /**

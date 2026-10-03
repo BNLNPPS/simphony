@@ -97,6 +97,21 @@ void TestSerializationRoundTrip()
     assert(description.find("rss_kb=567") != std::string::npos);
 }
 
+void TestSerializationRequiresMonotonicTimestamp()
+{
+    const EventTimingSample sample{};
+    bool                    threw = false;
+    try
+    {
+        (void)sample.serialize();
+    }
+    catch (const std::logic_error&)
+    {
+        threw = true;
+    }
+    assert(threw);
+}
+
 void TestMalformedSerialization()
 {
     ExpectInvalid("1,2,3,4,5");
@@ -197,6 +212,7 @@ int main()
 {
     TestCaptureMasks();
     TestSerializationRoundTrip();
+    TestSerializationRequiresMonotonicTimestamp();
     TestMalformedSerialization();
     TestDeltas();
     TestMemoryFailureWarnsOnce();

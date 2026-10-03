@@ -521,6 +521,7 @@ bool EventTimingSample::has(EventTimingCapture field) const
 
 std::string EventTimingSample::serialize() const
 {
+    Require(*this, EventTimingCapture::Monotonic, "serialization");
     std::ostringstream out;
     out << OptionalValue(*this, EventTimingCapture::Wall, wall_time_us) << ','
         << steady_time_ns << ','

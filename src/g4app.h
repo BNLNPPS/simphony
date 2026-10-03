@@ -871,6 +871,7 @@ struct RunAction : G4UserRunAction
             timing->Write(timing_metadata);
             G4cout << "RunAction::EndOfRunAction: Event timing: " << timing->output() << G4endl;
         }
+        EventTimingProfile::Write(EventTimingWriteMode::Replace);
     }
 };
 
