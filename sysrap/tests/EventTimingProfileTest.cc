@@ -137,6 +137,25 @@ void TestCollectionTagsAndRss()
     EventTimingProfile::UnsetTag();
 }
 
+void TestCollectionOrdersCapturedSamples()
+{
+    EventTimingProfile::Configure(true);
+    EventTimingProfile::Clear();
+    EventTimingProfile::UnsetTag();
+
+    EventTimingProfile::Add("late", KnownSample(300, 1300, 10030, 5030));
+    EventTimingProfile::Add("early", KnownSample(100, 1100, 10010, 5010));
+    EventTimingProfile::Add("middle", KnownSample(200, 1200, 10020, 5020));
+
+    const auto records = EventTimingProfile::Records();
+    assert(records.size() == 3u);
+    assert(records[0].name == "early");
+    assert(records[1].name == "middle");
+    assert(records[2].name == "late");
+    assert(EventTimingProfile::DeltaRssKb() == 10);
+    assert(EventTimingProfile::RangeRssKb() == 20);
+}
+
 void TestCsvRoundTripAndErrors(const fs::path& directory)
 {
     const std::string              annotation = "slice=2,\"quoted\"\nsecond line";
@@ -278,6 +297,7 @@ int main()
 
     TestDisabledFastPath(directory);
     TestCollectionTagsAndRss();
+    TestCollectionOrdersCapturedSamples();
     TestCsvRoundTripAndErrors(directory);
     TestSnapshotsAndPaths(directory);
     TestConcurrentMarksAndSnapshots();

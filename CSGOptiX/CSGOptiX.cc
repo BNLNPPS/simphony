@@ -147,15 +147,11 @@ CSGOptiX::SimulateMain
 
 int CSGOptiX::SimulateMain() // static
 {
-    EventTimingProfile::Mark("CSGOptiX__SimulateMain_HEAD");
     SEventConfig::SetRGModeSimulate();
     CSGFoundry* fd = CSGFoundry::Load();
     CSGOptiX* cx = CSGOptiX::Create(fd) ;
     bool reset = true ;
     for(int i=0 ; i < SEventConfig::NumEvent() ; i++) cx->simulate(i, reset);
-    EventTimingProfile::UnsetTag();
-    EventTimingProfile::Mark("CSGOptiX__SimulateMain_TAIL");
-    EventTimingProfile::Write(EventTimingWriteMode::Replace);
     cx->write_Ctx_log();
     delete cx ;
     return 0 ;

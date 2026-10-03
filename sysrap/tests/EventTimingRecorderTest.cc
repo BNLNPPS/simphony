@@ -213,6 +213,30 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
         assert(entry.path().filename().string().find(".tmp.") == std::string::npos);
 }
 
+void TestAbsoluteTimestampsRoundTripAtLongUptime(const fs::path& directory)
+{
+    constexpr std::int64_t origin_ns = 10'000'000'000'000'000ll;
+    constexpr std::int64_t start_ns = origin_ns + 101;
+    constexpr std::int64_t end_ns = origin_ns + 541;
+    SetSequence({
+        TimedSample(origin_ns, 0, 0),
+        TimedSample(start_ns, 0, 0),
+        TimedSample(origin_ns + 211, 0, 0),
+        TimedSample(origin_ns + 307, 0, 0),
+        TimedSample(origin_ns + 419, 0, 0),
+        TimedSample(end_ns, 0, 0),
+    });
+
+    const fs::path      output = directory / "long-uptime.csv";
+    EventTimingRecorder recorder(output, &NextSample);
+    CompleteOneEvent(recorder);
+    recorder.Write(Metadata());
+
+    const auto row = ReadSingleRow(output);
+    assert(std::stod(row.at("start_time")) == static_cast<double>(start_ns) / 1'000'000'000.0);
+    assert(std::stod(row.at("end_time")) == static_cast<double>(end_ns) / 1'000'000'000.0);
+}
+
 void ExpectLogicError(
     const fs::path&                                  output,
     const std::function<void(EventTimingRecorder&)>& action)
@@ -336,6 +360,7 @@ int main()
     fs::create_directories(directory);
 
     TestGoldenCsvAndManifest(directory);
+    TestAbsoluteTimestampsRoundTripAtLongUptime(directory);
     TestInvalidTransitions(directory);
     TestClockInversion(directory);
     TestIoFailure(directory);

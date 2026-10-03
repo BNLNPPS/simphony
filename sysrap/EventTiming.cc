@@ -6,6 +6,7 @@
 
 #include "EventTiming.hh"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <charconv>
@@ -14,6 +15,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -659,7 +661,15 @@ void EventTimingProfile::Add(
         std::string(metadata),
     };
     std::lock_guard<std::mutex> lock(ProfileMutex());
-    ProfileRecords().push_back(std::move(record));
+    auto&                       records = ProfileRecords();
+    const auto                  position = std::upper_bound(
+        records.begin(),
+        records.end(),
+        record.sample.steady_time_ns,
+        [](std::int64_t timestamp, const EventTimingProfileRecord& existing) {
+            return timestamp < existing.sample.steady_time_ns;
+        });
+    records.insert(position, std::move(record));
 }
 
 void EventTimingProfile::SetTag(int index, std::string_view format)
@@ -1069,7 +1079,7 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
            "num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,"
            "process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s\n";
 
-    csv << std::setprecision(12);
+    csv << std::setprecision(std::numeric_limits<double>::max_digits10);
     for (const Row& row : rows_)
     {
         const auto absolute = [](const EventTimingSample& sample) {
