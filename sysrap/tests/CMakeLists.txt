@@ -104,7 +104,12 @@ set(TEST_SOURCES
 
    SNameTest.cc
 
-   SProfTest.cc
+   EventTimingSampleTest.cc
+   EventTimingProfileTest.cc
+   EventTimingRecorderTest.cc
+   EventTimingProfileReportTest.cc
+   sreport_test.cc
+   ConfigTest.cc
 
    SEvt_test.cc
    smath_test.cc
@@ -123,6 +128,9 @@ set(STREE_GDML_TEST_SOURCE
 
 set(REPORT_SOURCES
    sreport.cc
+   NPFold_clear_test.cc
+   NP_delete_test.cc
+   sleak.cc
 )
 
 set(BASH_RUN_TEST_SOURCES
@@ -145,6 +153,10 @@ foreach(SRC ${TEST_SOURCES})
     add_test(${name}.${TGT} ${TGT})
 endforeach()
 
+target_compile_definitions(EventTimingProfileReportTest PRIVATE
+    EVENT_TIMING_PROFILE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/EventTimingProfileFixture.csv"
+)
+
 add_test(
     NAME ${name}.SUTest.presized
     COMMAND ${CMAKE_COMMAND} -E env TEST=presized $<TARGET_FILE:SUTest>
@@ -156,6 +168,15 @@ foreach(SRC ${REPORT_SOURCES})
     target_link_libraries(${TGT} SysRap)
 endforeach()
 
+add_executable(sleak_test sleak_test.cc)
+target_link_libraries(sleak_test SysRap)
+add_dependencies(sleak_test sleak)
+add_test(
+    NAME ${name}.sleak_test
+    COMMAND sleak_test
+            $<TARGET_FILE:sleak>
+            ${CMAKE_CURRENT_SOURCE_DIR}/EventTimingProfileFixture.csv
+)
 
 set(TEST_COLORS 
     red

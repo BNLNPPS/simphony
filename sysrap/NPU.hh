@@ -11,25 +11,28 @@ other projects together with NP.hh
 
 **/
 
-
-#include <csignal>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <cassert>
-#include <complex>
-#include <fstream>
-#include <cstdlib>
-#include <cstdint>
 #include <algorithm>
-#include <chrono>
+#include <array>
+#include <cassert>
 #include <cctype>
+#include <charconv>
+#include <chrono>
+#include <complex>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <locale>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <system_error>
 #include <tuple>
-
+#include <vector>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -635,10 +638,9 @@ struct U
 
     static uint64_t Now();
     static bool LooksLikeStampInt(   const char* str);
+    static void ParseEventTimingSample(std::array<int64_t, 6>& values, uint32_t& field_mask, std::string_view text);
     template<typename T>
     static bool LooksLikeTimestamp( T value );
-
-    static bool LooksLikeProfileTriplet(const char* str);
 
     static std::string Format(uint64_t t=0, const char* fmt="%FT%T.", int _wsubsec=3 );
 
@@ -1967,47 +1969,68 @@ inline bool U::LooksLikeStampInt(const char* str) // static
     for(int i=0 ; i < length ; i++) if(str[i] >= '0' && str[i] <= '9') digits += 1 ;
     return length == 16 && digits == length  ;
 }
-
-
-template<typename T>
-inline bool U::LooksLikeTimestamp( T value )
-{
-    return sizeof(T) == 8 && value > 1700000000000000 ;
-}
-
-
 /**
-U::LooksLikeProfileTriplet
------------------------------
+U::ParseEventTimingSample
+-------------------------
 
-Follows sprof::LooksLikeProf, repeated hear for convenience.
-Returns true for comma delimited list of three integers where
-the first has 16 digits, eg::
-
-    1111111111111111,2222,3333
-
+Parses the six comma-separated integer fields used by EventTimingSample.
+The returned field_mask uses the serialized field index as its bit index.
 **/
 
-inline bool U::LooksLikeProfileTriplet(const char* str) // static
+inline void U::ParseEventTimingSample(
+    std::array<int64_t, 6>& values,
+    uint32_t&               field_mask,
+    std::string_view        text)
 {
-    int len = str ? int(strlen(str)) : 0 ;
-    int count_delim = 0 ;
-    int count_non_digit = 0 ;
-    int first_field_digits = 0 ;
+    std::array<std::string_view, 6> fields{};
+    std::size_t                     field_index = 0;
+    std::size_t                     field_start = 0;
 
-    for(int i=0 ; i < len ; i++ )
+    for (std::size_t index = 0; index <= text.size(); ++index)
     {
-        char c = str[i] ;
-        bool is_digit = c >= '0' && c <= '9' ;
-        bool is_delim = c == ',' ;
-        if(!is_digit) count_non_digit += 1 ;
-        if(count_delim == 0 && is_digit ) first_field_digits += 1 ;
-        if(is_delim) count_delim += 1 ;
+        if (index != text.size() && text[index] != ',')
+            continue;
+        if (field_index >= fields.size())
+            throw std::invalid_argument("EventTimingSample expected six fields");
+        fields[field_index++] = text.substr(field_start, index - field_start);
+        field_start = index + 1;
     }
-    bool heuristic = count_delim == 2 && count_non_digit == count_delim && first_field_digits == 16 ;
-    return heuristic ;
+    if (field_index != fields.size())
+        throw std::invalid_argument("EventTimingSample expected six fields");
+
+    const std::array<const char*, 6> names = {
+        "wall_time_us", "steady_time_ns", "process_cpu_ns",
+        "thread_cpu_ns", "vm_kb", "rss_kb"};
+    const auto parse_integer = [](std::string_view field, const char* name) {
+        if (field.empty())
+            throw std::invalid_argument("EventTimingSample missing " + std::string(name));
+        int64_t     value = 0;
+        const char* begin = field.data();
+        const char* end = begin + field.size();
+        const auto  result = std::from_chars(begin, end, value);
+        if (result.ec != std::errc{} || result.ptr != end)
+            throw std::invalid_argument("EventTimingSample invalid " + std::string(name));
+        return value;
+    };
+
+    values.fill(0);
+    field_mask = 0;
+    for (std::size_t index = 0; index < fields.size(); ++index)
+    {
+        if (index != 1 && fields[index].empty())
+            continue;
+        values[index] = parse_integer(fields[index], names[index]);
+        field_mask |= 1u << index;
+    }
+    if (fields[4].empty() != fields[5].empty())
+        throw std::invalid_argument("EventTimingSample requires both vm_kb and rss_kb");
 }
 
+template <typename T>
+inline bool U::LooksLikeTimestamp(T value)
+{
+    return sizeof(T) == 8 && value > 1700000000000000;
+}
 
 inline std::string U::FormatLog(const char* msg) // static
 {
@@ -2187,10 +2210,8 @@ inline void U::GetMetaKVS_(
             const char* v = _v.c_str();
             bool disqualify_key = strlen(k) > 0 && k[0] == '_' ;
             bool looks_like_stamp = U::LooksLikeStampInt(v);
-            bool looks_like_prof  = U::LooksLikeProfileTriplet(v);
             int64_t t = 0 ;
             if(looks_like_stamp) t = U::To<int64_t>(v) ;
-            if(looks_like_prof)  t = strtoll(v, nullptr, 10);
             bool select = only_with_stamp ? ( t > 0 && !disqualify_key )  : true ;
             if(!select) continue ;
 

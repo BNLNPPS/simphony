@@ -12,10 +12,10 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "EventTiming.hh"
+#include "sproc.h"
 #include "sstr.h"
 #include "ssys.h"
-#include "sproc.h"
-#include "SProf.hh"
 
 #include "smeta.h"
 #include "SSim.hh"
@@ -3102,9 +3102,13 @@ Instanciation grabs the (SSim)sim instance
 
 CSGFoundry* CSGFoundry::CreateFromSim()
 {
+    // Keep the established geometry-materialization range names for both
+    // persisted loads and live Geant4-to-CSG imports.
+    EventTimingProfile::Mark("CSGFoundry__Load_HEAD");
     assert(SSim::Get() != nullptr);
     CSGFoundry* fd = new CSGFoundry ;
     fd->importSim();
+    EventTimingProfile::Mark("CSGFoundry__Load_TAIL");
     return fd ;
 }
 
@@ -3138,9 +3142,7 @@ bool CSGFoundry::Load_saveAlt = ssys::getenvbool("CSGFoundry_Load_saveAlt") ;
 
 CSGFoundry* CSGFoundry::Load() // static
 {
-    SProf::Add("CSGFoundry__Load_HEAD");
-
-
+    EventTimingProfile::Mark("CSGFoundry__Load_HEAD");
 
     LOG(LEVEL) << "[ argumentless " ;
     CSGFoundry* src = CSGFoundry::Load_() ;
@@ -3174,7 +3176,7 @@ CSGFoundry* CSGFoundry::Load() // static
     //AfterLoadOrCreate();  // TRY TO REPLACE WITH SSim::afterLoadOrCreate
 
     LOG(LEVEL) << "] argumentless " ;
-    SProf::Add("CSGFoundry__Load_TAIL");
+    EventTimingProfile::Mark("CSGFoundry__Load_TAIL");
     return dst ;
 }
 

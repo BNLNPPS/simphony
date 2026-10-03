@@ -25,6 +25,10 @@ usage() {
     echo "  drich_aerogel" >&2
     echo "  drich_mirror" >&2
     echo "  sibling_pair" >&2
+    echo "  preinit_macro" >&2
+    echo "  finite_rise_time" >&2
+    echo "  optical_particle_rejected" >&2
+    echo "  zero_genstep_profile" >&2
 }
 
 if [[ $# -gt 1 ]]; then
@@ -134,6 +138,60 @@ case "${TEST_CASE}" in
         # from the left sibling into the right sibling while retaining the
         # correct current-medium properties for the segment ending at that face.
         run_hit_validation sibling_pair sibling_pair "${REPO_DIR}/tests/run_validate.mac"
+        ;;
+    preinit_macro)
+        run_log="${PWD}/simg4ox.log"
+        rm -f "${run_log}"
+        "${SIMG4OX_BIN}" \
+            -g "${REPO_DIR}/tests/geom/raindrop.gdml" \
+            -c dev \
+            -m "${REPO_DIR}/tests/run_preinit.mac" \
+            -s "${SEED}" > "${run_log}" 2>&1
+        grep -Eq 'Boundary process active:[[:space:]]+0' "${run_log}"
+        ;;
+    finite_rise_time)
+        run_log="${PWD}/simg4ox.log"
+        rm -f "${run_log}"
+        if "${SIMG4OX_BIN}" \
+            -g "${REPO_DIR}/tests/geom/opticks_raindrop_with_scintillation.gdml" \
+            -c dev \
+            -m "${REPO_DIR}/tests/run_finite_rise.mac" \
+            --particle mu- \
+            --momentum-gev-c 5 \
+            -s "${SEED}" > "${run_log}" 2>&1; then
+            echo "Expected finite scintillation rise time to be rejected" >&2
+            exit 1
+        fi
+        grep -Fq 'Finite scintillation rise time cannot be represented' "${run_log}"
+        ;;
+    optical_particle_rejected)
+        run_log="${PWD}/simg4ox.log"
+        rm -f "${run_log}"
+        if "${SIMG4OX_BIN}" --particle opticalphoton > "${run_log}" 2>&1; then
+            echo "Expected optical-photon particle-source mode to be rejected" >&2
+            exit 1
+        fi
+        grep -Fq -- \
+            "--particle opticalphoton is unsupported; omit --particle to use the optical-photon torch source" \
+            "${run_log}"
+        ;;
+    zero_genstep_profile)
+        run_log="${PWD}/simg4ox.log"
+        profile_csv="${PWD}/event_timing_profile.csv"
+        rm -f "${run_log}" "${profile_csv}"
+        "${SIMG4OX_BIN}" \
+            -g "${REPO_DIR}/tests/geom/raindrop.gdml" \
+            -c pfrich_profiled \
+            -m "${MAC_FILE}" \
+            --particle geantino \
+            -s "${SEED}" > "${run_log}" 2>&1
+        if grep -Fq 'EventAction::SimulateOnGPU: Event 0: Simulated GPU photons:' "${run_log}"; then
+            echo "Expected geantino run to produce no GPU workload" >&2
+            exit 1
+        fi
+        test -s "${profile_csv}"
+        grep -Eq '^CSGFoundry__' "${profile_csv}"
+        grep -Eq '^CSGOptiX__' "${profile_csv}"
         ;;
     *)
         echo "Unknown simg4ox test case: ${TEST_CASE}" >&2

@@ -1,3 +1,7 @@
+#include <filesystem>
+
+#include "EventTiming.hh"
+#include "EventTimingProfileReport.hh"
 #include "NPFold.h"
 
 
@@ -42,8 +46,10 @@ inline NPFold* sleak::serialize() const
 }
 inline void sleak::import(const NPFold* smry) 
 {
-    run = smry->get("run")->copy() ; 
-    runprof = smry->get("runprof")->copy() ; 
+    const NP* saved_run = smry ? smry->get("run") : nullptr;
+    const NP* saved_runprof = smry ? smry->get("runprof") : nullptr;
+    run = saved_run ? saved_run->copy() : nullptr;
+    runprof = saved_runprof ? saved_runprof->copy() : nullptr;
 }
 inline void sleak::save(const char* dir) const 
 {
@@ -86,8 +92,17 @@ inline sleak_Creator::sleak_Creator( const char* dirp_ )
     run(fold_valid ? fold->get("run") : nullptr),
     leak(new sleak)
 {
-    leak->run = run->copy() ;  //  HUH: if dont copy get SEGV om saving (presumably due to NoData)
-    leak->runprof = leak->run ? run->makeMetaKVProfileArray("Index") : nullptr ; 
+    leak->run = run ? run->copy() : nullptr; // NoData arrays must be copied before saving.
+
+    const std::filesystem::path profile_path =
+        std::filesystem::path(dirp) / "event_timing_profile.csv";
+    const std::vector<EventTimingProfileRecord> records =
+        std::filesystem::exists(profile_path)
+            ? EventTimingProfile::ReadFile(profile_path)
+            : std::vector<EventTimingProfileRecord>{};
+    leak->runprof = records.empty()
+                        ? nullptr
+                        : EventTimingProfileReport::MakeEventTimingProfileArray(records);
 }
 
 inline std::string sleak_Creator::desc() const 
@@ -125,6 +140,4 @@ int main(int argc, char** argv)
 
     return 0 ; 
 }
-
-
 
