@@ -60,6 +60,7 @@ set(SIMPHONY_RNG_REBUILD_TEST_WORKDIR
 function(add_simg4ox_rng_rebuild_run MODE PTX_DIR)
     set(TEST_NAME "Integration.simg4ox_rng_rebuild.${MODE}")
     set(TEST_WORKDIR "${SIMPHONY_RNG_REBUILD_TEST_WORKDIR}/${MODE}")
+    set(TEST_PTX "${PTX_DIR}/CSGOptiX.ptx")
     file(MAKE_DIRECTORY "${TEST_WORKDIR}")
 
     add_test(
@@ -76,6 +77,7 @@ function(add_simg4ox_rng_rebuild_run MODE PTX_DIR)
     set_tests_properties("${TEST_NAME}" PROPERTIES
         WORKING_DIRECTORY "${TEST_WORKDIR}"
         LABELS "integration;rng-rebuild"
+        REQUIRED_FILES "${TEST_PTX}"
         TIMEOUT 120
     )
 endfunction()
@@ -87,17 +89,49 @@ set(SIMPHONY_RNG_REBUILD_OFF_WORKDIR "${SIMPHONY_RNG_REBUILD_TEST_WORKDIR}/off")
 set(SIMPHONY_RNG_REBUILD_ON_WORKDIR "${SIMPHONY_RNG_REBUILD_TEST_WORKDIR}/on")
 set(SIMPHONY_RNG_REBUILD_RUN_TESTS
     "Integration.simg4ox_rng_rebuild.off;Integration.simg4ox_rng_rebuild.on")
+set(SIMPHONY_RNG_REBUILD_OFF_PTX
+    "${SIMPHONY_RNG_REBUILD_PTX_OFF_DIR}/CSGOptiX.ptx")
+set(SIMPHONY_RNG_REBUILD_ON_PTX
+    "${SIMPHONY_RNG_REBUILD_PTX_ON_DIR}/CSGOptiX.ptx")
+
+set(SIMPHONY_RNG_REBUILD_COMPARE_PTX [=[
+for file in "$1" "$2"
+do
+    if [[ ! -r "${file}" ]]
+    then
+        echo "Missing or unreadable PTX file: ${file}" >&2
+        exit 2
+    fi
+done
+
+cmp --silent -- "$1" "$2"
+status=$?
+if [[ "${status}" -eq 0 ]]
+then
+    echo "RNG rebuild ON and OFF unexpectedly produced identical PTX" >&2
+    exit 1
+fi
+if [[ "${status}" -eq 1 ]]
+then
+    exit 0
+fi
+
+echo "PTX comparison failed with status ${status}" >&2
+exit "${status}"
+]=])
 
 add_test(
     NAME Integration.simg4ox_rng_rebuild.ptx_differ
-    COMMAND ${CMAKE_COMMAND} -E compare_files
-            "${SIMPHONY_RNG_REBUILD_PTX_OFF_DIR}/CSGOptiX.ptx"
-            "${SIMPHONY_RNG_REBUILD_PTX_ON_DIR}/CSGOptiX.ptx"
+    COMMAND ${BASH_EXECUTABLE} -c
+            "${SIMPHONY_RNG_REBUILD_COMPARE_PTX}"
+            rng-rebuild-ptx-compare
+            "${SIMPHONY_RNG_REBUILD_OFF_PTX}"
+            "${SIMPHONY_RNG_REBUILD_ON_PTX}"
 )
 set_tests_properties(Integration.simg4ox_rng_rebuild.ptx_differ PROPERTIES
     DEPENDS "${SIMPHONY_RNG_REBUILD_RUN_TESTS}"
     LABELS "integration;rng-rebuild"
-    WILL_FAIL TRUE
+    REQUIRED_FILES "${SIMPHONY_RNG_REBUILD_OFF_PTX};${SIMPHONY_RNG_REBUILD_ON_PTX}"
 )
 
 add_test(
