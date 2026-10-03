@@ -5,8 +5,7 @@ Overview
 ----------
 
 The SOPTIX, SCUDA, and SMesh structs implement a triangulated geometry
-workflow with the NVIDIA OptiX 7+ API.
-
+workflow with the NVIDIA OptiX API.
 
 Structs
 ---------

@@ -825,8 +825,6 @@ void QSim::MaybeSaveIGS(int eventID, NP* igs) // static
     igs->save(igs_path);
 }
 
-
-
 /**
 QSim::getPhotonSlotOffset
 ---------------------------
@@ -838,11 +836,10 @@ The first genstep slice yields an offset of zero.
 So this only yields non-zero offsets for multi-launch
 running,
 
-
 The photon_slot_offset is uploaded to Params on device prior
 to simulate launches by CSGOptiX::prepareParamSimulate
 
-The offset is used at head of CSGOptiX7.cu:simulate  to offset the
+The offset is used at head of CSGOptiX.cu:simulate  to offset the
 launch index.
 
 Hence the sum of the offset and the
@@ -850,8 +847,6 @@ number of photons in the launch must be less than
 or equal the number of states uploaded.
 
 **/
-
-
 
 unsigned long long QSim::get_photon_slot_offset() const
 {

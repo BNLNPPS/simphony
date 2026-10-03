@@ -3,7 +3,7 @@ qsim.h : GPU side struct prepared CPU side by QSim.hh
 ========================================================
 
 qsim.h provides the CUDA-centric simulation state.
-Canonical use is from CSGOptiX/CSGOptiX7.cu:simulate
+Canonical use is from CSGOptiX/CSGOptiX.cu:simulate
 
 * qsim.h instance is uploaded once only at CSGOptiX instanciation
   as this encompasses the physics not the event-by-event info.
@@ -2021,12 +2021,12 @@ qsim::fake_propagate
 This uses mock input prd (quad2) to provide a CUDA only (no OptiX, no geometry)
 test of qsim propagation machinery.
 
-* NB: qsim::mock_propagate is intended to be very similar to CSGOptiX/CSGOptiX7.cu::simulate
+* NB: qsim::mock_propagate is intended to be very similar to CSGOptiX/CSGOptiX.cu::simulate
 
 TODO
 ~~~~~
 
-* compare with cx/CSGOptiX7.cu::simulate and find users of this to see if it could be made more similar to cx::simulate
+* compare with cx/CSGOptiX.cu::simulate and find users of this to see if it could be made more similar to cx::simulate
 * can sstate be slimmed : seems not very easily
 * simplify sstate persisting (quad6?quad5?)
 
@@ -2060,7 +2060,7 @@ inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd,
     qsim* sim = this ;
 
     sctx ctx = {} ;
-    ctx.p = p ;     // Q: Why is this different from CSGOptiX7.cu:simulate ? A: Presumably due to input photon.
+    ctx.p = p; // Q: Why is this different from CSGOptiX.cu:simulate ? A: Presumably due to input photon.
     ctx.evt = evt ;
     ctx.pidx = idx ;
 
@@ -2101,7 +2101,7 @@ inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd,
 qsim::propagate : one "bounce" propagate_to_boundary/propagate_at_boundary
 -----------------------------------------------------------------------------
 
-This is canonically invoked from within the bounce loop of CSGOptiX/OptiX7Test.cu:simulate
+This is canonically invoked from within the bounce loop of CSGOptiX/CSGOptiX.cu:simulate
 after tracing (or mock tracing) has populated ctx.prd
 
 MISSING intersects
@@ -2338,14 +2338,11 @@ inline QSIM_METHOD void qsim::hemisphere_polarized( unsigned polz, bool inwards,
     }
 }
 
-
-
-
 /**
 qsim::generate_photon_simtrace
 --------------------------------
 
-Canonical invokation from CSGOptiX7.cu:simtrace
+Canonical invokation from CSGOptiX.cu:simtrace
 
 * NB simtrace cxs center-extent-genstep are very different to standard Cerenkov/Scintillation gensteps
 

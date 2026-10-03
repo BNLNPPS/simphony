@@ -1,5 +1,5 @@
 /**
-CSGOptiX7.cu
+CSGOptiX.cu
 ===================
 
 NB: ONLY CODE THAT MUST BE HERE DUE TO OPTIX DEPENDENCY SHOULD BE HERE
@@ -219,7 +219,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
 {
 
 #if defined(DEBUG_PIDX)
-    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render idx(%d,%d,%d) dim(%d,%d,%d) \n", idx.x, idx.y, idx.z, dim.x, dim.y, dim.z );
+    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render idx(%d,%d,%d) dim(%d,%d,%d) \n", idx.x, idx.y, idx.z, dim.x, dim.y, dim.z );
 #endif
 
     float2 d = 2.0f * make_float2(
@@ -246,7 +246,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
     );
 
 #if defined(DEBUG_PIDX)
-    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render prd.distance(%7.3f)  prd.lposcost(%7.3f)  \n", prd->distance(), prd->lposcost()  );
+    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render prd.distance(%7.3f)  prd.lposcost(%7.3f)  \n", prd->distance(), prd->lposcost()  );
 #endif
 
 
@@ -256,7 +256,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
     const float3* normal = prd->normal();
 
 #if defined(DEBUG_PIDX)
-    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render normal(%7.3f,%7.3f,%7.3f)  \n", normal->x, normal->y, normal->z );
+    //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render normal(%7.3f,%7.3f,%7.3f)  \n", normal->x, normal->y, normal->z );
 #endif
 
     float3 diddled_normal = normalize(*normal)*0.5f + 0.5f ; // diddling lightens the render, with mid-grey "pedestal"
@@ -276,7 +276,7 @@ static __forceinline__ __device__ void render( const uint3& idx, const uint3& di
     if(params.pixels)
     {
 #if defined(DEBUG_PIDX)
-        //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX7.cu:render/params.pixels diddled_normal(%7.3f,%7.3f,%7.3f)  \n", diddled_normal.x, diddled_normal.y, diddled_normal.z );
+        //if(idx.x == 10 && idx.y == 10) printf("//CSGOptiX.cu:render/params.pixels diddled_normal(%7.3f,%7.3f,%7.3f)  \n", diddled_normal.x, diddled_normal.y, diddled_normal.z );
 #endif
         params.pixels[index] = params.rendertype == 0 ? make_normal_pixel( diddled_normal, zdepth ) : make_zdepth_pixel( zdepth ) ;
     }
@@ -404,7 +404,7 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
     // q0.u.z. TORCH and FRAME use that slot for a genstep id, so leave the
     // carried line invalid for all other genstep types.
     const unsigned gentype = gs.q0.u.x;
-    const bool carries_matline = CSGOptiX7_GenstepCarriesMaterialLine(gentype);
+    const bool carries_matline = CSGOptiX_GenstepCarriesMaterialLine(gentype);
     ctx.current_matline = carries_matline ? gs.q0.u.z : 0xFFFFFFFFu;
 
     FlowAction command = FlowAction::Start;
@@ -414,12 +414,21 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
     {
         float tmin = ( ctx.p.orient_boundary_flag & params.PropagateEpsilon0Mask ) ? params.tmin0 : params.tmin ;
 
+#ifdef SIMPHONY_RNG_REBUILD
+        unsigned rng_p = ( rng.ctr.x << 2 ) | ( rng.STATE & 3u ) ;
+#endif
+
         // intersect query filling (quad2)prd
         switch(params.PropagateRefine)
         {
             case 0u: trace<false>( params.handle, ctx.p.pos, ctx.p.mom, tmin, params.tmax, prd, params.vizmask, params.PropagateRefineDistance );  break ;
             case 1u: trace<true>(  params.handle, ctx.p.pos, ctx.p.mom, tmin, params.tmax, prd, params.vizmask, params.PropagateRefineDistance );  break ;
         }
+
+#ifdef SIMPHONY_RNG_REBUILD
+        sim->rng->init( rng, sim->evt->index, photon_idx );
+        skipahead( (unsigned long long)( rng_p - ( ( rng.ctr.x << 2 ) | ( rng.STATE & 3u ) ) ), &rng ) ;
+#endif
 
         if( prd->boundary() == 0xffffu ) break ; // SHOULD ONLY HAPPEN FOR PHOTONS STARTING OUTSIDE WORLD
         // propagate can do nothing meaningful without a boundary
@@ -505,7 +514,7 @@ static __forceinline__ __device__ void simtrace( const uint3& launch_idx, const 
     // photon_idx same as idx for first launch, offset beyond first for multi-launch
 
 #if defined(DEBUG_PIDX)
-    if(photon_idx == 0) printf("//CSGOptiX7.cu : simtrace idx %d photon_idx %d  genstep_idx %d evt->num_simtrace %ld \n", idx, photon_idx, genstep_idx, evt->num_simtrace );
+    if(photon_idx == 0) printf("//CSGOptiX.cu : simtrace idx %d photon_idx %d  genstep_idx %d evt->num_simtrace %ld \n", idx, photon_idx, genstep_idx, evt->num_simtrace );
 #endif
 
     const quad6& gs = evt->genstep[genstep_idx] ;
@@ -524,7 +533,7 @@ static __forceinline__ __device__ void simtrace( const uint3& launch_idx, const 
 
 
 #if defined(DEBUG_PIDX)
-    if(photon_idx == 0) printf("//CSGOptiX7.cu : simtrace idx %d pos.xyz %7.3f,%7.3f,%7.3f mom.xyz %7.3f,%7.3f,%7.3f  \n", idx, pos.x, pos.y, pos.z, mom.x, mom.y, mom.z );
+    if(photon_idx == 0) printf("//CSGOptiX.cu : simtrace idx %d pos.xyz %7.3f,%7.3f,%7.3f mom.xyz %7.3f,%7.3f,%7.3f  \n", idx, pos.x, pos.y, pos.z, mom.x, mom.y, mom.z );
 #endif
 
     switch(params.PropagateRefine)
@@ -817,7 +826,7 @@ extern "C" __global__ void __intersection__is()
         // This one-ULP ordering change cannot overstep a representable physical
         // gap. Keep the unbiased isect.w in the PRD for position advancement.
         const float cosI = dot(ray_direction, make_float3(isect.x, isect.y, isect.z));
-        const float t_report = CSGOptiX7_ReportedIntersectionDistance(isect.w, params.raygenmode, cosI);
+        const float t_report = CSGOptiX_ReportedIntersectionDistance(isect.w, params.raygenmode, cosI);
 
         if (optixReportIntersection(t_report, hitKind))
         {

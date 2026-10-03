@@ -61,7 +61,7 @@ class Config
     Config(std::string config_name = "dev");
 
     /// Resolve a PTX file from SIMPHONY_PTX_DIR or configured search paths.
-    static std::string PtxPath(const std::string& ptx_name = "CSGOptiX7.ptx");
+    static std::string PtxPath(const std::string& ptx_name = "CSGOptiX.ptx");
 
     /// A unique name associated with this Config
     std::string name{"dev"};

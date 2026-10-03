@@ -1,11 +1,11 @@
 #pragma once
 /**
-PIP : OptiX 7 Ray Trace Program Pipeline 
+PIP : OptiX Ray Trace Program Pipeline
 ==========================================
 
-Aiming to keep this geometry independent, so it is just 
-responsible to convert the ptx code into an optix 
-ray trace pipeline.  
+Aiming to keep this geometry independent, so it is just
+responsible to convert the ptx code into an optix
+ray trace pipeline.
 
 The pip(PIP) instance is instanciated in CSGOptiX::initPIP
 and passed as ctor argument to SBT
@@ -37,10 +37,6 @@ struct PIP
     OptixProgramGroup hitgroup_pg_tri = nullptr; // triangle: CH only (builtin IS)
 
     OptixPipeline pipeline = nullptr;
-
-
-    static bool OptiXVersionIsSupported(); 
-
 
     static const char*                 CreatePipelineOptions_exceptionFlags ; 
     static OptixPipelineCompileOptions CreatePipelineOptions(unsigned numPayloadValues, unsigned numAttributeValues );
@@ -83,12 +79,9 @@ struct PIP
     void createHitgroupPG();
     void destroyHitgroupPG();
 
-
-    static const char* linkPipeline_debugLevel ; 
     std::string Desc_PipelineLinkOptions(const OptixPipelineLinkOptions& pipeline_link_options ); 
     void linkPipeline(unsigned max_trace_depth);
     void destroyPipeline(); 
-
 
     void configureStack(); 
 }; 

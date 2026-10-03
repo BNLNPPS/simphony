@@ -6,18 +6,16 @@ CSGParams.h : HMM: needs better name : purpose is for scan testing
 
 See CSGScan.cc for usage
 
-Aiming to do CUDA only CSG intersect tests that follow 
-the pattern of OptiX ray trace tests. 
+Aiming to do CUDA only CSG intersect tests that follow
+the pattern of OptiX ray trace tests.
 
-CSGOptiX7.cu revolves around the Params constant::
+CSGOptiX.cu revolves around the Params constant::
 
     extern "C" { __constant__ Params params ;  }
 
 Try to do something similar here for CUDA CSG scanning.
 
 **/
-
-
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
    #define PARAMS_METHOD __device__

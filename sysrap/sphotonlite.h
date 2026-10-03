@@ -164,17 +164,10 @@ struct sphotonlite_selector
     SPHOTONLITE_METHOD bool operator() (const sphotonlite* p) const { return ( p->flagmask & hitmask ) == hitmask  ; }
 };
 
-
-
-
-
-
 /**
 sphotonlite::init
 -------------------
-
-Example, CSGOptiX/CSGOptiX7.cu::
-
+Example, CSGOptiX/CSGOptiX.cu::
 
     457     if( evt->photonlite )
     458     {
@@ -187,7 +180,6 @@ Example, CSGOptiX/CSGOptiX7.cu::
 
 
 **/
-
 
 inline void sphotonlite::init(unsigned _identity, float _time, unsigned _flagmask)
 {

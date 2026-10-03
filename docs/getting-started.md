@@ -138,12 +138,24 @@ The full suite includes GPU-backed tests. You can build without a GPU, but
 running those tests requires a compatible NVIDIA driver and GPU access from the
 container.
 
+### CMake build options
+
+Set supported build options when configuring the CMake build tree. Re-run the
+configure command after changing an option, then rebuild the affected targets.
+
+| Option | Default | Scope | Description |
+|---|---|---|---|
+| `SIMPHONY_RNG_REBUILD` | `OFF` | CSGOptiX PTX | Reconstruct the Philox RNG state after each OptiX trace instead of carrying it live. |
+
+
 ## Build directly on the host
 
 If you prefer to manage the toolchain yourself, install:
 
 - CUDA 12.1+
-- NVIDIA OptiX 7+
+- NVIDIA OptiX 8+
+- an NVIDIA driver compatible with the selected OptiX SDK (R535 or newer for
+  OptiX 8.0)
 - Geant4 11.3+
 - CMake 3.22+
 - Python 3.10+
@@ -162,8 +174,9 @@ cmake --build build
 ctest --test-dir build
 ```
 
-Before running GPU workloads, make sure the installed driver supports your
-OptiX version. The minimum driver versions are:
+OptiX 8.0 is the oldest supported SDK and requires an R535-or-newer NVIDIA
+driver. Later SDK releases raise that driver floor. Before running GPU
+workloads, check the requirement for the selected OptiX version:
 
 | OptiX version | Release date  | Minimum driver required |
 |---            |---:           |---                      |
@@ -180,9 +193,10 @@ OptiX version. The minimum driver versions are:
 | 7.1.0         | June 2020     | 450                     |
 | 7.0.0         | August 2019   | 435.80                  |
 
-See NVIDIA's [OptiX download
-page](https://developer.nvidia.com/designworks/optix/downloads/legacy) for the
-release details.
+See NVIDIA's [current OptiX download
+page](https://developer.nvidia.com/designworks/optix/download) and [legacy SDK
+downloads](https://developer.nvidia.com/designworks/optix/downloads/legacy)
+for release-specific requirements.
 
 ## Run with Docker
 
