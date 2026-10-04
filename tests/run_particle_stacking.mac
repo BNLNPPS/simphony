@@ -1,0 +1,4 @@
+/process/optical/cerenkov/setStackPhotons true
+/process/optical/scintillation/setStackPhotons true
+/run/initialize
+/run/beamOn 1

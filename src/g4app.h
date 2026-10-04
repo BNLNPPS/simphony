@@ -25,6 +25,7 @@
 #include "G4GDMLParser.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4OpBoundaryProcess.hh"
+#include "G4OpticalParameters.hh"
 #include "G4OpticalPhoton.hh"
 #include "G4ParticleTable.hh"
 #include "G4PhysicalConstants.hh"
@@ -814,13 +815,15 @@ struct RunAction : G4UserRunAction
 {
     simphony::Config                    cfg;
     std::shared_ptr<Simg4oxSharedState> shared_state;
+    bool                                particle_source;
     EventTimingRecorder*                timing;
     EventTimingMetadata                 timing_metadata;
 
     RunAction(const simphony::Config& cfg, std::shared_ptr<Simg4oxSharedState> shared_state,
-              EventTimingRecorder* timing, EventTimingMetadata timing_metadata) :
+              bool particle_source, EventTimingRecorder* timing, EventTimingMetadata timing_metadata) :
         cfg(cfg),
         shared_state(std::move(shared_state)),
+        particle_source(particle_source),
         timing(timing),
         timing_metadata(std::move(timing_metadata))
     {
@@ -835,6 +838,15 @@ struct RunAction : G4UserRunAction
     {
         if (!G4Threading::IsWorkerThread())
         {
+            G4OpticalParameters* optical = G4OpticalParameters::Instance();
+            if (particle_source &&
+                (optical->GetCerenkovStackPhotons() || optical->GetScintStackPhotons()))
+            {
+                G4Exception(
+                    "RunAction::BeginOfRunAction", "ParticleSourceStackPhotons", FatalException,
+                    "Particle-source mode requires Cerenkov and scintillation photon stacking to remain disabled");
+                return;
+            }
             shared_state->BeginRun();
             if (timing)
                 timing->BeginRun();
@@ -902,7 +914,7 @@ struct ActionInitialization : G4VUserActionInitialization
 
     void BuildForMaster() const override
     {
-        SetUserAction(new RunAction(cfg, shared_state, timing, timing_metadata));
+        SetUserAction(new RunAction(cfg, shared_state, primary.enabled, timing, timing_metadata));
     }
 
     void Build() const override
@@ -915,7 +927,7 @@ struct ActionInitialization : G4VUserActionInitialization
                                                      : SEvt::CreateOrReuse_ECPU());
 
         SetUserAction(new PrimaryGenerator(cfg, sev, primary, timing));
-        SetUserAction(new RunAction(cfg, shared_state, timing, timing_metadata));
+        SetUserAction(new RunAction(cfg, shared_state, primary.enabled, timing, timing_metadata));
         SetUserAction(new EventAction(sev, shared_state, multithreaded, primary.enabled, timing));
         SetUserAction(new TrackingAction(sev));
 

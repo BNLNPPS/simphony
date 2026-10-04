@@ -29,6 +29,7 @@ usage() {
     echo "  finite_rise_time" >&2
     echo "  optical_particle_rejected" >&2
     echo "  zero_genstep_profile" >&2
+    echo "  particle_stacking_rejected" >&2
 }
 
 if [[ $# -gt 1 ]]; then
@@ -192,6 +193,22 @@ case "${TEST_CASE}" in
         test -s "${profile_csv}"
         grep -Eq '^CSGFoundry__' "${profile_csv}"
         grep -Eq '^CSGOptiX__' "${profile_csv}"
+        ;;
+    particle_stacking_rejected)
+        run_log="${PWD}/simg4ox.log"
+        rm -f "${run_log}"
+        if "${SIMG4OX_BIN}" \
+            -g "${REPO_DIR}/tests/geom/raindrop.gdml" \
+            -c dev \
+            -m "${REPO_DIR}/tests/run_particle_stacking.mac" \
+            --particle geantino \
+            -s "${SEED}" > "${run_log}" 2>&1; then
+            echo "Expected particle-source mode to reject optical photon stacking" >&2
+            exit 1
+        fi
+        grep -Fq \
+            'Particle-source mode requires Cerenkov and scintillation photon stacking to remain disabled' \
+            "${run_log}"
         ;;
     *)
         echo "Unknown simg4ox test case: ${TEST_CASE}" >&2
