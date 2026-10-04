@@ -168,6 +168,12 @@ foreach(SRC ${REPORT_SOURCES})
     target_link_libraries(${TGT} SysRap)
 endforeach()
 
+target_compile_definitions(sreport_test PRIVATE
+    SREPORT_EXECUTABLE="$<TARGET_FILE:sreport>"
+    EVENT_TIMING_PROFILE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/EventTimingProfileFixture.csv"
+)
+add_dependencies(sreport_test sreport)
+
 add_executable(sleak_test sleak_test.cc)
 target_link_libraries(sleak_test SysRap)
 add_dependencies(sleak_test sleak)

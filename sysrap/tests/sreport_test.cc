@@ -1,8 +1,10 @@
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "sreport.h"
@@ -76,6 +78,36 @@ int main()
             std::string(error.what()).find("required 'run' array") != std::string::npos;
     }
     assert(rejected_missing_run);
+
+    const std::filesystem::path input = directory / "profiled-input";
+    const std::filesystem::path output = directory / "profiled-output";
+    const std::filesystem::path profile = directory / "custom-profile.csv";
+    NPFold                      input_fold;
+    NP*                         input_run = NP::Make<std::int64_t>(1, 1);
+    NP::SetMeta<std::string>(input_run->meta,
+                             "EventTimingProfile__Configure",
+                             "1760000000000000,900000000,,,1234,567");
+    input_fold.add("run", input_run);
+    input_fold.save(input.c_str());
+    std::filesystem::copy_file(EVENT_TIMING_PROFILE_FIXTURE, profile);
+
+    const std::string command =
+        "SREPORT_FOLD='" + output.string() + "' '" + SREPORT_EXECUTABLE +
+        "' '" + input.string() + "' --event-timing-profile '" +
+        profile.string() + "' >/dev/null 2>&1";
+    const int status = std::system(command.c_str());
+    assert(status != -1);
+    assert(WIFEXITED(status));
+    assert(WEXITSTATUS(status) == 0);
+
+    sreport* generated = sreport::Load(output.c_str());
+    assert(generated);
+    assert(generated->runprof);
+    assert(generated->runprof->shape.size() == 2u);
+    assert(generated->runprof->shape[0] == 15);
+    assert(generated->runprof->shape[1] == 4);
+    assert(generated->ranges);
+    std::filesystem::remove_all(directory);
 
     return 0;
 }

@@ -666,10 +666,14 @@ struct SteppingAction : G4UserSteppingAction
                 const G4double charge = track->GetDynamicParticle()->GetDefinition()->GetPDGCharge();
                 const G4double beta1 = step->GetPreStepPoint()->GetBeta();
                 const G4double beta2 = step->GetPostStepPoint()->GetBeta();
-                const G4double beta_inverse = 2.0 / (beta1 + beta2);
+                const G4double beta = 0.5 * (beta1 + beta2);
+                const G4double n_max = rindex->GetMaxValue();
+                if (beta <= 0.0 || n_max <= 0.0)
+                    continue;
+                const G4double beta_inverse = 1.0 / beta;
                 const G4double pmin = rindex->Energy(0);
                 const G4double pmax = rindex->GetMaxEnergy();
-                const G4double max_cos = beta_inverse / rindex->GetMaxValue();
+                const G4double max_cos = beta_inverse / n_max;
                 const G4double max_sin2 = (1.0 - max_cos) * (1.0 + max_cos);
                 const G4double mean1 = cerenkov->GetAverageNumberOfPhotons(charge, beta1, material, rindex);
                 const G4double mean2 = cerenkov->GetAverageNumberOfPhotons(charge, beta2, material, rindex);

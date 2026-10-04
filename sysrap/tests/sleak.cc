@@ -1,3 +1,4 @@
+#include <cstring>
 #include <filesystem>
 
 #include "EventTiming.hh"
@@ -64,29 +65,24 @@ inline sleak* sleak::Load(const char* dir) // static
     return leak ; 
 }
 
-
-
-
-
 struct sleak_Creator
 {
-    bool VERBOSE ; 
-    const char* dirp ; 
-    const NPFold* fold ; 
-    bool fold_valid ; 
-    const NP* run ; 
-    sleak* leak ; 
+    bool                  VERBOSE;
+    const char*           dirp;
+    std::filesystem::path profile_path;
+    const NPFold*         fold;
+    bool                  fold_valid;
+    const NP*             run;
+    sleak*                leak;
 
-    sleak_Creator( const char* dirp_ ); 
-    std::string desc() const; 
-    
-}; 
+    sleak_Creator(const char* dirp_, const char* profile_path_ = nullptr);
+    std::string desc() const;
+};
 
-
-inline sleak_Creator::sleak_Creator( const char* dirp_ )
-    :
+inline sleak_Creator::sleak_Creator(const char* dirp_, const char* profile_path_) :
     VERBOSE(getenv("sleak_Creator__VERBOSE") != nullptr),
     dirp(dirp_ ? strdup(dirp_) : nullptr),
+    profile_path(profile_path_ ? std::filesystem::path(profile_path_) : std::filesystem::path(dirp_) / "event_timing_profile.csv"),
     fold(NPFold::LoadNoData(dirp)),
     fold_valid(NPFold::IsValid(fold)),
     run(fold_valid ? fold->get("run") : nullptr),
@@ -94,8 +90,6 @@ inline sleak_Creator::sleak_Creator( const char* dirp_ )
 {
     leak->run = run ? run->copy() : nullptr; // NoData arrays must be copied before saving.
 
-    const std::filesystem::path profile_path =
-        std::filesystem::path(dirp) / "event_timing_profile.csv";
     const std::vector<EventTimingProfileRecord> records =
         std::filesystem::exists(profile_path)
             ? EventTimingProfile::ReadFile(profile_path)
@@ -120,10 +114,14 @@ inline std::string sleak_Creator::desc() const
 
 int main(int argc, char** argv)
 {
-    char* argv0 = argv[0] ; 
-    const char* dirp = argc > 1 ? argv[1] : U::PWD() ;   
-    if(dirp == nullptr) return 0 ; 
-    sleak_Creator creator(dirp); 
+    char*       argv0 = argv[0];
+    const char* dirp = argc > 1 ? argv[1] : U::PWD();
+    const char* profile_path = argc == 4 && std::strcmp(argv[2], "--event-timing-profile") == 0
+                                   ? argv[3]
+                                   : nullptr;
+    if (dirp == nullptr)
+        return 0;
+    sleak_Creator creator(dirp, profile_path);
     std::cout << creator.desc() ; 
     if(!creator.fold_valid) return 1 ; 
 

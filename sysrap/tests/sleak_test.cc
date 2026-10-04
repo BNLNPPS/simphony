@@ -28,11 +28,15 @@ void SaveInputFold(const fs::path& directory)
 void RunSleak(
     const fs::path& executable,
     const fs::path& input,
-    const fs::path& output)
+    const fs::path& output,
+    const fs::path& profile = {})
 {
-    const std::string command =
+    std::string command =
         "SLEAK_FOLD='" + output.string() + "' '" + executable.string() +
-        "' '" + input.string() + "' >/dev/null 2>&1";
+        "' '" + input.string() + "'";
+    if (!profile.empty())
+        command += " --event-timing-profile '" + profile.string() + "'";
+    command += " >/dev/null 2>&1";
     const int status = std::system(command.c_str());
     assert(status != -1);
     assert(WIFEXITED(status));
@@ -46,10 +50,11 @@ void TestRealProfileIsSerialized(
 {
     const fs::path input = directory / "profiled-input";
     const fs::path output = directory / "profiled-output";
+    const fs::path profile_path = input / "custom-profile.csv";
     SaveInputFold(input);
-    fs::copy_file(fixture, input / "event_timing_profile.csv");
+    fs::copy_file(fixture, profile_path);
 
-    RunSleak(executable, input, output);
+    RunSleak(executable, input, output, profile_path);
 
     NPFold* result = NPFold::Load(output.c_str());
     assert(result);

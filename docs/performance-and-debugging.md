@@ -105,8 +105,15 @@ path with one safe integer conversion:
 }
 ```
 
-`sreport` reads `event_timing_profile.csv` from a selected run directory. It can
-also analyze only a profile, without loading an event directory:
+`sreport` reads `event_timing_profile.csv` from a selected run directory by
+default. For a configured custom or indexed filename, pass the actual profile
+path while creating the directory report:
+
+```bash
+build/sysrap/tests/sreport /tmp/pfrich --event-timing-profile /tmp/pfrich/event_timing_profile_00007.csv
+```
+
+It can also analyze only a profile, without loading an event directory:
 
 ```bash
 build/sysrap/tests/sreport --event-timing-profile /tmp/pfrich/event_timing_profile.csv

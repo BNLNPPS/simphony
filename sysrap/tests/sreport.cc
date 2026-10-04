@@ -214,12 +214,13 @@ struct sreport_Creator
 
     bool VERBOSE ;
     const char* dirp ;
+    std::filesystem::path profile_path;
     NPFold*    fold ;
     bool fold_valid ;
     const NP*  run ;
     sreport*   report ;
 
-    sreport_Creator(  const char* dirp_ );
+    sreport_Creator(const char* dirp_, const char* profile_path_ = nullptr);
     void init();
     void init_EventTimingProfile();
     void init_substamp();
@@ -233,10 +234,10 @@ struct sreport_Creator
     std::string desc_run() const ;
 };
 
-inline sreport_Creator::sreport_Creator( const char* dirp_ )
-    :
+inline sreport_Creator::sreport_Creator(const char* dirp_, const char* profile_path_) :
     VERBOSE(getenv("sreport_Creator__VERBOSE") != nullptr),
     dirp(dirp_ ? strdup(dirp_) : nullptr),
+    profile_path(profile_path_ ? std::filesystem::path(profile_path_) : std::filesystem::path(dirp_) / "event_timing_profile.csv"),
     fold(NPFold::LoadNoData(dirp)),
     fold_valid(NPFold::IsValid(fold)),
     run(fold_valid ? fold->get("run") : nullptr),
@@ -288,11 +289,9 @@ inline void sreport_Creator::init_EventTimingProfile()
 {
     std::cout << "[sreport_Creator::init_EventTimingProfile\n";
 
-    const std::filesystem::path path =
-        std::filesystem::path(dirp) / "event_timing_profile.csv";
     const std::vector<EventTimingProfileRecord> records =
-        std::filesystem::exists(path)
-            ? EventTimingProfile::ReadFile(path)
+        std::filesystem::exists(profile_path)
+            ? EventTimingProfile::ReadFile(profile_path)
             : std::vector<EventTimingProfileRecord>{};
 
     report->runprof = records.empty()
@@ -463,6 +462,9 @@ int main(int argc, char** argv)
 
     char* argv0 = argv[0] ;
     const char* dirp = argc > 1 ? argv[1] : U::PWD() ;
+    const char* profile_path = argc == 4 && strcmp(argv[2], "--event-timing-profile") == 0
+                                   ? argv[3]
+                                   : nullptr;
     if(dirp == nullptr) return 0 ;
     bool is_executable_sibling_path = U::IsExecutableSiblingPath( argv0 , dirp ) ;
 
@@ -480,7 +482,7 @@ int main(int argc, char** argv)
         std::cout << "[sreport.main : CREATING REPORT " << std::endl ;
 
         std::cout << "[sreport.main : creator " << std::endl ;
-        sreport_Creator creator(dirp);
+        sreport_Creator creator(dirp, profile_path);
         std::cout << "]sreport.main : creator " << std::endl ;
         std::cout << "[sreport.main : creator.desc " << std::endl ;
         std::cout << creator.desc() ;
