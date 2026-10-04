@@ -256,6 +256,19 @@ class SYSRAP_API EventTimingProfile
         std::string_view name,
         std::string_view metadata = {});
     /**
+     * Captures and records a lifecycle point without the calling thread's tag.
+     *
+     * Any current tag is restored before returning so surrounding event marks
+     * retain their prefix.
+     *
+     * @param name lifecycle-point name
+     * @param metadata optional annotation stored with the record
+     * @return sample captured for this mark
+     */
+    static EventTimingSample MarkUntagged(
+        std::string_view name,
+        std::string_view metadata = {});
+    /**
      * Adds a caller-provided sample when profiling is enabled.
      *
      * @param name record name without the current thread tag

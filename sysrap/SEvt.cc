@@ -1566,7 +1566,7 @@ void SEvt::BeginOfRun()
 
 void SEvt::EndOfRun()
 {
-    EventTimingProfile::Mark("SEvt__EndOfRun");
+    EventTimingProfile::MarkUntagged("SEvt__EndOfRun");
     EventTimingProfile::Write(EventTimingWriteMode::Replace);
 }
 

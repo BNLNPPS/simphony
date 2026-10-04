@@ -648,6 +648,17 @@ EventTimingSample EventTimingProfile::Mark(
     return sample;
 }
 
+EventTimingSample EventTimingProfile::MarkUntagged(
+    std::string_view name,
+    std::string_view metadata)
+{
+    std::string tag = std::move(profile_tag);
+    profile_tag.clear();
+    const EventTimingSample sample = Mark(name, metadata);
+    profile_tag = std::move(tag);
+    return sample;
+}
+
 void EventTimingProfile::Add(
     std::string_view         name,
     const EventTimingSample& sample,

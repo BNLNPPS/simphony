@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "EventTiming.hh"
+#include "SEvt.hh"
 
 namespace
 {
@@ -154,6 +155,21 @@ void TestCollectionOrdersCapturedSamples()
     assert(records[2].name == "late");
     assert(EventTimingProfile::DeltaRssKb() == 10);
     assert(EventTimingProfile::RangeRssKb() == 20);
+}
+
+void TestEndOfRunMarkIsUntagged(const fs::path& directory)
+{
+    EventTimingProfile::Configure(true, directory / "end-of-run.csv");
+    EventTimingProfile::Clear();
+    EventTimingProfile::SetTag(2);
+
+    SEvt::EndOfRun();
+
+    const auto records = EventTimingProfile::Records();
+    assert(records.size() == 1u);
+    assert(records[0].name == "SEvt__EndOfRun");
+    assert(EventTimingProfile::Tag() == "A002_");
+    EventTimingProfile::UnsetTag();
 }
 
 void TestCsvRoundTripAndErrors(const fs::path& directory)
@@ -298,6 +314,7 @@ int main()
     TestDisabledFastPath(directory);
     TestCollectionTagsAndRss();
     TestCollectionOrdersCapturedSamples();
+    TestEndOfRunMarkIsUntagged(directory);
     TestCsvRoundTripAndErrors(directory);
     TestSnapshotsAndPaths(directory);
     TestConcurrentMarksAndSnapshots();
