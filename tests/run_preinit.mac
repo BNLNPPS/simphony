@@ -1,0 +1,6 @@
+# Process activation is a PreInit-only command. This verifies that simg4ox
+# leaves initialization under macro control rather than entering Idle first.
+/process/optical/processActivation OpBoundary false
+/process/optical/printParameters
+/run/initialize
+/run/beamOn 1

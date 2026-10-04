@@ -1,0 +1,4 @@
+# Blocking CPU/GPU timing baseline: three single-threaded Geant4 events.
+/run/verbose 1
+/run/initialize
+/run/beamOn 3

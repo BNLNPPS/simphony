@@ -1,0 +1,4 @@
+/run/verbose 1
+/process/optical/scintillation/setFiniteRiseTime true
+/run/initialize
+/run/beamOn 1
