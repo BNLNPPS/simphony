@@ -23,8 +23,6 @@ set(SOURCES
     U4Cerenkov_Debug.cc
     U4Hit_Debug.cc
 
-    ShimG4OpAbsorption.cc
-    ShimG4OpRayleigh.cc
 
     U4Physics.cc
 )
@@ -85,9 +83,6 @@ set(HEADERS
     U4Scintillation_Debug.hh
     U4Cerenkov_Debug.hh
     U4Hit_Debug.hh
-
-    ShimG4OpAbsorption.hh
-    ShimG4OpRayleigh.hh
 
     U4Physics.hh
 
