@@ -14,6 +14,12 @@ services:
         CMAKE_VERSION: ${CMAKE_VERSION:?Set CMAKE_VERSION in the selected environment file}
       cache_from:
         - type=registry,ref=ghcr.io/bnlnpps/simphony-buildcache:cuda${CUDA_VERSION}-base-${OS_VERSION}-optix${OPTIX_VERSION}-geant4${GEANT4_VERSION}-cmake${CMAKE_VERSION}
+    environment:
+      DISPLAY: ${SIMPHONY_X11_DISPLAY:-}
+      XAUTHORITY: /tmp/simphony.Xauthority
+      XAUTHLOCALHOSTNAME: ${SIMPHONY_X11_HOSTNAME:-}
     volumes:
       - ..:/workspaces/simphony:cached
+      - ${SIMPHONY_X11_SOCKET_DIR:-/tmp/.X11-unix}:/tmp/.X11-unix:ro
+      - ${SIMPHONY_X11_AUTHORITY:-/dev/null}:/tmp/simphony.Xauthority:ro
     command: sleep infinity

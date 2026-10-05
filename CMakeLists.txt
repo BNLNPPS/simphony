@@ -14,6 +14,12 @@ if(NOT DEFINED BUILD_TESTING)
     set(BUILD_TESTING ${PROJECT_IS_TOP_LEVEL} CACHE BOOL "Build the testing tree.")
 endif()
 
+option(
+    SIMPHONY_BUILD_INTERACTIVE_RENDERER
+    "Build the Qt-based interactive OptiX geometry viewer."
+    ON
+)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
