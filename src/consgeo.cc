@@ -1,12 +1,15 @@
 #include <algorithm>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
+#include "G4GDMLParser.hh"
+#include "G4VPhysicalVolume.hh"
 #include "sysrap/OPTICKS_LOG.hh"
 
 #include <argparse/argparse.hpp>
 
-#include "g4cx/G4CXOpticks.hh"
+#include "simphony.h"
 
 using namespace std;
 
@@ -44,7 +47,30 @@ int main(int argc, char **argv)
 
     LOG_INFO << "gdml_file: " << gdml_file << endl;
 
-    from_gdml(gdml_file, out_prefix);
+    try
+    {
+        G4GDMLParser parser;
+        parser.Read(gdml_file, false);
+        const G4VPhysicalVolume* world = parser.GetWorldVolume();
+        if (world == nullptr)
+            throw runtime_error("failed to create a Geant4 world from " + gdml_file);
+
+        simphony::GeometryOptions options;
+        options.gpu = simphony::GpuRequirement::Disabled;
+        simphony::initialize(world, options);
+
+        const filesystem::path outpath =
+            filesystem::path(out_prefix) / filesystem::path(gdml_file).stem();
+        simphony::save_geometry(outpath);
+
+        LOG_INFO << "Created G4 volume " << world->GetName() << " from " << gdml_file << endl;
+        LOG_INFO << "Saved CSG tree to " << outpath << endl;
+    }
+    catch (const exception& error)
+    {
+        LOG_ERROR << error.what() << endl;
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
