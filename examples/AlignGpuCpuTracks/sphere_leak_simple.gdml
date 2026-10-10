@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="">
+
+  <define>
+    <matrix coldim="2" name="REFLECTIVITY_MIRROR" values="1.55e-06 1.  11.6*eV 1." />
+    <matrix coldim="2" name="RINDEX_WATER"        values="1.55e-06 1.333 1.55e-05 1.333" />
+    <matrix coldim="2" name="ABSLENGTH_WATER"     values="1.55e-06 500*mm 1.55e-05 500*mm" />
+    <matrix coldim="2" name="RINDEX_GLASS"        values="1.55e-06 1.5  1.55e-05 1.5" />
+    <matrix coldim="2" name="EFFICIENCYDET"       values="1.55e-06 1.0 1.55e-05 1.0" />
+  </define>
+
+  <materials>
+    <element name="H" formula="H" Z="1">
+      <atom value="1.0079" unit="g/mole"/>
+    </element>
+    <element name="O" formula="O" Z="8">
+      <atom value="15.999" unit="g/mole"/>
+    </element>
+    <material name="WaterMaterial" state="liquid">
+      <D value="1.0" unit="g/cm3"/>
+      <fraction n="0.1119" ref="H"/>
+      <fraction n="0.8881" ref="O"/>
+      <property name="RINDEX"    ref="RINDEX_WATER"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_WATER"/>
+    </material>
+    <material name="MirrorMetal" state="solid">
+      <D value="2.7" unit="g/cm3"/>
+      <fraction n="1.0" ref="O"/>
+    </material>
+    <material name="CavityWater" state="liquid">
+      <D value="1.0" unit="g/cm3"/>
+      <fraction n="0.1119" ref="H"/>
+      <fraction n="0.8881" ref="O"/>
+      <property name="RINDEX"    ref="RINDEX_WATER"/>
+      <property name="ABSLENGTH" ref="ABSLENGTH_WATER"/>
+    </material>
+  </materials>
+
+  <solids>
+    <sphere name="WorldSphere" rmin="0" rmax="50" deltaphi="6.28318530718"
+            deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+    <sphere name="MirrorSphere" rmin="0" rmax="30" deltaphi="6.28318530718"
+            deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+    <sphere name="CavitySphere" rmin="0" rmax="25" deltaphi="6.28318530718"
+            deltatheta="3.14159265359" aunit="rad" lunit="mm"/>
+
+    <!-- dielectric_metal, unified, polished -->
+    <opticalsurface name="MirrorSurface" type="0" model="1" finish="0" value="0">
+      <property name="REFLECTIVITY" ref="REFLECTIVITY_MIRROR"/>
+    </opticalsurface>
+    <opticalsurface name="DetSurface" type="0" model="1" finish="0" value="0">
+      <property name="EFFICIENCY" ref="EFFICIENCYDET"/>
+    </opticalsurface>
+  </solids>
+
+  <structure>
+    <volume name="Cavity_logical">
+      <materialref ref="CavityWater"/>
+      <solidref   ref="CavitySphere"/>
+    </volume>
+
+    <!-- Mirror is the parent of Cavity (nested) -->
+    <volume name="Mirror_logical">
+      <materialref ref="MirrorMetal"/>
+      <solidref   ref="MirrorSphere"/>
+      <physvol name="Cavity_phys">
+        <volumeref ref="Cavity_logical"/>
+        <position name="Cavitypos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+
+    <volume name="World_logical">
+      <materialref ref="WaterMaterial"/>
+      <solidref   ref="WorldSphere"/>
+      <auxiliary auxtype="SensDet" auxvalue="PhotonDetector"/>
+      <physvol name="Mirror_phys">
+        <volumeref ref="Mirror_logical"/>
+        <position name="Mirrorpos" unit="mm" x="0" y="0" z="0"/>
+      </physvol>
+    </volume>
+
+    <!-- Skin surface on mirror: dielectric_metal with no RINDEX = true metal -->
+    <skinsurface name="MirrorSkinSurface" surfaceproperty="MirrorSurface">
+      <volumeref ref="Mirror_logical"/>
+    </skinsurface>
+
+    <skinsurface name="WorldDetSurface" surfaceproperty="DetSurface">
+      <volumeref ref="World_logical"/>
+    </skinsurface>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="World_logical"/>
+  </setup>
+</gdml>
