@@ -25,9 +25,9 @@ Resolve_CFBaseFromGEOM()
 {
    : LOOK FOR CFBase directory containing CSGFoundry geometry 
    : HMM COULD PUT INTO GEOM.sh TO AVOID DUPLICATION ?
-   : G4CXOpticks_setGeometry_Test GEOM TAKES PRECEDENCE OVER .opticks/GEOM
+   : consgeo exports take precedence over .opticks/GEOM
 
-   local A_CFBaseFromGEOM=$TMP/G4CXOpticks_setGeometry_Test/$GEOM
+   local A_CFBaseFromGEOM=${SIMPHONY_GEOMETRY_DIR:-$PWD/csg}/$GEOM
    local B_CFBaseFromGEOM=$HOME/.opticks/GEOM/$GEOM
    local TestPath=CSGFoundry/prim.npy
 

@@ -82,7 +82,7 @@ def run():
     stepping.Verbose = 1
     kernel.steppingAction().adopt(stepping)
 
-    # RunAction: initializes/finalizes G4CXOpticks geometry
+    # RunAction: initializes/reuses Simphony geometry
     run_action = DDG4.RunAction(kernel, 'OpticsRun/OpticsRun1')
     run_action.SaveGeometry = False
     kernel.runAction().adopt(run_action)

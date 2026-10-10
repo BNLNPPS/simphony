@@ -21,9 +21,11 @@ struct SensorIdentifier : simphony::SensorIdentifier
 {
     int  calls = 0;
     bool fail_translation = false;
+
     void setLevel(int) override
     {
     }
+
     int getGlobalIdentity(const G4VPhysicalVolume*, const G4VPhysicalVolume*) override
     {
         ++calls;
@@ -31,6 +33,7 @@ struct SensorIdentifier : simphony::SensorIdentifier
             throw TranslationFailure();
         return -1;
     }
+
     int getInstanceIdentity(const G4VPhysicalVolume*) const override
     {
         return -1;
@@ -96,6 +99,7 @@ int main(int argc, char** argv)
             .sensor_identifier = &identifier,
             .gpu = simphony::GpuRequirement::Disabled,
         };
+
         if (argc == 4)
         {
             identifier.fail_translation = true;
@@ -119,6 +123,7 @@ int main(int argc, char** argv)
                     "rejected retry changed the runtime state");
             return 0;
         }
+
         simphony::initialize(world, options);
 
         require(identifier.calls > 0, "custom sensor identifier was not used during translation");
