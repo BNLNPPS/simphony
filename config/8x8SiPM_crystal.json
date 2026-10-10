@@ -24,7 +24,7 @@
   },
 
   "event": {
-    "mode": "Minimal",
+    "event_mode": "Minimal",
     "maxslot": 1000000,
     "max_bounce": 31,
     "propagate_epsilon": 0.05,

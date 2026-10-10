@@ -24,7 +24,7 @@
   },
 
   "event": {
-    "mode": "DebugLite",
+    "event_mode": "DebugLite",
     "maxslot": 1000000,
     "max_bounce": 10000,
     "propagate_epsilon": 0.001,
