@@ -19,9 +19,9 @@ explicitly set via DetElement::setSensitiveDetector().
 #include "G4PVPlacement.hh"
 #include "G4VSensitiveDetector.hh"
 
-#include "U4SensorIdentifier.h"
+#include "SensorIdentifier.h"
 
-struct DD4hepSensorIdentifier : public U4SensorIdentifier
+struct DD4hepSensorIdentifier : public simphony::SensorIdentifier
 {
     int level = 0;
     int counter = 0; // auto-increment sensor ID (1-based; 0 means "not a sensor" in opticks)

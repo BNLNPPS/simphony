@@ -55,7 +55,7 @@
 #include "G4VUserEventInformation.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-#include "g4cx/G4CXOpticks.hh"
+#include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/SEvt.hh"
 #include "sysrap/STrackInfo.h"
@@ -189,7 +189,7 @@ struct DetectorConstruction : G4VUserDetectorConstruction
         parser_.Read(gdml_file_.string(), false);
         G4VPhysicalVolume* world = parser_.GetWorldVolume();
 
-        G4CXOpticks::SetGeometry(world);
+        simphony::initialize(world);
 
         return world;
     }
@@ -485,8 +485,7 @@ struct EventAction : G4UserEventAction
         std::vector<sphoton> gpu_hits;
         if (has_gpu_work)
         {
-            G4CXOpticks* gx = G4CXOpticks::Get();
-            gx->simulate(event_id, false);
+            simphony::simulate(event_id, false);
             cudaDeviceSynchronize();
 
             if (timing)
@@ -499,7 +498,7 @@ struct EventAction : G4UserEventAction
             gpu_hits = CollectGPUHits(sev_gpu);
             // QSim::reset ends the EGPU event; particle-source mode must not
             // end its aliased SEvt a second time.
-            gx->reset(event_id);
+            simphony::reset(event_id);
         }
         else if (timing)
             timing->EndGpu();

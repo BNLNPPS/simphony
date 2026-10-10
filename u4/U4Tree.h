@@ -69,7 +69,7 @@ controlled via envvar::
 #include "SSimtrace.h"
 #include "SEventConfig.hh"
 
-#include "U4SensorIdentifier.h"
+#include "SensorIdentifier.h"
 #include "U4SensorIdentifierDefault.h"
 
 #include "U4Transform.h"
@@ -101,7 +101,7 @@ struct U4Tree
 
     stree*                                      st ;
     const G4VPhysicalVolume* const              top ;
-    U4SensorIdentifier*                         sid ;
+    simphony::SensorIdentifier*                  sid ;
     int                                         level ;
     // export SSim__stree_level=1 controls this
 
@@ -128,18 +128,18 @@ struct U4Tree
     static U4Tree* Create(
         stree* st,
         const G4VPhysicalVolume* const top,
-        U4SensorIdentifier* sid=nullptr
+        simphony::SensorIdentifier* sid=nullptr
         );
 
     // using SSim::Get SSim::get_tree is tempting
     // but that would add SSim dependency and SSim is not header only
-    // static U4Tree* Create( const G4VPhysicalVolume* const top, U4SensorIdentifier* sid=nullptr );
+    // static U4Tree* Create( const G4VPhysicalVolume* const top, simphony::SensorIdentifier* sid=nullptr );
 
 private:
     U4Tree(
         stree* st,
         const G4VPhysicalVolume* const top=nullptr,
-        U4SensorIdentifier* sid=nullptr
+        simphony::SensorIdentifier* sid=nullptr
         );
 
     void init();
@@ -212,7 +212,7 @@ public:
 U4Tree::Create
 ----------------
 
-Canonically invoked from G4CXOpticks::setGeometry
+Invoked by simphony::initialize during geometry translation
 
 HMM: can these be moved into U4Tree ctor now ?
 
@@ -220,7 +220,7 @@ HMM: can these be moved into U4Tree ctor now ?
 inline U4Tree* U4Tree::Create(
     stree* st,
     const G4VPhysicalVolume* const top,
-    U4SensorIdentifier* sid
+    simphony::SensorIdentifier* sid
     )
 {
     if(st->level > 0) std::cout << "[ U4Tree::Create " << std::endl ;
@@ -252,7 +252,7 @@ inline U4Tree* U4Tree::Create(
     return tree ;
 }
 
-inline U4Tree::U4Tree(stree *st_, const G4VPhysicalVolume *const top_, U4SensorIdentifier *sid_) :
+inline U4Tree::U4Tree(stree *st_, const G4VPhysicalVolume *const top_, simphony::SensorIdentifier *sid_) :
     st(st_),
     top(top_),
     sid(sid_ ? sid_ : new U4SensorIdentifierDefault),
@@ -1120,7 +1120,7 @@ Canonically invoked from U4Tree::Create after stree factorization
 and before instance creation.
 
 This uses stree/sfactor to get node indices of the outer
-volumes of all instances. These together with U4SensorIdentifier/sid
+volumes of all instances. These together with simphony::SensorIdentifier/sid
 allow sensor_id and sensor_index results (-1 when not sensors)
 to be added into the stree/snode.
 

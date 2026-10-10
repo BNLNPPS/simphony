@@ -18,7 +18,7 @@
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-#include "g4cx/G4CXOpticks.hh"
+#include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/SEvt.hh"
 #include "sysrap/sphoton.h"
@@ -34,7 +34,7 @@ struct DetectorConstruction : G4VUserDetectorConstruction
         parser_.Read(gdml_file_.string(), false);
         G4VPhysicalVolume *world = parser_.GetWorldVolume();
 
-        G4CXOpticks::SetGeometry(world);
+        simphony::initialize(world);
 
         return world;
     }
@@ -158,9 +158,7 @@ struct EventAction : G4UserEventAction
         sev->endOfEvent(eventID);
 
         // GPU-based simulation
-        G4CXOpticks *gx = G4CXOpticks::Get();
-
-        gx->simulate(eventID, false);
+        simphony::simulate(eventID, false);
         cudaDeviceSynchronize();
 
         SEvt *sev_gpu = SEvt::Get_EGPU();
@@ -191,7 +189,7 @@ struct EventAction : G4UserEventAction
             outFile.close();
         }
 
-        gx->reset(eventID);
+        simphony::reset(eventID);
     }
 
     unsigned int GetTotalOpticksHits() const

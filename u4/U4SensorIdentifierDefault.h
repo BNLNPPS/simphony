@@ -3,9 +3,9 @@
 u4/U4SensorIdentifierDefault.h
 ================================
 
-This fulfils U4SensorIdentifier protocol, it is used
+This fulfils simphony::SensorIdentifier protocol, it is used
 to identify sensors in the geometry.  To override this
-implementation use G4CXOpticks::SetSensorIdentifier.
+implementation pass GeometryOptions::sensor_identifier to simphony::initialize.
 
 
 **/
@@ -19,11 +19,11 @@ implementation use G4CXOpticks::SetSensorIdentifier.
 #include "sstr.h"
 #include "ssys.h"
 
-#include "U4SensorIdentifier.h"
+#include "SensorIdentifier.h"
 #include "U4Boundary.h"
 
 
-struct U4SensorIdentifierDefault : public U4SensorIdentifier
+struct U4SensorIdentifierDefault : public simphony::SensorIdentifier
 {
     static std::vector<std::string>* GLOBAL_SENSOR_BOUNDARY_LIST ;
 
