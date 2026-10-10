@@ -2,6 +2,41 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS multithreaded)
 find_program(BASH_EXECUTABLE bash REQUIRED)
 
+add_executable(SimphonyApiTest SimphonyApiTest.cc)
+target_link_libraries(SimphonyApiTest PRIVATE simphony::simphony Geant4::G4gdml)
+
+set(SIMPHONY_API_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simphony_api")
+file(MAKE_DIRECTORY "${SIMPHONY_API_TEST_WORKDIR}")
+
+add_test(
+    NAME Simphony.Api
+    COMMAND SimphonyApiTest
+            "${PROJECT_SOURCE_DIR}/tests/geom/raindrop.gdml"
+            "${SIMPHONY_API_TEST_WORKDIR}/geometry"
+)
+set_tests_properties(Simphony.Api PROPERTIES
+    WORKING_DIRECTORY "${SIMPHONY_API_TEST_WORKDIR}"
+    LABELS "api"
+    TIMEOUT 120
+)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_program(READELF_EXECUTABLE readelf REQUIRED)
+    add_test(
+        NAME Simphony.NoG4CXDependency
+        COMMAND ${BASH_EXECUTABLE}
+                "${CMAKE_CURRENT_SOURCE_DIR}/check_no_g4cx_dependency.sh"
+                "${READELF_EXECUTABLE}"
+                $<TARGET_FILE:consgeo>
+                $<TARGET_FILE:simg4ox>
+                $<TARGET_FILE:GPUCerenkov>
+                $<TARGET_FILE:GPURaytrace>
+                $<TARGET_FILE:GPUPhotonSourceMinimal>
+                $<TARGET_FILE:GPUPhotonFileSource>
+    )
+    set_tests_properties(Simphony.NoG4CXDependency PROPERTIES LABELS "api")
+endif()
+
 set(SIMPHONY_SIMG4OX_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox")
 
 function(add_simg4ox_integration_test TEST_CASE)
