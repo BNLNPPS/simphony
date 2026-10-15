@@ -2,6 +2,9 @@ name: simphony-${USER:-dev}
 
 services:
   simphony:
+    # Allow GPU performance-counter access for Nsight Compute profiling as root.
+    cap_add:
+      - SYS_ADMIN
     build:
       context: ..
       dockerfile: Dockerfile

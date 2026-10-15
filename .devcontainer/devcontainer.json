@@ -10,6 +10,13 @@
     "gpu": "optional"
   },
   "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "dev",
+      "sudoers": true,
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "./features/llvm": {
       "version": "23"
