@@ -3,7 +3,7 @@ qsim.h : GPU side struct prepared CPU side by QSim.hh
 ========================================================
 
 qsim.h provides the CUDA-centric simulation state.
-Canonical use is from CSGOptiX/CSGOptiX7.cu:simulate
+Canonical use is from CSGOptiX/CSGOptiX.cu:simulate
 
 * qsim.h instance is uploaded once only at CSGOptiX instanciation
   as this encompasses the physics not the event-by-event info.
@@ -781,8 +781,16 @@ inline QSIM_METHOD FlowAction qsim::propagate_to_boundary(unsigned& flag, RNG& r
     if (wls_wins && wls_absorption_distance <= distance_to_boundary)
     {
         // WLS ABSORPTION: photon absorbed by wavelength shifting material
-        p.time += wls_absorption_distance / group_velocity;
-        p.pos += wls_absorption_distance * (p.mom);
+        //
+        // Subprecision floor: when wls_absorption_distance is below float32
+        // precision at world coords, p.pos += dist*mom rounds to no-op and the
+        // photon stays on the boundary, causing BVH ambiguity on the next trace.
+        // Force minimum step of 4 ulps along the entering direction.
+        const float pos_max = fmaxf(fmaxf(fabsf(p.pos.x), fabsf(p.pos.y)), fabsf(p.pos.z));
+        const float min_step = pos_max * 4.7683716e-7f; // 4 * 2^-23
+        const float eff_wls_distance = fmaxf(wls_absorption_distance, min_step);
+        p.time += eff_wls_distance / group_velocity;
+        p.pos += eff_wls_distance * (p.mom);
 
         // Sample re-emitted wavelength from WLS emission spectrum ICDF
         float u_wls_wl = curand_uniform(&rng);
@@ -2013,12 +2021,12 @@ qsim::fake_propagate
 This uses mock input prd (quad2) to provide a CUDA only (no OptiX, no geometry)
 test of qsim propagation machinery.
 
-* NB: qsim::mock_propagate is intended to be very similar to CSGOptiX/CSGOptiX7.cu::simulate
+* NB: qsim::mock_propagate is intended to be very similar to CSGOptiX/CSGOptiX.cu::simulate
 
 TODO
 ~~~~~
 
-* compare with cx/CSGOptiX7.cu::simulate and find users of this to see if it could be made more similar to cx::simulate
+* compare with cx/CSGOptiX.cu::simulate and find users of this to see if it could be made more similar to cx::simulate
 * can sstate be slimmed : seems not very easily
 * simplify sstate persisting (quad6?quad5?)
 
@@ -2052,7 +2060,7 @@ inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd,
     qsim* sim = this ;
 
     sctx ctx = {} ;
-    ctx.p = p ;     // Q: Why is this different from CSGOptiX7.cu:simulate ? A: Presumably due to input photon.
+    ctx.p = p; // Q: Why is this different from CSGOptiX.cu:simulate ? A: Presumably due to input photon.
     ctx.evt = evt ;
     ctx.pidx = idx ;
 
@@ -2093,7 +2101,7 @@ inline QSIM_METHOD void qsim::fake_propagate( sphoton& p, const quad2* mock_prd,
 qsim::propagate : one "bounce" propagate_to_boundary/propagate_at_boundary
 -----------------------------------------------------------------------------
 
-This is canonically invoked from within the bounce loop of CSGOptiX/OptiX7Test.cu:simulate
+This is canonically invoked from within the bounce loop of CSGOptiX/CSGOptiX.cu:simulate
 after tracing (or mock tracing) has populated ctx.prd
 
 MISSING intersects
@@ -2330,14 +2338,11 @@ inline QSIM_METHOD void qsim::hemisphere_polarized( unsigned polz, bool inwards,
     }
 }
 
-
-
-
 /**
 qsim::generate_photon_simtrace
 --------------------------------
 
-Canonical invokation from CSGOptiX7.cu:simtrace
+Canonical invokation from CSGOptiX.cu:simtrace
 
 * NB simtrace cxs center-extent-genstep are very different to standard Cerenkov/Scintillation gensteps
 

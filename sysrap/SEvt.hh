@@ -58,17 +58,20 @@ index and photon offset in addition to  gentype/trackid/matline/numphotons
 #include <sstream>
 #include "plog/Severity.h"
 
+#include "EventTiming.hh"
 #include "scuda.h"
-#include "squad.h"
-#include "sphoton.h"
 #include "sphit.h"
-#include "sstate.h"
+#include "sphoton.h"
+#include "squad.h"
 #include "srec.h"
 #include "sseq.h"
+#include "sstate.h"
 #include "stag.h"
+
 #include "sevent.h"
+
+// sctx contains sevent and the instrumentation types above by value.
 #include "sctx.h"
-#include "sprof.h"
 
 #include "squad.h"
 
@@ -174,10 +177,9 @@ struct SYSRAP_API SEvt : public SCompProvider
     int stage ;
     int gather_metadata_notopfold ;
 
-    sprof p_SEvt__beginOfEvent_0 ;
-    sprof p_SEvt__beginOfEvent_1 ;
-    sprof p_SEvt__endOfEvent_0 ;
-    //sprof p_SEvt__endOfEvent_1 ;
+    EventTimingSample p_SEvt__beginOfEvent_0;
+    EventTimingSample p_SEvt__beginOfEvent_1;
+    EventTimingSample p_SEvt__endOfEvent_0;
 
     uint64_t t_BeginOfEvent ;
 #ifndef PRODUCTION
@@ -456,8 +458,7 @@ public:
     static void SaveRunMeta(const char* base=nullptr );
 
     void setMetaString(const char* k, const char* v);
-    void setMetaProf(  const char* k, const sprof& v);
-    void setMetaProf(  const char* k) ;
+    void setMetaTiming(const char* k, const EventTimingSample& v);
 
     template<typename T>
     void setMeta( const char* k, T v );

@@ -54,9 +54,7 @@ struct U4Step
 
 };
 
-
-const SCF* U4Step::CF = SCF::Create() ; 
-
+const SCF* U4Step::CF = SCF::Create();
 
 /**
 U4Step::MockOpticksBoundaryIdentity
@@ -65,7 +63,7 @@ U4Step::MockOpticksBoundaryIdentity
 This only partially mimicks the Opticks identity, using the primname index as stand in for real prim_idx.
 That should match Opticks only with simple geom without repeated prim or instances.
 
-cx/CSGOptiX7.cu::
+cx/CSGOptiX.cu::
 
     747 extern "C" __global__ void __closesthit__ch()
     748 {
@@ -74,10 +72,10 @@ cx/CSGOptiX7.cu::
     751     unsigned iindex_identity = (( iindex & 0xffffu ) << 16 ) | ( identity & 0xffffu ) ;
     752     // optixGetPrimitiveIndex() is only used within the triangle branch (TriMesh lookup)
 
-TODO: find way to fully reproduce the Opticks identity with instance index, 
+TODO: find way to fully reproduce the Opticks identity with instance index,
 probably that would mean dealing with long lists of volume names : the difficulty
 is the factorization which means multiple volumes are within each instance so would
-have to list all volumes 
+have to list all volumes
 
 **/
 

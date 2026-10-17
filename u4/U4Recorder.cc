@@ -32,14 +32,15 @@ Boundary class changes need to match in all the below::
 #include "G4LogicalBorderSurface.hh"
 #include "G4Event.hh"
 
-#include "U4Recorder.hh"
 #include "U4Engine.h"
-#include "U4Track.h"
-#include "U4StepPoint.hh"
+#include "U4Genstep.h"
 #include "U4OpBoundaryProcess.h"
 #include "U4OpBoundaryProcessStatus.h"
-#include "U4TrackStatus.h"
 #include "U4Random.hh"
+#include "U4Recorder.hh"
+#include "U4StepPoint.hh"
+#include "U4Track.h"
+#include "U4TrackStatus.h"
 
 #include "U4UniformRand.h"
 NP *U4UniformRand::UU = nullptr;
@@ -64,7 +65,6 @@ NP *U4UniformRand::UU = nullptr;
 #include "G4Material.hh"
 #include "G4MaterialPropertiesTable.hh"
 #include "G4OpBoundaryProcess.hh"
-#include "G4ParticleDefinition.hh"
 #include "G4ProcessVector.hh"
 #include "G4Scintillation.hh"
 #include "G4Step.hh"
@@ -123,66 +123,6 @@ std::vector<const G4Track*> U4Recorder_Secondaries(const G4Step* step, const G4V
             selected.push_back(secondary);
     }
     return selected;
-}
-
-/**
- * Resolves scintillation component yields and time constants as Geant4 does.
- *
- * @param track track used to select particle-specific material properties
- * @param scintillation process that controls particle-specific scintillation
- * @param mpt material property table containing component configuration
- * @param numComponent number of components to resolve
- * @param yields output array receiving component yield weights
- * @param times output array receiving component time constants
- */
-void U4Recorder_ScintillationComponentValues(
-    const G4Track*                   track,
-    const G4Scintillation*           scintillation,
-    const G4MaterialPropertiesTable* mpt,
-    G4int                            numComponent,
-    G4double*                        yields,
-    G4double*                        times)
-{
-    const char* standardYieldKeys[3] = {
-        "SCINTILLATIONYIELD1",
-        "SCINTILLATIONYIELD2",
-        "SCINTILLATIONYIELD3"};
-    const char* standardTimeKeys[3] = {
-        "SCINTILLATIONTIMECONSTANT1",
-        "SCINTILLATIONTIMECONSTANT2",
-        "SCINTILLATIONTIMECONSTANT3"};
-
-    G4String particlePrefix;
-    if (scintillation->GetScintillationByParticleType())
-    {
-        const G4ParticleDefinition* definition = track->GetParticleDefinition();
-        const G4String&             name = definition->GetParticleName();
-        particlePrefix = name == "proton" ? "PROTON" : name == "deuteron"                                            ? "DEUTERON"
-                                                   : name == "triton"                                                ? "TRITON"
-                                                   : name == "alpha"                                                 ? "ALPHA"
-                                                   : name == "neutron" || definition->GetParticleType() == "nucleus" ? "ION"
-                                                                                                                     : "ELECTRON";
-    }
-
-    for (G4int c = 0; c < numComponent; ++c)
-    {
-        const G4String suffix = std::to_string(c + 1);
-        const G4String yieldKey = particlePrefix.empty()
-                                      ? G4String(standardYieldKeys[c])
-                                      : particlePrefix + "SCINTILLATIONYIELD" + suffix;
-        const G4String timeKey = particlePrefix.empty()
-                                     ? G4String(standardTimeKeys[c])
-                                     : particlePrefix + "SCINTILLATIONTIMECONSTANT" + suffix;
-
-        yields[c] = mpt->ConstPropertyExists(yieldKey)
-                        ? mpt->GetConstProperty(yieldKey)
-                        : (c == 0 ? 1. : 0.);
-        times[c] = mpt->ConstPropertyExists(timeKey)
-                       ? mpt->GetConstProperty(timeKey)
-                       : (mpt->ConstPropertyExists(standardTimeKeys[c])
-                              ? mpt->GetConstProperty(standardTimeKeys[c])
-                              : 0.);
-    }
 }
 
 /**
@@ -560,19 +500,15 @@ void U4Recorder::CollectGensteps(const G4Step* step)
     if (steppingManager == nullptr)
         return;
 
-    const bool       atRest = steppingManager->GetfStepStatus() == fAtRestDoItProc;
-    G4ProcessVector* processes = atRest
-                                     ? steppingManager->GetfAtRestDoItVector()
-                                     : steppingManager->GetfPostStepDoItVector();
-    if (processes == nullptr)
+    const U4Genstep::ProcessRange process_range = U4Genstep::Processes(steppingManager);
+    if (process_range.processes == nullptr)
         return;
-    const std::size_t numProcess = processes->size();
 
     const G4Track* track = step->GetTrack();
 
-    for (std::size_t i = 0; i < numProcess; ++i)
+    for (std::size_t i = 0; i < process_range.count; ++i)
     {
-        G4VProcess* process = (*processes)[i];
+        G4VProcess* process = (*process_range.processes)[i];
         if (process == nullptr)
             continue;
 
@@ -649,18 +585,8 @@ void U4Recorder::CollectGensteps(const G4Step* step)
         if (totalPhotons <= 0)
             continue;
 
-        if (scintillation->GetFiniteRiseTime())
-        {
-            G4ExceptionDescription description;
-            description
-                << "Finite scintillation rise time cannot be represented by "
-                << "the current Opticks scintillation genstep. Disable "
-                << "/process/optical/scintillation/setFiniteRiseTime before running.";
-            G4Exception(
-                "U4Recorder::CollectGensteps", "U4Recorder002",
-                FatalException, description);
+        if (!U4Genstep::ValidateScintillation(scintillation, "U4Recorder::CollectGensteps"))
             return;
-        }
 
         const std::vector<const G4Track*> secondaries = U4Recorder_Secondaries(step, process);
         const G4Material*                 material = track->GetMaterial();
@@ -668,50 +594,16 @@ void U4Recorder::CollectGensteps(const G4Step* step)
         if (mpt == nullptr)
             continue;
 
-        const G4int componentKeys[3] = {
-            kSCINTILLATIONCOMPONENT1,
-            kSCINTILLATIONCOMPONENT2,
-            kSCINTILLATIONCOMPONENT3};
-
-        G4int numComponent = mpt->GetProperty(componentKeys[2]) ? 3 : mpt->GetProperty(componentKeys[1]) ? 2
-                                                                  : mpt->GetProperty(componentKeys[0])   ? 1
-                                                                                                         : 0;
-        if (numComponent == 0)
+        const U4Genstep::ScintillationPlan plan =
+            U4Genstep::Scintillation(track, scintillation, mpt, totalPhotons);
+        if (plan.num_components == 0)
             continue;
-
-        G4double yields[3] = {1., 0., 0.};
-        G4double times[3] = {0., 0., 0.};
-        G4int    counts[3] = {0, 0, 0};
-
-        U4Recorder_ScintillationComponentValues(
-            track, scintillation, mpt, numComponent, yields, times);
-
-        const G4double yieldSum = yields[0] + yields[1] + yields[2];
-        if (yieldSum <= 0.)
+        if (plan.yield_sum <= 0.)
         {
             LOG(error) << "Scintillation component yields sum to zero";
             continue;
         }
-        else if (numComponent == 1)
-        {
-            counts[0] = totalPhotons;
-        }
-        else if (numComponent == 2)
-        {
-            counts[0] = G4int(yields[0] / yieldSum * totalPhotons);
-            counts[1] = totalPhotons - counts[0];
-        }
-        else
-        {
-            for (G4int c = 0; c < 3; ++c) counts[c] = G4int(yields[c] / yieldSum * totalPhotons);
-        }
-
-        G4int expectedSecondaries = 0;
-        for (G4int c = 0; c < numComponent; ++c)
-        {
-            if (mpt->GetProperty(componentKeys[c]))
-                expectedSecondaries += counts[c];
-        }
+        const G4int expectedSecondaries = plan.photonCount();
         const bool secondaryCountMatches =
             secondaries.size() == static_cast<std::size_t>(expectedSecondaries);
         const bool stackPhotons = scintillation->GetStackPhotons();
@@ -735,20 +627,20 @@ void U4Recorder::CollectGensteps(const G4Step* step)
         G4AutoLock lock(&U4Recorder_Genstep_Mutex);
         unsigned   cursor = 0;
         G4int      collectedThisStep = 0;
-        for (G4int c = 0; c < numComponent; ++c)
+        for (G4int c = 0; c < plan.num_components; ++c)
         {
-            if (counts[c] <= 0 || mpt->GetProperty(componentKeys[c]) == nullptr)
+            if (plan.counts[c] <= 0)
                 continue;
 
             U4Recorder_SEvtGenstepCount before;
-            U4::CollectGenstep_Scintillation(track, step, counts[c], c, times[c]);
+            U4::CollectGenstep_Scintillation(track, step, plan.counts[c], c, plan.times[c]);
             before.assertAdded();
             if (stackPhotons)
-                U4Recorder_LabelGenstepSecondaries(track, secondaries, cursor, counts[c]);
+                U4Recorder_LabelGenstepSecondaries(track, secondaries, cursor, plan.counts[c]);
 
             num_scintillation_genstep += 1;
-            num_scintillation_photon += counts[c];
-            collectedThisStep += counts[c];
+            num_scintillation_photon += plan.counts[c];
+            collectedThisStep += plan.counts[c];
         }
         assert(collectedThisStep == expectedSecondaries);
         if (stackPhotons)

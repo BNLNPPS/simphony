@@ -9,21 +9,35 @@ import numpy as np
 
 
 EVENT_PATTERNS = {
-    "GPU": re.compile(r"Collected GPU hits:\s*(\d+)"),
-    "G4": re.compile(r"Collected G4\s+hits:\s*(\d+)"),
+    "GPU": re.compile(r"EventAction::EndOfEventAction: Event (\d+): Collected GPU hits:\s*(\d+)"),
+    "G4": re.compile(r"EventAction::EndOfEventAction: Event (\d+): Collected G4\s+hits:\s*(\d+)"),
 }
+PHOTON_PATTERN = re.compile(
+    r"EventAction::SimulateOnGPU: Event (\d+): Simulated GPU photons:\s*(\d+)"
+)
 TOTAL_PATTERNS = {
     "GPU": re.compile(r"Total GPU hits:\s*(\d+)"),
     "G4": re.compile(r"Total G4\s+hits:\s*(\d+)"),
 }
 
 
+def order_event_counts(matches, label, events):
+    parsed = [(int(event_id), int(value)) for event_id, value in matches]
+    event_ids = [event_id for event_id, _ in parsed]
+
+    if len(parsed) != events:
+        raise AssertionError(f"Expected {events} {label} event counts, found {len(parsed)}")
+    if sorted(event_ids) != list(range(events)):
+        raise AssertionError(f"Expected {label} event ids 0..{events - 1}, found {event_ids}")
+
+    counts_by_event = dict(parsed)
+    return [counts_by_event[event_id] for event_id in range(events)]
+
+
 def parse_counts(log_text, label, events):
-    event_counts = [int(value) for value in EVENT_PATTERNS[label].findall(log_text)]
+    event_counts = order_event_counts(EVENT_PATTERNS[label].findall(log_text), label, events)
     total_matches = TOTAL_PATTERNS[label].findall(log_text)
 
-    if len(event_counts) != events:
-        raise AssertionError(f"Expected {events} {label} event counts, found {len(event_counts)}")
     if len(total_matches) != 1:
         raise AssertionError(f"Expected one {label} run total, found {len(total_matches)}")
 
@@ -34,6 +48,14 @@ def parse_counts(log_text, label, events):
         raise AssertionError(f"Expected non-empty {label} hits")
 
     return event_counts, total
+
+
+def parse_photon_counts(log_text, events):
+    photon_counts = order_event_counts(PHOTON_PATTERN.findall(log_text), "GPU photon", events)
+    if any(value == 0 for value in photon_counts):
+        raise AssertionError(f"Expected non-empty GPU photon counts, found {photon_counts}")
+
+    return photon_counts
 
 
 def check_array(path, expected_rows):
@@ -58,12 +80,14 @@ def main():
     args = parser.parse_args()
 
     log_text = args.log.read_text()
+    gpu_photon_counts = parse_photon_counts(log_text, args.events)
     gpu_event_counts, gpu_total = parse_counts(log_text, "GPU", args.events)
     g4_event_counts, g4_total = parse_counts(log_text, "G4", args.events)
 
     gpu_hits = check_array(args.output_dir / "s_hits.npy", gpu_total)
     g4_hits = check_array(args.output_dir / "g_hits.npy", g4_total)
 
+    print(f"GPU_EVENT_PHOTON_COUNTS={gpu_photon_counts}")
     print(f"GPU_EVENT_COUNTS={gpu_event_counts}")
     print(f"G4_EVENT_COUNTS={g4_event_counts}")
     print(f"S_HITS_SHAPE={gpu_hits.shape}")

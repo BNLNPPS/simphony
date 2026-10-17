@@ -52,7 +52,6 @@ inline SOPTIX_BuildInput_CPA::SOPTIX_BuildInput_CPA( const SCSGPrimSpec& ps )
     buildInputCPA.sbtIndexOffsetBuffer  = d_sbt_index ;              // Device pointer to per-primitive local sbt index offset buffer, Every entry must be in range [0,numSbtRecords-1]
     buildInputCPA.sbtIndexOffsetSizeInBytes  = sizeof(unsigned);     // Size of type of the sbt index offset. Needs to be 0,1,2 or 4    
     buildInputCPA.sbtIndexOffsetStrideInBytes = ps.stride_in_bytes ; // Stride between the index offsets. If set to zero, the offsets are assumed to be tightly packed.
-    buildInputCPA.primitiveIndexOffset = ps.primitiveIndexOffset ;   // Primitive index bias, applied in optixGetPrimitiveIndex() see OptiX7Test.cu:__closesthit__ch
+    buildInputCPA.primitiveIndexOffset = ps.primitiveIndexOffset;    // Primitive index bias, applied in optixGetPrimitiveIndex() see CSGOptiX.cu:__closesthit__ch
 }
-
  

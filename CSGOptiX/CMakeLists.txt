@@ -1,11 +1,12 @@
 set(name CSGOptiX)
 
-find_package(OptiX 7 REQUIRED)
+find_package(OptiX REQUIRED)
 
 set(SOURCES)
-set(OPTIX_PTX_SRC CSGOptiX7.cu)
-set(OPTIX_PTX_TARGET CSGOptiX7_ptx)
+set(OPTIX_PTX_SRC CSGOptiX.cu)
+set(OPTIX_PTX_TARGET CSGOptiX_ptx)
 
+option(SIMPHONY_RNG_REBUILD "Rebuild the Philox RNG state after each trace instead of carrying it live" OFF)
 
 list(APPEND SOURCES
     Params.cc 
@@ -56,7 +57,8 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
         $<$<CONFIG:Release>:PRODUCTION>
         OPTICKS_OKCONF
         OPTICKS_QUDARAP
-        NVCC)
+        NVCC
+        $<$<BOOL:${SIMPHONY_RNG_REBUILD}>:SIMPHONY_RNG_REBUILD>)
 target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
 
 get_filename_component(ptx_stem "${OPTIX_PTX_SRC}" NAME_WE)
@@ -68,6 +70,59 @@ add_custom_target(csgoptix_ptx
     VERBATIM
 )
 add_dependencies(csgoptix_ptx ${OPTIX_PTX_TARGET})
+
+if(BUILD_TESTING)
+    set(RNG_REBUILD_OPPOSITE_PTX_TARGET CSGOptiX_ptx_rng_rebuild_opposite)
+    add_library(${RNG_REBUILD_OPPOSITE_PTX_TARGET} OBJECT ${OPTIX_PTX_SRC})
+    set_target_properties(${RNG_REBUILD_OPPOSITE_PTX_TARGET}
+        PROPERTIES CUDA_PTX_COMPILATION ON)
+
+    get_target_property(RNG_REBUILD_PTX_INCLUDE_DIRS
+        ${OPTIX_PTX_TARGET} INCLUDE_DIRECTORIES)
+    get_target_property(RNG_REBUILD_PTX_COMPILE_DEFINITIONS
+        ${OPTIX_PTX_TARGET} COMPILE_DEFINITIONS)
+    list(FILTER RNG_REBUILD_PTX_COMPILE_DEFINITIONS
+        EXCLUDE REGEX "SIMPHONY_RNG_REBUILD")
+
+    target_include_directories(${RNG_REBUILD_OPPOSITE_PTX_TARGET} PUBLIC
+        ${RNG_REBUILD_PTX_INCLUDE_DIRS})
+    target_compile_definitions(${RNG_REBUILD_OPPOSITE_PTX_TARGET}
+        PUBLIC ${RNG_REBUILD_PTX_COMPILE_DEFINITIONS}
+            $<$<NOT:$<BOOL:${SIMPHONY_RNG_REBUILD}>>:SIMPHONY_RNG_REBUILD>)
+    target_link_libraries(${RNG_REBUILD_OPPOSITE_PTX_TARGET} PUBLIC OptiX::OptiX)
+
+    if(SIMPHONY_RNG_REBUILD)
+        set(RNG_REBUILD_OFF_PTX_TARGET ${RNG_REBUILD_OPPOSITE_PTX_TARGET})
+        set(RNG_REBUILD_ON_PTX_TARGET ${OPTIX_PTX_TARGET})
+    else()
+        set(RNG_REBUILD_OFF_PTX_TARGET ${OPTIX_PTX_TARGET})
+        set(RNG_REBUILD_ON_PTX_TARGET ${RNG_REBUILD_OPPOSITE_PTX_TARGET})
+    endif()
+
+    set(SIMPHONY_RNG_REBUILD_PTX_OFF_DIR
+        "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/off" PARENT_SCOPE)
+    set(SIMPHONY_RNG_REBUILD_PTX_ON_DIR
+        "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/on" PARENT_SCOPE)
+
+    add_custom_target(csgoptix_rng_rebuild_ptx
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/off"
+                "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/on"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_OBJECTS:${RNG_REBUILD_OFF_PTX_TARGET}>"
+                "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/off/CSGOptiX.ptx"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_OBJECTS:${RNG_REBUILD_ON_PTX_TARGET}>"
+                "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/on/CSGOptiX.ptx"
+        BYPRODUCTS
+                "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/off/CSGOptiX.ptx"
+                "${PROJECT_BINARY_DIR}/ptx_rng_rebuild/on/CSGOptiX.ptx"
+        VERBATIM
+    )
+    add_dependencies(csgoptix_rng_rebuild_ptx
+        ${RNG_REBUILD_OFF_PTX_TARGET}
+        ${RNG_REBUILD_ON_PTX_TARGET})
+endif()
 
 message(STATUS "Configured PTX build for ${OPTIX_PTX_SRC}")
 

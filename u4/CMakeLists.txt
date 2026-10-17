@@ -11,6 +11,7 @@ set(SOURCES
     U4SolidMaker.cc
     U4SolidTree.cc
     U4Material.cc
+    U4Genstep.cc
     U4VolumeMaker.cc
     U4Recorder.cc
     U4StepPoint.cc
@@ -55,6 +56,7 @@ set(HEADERS
     U4SolidTree.hh
 
     U4Material.hh
+    U4Genstep.h
     U4Mat.h
     U4Scint.h
     U4WLS.h

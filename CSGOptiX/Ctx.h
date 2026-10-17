@@ -1,6 +1,6 @@
 #pragma once
 /**
-Ctx : instanciation creates OptiX 7 optixDeviceContext and populates Properties  
+Ctx : instanciation creates OptiX optixDeviceContext and populates Properties
 ==================================================================================
 
 Instanciated by CSGOptiX::initCtx dump properties using: CSGOptiX=INFO

@@ -19,17 +19,11 @@ struct OPT
 
     static OptixCompileDebugLevel        DebugLevel(const char* option); 
     static const char *                  DebugLevel_( OptixCompileDebugLevel debugLevel ); 
-#if OPTIX_VERSION == 70000
-    static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_NONE_     = "OPTIX_COMPILE_DEBUG_LEVEL_NONE" ; 
-    static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO_ = "OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO" ; 
-    static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_FULL_     = "OPTIX_COMPILE_DEBUG_LEVEL_FULL" ; 
-#elif OPTIX_VERSION >= 70500
     static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT_  = "OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT" ; 
     static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_NONE_     = "OPTIX_COMPILE_DEBUG_LEVEL_NONE" ; 
     static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL_  = "OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL" ; 
     static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_MODERATE_ = "OPTIX_COMPILE_DEBUG_LEVEL_MODERATE" ; 
     static constexpr const char* OPTIX_COMPILE_DEBUG_LEVEL_FULL_     = "OPTIX_COMPILE_DEBUG_LEVEL_FULL" ; 
-#endif
 
 
 
@@ -53,15 +47,7 @@ struct OPT
     static constexpr const char* OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW_ = "OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW" ; 
     static constexpr const char* OPTIX_EXCEPTION_FLAG_TRACE_DEPTH_    = "OPTIX_EXCEPTION_FLAG_TRACE_DEPTH" ; 
     static constexpr const char* OPTIX_EXCEPTION_FLAG_USER_           = "OPTIX_EXCEPTION_FLAG_USER_" ; 
-#if OPTIX_VERSION <= 70700
-    static constexpr const char* OPTIX_EXCEPTION_FLAG_DEBUG_          = "OPTIX_EXCEPTION_FLAG_DEBUG" ; 
-#endif
-
-
-
 };
-
-
 
 
 /**
@@ -80,32 +66,16 @@ droettger, Nov 2021::
 
 
 See optix7-;optix7-types
-
 **/
-
 
 inline OptixCompileDebugLevel OPT::DebugLevel(const char* option)  // static
 {
     OptixCompileDebugLevel level = OPTIX_COMPILE_DEBUG_LEVEL_NONE ; 
-#if OPTIX_VERSION == 70000
-    if(     strcmp(option, "NONE") == 0 )     level = OPTIX_COMPILE_DEBUG_LEVEL_NONE ; 
-    else if(strcmp(option, "LINEINFO") == 0 ) level = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO ; 
-    else if(strcmp(option, "FULL") == 0 )     level = OPTIX_COMPILE_DEBUG_LEVEL_FULL ; 
-    else if(strcmp(option, "DEFAULT") == 0 )  level = OPTIX_COMPILE_DEBUG_LEVEL_NONE ; 
-#elif OPTIX_VERSION >= 70500
     if(     strcmp(option, "DEFAULT") == 0 )  level = OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT ; 
     else if(strcmp(option, "NONE") == 0 )     level = OPTIX_COMPILE_DEBUG_LEVEL_NONE ; 
     else if(strcmp(option, "MINIMAL") == 0 )  level = OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL ; 
     else if(strcmp(option, "MODERATE") == 0 ) level = OPTIX_COMPILE_DEBUG_LEVEL_MODERATE ; 
     else if(strcmp(option, "FULL") == 0 )     level = OPTIX_COMPILE_DEBUG_LEVEL_FULL ; 
-#else
-    std::cerr 
-        << " NOT RECOGNIZED " << " option " << option  << " level " << level  
-        << " OPTIX_VERSION " << OPTIX_VERSION 
-        << std::endl 
-        ; 
-    assert(0);   
-#endif
     if(VERBOSE) std::cout 
          << "OPT::DebugLevel"
          << " option " << option 
@@ -121,17 +91,11 @@ inline const char * OPT::DebugLevel_( OptixCompileDebugLevel debugLevel )
     const char* s = nullptr ; 
     switch(debugLevel)
     {  
-#if OPTIX_VERSION == 70000
-        case OPTIX_COMPILE_DEBUG_LEVEL_NONE:     s = OPTIX_COMPILE_DEBUG_LEVEL_NONE_     ; break ; 
-        case OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO: s = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO_ ; break ;
-        case OPTIX_COMPILE_DEBUG_LEVEL_FULL:     s = OPTIX_COMPILE_DEBUG_LEVEL_FULL_     ; break ;
-#elif OPTIX_VERSION >= 70500
         case OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT:  s = OPTIX_COMPILE_DEBUG_LEVEL_DEFAULT_  ; break ; 
         case OPTIX_COMPILE_DEBUG_LEVEL_NONE:     s = OPTIX_COMPILE_DEBUG_LEVEL_NONE_     ; break ; 
         case OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL:  s = OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL_  ; break ;
         case OPTIX_COMPILE_DEBUG_LEVEL_MODERATE: s = OPTIX_COMPILE_DEBUG_LEVEL_MODERATE_ ; break ;
         case OPTIX_COMPILE_DEBUG_LEVEL_FULL:     s = OPTIX_COMPILE_DEBUG_LEVEL_FULL_     ; break ;
-#endif
     }
 
     if( s == nullptr ) std::cerr
@@ -208,9 +172,6 @@ inline OptixExceptionFlags OPT::ExceptionFlags_(const char* opt)
     else if( strcmp(opt, "STACK_OVERFLOW") == 0) flag = OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW ; 
     else if( strcmp(opt, "TRACE_DEPTH") == 0)    flag = OPTIX_EXCEPTION_FLAG_TRACE_DEPTH  ; 
     else if( strcmp(opt, "USER") == 0)           flag = OPTIX_EXCEPTION_FLAG_USER  ; 
-#if OPTIX_VERSION <= 70700
-    else if( strcmp(opt, "DEBUG") == 0)          flag = OPTIX_EXCEPTION_FLAG_DEBUG  ; 
-#endif
     else 
     {
         std::cerr 
@@ -235,9 +196,6 @@ inline const char* OPT::ExceptionFlags__(OptixExceptionFlags excFlag)
         case OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW: s = OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW_  ; break ;
         case OPTIX_EXCEPTION_FLAG_TRACE_DEPTH:    s = OPTIX_EXCEPTION_FLAG_TRACE_DEPTH_     ; break ; 
         case OPTIX_EXCEPTION_FLAG_USER:           s = OPTIX_EXCEPTION_FLAG_USER_            ; break ; 
-#if OPTIX_VERSION <= 70700
-        case OPTIX_EXCEPTION_FLAG_DEBUG:          s = OPTIX_EXCEPTION_FLAG_DEBUG_           ; break ;      
-#endif
     }
     return s ; 
 }
@@ -269,9 +227,6 @@ inline std::string OPT::Desc_ExceptionFlags( unsigned flags )
     if( flags & OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW ) ss << OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW_ << " " ; 
     if( flags & OPTIX_EXCEPTION_FLAG_TRACE_DEPTH )    ss << OPTIX_EXCEPTION_FLAG_TRACE_DEPTH_ << " " ; 
     if( flags & OPTIX_EXCEPTION_FLAG_USER )           ss << OPTIX_EXCEPTION_FLAG_USER_ << " " ; 
-#if OPTIX_VERSION <= 70700
-    if( flags & OPTIX_EXCEPTION_FLAG_DEBUG )          ss << OPTIX_EXCEPTION_FLAG_DEBUG_ << " " ; 
-#endif
     std::string str = ss.str() ; 
     return str ; 
 }

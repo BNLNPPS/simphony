@@ -54,103 +54,9 @@ output with where it comes from to speedup understanding+debug.
 
 **/
 
-#include "NPFold.h"
+#include "sreport.h"
 
 #define WITH_SUBMETA 1
-
-struct sreport
-{
-    static constexpr const char* JUNCTURE = "SEvt__Init_RUN_META,SEvt__BeginOfRun,SEvt__EndOfRun,SEvt__Init_RUN_META" ;
-    static constexpr const char* RANGES = R"(
-        SEvt__Init_RUN_META:CSGFoundry__Load_HEAD                     ## init
-        CSGFoundry__Load_HEAD:CSGFoundry__Load_TAIL                   ## load_geom
-        CSGOptiX__Create_HEAD:CSGOptiX__Create_TAIL                   ## upload_geom
-        A%0.3d_QSim__simulate_HEAD:A%0.3d_QSim__simulate_LBEG         ## slice_genstep
-        A%0.3d_QSim__simulate_PRUP:A%0.3d_QSim__simulate_PREL         ## upload genstep slice
-        A%0.3d_QSim__simulate_PREL:A%0.3d_QSim__simulate_POST         ## simulate slice
-        A%0.3d_QSim__simulate_POST:A%0.3d_QSim__simulate_DOWN         ## download slice
-        A%0.3d_QSim__simulate_LEND:A%0.3d_QSim__simulate_PCAT         ## concat slices
-        A%0.3d_QSim__simulate_BRES:A%0.3d_QSim__simulate_TAIL         ## save arrays
-       )" ;
-
-    bool    VERBOSE ;
-
-    NP*       run ;   // dummy array that exists just to hold metadata
-    NP*       runprof ;
-    NP*       ranges ;
-
-    NPFold*   substamp ;
-    NPFold*   subprofile ;
-    NPFold*   submeta ;
-    NPFold*   submeta_NumPhotonCollected ;
-    NPFold*   subcount ;
-
-    sreport();
-
-    NPFold* serialize() const ;
-    void    import( const NPFold* fold );
-    void save(const char* dir) const ;
-    static sreport* Load(const char* dir) ;
-
-    std::string desc() const ;
-    std::string desc_run() const ;
-    std::string desc_runprof() const ;
-    std::string desc_ranges() const ;
-    std::string desc_substamp() const ;
-    std::string desc_subprofile() const ;
-    std::string desc_submeta() const ;
-    std::string desc_subcount() const ;
-};
-
-inline sreport::sreport()
-    :
-    VERBOSE(getenv("sreport__VERBOSE") != nullptr),
-    run( nullptr ),
-    runprof( nullptr ),
-    ranges( nullptr ),
-    substamp( nullptr),
-    subprofile( nullptr ),
-    submeta( nullptr ),
-    submeta_NumPhotonCollected( nullptr ),
-    subcount( nullptr )
-{
-}
-inline NPFold* sreport::serialize() const
-{
-    NPFold* smry = new NPFold ;
-    smry->add("run", run ) ;
-    smry->add("runprof", runprof ) ;
-    smry->add("ranges", ranges ) ;
-    smry->add_subfold("substamp", substamp ) ;
-    smry->add_subfold("subprofile", subprofile ) ;
-    smry->add_subfold("submeta", submeta ) ;
-    smry->add_subfold("submeta_NumPhotonCollected", submeta_NumPhotonCollected ) ;
-    smry->add_subfold("subcount", subcount ) ;
-    return smry ;
-}
-inline void sreport::import(const NPFold* smry)
-{
-    run = smry->get("run")->copy() ;
-    runprof = smry->get("runprof")->copy() ;
-    ranges = smry->get("ranges")->copy() ;
-    substamp = smry->get_subfold("substamp");
-    subprofile = smry->get_subfold("subprofile");
-    submeta = smry->get_subfold("submeta");
-    submeta_NumPhotonCollected = smry->get_subfold("submeta_NumPhotonCollected");
-    subcount = smry->get_subfold("subcount");
-}
-inline void sreport::save(const char* dir) const
-{
-    NPFold* smry = serialize();
-    smry->save_verbose(dir);
-}
-inline sreport* sreport::Load(const char* dir) // static
-{
-    NPFold* smry = NPFold::Load(dir) ;
-    sreport* report = new sreport ;
-    report->import(smry) ;
-    return report ;
-}
 
 inline std::string sreport::desc() const
 {
@@ -308,14 +214,15 @@ struct sreport_Creator
 
     bool VERBOSE ;
     const char* dirp ;
+    std::filesystem::path profile_path;
     NPFold*    fold ;
     bool fold_valid ;
     const NP*  run ;
     sreport*   report ;
 
-    sreport_Creator(  const char* dirp_ );
+    sreport_Creator(const char* dirp_, const char* profile_path_ = nullptr);
     void init();
-    void init_SProf();
+    void init_EventTimingProfile();
     void init_substamp();
     void init_subprofile();
     void init_submeta();
@@ -327,10 +234,10 @@ struct sreport_Creator
     std::string desc_run() const ;
 };
 
-inline sreport_Creator::sreport_Creator( const char* dirp_ )
-    :
+inline sreport_Creator::sreport_Creator(const char* dirp_, const char* profile_path_) :
     VERBOSE(getenv("sreport_Creator__VERBOSE") != nullptr),
     dirp(dirp_ ? strdup(dirp_) : nullptr),
+    profile_path(profile_path_ ? std::filesystem::path(profile_path_) : std::filesystem::path(dirp_) / "event_timing_profile.csv"),
     fold(NPFold::LoadNoData(dirp)),
     fold_valid(NPFold::IsValid(fold)),
     run(fold_valid ? fold->get("run") : nullptr),
@@ -346,22 +253,20 @@ inline sreport_Creator::sreport_Creator( const char* dirp_ )
     std::cout << "]sreport_Creator::sreport_Creator" << std::endl ;
 }
 
-
 /**
 sreport_Creator::init
 -----------------------
 
-1. construct SProf derived metadata arrays
+1. construct EventTimingProfile derived arrays
 2. construct subfold derived arrays and fold
 
 **/
-
 
 inline void sreport_Creator::init()
 {
     std::cout << "[sreport_Creator::init\n" ;
 
-    init_SProf();
+    init_EventTimingProfile();
 
     init_substamp();
     init_subprofile();
@@ -372,66 +277,37 @@ inline void sreport_Creator::init()
 }
 
 /**
-sreport_Creator::init_SProf
-----------------------------
+sreport_Creator::init_EventTimingProfile
+----------------------------------------
 
-The SProf has the advantage of almost always being available, as the SProf.txt is small
-unlike the full arrays.
-
-1. read SProf.txt into meta string
-2. create report->runprof array from the "Index" lines, shaped (2,3) for the below example
-3. create report->run (dummy array with run metadata)
-4. create report->ranges. eg shaped (8,5) with the below example : this included time deltas between the keys
-   that match the wildcard resolved sreport::RANGES
-
-Analysis of the SProf.txt written by SProf.hh, eg::
-
-    A[blyth@localhost ALL1_Debug_Philox_ref1]$ cat SProf.txt
-    SEvt__Init_RUN_META:1760707884870593,46464,8064
-    CSGOptiX__SimulateMain_HEAD:1760707884871147,46464,10752
-    CSGFoundry__Load_HEAD:1760707884871171,46464,11200
-    CSGFoundry__Load_TAIL:1760707885851123,5419968,883988
-    CSGOptiX__Create_HEAD:1760707885851159,5419968,883988
-    CSGOptiX__Create_TAIL:1760707886286856,7316444,1222084
-    A000_QSim__simulate_HEAD:1760707886286900,7316444,1222084
-    A000_SEvt__BeginOfRun:1760707886286914,7316444,1222084
-    A000_SEvt__beginOfEvent_FIRST_EGPU:1760707886287034,7316444,1222084
-    A000_SEvt__setIndex:1760707886287057,7316444,1222084
-    A000_QSim__simulate_LBEG:1760707886287202,7316444,1222084
-    A000_QSim__simulate_PRUP:1760707886287207,7316444,1222084
-    A000_QSim__simulate_PREL:1760707886288393,8266716,1222980
-    A000_QSim__simulate_POST:1760707886441594,8266716,1227908
-    A000_QSim__simulate_DOWN:1760707886541324,8373000,1334844
-    A000_QSim__simulate_LEND:1760707886541353,8373000,1334844
-    A000_QSim__simulate_PCAT:1760707886541381,8373000,1334844
-    A000_QSim__simulate_BRES:1760707886541433,8373000,1334844 # numGenstepCollected=10,numPhotonCollected=1000000,numHit=200397
-    A000_QSim__reset_HEAD:1760707886541441,8373000,1334844
-    A000_SEvt__endIndex:1760707886541457,8373000,1334844
-    A000_SEvt__EndOfRun:1760707887055687,8266716,1229000
-    A000_QSim__reset_TAIL:1760707887055757,8266716,1229000
-    A000_QSim__simulate_TAIL:1760707887055768,8266716,1229000
-    CSGOptiX__SimulateMain_TAIL:1760707887056235,8266716,1229000
-    A[blyth@localhost ALL1_Debug_Philox_ref1]$
+Reads the small process profile CSV from the selected run directory and derives
+the raw four-column profile plus the existing microsecond range table.
 
 **/
 
-inline void sreport_Creator::init_SProf()
+inline void sreport_Creator::init_EventTimingProfile()
 {
-    std::cout << "[sreport_Creator::init_SProf\n" ;
+    std::cout << "[sreport_Creator::init_EventTimingProfile\n";
 
-    std::string meta = U::ReadString2_("SProf.txt");
+    const std::vector<EventTimingProfileRecord> records =
+        std::filesystem::exists(profile_path)
+            ? EventTimingProfile::ReadFile(profile_path)
+            : std::vector<EventTimingProfileRecord>{};
 
-    report->runprof = NP::MakeMetaKVProfileArray(meta, "Index") ;
-    std::cout << "-sreport_Creator::init.SProf:runprof   :" << ( report->runprof ? report->runprof->sstr() : "-" ) << std::endl ;
-    // report->runprof, should now be report->prof
+    report->runprof = records.empty()
+                          ? nullptr
+                          : EventTimingProfileReport::MakeEventTimingProfileArray(records);
+    std::cout << "-sreport_Creator::init_EventTimingProfile.runprof :" << (report->runprof ? report->runprof->sstr() : "-") << std::endl;
 
     report->run     = run ? run->copy() : nullptr ;
-    std::cout << "-sreport_Creator::init_SProf.run       :" << ( report->run ? report->run->sstr() : "-" ) << std::endl ;
+    std::cout << "-sreport_Creator::init_EventTimingProfile.run :" << (report->run ? report->run->sstr() : "-") << std::endl;
 
-    report->ranges = run ? NP::MakeMetaKVS_ranges2( meta, sreport::RANGES ) : nullptr ;
-    std::cout << "-sreport_Creator::init_SProf.ranges2   :" << ( report->ranges ?  report->ranges->sstr() : "-" ) <<  std::endl ;
+    report->ranges = records.empty()
+                         ? nullptr
+                         : EventTimingProfileReport::MakeEventTimingRanges(records);
+    std::cout << "-sreport_Creator::init_EventTimingProfile.ranges :" << (report->ranges ? report->ranges->sstr() : "-") << std::endl;
 
-    std::cout << "]sreport_Creator::init_SProf\n" ;
+    std::cout << "]sreport_Creator::init_EventTimingProfile\n";
 }
 
 /**
@@ -573,8 +449,22 @@ inline std::string sreport_Creator::desc_run() const
 
 int main(int argc, char** argv)
 {
+    if (argc == 3 && strcmp(argv[1], "--event-timing-profile") == 0)
+    {
+        const std::vector<EventTimingProfileRecord> records =
+            EventTimingProfile::ReadFile(argv[2]);
+        sreport report;
+        report.runprof = EventTimingProfileReport::MakeEventTimingProfileArray(records);
+        report.ranges = EventTimingProfileReport::MakeEventTimingRanges(records);
+        std::cout << report.desc_runprof() << report.desc_ranges();
+        return 0;
+    }
+
     char* argv0 = argv[0] ;
     const char* dirp = argc > 1 ? argv[1] : U::PWD() ;
+    const char* profile_path = argc == 4 && strcmp(argv[2], "--event-timing-profile") == 0
+                                   ? argv[3]
+                                   : nullptr;
     if(dirp == nullptr) return 0 ;
     bool is_executable_sibling_path = U::IsExecutableSiblingPath( argv0 , dirp ) ;
 
@@ -592,7 +482,7 @@ int main(int argc, char** argv)
         std::cout << "[sreport.main : CREATING REPORT " << std::endl ;
 
         std::cout << "[sreport.main : creator " << std::endl ;
-        sreport_Creator creator(dirp);
+        sreport_Creator creator(dirp, profile_path);
         std::cout << "]sreport.main : creator " << std::endl ;
         std::cout << "[sreport.main : creator.desc " << std::endl ;
         std::cout << creator.desc() ;
@@ -630,4 +520,3 @@ int main(int argc, char** argv)
 
     return 0 ;
 }
-

@@ -2,7 +2,7 @@
 CSGOptiX.cc
 ============
 
-OptiX 7+ implementation of CSGFoundry geometry upload and launch.
+OptiX implementation of CSGFoundry geometry upload and launch.
 
 **/
 
@@ -17,11 +17,11 @@ OptiX 7+ implementation of CSGFoundry geometry upload and launch.
 #include <glm/glm.hpp>
 
 // sysrap
+#include "EventTiming.hh"
+#include "smeta.h"
+#include "spath.h"
 #include "sproc.h"
 #include "ssys.h"
-#include "spath.h"
-#include "smeta.h"
-#include "SProf.hh"
 
 #include "NP.hh"
 #include "SCAM.h"
@@ -147,15 +147,11 @@ CSGOptiX::SimulateMain
 
 int CSGOptiX::SimulateMain() // static
 {
-    SProf::Add("CSGOptiX__SimulateMain_HEAD");
     SEventConfig::SetRGModeSimulate();
     CSGFoundry* fd = CSGFoundry::Load();
     CSGOptiX* cx = CSGOptiX::Create(fd) ;
     bool reset = true ;
     for(int i=0 ; i < SEventConfig::NumEvent() ; i++) cx->simulate(i, reset);
-    SProf::UnsetTag();
-    SProf::Add("CSGOptiX__SimulateMain_TAIL");
-    SProf::Write();
     cx->write_Ctx_log();
     delete cx ;
     return 0 ;
@@ -306,7 +302,7 @@ within the ctor ?
 
 CSGOptiX* CSGOptiX::Create(CSGFoundry* fd )
 {
-    SProf::Add("CSGOptiX__Create_HEAD");
+    EventTimingProfile::Mark("CSGOptiX__Create_HEAD");
     LOG(LEVEL) << "[ fd.descBase " << ( fd ? fd->descBase() : "-" ) ;
 
     SSim* ssim = const_cast<SSim*>(fd->sim) ;
@@ -327,7 +323,7 @@ CSGOptiX* CSGOptiX::Create(CSGFoundry* fd )
 
 
     LOG(LEVEL) << "]" ;
-    SProf::Add("CSGOptiX__Create_TAIL");
+    EventTimingProfile::Mark("CSGOptiX__Create_TAIL");
     return cx ;
 }
 
@@ -376,7 +372,7 @@ CSGOptiX::CSGOptiX(const CSGFoundry* foundry_) :
     flight(SGeoConfig::FlightConfig()),
     foundry(foundry_),
     outdir(SEventConfig::OutFold()),
-    optixpath(spath::Resolve(simphony::Config::PtxPath("CSGOptiX7.ptx").c_str())),
+    optixpath(spath::Resolve(simphony::Config::PtxPath("CSGOptiX.ptx").c_str())),
     tmin_model(ssys::getenvfloat("TMIN", 0.1)), // CAUTION: tmin very different in rendering and simulation
     kernel_count(0),
     raygenmode(SEventConfig::RGMode()),
@@ -981,12 +977,11 @@ void CSGOptiX::prepareParam()
     LOG_IF(level, !flight) << params->detail();
 }
 
-
 /**
 CSGOptiX::launch
 -------------------
 
-For what happens next, see CSGOptiX7.cu::__raygen__rg.
+For what happens next, see CSGOptiX.cu::__raygen__rg.
 Depending on params.raygenmode the "render" or "simulate" method is called.
 
 Formerly followed an OptiX 7 SDK example, creating a stream for the launch::
@@ -1083,8 +1078,6 @@ double CSGOptiX::launch()
     return kernel_dt ;
 }
 
-
-
 /**
 CSGOptiX::render_launch CSGOptiX::simtrace_launch CSGOptiX::simulate_launch
 --------------------------------------------------------------------------------
@@ -1096,7 +1089,7 @@ MUST BE invoked from QSim::simulate and QSim::simtrace.
 This is because genstep preparations are needed prior to launch.
 
 These three methods currently all call *CSGOptiX::launch*
-with params.raygenmode switch function inside OptiX7Test.cu:__raygen__rg
+with params.raygenmode switch function inside CSGOptiX.cu:__raygen__rg
 As it is likely better to instead have multiple raygen entry points
 are retaining the distinct methods up here.
 

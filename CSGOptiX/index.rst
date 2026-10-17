@@ -1,6 +1,5 @@
-CSGOptiX : expt with OptiX 7 geometry and rendering 
+CSGOptiX : expt with OptiX geometry and rendering
 ======================================================
-
 
 TODO
 -----
@@ -8,8 +7,7 @@ TODO
 * cxr paths need to have the digest in them 
 * cxs paths need to keep the digest at pub stage 
 
-
-3D render scripts using the OptiX 7+ CSG/CSGOptiX machinery
+3D render scripts using the OptiX CSG/CSGOptiX machinery
 -----------------------------------------------------------
 
 cxr.sh
@@ -97,13 +95,11 @@ cxr_flight.sh
 
 ../bin/flight7.sh 
 
-    looks to be an update to flight.sh but using the OptiX 7 executable CSGOptiXFlight
+    looks to be an update to flight.sh but using the OptiX executable CSGOptiXFlight
 
     TODO: this is setting CFBASE, that is no longer the way to pick standard geometry 
 
 Flight path rendering should use the CSGOptiX render scripts.
-
-
 
 
 
@@ -234,8 +230,8 @@ Binding.h
 PIP.h
     OptiX render pipeline creation from ptx file
 
-CSGOptiX7.cu
-    compiled into ptx that gets loaded by PIP to create the GPU pipeline, with OptiX 7 entry points::
+CSGOptiX.cu
+    compiled into ptx that gets loaded by PIP to create the GPU pipeline, with OptiX entry points::
     
     __raygen__rg
     __miss__ms
@@ -243,7 +239,7 @@ CSGOptiX7.cu
     __closesthit__ch 
 
 SBT.h
-    brings together OptiX 7 geometry and render pipeline programs, nexus of control  
+    brings together OptiX geometry and render pipeline programs, nexus of control
 
     * SBT::setFoundry SBT::createGeom converts the CSGFoundy geometry into an OptiX geometry
 
@@ -254,4 +250,4 @@ Properties.h
     holder of information gleaned from OptiX 7
 
 OPTIX_CHECK.h
-    error check macro for optix 7 calls
+    error check macro for OptiX calls

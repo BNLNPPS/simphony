@@ -15,6 +15,7 @@
 #include <cuda_runtime.h>
 #include <nlohmann/json.hpp>
 
+#include "EventTiming.hh"
 #include "SEventConfig.hh"
 
 #include "config.h"
@@ -207,6 +208,18 @@ void AssignOutputDir(const nlohmann::json& event, std::filesystem::path& output_
         output_dir = it->get<std::string>();
 }
 
+void AssignPath(const nlohmann::json& object, const char* key, std::filesystem::path& value)
+{
+    if (const auto it = object.find(key); it != object.end())
+        value = it->get<std::string>();
+}
+
+void ResolveOutputPath(const std::filesystem::path& output_dir, std::filesystem::path& path)
+{
+    if (!path.empty() && path.is_relative())
+        path = output_dir / path;
+}
+
 } // namespace
 
 Config::Config(std::string config_name) :
@@ -342,6 +355,22 @@ void Config::ReadConfig(std::string filepath)
             Assign(ser_, "interval", ser_interval);
             Assign(ser_, "hint", ser_hint);
         }
+        if (const auto it = json.find("event_timing"); it != json.end())
+        {
+            const nlohmann::json& event_timing = *it;
+            AssignPath(event_timing, "output", event_timing_output);
+
+            if (const auto profile_it = event_timing.find("profile"); profile_it != event_timing.end())
+            {
+                const nlohmann::json& profile = *profile_it;
+                Assign(profile, "enabled", event_timing_profile_enabled);
+                AssignPath(profile, "output", event_timing_profile_output);
+                Assign(profile, "path_index", event_timing_profile_path_index);
+            }
+        }
+
+        ResolveOutputPath(output_dir, event_timing_output);
+        ResolveOutputPath(output_dir, event_timing_profile_output);
     }
     catch (nlohmann::json::exception& e)
     {
@@ -372,6 +401,12 @@ void Config::Apply() const
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
     SEventConfig::SetSerInterval(ser_interval);
     SEventConfig::SetSerHint(ser_hint);
+    EventTimingProfile::Configure(
+        event_timing_profile_enabled,
+        event_timing_profile_output,
+        event_timing_profile_path_index);
+    if (event_timing_profile_enabled)
+        EventTimingProfile::Mark("EventTimingProfile__Configure");
 }
 
 } // namespace simphony

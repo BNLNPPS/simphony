@@ -29,6 +29,7 @@ set(TEST_SOURCES
    U4MaterialTest.cc
    U4MaterialLegacyReemissionTest.cc
    U4ScintSpectrumTest.cc
+   U4GenstepTest.cc
    U4PhysicsStackingTest.cc
    U4MaterialPropertyVectorTest.cc
    U4TrackInfoTest.cc 
@@ -129,6 +130,14 @@ set(U4HitTest_SOURCES
 set(TGT U4HitTest)
 add_executable(${TGT} ${U4HitTest_SOURCES})
 target_link_libraries(${TGT} U4 CSG CUDA::cudart)
+
+set(U4HitTest_CONFIG_TEST ${name}.${TGT}.config)
+add_test(
+    NAME ${U4HitTest_CONFIG_TEST}
+    COMMAND ${TGT} --check-config
+)
+set_tests_properties(${U4HitTest_CONFIG_TEST} PROPERTIES
+    ENVIRONMENT "SIMPHONY_CONFIG_DIR=${PROJECT_SOURCE_DIR}/config")
 
 set(BUILD_ONLY_SOURCES
    U4SimulateTest.cc

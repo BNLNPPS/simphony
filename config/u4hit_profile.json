@@ -1,0 +1,9 @@
+{
+    "event_timing": {
+        "profile": {
+            "enabled": true,
+            "output": "event_timing_profile.csv",
+            "path_index": 0
+        }
+    }
+}

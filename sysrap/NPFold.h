@@ -87,6 +87,7 @@ Hid fts.h usage behind WITH_FTS as getting compilation error on Linux::
 #include <sstream>
 #include <iomanip>
 
+#include "EventTiming.hh"
 #include "NPX.h"
 
 struct NPFold
@@ -2962,7 +2963,22 @@ inline void NPFold::getMetaKV(
     std::vector<std::string>* vals,
     bool only_with_profile ) const
 {
-    NP::GetMetaKV(meta, keys, vals, only_with_profile );
+    std::stringstream stream(meta);
+    std::string       line;
+    while (std::getline(stream, line))
+    {
+        const std::size_t delimiter = line.find(':');
+        if (delimiter == std::string::npos)
+            continue;
+        const std::string key = line.substr(0, delimiter);
+        const std::string value = line.substr(delimiter + 1);
+        if (only_with_profile && !EventTimingSample::looksLikeSerialized(value))
+            continue;
+        if (keys)
+            keys->push_back(key);
+        if (vals)
+            vals->push_back(value);
+    }
 }
 
 /**
@@ -3301,7 +3317,6 @@ inline NP* NPFold::submeta(const char* prefix, const char* column_key ) const
     return a ;
 }
 
-
 /**
 NPFold::substamp
 --------------------
@@ -3310,8 +3325,8 @@ This provides metadata across multiple events, but as it relies on
 saving of arrays it is not useful for production running because
 SEvt are not saved because they are too big.
 
-For metadata in production running the alternative SProf.hh
-low resource approach should be used.
+For metadata in production running the separate EventTimingProfile CSV
+provides a low-resource alternative.
 
 Example arguments:
 
@@ -3373,7 +3388,7 @@ Entries from "site:SEvt::endMeta" onwards are written from SEvt::endOfEvent/SEvt
 with::
 
     SEvt::setMeta
-    SEvt::setMetaProf
+    SEvt::setMetaTiming
 
 Both the above methods append to the SEvt::meta string.
 SEvt::meta is assigned to the NPFold by SEvt::gather_metadata
@@ -3502,8 +3517,6 @@ inline NPFold* NPFold::substamp(const char* prefix, const char* keyname) const
     return out ;
 }
 
-
-
 /**
 NPFold::subprofile
 --------------------
@@ -3511,7 +3524,7 @@ NPFold::subprofile
 Collect profile metadata from subfold matching the prefix
 
 1. find *subs* vector of subfold of this fold with path prefix, eg "//A" "//B"
-2. create *t* array of shape (num_sub, num_prof0, 3) with the profile triplets
+2. create *t* array of shape (num_sub, num_prof0, 6) with EventTiming samples
 3. create *out* NPFold containing "subprofile" keyname with the *t* array
 
 **/
@@ -3543,11 +3556,11 @@ inline NPFold* NPFold::subprofile(const char* prefix, const char* keyname) const
     NPFold* out = nullptr ;
     if(skip) return out ;
 
-    // 2. create *t* array of shape (num_sub, num_prof0, 3) with the profile triplets
+    // 2. create *t* array of shape (num_sub, num_prof0, 6) with EventTiming samples
 
     int ni = num_sub ;
     int nj = num_prof0 ;
-    int nk = 3 ;
+    int nk = 6;
 
     NP* t = NP::Make<int64_t>( ni, nj, nk ) ;
     int64_t* tt = t->values<int64_t>() ;
@@ -3555,6 +3568,9 @@ inline NPFold* NPFold::subprofile(const char* prefix, const char* keyname) const
     t->set_meta<std::string>("base", loaddir ? loaddir : "-" );
     t->set_meta<std::string>("prefix", prefix ? prefix : "-" );
     t->set_meta<std::string>("keyname", keyname ? keyname : "-" );
+    t->set_meta<std::string>(
+        "profile_fields",
+        "wall_time_us,steady_time_ns,process_cpu_ns,thread_cpu_ns,vm_kb,rss_kb");
 
     // collect metadata (k,v) pairs that are the same for all the subs
     std::vector<std::string> okey ;
@@ -3596,11 +3612,13 @@ inline NPFold* NPFold::subprofile(const char* prefix, const char* keyname) const
 
         for(int j=0 ; j < nj ; j++)
         {
-            const char* v = vals[j].c_str();
-            std::vector<int64_t> elem ;
-            U::MakeVec<int64_t>( elem, v, ',' );
-            assert( int(elem.size()) == nk );
-            for(int k=0 ; k < nk ; k++)  tt[i*nj*nk+j*nk+k] = elem[k] ;
+            const EventTimingSample sample = EventTimingSample::parse(vals[j]);
+            tt[i * nj * nk + j * nk + 0] = sample.wall_time_us;
+            tt[i * nj * nk + j * nk + 1] = sample.steady_time_ns;
+            tt[i * nj * nk + j * nk + 2] = sample.process_cpu_ns;
+            tt[i * nj * nk + j * nk + 3] = sample.thread_cpu_ns;
+            tt[i * nj * nk + j * nk + 4] = sample.vm_kb;
+            tt[i * nj * nk + j * nk + 5] = sample.rss_kb;
         }
         t->names.push_back(subpath);
     }
@@ -3996,5 +4014,3 @@ inline std::string NPFold::DescCommonKV(
     std::string str = ss.str();
     return str ;
 }
-
-

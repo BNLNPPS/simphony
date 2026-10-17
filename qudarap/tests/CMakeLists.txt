@@ -7,6 +7,7 @@ set(TEST_SOURCES
 
    QRngTest.cc
    QScintTest.cc
+   QScintGenerateTest.cc
    QCerenkovIntegralTest.cc
    QPolyTest.cc
    QSimDescTest.cc
@@ -88,7 +89,7 @@ foreach(SRC ${TEST_SOURCES})
     add_executable(${TGT} ${SRC})
     target_link_libraries(${TGT} QUDARap CUDA::cudart)
 
-    if(TGT STREQUAL QSim_MaterialCarryTest)
+    if(TGT STREQUAL QSim_MaterialCarryTest OR TGT STREQUAL QScintGenerateTest)
         target_compile_definitions(${TGT} PRIVATE MOCK_CUDA MOCK_CURAND)
     endif()
 

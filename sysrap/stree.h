@@ -7440,7 +7440,6 @@ inline int stree::lookup_mtline( int mtindex ) const
     return mtindex_to_mtline.count(mtindex) == 0 ? -1 :  mtindex_to_mtline.at(mtindex) ;
 }
 
-
 /**
 stree::populate_prim_nidx
 ----------------------------
@@ -7490,7 +7489,7 @@ that ust[:,2,3] is written GPU side by sevent::add_simtrace pulling from (quad2)
 
      a.q2.u.w = prd->globalPrimIdx_boundary() ;
 
-The globalPrimIdx is pulled from the geometry on intersection CSGOptiX7.cu::
+The globalPrimIdx is pulled from the geometry on intersection CSGOptiX.cu::
 
     882     HitGroupData* hg  = (HitGroupData*)optixGetSbtDataPointer();
     883     int nodeOffset = hg->prim.nodeOffset ;

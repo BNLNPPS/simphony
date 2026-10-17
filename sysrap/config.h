@@ -61,7 +61,7 @@ class Config
     Config(std::string config_name = "dev");
 
     /// Resolve a PTX file from SIMPHONY_PTX_DIR or configured search paths.
-    static std::string PtxPath(const std::string& ptx_name = "CSGOptiX7.ptx");
+    static std::string PtxPath(const std::string& ptx_name = "CSGOptiX.ptx");
 
     /// A unique name associated with this Config
     std::string name{"dev"};
@@ -86,6 +86,18 @@ class Config
 
     /// Base directory for event output folders.
     std::filesystem::path output_dir{std::filesystem::current_path()};
+
+    /// Per-event CPU/GPU timing CSV. Empty disables event timeline recording.
+    std::filesystem::path event_timing_output{};
+
+    /// Enable detailed lifecycle and memory profile sampling.
+    bool event_timing_profile_enabled{false};
+
+    /// Detailed timing profile CSV path.
+    std::filesystem::path event_timing_profile_output{"event_timing_profile.csv"};
+
+    /// Integer substituted into a formatted detailed profile path.
+    int event_timing_profile_path_index{0};
 
     /// Ray offset after boundary crossing.
     float propagate_epsilon{0.05f};

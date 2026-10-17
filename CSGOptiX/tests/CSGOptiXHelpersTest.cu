@@ -32,26 +32,26 @@ struct CSGOptiXHelpersTestResult
 __global__ void CSGOptiXHelpersTest_kernel(CSGOptiXHelpersTestResult* result)
 {
     result->torch_carries_matline =
-        CSGOptiX7_GenstepCarriesMaterialLine(OpticksGenstep_TORCH);
+        CSGOptiX_GenstepCarriesMaterialLine(OpticksGenstep_TORCH);
     result->frame_carries_matline =
-        CSGOptiX7_GenstepCarriesMaterialLine(OpticksGenstep_FRAME);
+        CSGOptiX_GenstepCarriesMaterialLine(OpticksGenstep_FRAME);
     result->cerenkov_carries_matline =
-        CSGOptiX7_GenstepCarriesMaterialLine(OpticksGenstep_CERENKOV);
+        CSGOptiX_GenstepCarriesMaterialLine(OpticksGenstep_CERENKOV);
     result->scintillation_carries_matline =
-        CSGOptiX7_GenstepCarriesMaterialLine(OpticksGenstep_SCINTILLATION);
+        CSGOptiX_GenstepCarriesMaterialLine(OpticksGenstep_SCINTILLATION);
     result->modified_cerenkov_carries_matline =
-        CSGOptiX7_GenstepCarriesMaterialLine(OpticksGenstep_G4Cerenkov_modified);
+        CSGOptiX_GenstepCarriesMaterialLine(OpticksGenstep_G4Cerenkov_modified);
 
     const float coincident_distance = 10.f;
-    result->entering_distance = CSGOptiX7_ReportedIntersectionDistance(
+    result->entering_distance = CSGOptiX_ReportedIntersectionDistance(
         coincident_distance,
         SRG_SIMULATE,
         -1.f);
-    result->exiting_distance = CSGOptiX7_ReportedIntersectionDistance(
+    result->exiting_distance = CSGOptiX_ReportedIntersectionDistance(
         coincident_distance,
         SRG_SIMULATE,
         1.f);
-    result->non_simulation_exit_distance = CSGOptiX7_ReportedIntersectionDistance(
+    result->non_simulation_exit_distance = CSGOptiX_ReportedIntersectionDistance(
         coincident_distance,
         SRG_SIMTRACE,
         1.f);

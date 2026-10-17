@@ -6,19 +6,19 @@
 #include "SRG.h"
 
 #if defined(__CUDACC__) || defined(__CUDABE__)
-#define CSGOPTIX7_HELPER_METHOD __device__ __forceinline__
+#define CSGOPTIX_HELPER_METHOD __device__ __forceinline__
 #else
-#define CSGOPTIX7_HELPER_METHOD inline
+#define CSGOPTIX_HELPER_METHOD inline
 #endif
 
-CSGOPTIX7_HELPER_METHOD bool CSGOptiX7_GenstepCarriesMaterialLine(unsigned gentype)
+CSGOPTIX_HELPER_METHOD bool CSGOptiX_GenstepCarriesMaterialLine(unsigned gentype)
 {
     return gentype == OpticksGenstep_CERENKOV ||
            gentype == OpticksGenstep_SCINTILLATION ||
            gentype == OpticksGenstep_G4Cerenkov_modified;
 }
 
-CSGOPTIX7_HELPER_METHOD float CSGOptiX7_ReportedIntersectionDistance(
+CSGOPTIX_HELPER_METHOD float CSGOptiX_ReportedIntersectionDistance(
     float    distance,
     unsigned raygenmode,
     float    direction_dot_normal)
@@ -27,4 +27,4 @@ CSGOPTIX7_HELPER_METHOD float CSGOptiX7_ReportedIntersectionDistance(
     return defer_exit ? nextafterf(distance, INFINITY) : distance;
 }
 
-#undef CSGOPTIX7_HELPER_METHOD
+#undef CSGOPTIX_HELPER_METHOD
