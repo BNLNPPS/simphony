@@ -355,6 +355,7 @@ void Config::ReadConfig(std::string filepath)
             Assign(ser_, "interval", ser_interval);
             Assign(ser_, "hint", ser_hint);
         }
+
         if (const auto it = json.find("event_timing"); it != json.end())
         {
             const nlohmann::json& event_timing = *it;
@@ -399,8 +400,8 @@ void Config::Apply() const
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
-    SEventConfig::SetSerInterval(ser_interval);
-    SEventConfig::SetSerHint(ser_hint);
+    SEventConfig::_SerInterval = ser_interval;
+    SEventConfig::_SerHint = ser_hint;
     EventTimingProfile::Configure(
         event_timing_profile_enabled,
         event_timing_profile_output,

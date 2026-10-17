@@ -6,6 +6,8 @@ set(SOURCES)
 set(OPTIX_PTX_SRC CSGOptiX.cu)
 set(OPTIX_PTX_TARGET CSGOptiX_ptx)
 
+option(SIMPHONY_ENABLE_SER "Compile shader execution reordering support (OptiX 8+)" ON)
+
 option(SIMPHONY_RNG_REBUILD "Rebuild the Philox RNG state after each trace instead of carrying it live" OFF)
 
 list(APPEND SOURCES
@@ -58,6 +60,7 @@ target_compile_definitions(${OPTIX_PTX_TARGET}
         OPTICKS_OKCONF
         OPTICKS_QUDARAP
         NVCC
+        $<$<BOOL:${SIMPHONY_ENABLE_SER}>:SIMPHONY_ENABLE_SER>
         $<$<BOOL:${SIMPHONY_RNG_REBUILD}>:SIMPHONY_RNG_REBUILD>)
 target_link_libraries(${OPTIX_PTX_TARGET} PUBLIC OptiX::OptiX)
 
