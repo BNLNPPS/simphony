@@ -1,6 +1,8 @@
 #include <cstdlib>
 
-#include "G4CXOpticks.hh"
+#include "SLOG.hh"
+#include "U4GDML.h"
+#include "simphony.h"
 
 namespace
 {
@@ -14,8 +16,10 @@ struct CSGFoundry_GDMLBootstrap
 
         setenv("CSGFoundry_GDMLBootstrap_ReturnExisting", "1", 0);
 
-        G4CXOpticks::SetNoGPU(true);
-        G4CXOpticks::SetGeometry(gdml);
+        const G4VPhysicalVolume*  world = U4GDML::Read(gdml);
+        simphony::GeometryOptions options;
+        options.gpu = simphony::GpuRequirement::Disabled;
+        simphony::initialize(world, options);
     }
 };
 

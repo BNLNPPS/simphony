@@ -10,13 +10,14 @@ namespace ddsimphony
 /*!
  * DDG4 action plugin for simphony run-level lifecycle.
  *
- * At begin-of-run: initializes G4CXOpticks geometry from the Geant4 world
+ * At begin-of-run: initializes or reuses Simphony geometry from the Geant4 world
  * volume, translating the geometry to OptiX acceleration structures on GPU.
  *
- * At end-of-run: finalizes G4CXOpticks, releasing GPU resources.
+ * At end-of-run: flushes pending gensteps. The runtime lives for the process.
  *
  * Properties:
  *   - SaveGeometry (default: false) -- save Opticks geometry to disk
+ *   - GeometryDirectory (default: "geometry") -- geometry export directory
  */
 class OpticsRun final : public dd4hep::sim::Geant4RunAction
 {
@@ -32,6 +33,7 @@ class OpticsRun final : public dd4hep::sim::Geant4RunAction
 
   private:
     bool save_geometry_{false};
+    std::string geometry_directory_{"geometry"};
 };
 
 //---------------------------------------------------------------------------//

@@ -10,7 +10,7 @@ Runs three configurations of the raindrop geometry (10 MeV e- in water):
 
 Speedup = CPU_optical_time / GPU_simulate_time
   where CPU_optical_time = T(cpu) - T(baseline)
-  and   GPU_simulate_time = wall time of G4CXOpticks::simulate()
+  and   GPU_simulate_time = wall time of simphony::simulate()
                             (includes genstep upload, OptiX launch,
                              cudaDeviceSynchronize, hit download)
 
