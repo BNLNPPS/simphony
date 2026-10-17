@@ -86,10 +86,11 @@ bool has_gpu() noexcept;
 /**
  * Simulates an event using the GPU backend and its prepared event inputs.
  *
- * @param event_id event identifier forwarded to the backend.
+ * @param event_id non-negative event identifier forwarded to the backend.
  * @param reset if true, clean up the event before returning. If false (the
  * default), retain event data for retrieval and call reset(event_id) afterward,
  * before simulating another event.
+ * @throws std::invalid_argument if event_id is negative.
  * @throws std::logic_error if uninitialized, no GPU backend exists, or a previous
  * event is awaiting reset.
  */
@@ -98,7 +99,9 @@ void simulate(int event_id, bool reset = false);
 /**
  * Cleans up the event retained by simulate(event_id, false).
  *
- * @param event_id identifier of the pending event; must match the simulate() call.
+ * @param event_id non-negative identifier of the pending event; must match the
+ * simulate() call.
+ * @throws std::invalid_argument if event_id is negative.
  * @throws std::logic_error if uninitialized, no GPU backend exists, no event is
  * pending, or event_id does not match the pending event.
  * @note This resets event data, not the runtime or its geometry.

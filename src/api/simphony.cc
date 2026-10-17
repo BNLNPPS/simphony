@@ -134,6 +134,9 @@ bool has_gpu() noexcept
 
 void simulate(int event_id, bool reset_after)
 {
+    if (event_id < 0)
+        throw std::invalid_argument("simphony::simulate requires a non-negative event id");
+
     Runtime&        state = runtime();
     std::lock_guard lock(state.mutex);
     require_gpu(state);
@@ -148,6 +151,9 @@ void simulate(int event_id, bool reset_after)
 
 void reset(int event_id)
 {
+    if (event_id < 0)
+        throw std::invalid_argument("simphony::reset requires a non-negative event id");
+
     Runtime&        state = runtime();
     std::lock_guard lock(state.mutex);
     require_gpu(state);

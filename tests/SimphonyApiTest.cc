@@ -48,6 +48,16 @@ void require_throws(Function&& function, const std::string& message)
     }
     throw std::runtime_error(message);
 }
+
+void require_negative_event_ids_rejected()
+{
+    require_throws<std::invalid_argument>(
+        [] { simphony::simulate(-1); },
+        "simulate(-1) did not throw std::invalid_argument");
+    require_throws<std::invalid_argument>(
+        [] { simphony::reset(-1); },
+        "reset(-1) did not throw std::invalid_argument");
+}
 } // namespace
 
 int main(int argc, char** argv)
@@ -66,6 +76,7 @@ int main(int argc, char** argv)
             [] { simphony::initialize(nullptr); },
             "initialize(nullptr) did not throw std::invalid_argument");
         require(!simphony::is_initialized(), "failed initialization changed API state");
+        require_negative_event_ids_rejected();
 
         G4GDMLParser parser;
         parser.Read(argv[1], false);
@@ -105,6 +116,7 @@ int main(int argc, char** argv)
         require(identifier.calls > 0, "custom sensor identifier was not used during translation");
         require(simphony::is_initialized(), "initialize did not update API state");
         require(!simphony::has_gpu(), "Disabled policy unexpectedly created a GPU backend");
+        require_negative_event_ids_rejected();
 
         simphony::initialize(world, options);
         require_throws<std::logic_error>(
