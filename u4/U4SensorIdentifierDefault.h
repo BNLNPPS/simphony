@@ -22,7 +22,6 @@ implementation pass GeometryOptions::sensor_identifier to simphony::initialize.
 #include "SensorIdentifier.h"
 #include "U4Boundary.h"
 
-
 struct U4SensorIdentifierDefault : public simphony::SensorIdentifier
 {
     static std::vector<std::string>* GLOBAL_SENSOR_BOUNDARY_LIST ;

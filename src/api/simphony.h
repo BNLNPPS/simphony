@@ -40,7 +40,7 @@ struct GeometryOptions
     SensorIdentifier* sensor_identifier = nullptr;
 
     /** GPU availability policy; a GPU is required by default. */
-    GpuRequirement      gpu = GpuRequirement::Required;
+    GpuRequirement gpu = GpuRequirement::Required;
 };
 
 /**

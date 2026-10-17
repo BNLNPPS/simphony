@@ -11,14 +11,19 @@ namespace
 {
 struct TranslationFailure : std::runtime_error
 {
-    TranslationFailure() : std::runtime_error("injected sensor translation failure") {}
+    TranslationFailure() :
+        std::runtime_error("injected sensor translation failure")
+    {
+    }
 };
 
 struct SensorIdentifier : simphony::SensorIdentifier
 {
-    int calls = 0;
+    int  calls = 0;
     bool fail_translation = false;
-    void setLevel(int) override {}
+    void setLevel(int) override
+    {
+    }
     int getGlobalIdentity(const G4VPhysicalVolume*, const G4VPhysicalVolume*) override
     {
         ++calls;
@@ -26,7 +31,10 @@ struct SensorIdentifier : simphony::SensorIdentifier
             throw TranslationFailure();
         return -1;
     }
-    int getInstanceIdentity(const G4VPhysicalVolume*) const override { return -1; }
+    int getInstanceIdentity(const G4VPhysicalVolume*) const override
+    {
+        return -1;
+    }
 };
 
 void require(bool condition, const std::string& message)
@@ -83,7 +91,7 @@ int main(int argc, char** argv)
         const G4VPhysicalVolume* world = parser.GetWorldVolume();
         require(world != nullptr, "GDML parser returned a null world");
 
-        SensorIdentifier identifier;
+        SensorIdentifier                identifier;
         const simphony::GeometryOptions options{
             .sensor_identifier = &identifier,
             .gpu = simphony::GpuRequirement::Disabled,
