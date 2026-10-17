@@ -409,6 +409,7 @@ struct RunAction : G4UserRunAction
             if (!outFile.is_open())
             {
                 std::cerr << "Error opening output file!" << std::endl;
+                simphony::reset(0);
                 return;
             }
 
@@ -451,6 +452,7 @@ struct RunAction : G4UserRunAction
             }
 
             outFile.close();
+            simphony::reset(0);
         }
     }
 };
