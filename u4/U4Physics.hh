@@ -11,13 +11,8 @@ class G4Cerenkov;
 class G4Scintillation;
 class G4OpWLS;
 
-#ifdef DEBUG_TAG
-class ShimG4OpAbsorption ;
-class ShimG4OpRayleigh ;
-#else
 class G4OpAbsorption ;
 class G4OpRayleigh ;
-#endif
 
 class G4VProcess ; 
 class G4ProcessManager ; 
@@ -43,13 +38,8 @@ struct U4_API U4Physics : public G4VUserPhysicsList
     /** Official Geant4 wavelength-shifting process. */
     G4OpWLS* fWLS;
 
-#ifdef DEBUG_TAG
-    ShimG4OpAbsorption*   fAbsorption ;
-    ShimG4OpRayleigh*     fRayleigh ;
-#else
     G4OpAbsorption*       fAbsorption ;
     G4OpRayleigh*         fRayleigh ;
-#endif
 
     G4VProcess*          fBoundary ; 
     G4FastSimulationManagerProcess*   fFastSim ;  
@@ -85,5 +75,3 @@ struct U4_API U4Physics : public G4VUserPhysicsList
     int OpBoundaryProcess_LASTPOST = 0 ; 
     int FastSim_ENABLE = 0 ; 
 };
-
-
