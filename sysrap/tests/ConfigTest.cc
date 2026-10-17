@@ -1,6 +1,6 @@
 #include <cassert>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -65,8 +65,8 @@ int main()
     WriteText(directory / "legacy.json", "{}\n");
 
     setenv("OPTICKS_MAX_TIME", "77", 1);
-    std::ostringstream warning;
-    std::streambuf* const previous_cerr = std::cerr.rdbuf(warning.rdbuf());
+    std::ostringstream     warning;
+    std::streambuf* const  previous_cerr = std::cerr.rdbuf(warning.rdbuf());
     const simphony::Config legacy("legacy");
     std::cerr.rdbuf(previous_cerr);
     unsetenv("OPTICKS_MAX_TIME");

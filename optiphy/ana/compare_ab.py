@@ -118,12 +118,12 @@ def record_parser():
     )
     parser.add_argument(
         "--a-record",
-        default="ALL0_no_opticks_event_name/A000/record.npy",
+        default="ALL0/A000/record.npy",
         help="path to the A-side record.npy relative to --base",
     )
     parser.add_argument(
         "--b-record",
-        default="ALL0_no_opticks_event_name/B000/f000/record.npy",
+        default="ALL0/B000/f000/record.npy",
         help="path to the B-side record.npy relative to --base",
     )
     return parser

@@ -4,7 +4,7 @@ int main()
 {
     SEvt* sev = SEvt::Create_EGPU();
 
-    sev->setIndex(0); // needed for config of num photon in the genstep to work
+    sev->setIndex(0); // exercise indexed genstep metadata
 
     NP* gs = sev->createInputGenstep_configured();
     std::cout << "gs: " << ( gs ? gs->sstr() : "-" ) << "\n" ;

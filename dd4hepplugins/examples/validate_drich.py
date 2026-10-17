@@ -96,7 +96,7 @@ def run_gpu():
     # Read hits from npy files
     base = os.path.join(os.environ.get("TMP", "/tmp/opticks_out"),
                         "GEOM", os.environ.get("GEOM", "simple"),
-                        "python3.13", "ALL0_no_opticks_event_name")
+                        "python3.13", "ALL0")
     total = 0
     if os.path.isdir(base):
         for d in sorted(os.listdir(base)):

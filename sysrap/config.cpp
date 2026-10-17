@@ -173,10 +173,14 @@ ModeLite ModeLiteValue(std::int64_t value)
 {
     switch (value)
     {
-        case 0: return ModeLite::Standard;
-        case 1: return ModeLite::Lite;
-        case 2: return ModeLite::DebugCompare;
-        default: return ModeLite::Unspecified;
+    case 0:
+        return ModeLite::Standard;
+    case 1:
+        return ModeLite::Lite;
+    case 2:
+        return ModeLite::DebugCompare;
+    default:
+        return ModeLite::Unspecified;
     }
 }
 
@@ -184,9 +188,12 @@ ModeMerge ModeMergeValue(std::int64_t value)
 {
     switch (value)
     {
-        case 0: return ModeMerge::Separate;
-        case 1: return ModeMerge::Merged;
-        default: return ModeMerge::Unspecified;
+    case 0:
+        return ModeMerge::Separate;
+    case 1:
+        return ModeMerge::Merged;
+    default:
+        return ModeMerge::Unspecified;
     }
 }
 
@@ -531,7 +538,7 @@ void Config::Apply() const
 {
     const std::string event_mode_name{EventModeName(event_mode)};
     const std::string output_dir_str = output_dir.string();
-    const auto nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
+    const auto        nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
 
     SEventConfig::SetIntegrationMode(integration_mode);
     SEventConfig::SetEventMode(event_mode_name.c_str());

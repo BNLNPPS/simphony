@@ -963,7 +963,7 @@ NP* SEvt::createInputGenstep_simulate()
             else
             {
                 int index_arg = getIndexArg();
-                igs = SEvent::MakeTorchGenstep(index_arg);  // pass index to allow changing num photons per event
+                igs = SEvent::MakeTorchGenstep(index_arg); // retain the event index in genstep metadata
             }
         }
     }
@@ -1798,8 +1798,6 @@ void SEvt::beginOfEvent(int eventID)
             EventTimingCapture::Memory);
 }
 
-
-
 /**
 SEvt::endOfEvent
 ------------------
@@ -1809,8 +1807,7 @@ Called for example from::
    U4Recorder::EndOfEventAction
    QSim::simulate
 
-Only SEventConfig::SaveComp OPTICKS_SAVE_COMP are actually saved,
-so can switch off all saving wuth that config.
+Only components selected by SEventConfig::SaveComp are actually saved.
 
 **/
 
@@ -4101,7 +4098,6 @@ const char* SEvt::DefaultBase(const char* base_) // static
         outfold != nullptr &&
         strcmp(outfold, SEventConfig::_OutFoldDefault) != 0;
 
-    int64_t mode_save = SEventConfig::ModeSave();
     if (base_ != nullptr)
     {
         base = base_;
@@ -4111,22 +4107,16 @@ const char* SEvt::DefaultBase(const char* base_) // static
         // Honor explicit OutFold overrides from config/env for SEvt event folders.
         base = outfold;
     }
-    else if (mode_save == 0)
+    else
     {
         // controlled dir approach : good for campaigns
         base = spath::DefaultOutputDir();
-    }
-    else if( mode_save == 1 )
-    {
-        // relative to invoking directory approach : good for quick tests
-        base = BLANK ;
     }
 
     LOG_IF(info, DIRECTORY)
         << "\n"
         << " base_ [" << ( base_ ? base_ : "-" ) << "]\n"
         << " base  [" << ( base  ? base  : "-" ) << "]\n"
-        << " mode_save " << mode_save << "\n"
         ;
 
     return base ;
@@ -4172,11 +4162,11 @@ here too instead of hiding in Reldir
 +---------+----------------------------------------------------------------------------------------------+
 | base    |  "$TMP/GEOM/$GEOM/$ExecutableName"                                                           |
 +---------+----------------------------------------------------------------------------------------------+
-| reldir  |  "ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-no_opticks_event_name}"                             |
+| reldir  |  "ALL${VERSION:-0}"                                                                          |
 +---------+----------------------------------------------------------------------------------------------+
 | sidx    |  "A000"                                                                                      |
 +---------+----------------------------------------------------------------------------------------------+
-| path    |  "/tmp/blyth/opticks/GEOM/J25_4_0_opticks_Debug/python3.11/ALL0_no_opticks_event_name/A000"  |
+| path    |  "/tmp/blyth/opticks/GEOM/J25_4_0_opticks_Debug/python3.11/ALL0/A000"                        |
 +---------+----------------------------------------------------------------------------------------------+
 
 **/
@@ -4457,7 +4447,7 @@ void SEvt::save(const char* dir_)
 
     // 2. early exit if nothing configured to save
 
-    LOG_IF(LEVEL, save_fold == nullptr) << " NOTHING TO SAVE SEventConfig::SaveCompLabel/OPTICKS_SAVE_COMP  " << save_comp ;
+    LOG_IF(LEVEL, save_fold == nullptr) << " NOTHING TO SAVE: SEventConfig::SaveCompLabel is empty " << save_comp;
     if(save_fold == nullptr) return ;
 
     // 3. when "seq" history array is configured for save and is present,
@@ -4548,20 +4538,6 @@ void SEvt::save(const char* dir_)
     // NB: NOT DELETING save_fold AS IT IS A SHALLOW COPY : IT DOES NOT OWN THE ARRAYS
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
 SEvt::saveExtra(name,a)
 ------------------------
@@ -4572,14 +4548,14 @@ The name is expected to end with ".npy"
 For example with name of "somearray.npy" might
 save to::
 
-    /data1/blyth/tmp/GEOM/SEVT_TEST/SEvtTest/ALL0_no_opticks_event_name/somearray.npy
+    /data1/blyth/tmp/GEOM/SEVT_TEST/SEvtTest/ALL0/somearray.npy
 
-The directory depends on the name of the executable eg "SEvtTest" and envvars::
+The directory depends on the name of the executable, for example
+``SEvtTest``, and the configured event relative directory. With defaults::
 
     TMP                  /data1/blyth/tmp
     GEOM                 SEVT_TEST
     VERSION              0
-    OPTICKS_EVENT_NAME   no_opticks_event_name
 
 **/
 
@@ -4596,7 +4572,6 @@ void SEvt::saveExtra( const char* name, const NP* a  ) const
     a->save(dir, name);
 }
 
-
 /**
 SEvt::saveExtra(base, name,a)
 ---------------------------------
@@ -4608,11 +4583,10 @@ but with the organizational reldir.  For example with base "/tmp"
 and name "somearray.npy" and no other envvars or SEvt index
 setup might save to::
 
-    /tmp/ALL0_no_opticks_event_name/somearray.npy
+    /tmp/ALL0/somearray.npy
 
-Setting envvars VERSION and OPTICKS_EVENT_NAME would
-change the reldir. Also setting an index on the event would
-add a subfold like "A000" or "B000".
+Setting JSON ``event.event_reldir`` changes the relative directory. Setting an
+index on the event adds a subfolder such as ``A000`` or ``B000``.
 
 **/
 

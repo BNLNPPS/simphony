@@ -18,7 +18,6 @@ struct SEventConfigTest
     static int SetMinimal();
     static int Save();
     static int InputGenstep();
-
     static int main();
 
 };
@@ -114,7 +113,6 @@ int SEventConfigTest::InputGenstep()
     return 0 ;
 }
 
-
 int SEventConfigTest::main()
 {
     SEventConfig::Initialize();
@@ -131,7 +129,6 @@ int SEventConfigTest::main()
     if(ALL||strcmp(TEST,"Save") == 0)             rc += Save();
     if(ALL||strcmp(TEST,"Desc") == 0)             rc += Desc();
     if(ALL||strcmp(TEST,"InputGenstep") == 0)     rc += InputGenstep();
-
     return rc ;
 }
 

@@ -45,7 +45,7 @@ run_record_validation() {
     local geometry=$1
     local config_name=$2
 
-    rm -rf "${PWD}/ALL0_no_opticks_event_name"
+    rm -rf "${PWD}/ALL0"
 
     echo "=== simg4ox ${geometry} record validation ==="
     "${SIMG4OX_BIN}" \

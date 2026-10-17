@@ -4,9 +4,6 @@ QRngTest.cc
 
 TEST=ctor QRngTest
 
-OPTICKS_MAX_PHOTON=M4 QRngTest
-
-
 **/
 
 #include "NP.hh"

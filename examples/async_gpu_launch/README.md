@@ -33,14 +33,20 @@ A single `G4Mutex` ensures only one GPU kernel runs at a time.
 | `--async` | (default) Double-buffered async GPU processing |
 | `--sync`  | Original end-of-run batch GPU simulation |
 
-## Environment Variables
+## Example-specific and compatibility variables
+
+`GPU_PHOTON_FLUSH_THRESHOLD` is native to this example. The `OPTICKS_*`
+variables below are deprecated compatibility inputs retained because this
+standalone example does not yet construct `simphony::Config`. Config-backed
+applications should use the corresponding JSON keys documented in
+[`docs/configuration.md`](../../docs/configuration.md).
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GPU_PHOTON_FLUSH_THRESHOLD` | 10000000 | Photons per GPU batch |
-| `OPTICKS_MAX_BOUNCE` | 1000 | Maximum optical photon bounces |
-| `OPTICKS_PROPAGATE_EPSILON` | - | Ray offset after boundary crossing |
-| `OPTICKS_PROPAGATE_EPSILON0` | - | Ray offset after bulk interaction |
+| `OPTICKS_MAX_BOUNCE` | 1000 | Compatibility fallback for `event.max_bounce` |
+| `OPTICKS_PROPAGATE_EPSILON` | - | Compatibility fallback for `event.propagate_epsilon` |
+| `OPTICKS_PROPAGATE_EPSILON0` | - | Compatibility fallback for `event.propagate_epsilon0` |
 
 ## Build (standalone)
 
