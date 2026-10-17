@@ -10,7 +10,7 @@ Runs three configurations with the full dRICH geometry (100 pi+ at 10 GeV):
 
 Speedup = CPU_optical_time / GPU_simulate_time
   where CPU_optical_time = T(cpu) - T(baseline)
-  and   GPU_simulate_time = wall time of G4CXOpticks::simulate()
+  and   GPU_simulate_time = wall time of simphony::simulate()
 
 Prerequisites:
   - Spack environment activated with DD4hep, Geant4, simphony

@@ -95,12 +95,12 @@ foreach(SRC ${TEST_SOURCES})
         # SSim::Create internally, so the bootstrap prepares an in-memory
         # foundry from SIMPHONY_GEOM_FILE before test main starts.
         add_executable(${TGT} ${SRC} ${GDML_BOOTSTRAP_SOURCE})
-        target_link_libraries(${TGT} CSG G4CX CUDA::cudart)
+        target_link_libraries(${TGT} CSG simphony::simphony CUDA::cudart)
     elseif("${SRC}" STREQUAL "CSGScanTest.cc")
-        # CSGScanTest needs G4CX for explicit GDML setup, but must not use
+        # CSGScanTest needs the public API for explicit GDML setup, but must not use
         # the static bootstrap because it selects host-only scan mode in main.
         add_executable(${TGT} ${SRC})
-        target_link_libraries(${TGT} CSG G4CX CUDA::cudart)
+        target_link_libraries(${TGT} CSG simphony::simphony CUDA::cudart)
     else()
         add_executable(${TGT} ${SRC})
         target_link_libraries(${TGT} CSG CUDA::cudart)
