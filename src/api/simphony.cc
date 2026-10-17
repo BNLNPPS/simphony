@@ -27,6 +27,7 @@ struct Runtime
     CSGFoundry*               foundry = nullptr;
     CSGOptiX*                 backend = nullptr;
     std::optional<int>        pending_event;
+    bool                      initialization_failed = false;
 };
 
 Runtime& runtime()
@@ -66,6 +67,9 @@ void initialize(const G4VPhysicalVolume* world, const GeometryOptions& options)
     Runtime&        state = runtime();
     std::lock_guard lock(state.mutex);
 
+    if (state.initialization_failed)
+        throw std::logic_error("simphony initialization previously failed; restart the process before retrying");
+
     if (state.initialized.load(std::memory_order_acquire))
     {
         if (state.world == world && same_options(state.options, options))
@@ -83,31 +87,39 @@ void initialize(const G4VPhysicalVolume* world, const GeometryOptions& options)
             throw std::runtime_error("simphony requires a CUDA-capable GPU, but none is available");
     }
 
-    SSim* simulation = SSim::CreateOrReuse();
-    if (simulation == nullptr)
-        throw std::runtime_error("simphony failed to create its simulation state");
+    try
+    {
+        SSim* simulation = SSim::CreateOrReuse();
+        if (simulation == nullptr)
+            throw std::runtime_error("simphony failed to create its simulation state");
 
-    U4Tree* tree = U4Tree::Create(
-        simulation->get_tree(), world, options.sensor_identifier);
-    if (tree == nullptr)
-        throw std::runtime_error("simphony failed to translate the Geant4 geometry");
+        U4Tree* tree = U4Tree::Create(
+            simulation->get_tree(), world, options.sensor_identifier);
+        if (tree == nullptr)
+            throw std::runtime_error("simphony failed to translate the Geant4 geometry");
 
-    simulation->initSceneFromTree();
-    CSGFoundry* foundry = CSGFoundry::CreateFromSim();
-    if (foundry == nullptr)
-        throw std::runtime_error("simphony failed to create its CSG geometry");
+        simulation->initSceneFromTree();
+        CSGFoundry* foundry = CSGFoundry::CreateFromSim();
+        if (foundry == nullptr)
+            throw std::runtime_error("simphony failed to create its CSG geometry");
 
-    CSGOptiX* backend = create_gpu ? CSGOptiX::Create(foundry) : nullptr;
-    if (create_gpu && backend == nullptr)
-        throw std::runtime_error("simphony failed to create its GPU backend");
+        CSGOptiX* backend = create_gpu ? CSGOptiX::Create(foundry) : nullptr;
+        if (create_gpu && backend == nullptr)
+            throw std::runtime_error("simphony failed to create its GPU backend");
 
-    state.world = world;
-    state.options = options;
-    state.tree = tree;
-    state.foundry = foundry;
-    state.backend = backend;
-    state.gpu_available.store(backend != nullptr, std::memory_order_release);
-    state.initialized.store(true, std::memory_order_release);
+        state.world = world;
+        state.options = options;
+        state.tree = tree;
+        state.foundry = foundry;
+        state.backend = backend;
+        state.gpu_available.store(backend != nullptr, std::memory_order_release);
+        state.initialized.store(true, std::memory_order_release);
+    }
+    catch (...)
+    {
+        state.initialization_failed = true;
+        throw;
+    }
 }
 
 bool is_initialized() noexcept

@@ -9,13 +9,21 @@
 
 namespace
 {
+struct TranslationFailure : std::runtime_error
+{
+    TranslationFailure() : std::runtime_error("injected sensor translation failure") {}
+};
+
 struct SensorIdentifier : simphony::SensorIdentifier
 {
     int calls = 0;
+    bool fail_translation = false;
     void setLevel(int) override {}
     int getGlobalIdentity(const G4VPhysicalVolume*, const G4VPhysicalVolume*) override
     {
         ++calls;
+        if (fail_translation)
+            throw TranslationFailure();
         return -1;
     }
     int getInstanceIdentity(const G4VPhysicalVolume*) const override { return -1; }
@@ -46,7 +54,8 @@ int main(int argc, char** argv)
 {
     try
     {
-        require(argc == 3, "usage: SimphonyApiTest GEOMETRY.gdml OUTPUT_DIRECTORY");
+        require(argc == 3 || (argc == 4 && std::string(argv[3]) == "--fail-translation"),
+                "usage: SimphonyApiTest GEOMETRY.gdml OUTPUT_DIRECTORY [--fail-translation]");
 
         require(!simphony::is_initialized(), "API unexpectedly initialized at process start");
         require(!simphony::has_gpu(), "API unexpectedly has a GPU backend at process start");
@@ -68,6 +77,29 @@ int main(int argc, char** argv)
             .sensor_identifier = &identifier,
             .gpu = simphony::GpuRequirement::Disabled,
         };
+        if (argc == 4)
+        {
+            identifier.fail_translation = true;
+            require_throws<TranslationFailure>(
+                [&] { simphony::initialize(world, options); },
+                "initialize did not propagate the translation failure");
+            require(!simphony::is_initialized() && !simphony::has_gpu(),
+                    "failed translation published an initialized runtime");
+
+            identifier.fail_translation = false;
+            require_throws<std::logic_error>(
+                [&] { simphony::initialize(world, options); },
+                "retry after partial geometry translation did not throw std::logic_error");
+            auto changed_options = options;
+            changed_options.sensor_identifier = nullptr;
+            changed_options.gpu = simphony::GpuRequirement::Required;
+            require_throws<std::logic_error>(
+                [&] { simphony::initialize(world, changed_options); },
+                "retry with different options after partial translation was not rejected");
+            require(!simphony::is_initialized() && !simphony::has_gpu(),
+                    "rejected retry changed the runtime state");
+            return 0;
+        }
         simphony::initialize(world, options);
 
         require(identifier.calls > 0, "custom sensor identifier was not used during translation");

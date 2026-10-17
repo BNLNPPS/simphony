@@ -49,12 +49,18 @@ struct GeometryOptions
  * Repeating this call with the same world pointer, sensor identifier pointer,
  * and GPU policy is a no-op. Geometry is not saved automatically.
  *
+ * If geometry translation or backend creation throws, its exception propagates
+ * and subsequent initialize() calls are rejected because lower-level global
+ * state may be partially populated. Restart the process to try again.
+ * Validation failures before runtime construction can be retried.
+ *
  * @param world non-null, fully constructed world. Ownership remains with the
  * caller; keep the geometry alive and unchanged for the runtime's lifetime.
  * @param options translation options, copied by the runtime without taking
  * ownership of the sensor identifier.
  * @throws std::invalid_argument if world is nullptr.
- * @throws std::logic_error if already initialized with different inputs.
+ * @throws std::logic_error if already initialized with different inputs or a
+ * previous geometry/backend initialization failed.
  * @throws std::runtime_error if a required GPU is unavailable or runtime
  * creation reports failure.
  */

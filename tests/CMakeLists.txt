@@ -20,6 +20,19 @@ set_tests_properties(Simphony.Api PROPERTIES
     TIMEOUT 120
 )
 
+add_test(
+    NAME Simphony.Api.failed_initialization
+    COMMAND SimphonyApiTest
+            "${PROJECT_SOURCE_DIR}/tests/geom/raindrop.gdml"
+            "${SIMPHONY_API_TEST_WORKDIR}/failed_geometry"
+            --fail-translation
+)
+set_tests_properties(Simphony.Api.failed_initialization PROPERTIES
+    WORKING_DIRECTORY "${SIMPHONY_API_TEST_WORKDIR}"
+    LABELS "api"
+    TIMEOUT 120
+)
+
 foreach(FRONTEND IN ITEMS GPUCerenkov GPURaytrace)
     foreach(OUTPUT_MODE IN ITEMS normal output_failure)
         set(TEST_NAME "Integration.${FRONTEND}.repeated_runs.${OUTPUT_MODE}")
