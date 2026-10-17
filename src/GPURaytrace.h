@@ -32,7 +32,7 @@
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-#include "g4cx/G4CXOpticks.hh"
+#include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/SEvt.hh"
 #include "sysrap/STrackInfo.h"
@@ -232,7 +232,7 @@ struct DetectorConstruction : G4VUserDetectorConstruction
         parser_.Read(gdml_file_.string(), false);
         G4VPhysicalVolume *world = parser_.GetWorldVolume();
 
-        G4CXOpticks::SetGeometry(world);
+        simphony::initialize(world);
         G4LogicalVolumeStore *lvStore = G4LogicalVolumeStore::GetInstance();
 
         static G4VisAttributes invisibleVisAttr(false);
@@ -389,10 +389,8 @@ struct RunAction : G4UserRunAction
     {
         if (G4Threading::IsMasterThread())
         {
-            G4CXOpticks *gx = G4CXOpticks::Get();
-
             auto start = std::chrono::high_resolution_clock::now();
-            gx->simulate(0, false);
+            simphony::simulate(0, false);
             cudaDeviceSynchronize();
             auto end = std::chrono::high_resolution_clock::now();
             // Compute duration
@@ -411,6 +409,7 @@ struct RunAction : G4UserRunAction
             if (!outFile.is_open())
             {
                 std::cerr << "Error opening output file!" << std::endl;
+                simphony::reset(0);
                 return;
             }
 
@@ -453,6 +452,7 @@ struct RunAction : G4UserRunAction
             }
 
             outFile.close();
+            simphony::reset(0);
         }
     }
 };
@@ -622,8 +622,6 @@ struct G4App
         stepping_(new SteppingAction(sev))
     {
     }
-
-    //~G4App(){ G4CXOpticks::Finalize();}
 
     // Create "global" event
     SEvt *sev;

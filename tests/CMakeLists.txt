@@ -2,6 +2,59 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS multithreaded)
 find_program(BASH_EXECUTABLE bash REQUIRED)
 
+add_executable(SimphonyApiTest SimphonyApiTest.cc)
+target_link_libraries(SimphonyApiTest PRIVATE simphony::simphony Geant4::G4gdml)
+
+set(SIMPHONY_API_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simphony_api")
+file(MAKE_DIRECTORY "${SIMPHONY_API_TEST_WORKDIR}")
+
+add_test(
+    NAME Simphony.Api
+    COMMAND SimphonyApiTest
+            "${PROJECT_SOURCE_DIR}/tests/geom/raindrop.gdml"
+            "${SIMPHONY_API_TEST_WORKDIR}/geometry"
+)
+set_tests_properties(Simphony.Api PROPERTIES
+    WORKING_DIRECTORY "${SIMPHONY_API_TEST_WORKDIR}"
+    LABELS "api"
+    TIMEOUT 120
+)
+
+add_test(
+    NAME Simphony.Api.failed_initialization
+    COMMAND SimphonyApiTest
+            "${PROJECT_SOURCE_DIR}/tests/geom/raindrop.gdml"
+            "${SIMPHONY_API_TEST_WORKDIR}/failed_geometry"
+            --fail-translation
+)
+set_tests_properties(Simphony.Api.failed_initialization PROPERTIES
+    WORKING_DIRECTORY "${SIMPHONY_API_TEST_WORKDIR}"
+    LABELS "api"
+    TIMEOUT 120
+)
+
+foreach(FRONTEND IN ITEMS GPUCerenkov GPURaytrace)
+    foreach(OUTPUT_MODE IN ITEMS normal output_failure)
+        set(TEST_NAME "Integration.${FRONTEND}.repeated_runs.${OUTPUT_MODE}")
+        set(TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/${FRONTEND}/${OUTPUT_MODE}")
+        file(MAKE_DIRECTORY "${TEST_WORKDIR}")
+        add_test(
+            NAME "${TEST_NAME}"
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/test_frontend_repeated_runs.py
+                    $<TARGET_FILE:${FRONTEND}>
+                    ${PROJECT_SOURCE_DIR}/tests/geom/opticks_raindrop.gdml
+                    ${PROJECT_SOURCE_DIR}/config
+                    ${OUTPUT_MODE}
+        )
+        set_tests_properties("${TEST_NAME}" PROPERTIES
+            WORKING_DIRECTORY "${TEST_WORKDIR}"
+            LABELS "integration"
+            TIMEOUT 120
+        )
+    endforeach()
+endforeach()
+
 set(SIMPHONY_SIMG4OX_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox")
 
 function(add_simg4ox_integration_test TEST_CASE)

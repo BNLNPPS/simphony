@@ -48,7 +48,6 @@ set(HEADERS
     U4App.h
     U4VPrimaryGenerator.h
 
-    U4SensorIdentifier.h
     U4SensorIdentifierDefault.h
     U4SensitiveDetector.hh
 
@@ -121,7 +120,9 @@ target_link_libraries( ${name} PUBLIC
 
 target_include_directories( ${name} PUBLIC
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/api>
    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/u4>
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
 )
 
 target_compile_definitions( ${name} PUBLIC OPTICKS_U4 ) # THIS MUST BE PUBLIC FOR SLOG-ING TO WORK FULLY
