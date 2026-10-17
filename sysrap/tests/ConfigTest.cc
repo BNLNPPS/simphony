@@ -1,7 +1,9 @@
 #include <cassert>
+#include <cstring>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -54,6 +56,121 @@ int main()
                                   "}\n");
 
     setenv("SIMPHONY_CONFIG_DIR", directory.c_str(), 1);
+
+    const fs::path legacy_output_dir = directory / "legacy-output";
+    SEventConfig::SetIntegrationMode(2);
+    SEventConfig::SetMaxTime(77.f);
+    SEventConfig::SetOutFold(legacy_output_dir.c_str());
+    SEventConfig::SetInputPhoton("legacy-photons.npy");
+    WriteText(directory / "legacy.json", "{}\n");
+
+    setenv("OPTICKS_MAX_TIME", "77", 1);
+    std::ostringstream warning;
+    std::streambuf* const previous_cerr = std::cerr.rdbuf(warning.rdbuf());
+    const simphony::Config legacy("legacy");
+    std::cerr.rdbuf(previous_cerr);
+    unsetenv("OPTICKS_MAX_TIME");
+
+    assert(legacy.integration_mode == 2);
+    assert(legacy.max_time == 77.f);
+    assert(legacy.output_dir == legacy_output_dir);
+    assert(legacy.input_photon == "legacy-photons.npy");
+    assert(SEventConfig::IntegrationMode() == 2);
+    assert(SEventConfig::MaxTime() == 77.f);
+    assert(std::strcmp(SEventConfig::OutFold(), legacy_output_dir.c_str()) == 0);
+    assert(std::strcmp(SEventConfig::InputPhoton(), "legacy-photons.npy") == 0);
+    assert(warning.str().find("OPTICKS_MAX_TIME") != std::string::npos);
+    assert(warning.str().find("event.max_time") != std::string::npos);
+
+    WriteText(
+        directory / "event.json",
+        R"json({
+  "event": {
+    "event_mode": "HitPhotonSeq",
+    "integration_mode": 3,
+    "running_mode": "SRM_G4STATE_RERUN",
+    "start_index": 11,
+    "num_event": 7,
+    "event_skipahead": 234567,
+    "g4_state_spec": "2000:38",
+    "g4_state_rerun": 23,
+    "max_bounce": 47,
+    "max_genstep": 7654321,
+    "maxslot": 123456,
+    "max_simtrace": 54321,
+    "max_time": 123.5,
+    "mode_lite": "Lite",
+    "mode_merge": "Merged",
+    "merge_window": 2.25,
+    "event_reldir": "events/test",
+    "hit_mask": "SD,SA",
+    "propagate_epsilon": 0.125,
+    "propagate_epsilon0": 0.25,
+    "propagate_epsilon0_mask": "TO,CK",
+    "propagate_refine": 1,
+    "propagate_refine_distance": 12.5,
+    "input_genstep": "gensteps_%03d.npy",
+    "input_photon": "photons.npy",
+    "input_photon_frame": "sensor:0:1",
+    "input_photon_change_time": 4.5,
+    "input_photon_record_time": "[10:80:10]",
+    "input_photon_record_slice": "TO BT SA"
+  }
+})json");
+
+    const simphony::Config event("event");
+    assert(event.event_mode == simphony::EventMode::HitPhotonSeq);
+    assert(event.integration_mode == 3);
+    assert(event.running_mode == "SRM_G4STATE_RERUN");
+    assert(event.start_index == 11);
+    assert(event.num_event == 7);
+    assert(event.event_skipahead == 234567);
+    assert(event.g4_state_spec == "2000:38");
+    assert(event.g4_state_rerun == 23);
+    assert(event.max_bounce == 47);
+    assert(event.max_genstep == 7654321);
+    assert(event.maxslot == 123456);
+    assert(event.max_simtrace == 54321);
+    assert(event.max_time == 123.5f);
+    assert(event.mode_lite == simphony::ModeLite::Lite);
+    assert(event.mode_merge == simphony::ModeMerge::Merged);
+    assert(event.merge_window == 2.25f);
+    assert(event.event_reldir == "events/test");
+    assert(event.hit_mask == "SD,SA");
+    assert(event.propagate_epsilon == 0.125f);
+    assert(event.propagate_epsilon0 == 0.25f);
+    assert(event.propagate_epsilon0_mask == "TO,CK");
+    assert(event.propagate_refine == 1u);
+    assert(event.propagate_refine_distance == 12.5f);
+    assert(event.input_genstep == "gensteps_%03d.npy");
+    assert(event.input_photon == "photons.npy");
+    assert(event.input_photon_frame == "sensor:0:1");
+    assert(event.input_photon_change_time == 4.5f);
+    assert(event.input_photon_record_time == "[10:80:10]");
+    assert(event.input_photon_record_slice == "TO BT SA");
+
+    assert(std::strcmp(SEventConfig::EventMode(), "HitPhotonSeq") == 0);
+    assert(SEventConfig::IntegrationMode() == 3);
+    assert(std::strcmp(SEventConfig::RunningModeLabel(), "SRM_G4STATE_RERUN") == 0);
+    assert(SEventConfig::EventIndex(0) == 11);
+    assert(SEventConfig::NumEvent() == 7);
+    assert(SEventConfig::EventSkipahead() == 234567);
+    assert(std::strcmp(SEventConfig::G4StateSpec(), "2000:38") == 0);
+    assert(SEventConfig::G4StateRerun() == 23);
+    assert(SEventConfig::MaxSimtrace() == 54321);
+    assert(SEventConfig::MaxTime() == 123.5f);
+    assert(SEventConfig::MergeWindow() == 2.25f);
+    assert(std::strcmp(SEventConfig::EventReldir(), "events/test") == 0);
+    assert(SEventConfig::HitMaskLabel() == "SD|SA");
+    assert(SEventConfig::PropagateRefine() == 1u);
+    assert(SEventConfig::PropagateRefineDistance() == 12.5f);
+    assert(std::strcmp(SEventConfig::InputGenstep(), "gensteps_%03d.npy") == 0);
+    assert(std::strcmp(SEventConfig::InputPhoton(), "photons.npy") == 0);
+    assert(std::strcmp(SEventConfig::InputPhotonFrame(), "sensor:0:1") == 0);
+    assert(SEventConfig::InputPhotonChangeTime() == 4.5f);
+    assert(std::strcmp(SEventConfig::InputPhotonRecordTime(), "[10:80:10]") == 0);
+    assert(std::strcmp(SEventConfig::InputPhotonRecordSlice(), "TO BT SA") == 0);
+
     EventTimingProfile::Clear();
     const simphony::Config config("timing");
 

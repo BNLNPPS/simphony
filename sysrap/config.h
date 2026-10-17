@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -75,6 +76,27 @@ class Config
     /// Event persistence mode applied to SEventConfig.
     EventMode event_mode{EventMode::Minimal};
 
+    /// Opticks/framework integration mode: -1 disabled, 1 GPU, 2 CPU, 3 both.
+    int integration_mode{-1};
+
+    /// Event source or Geant4 state handling mode accepted by SRM.
+    std::string running_mode{"SRM_DEFAULT"};
+
+    /// First externally visible event index.
+    int start_index{0};
+
+    /// Number of events in the run.
+    int num_event{1};
+
+    /// Random-number skipahead applied between event indices.
+    int event_skipahead{100000};
+
+    /// Geant4 random-state allocation specification.
+    std::string g4_state_spec{"1000:38"};
+
+    /// Photon index selected when rerunning saved Geant4 state.
+    int g4_state_rerun{-1};
+
     /// Maximum photon bounce count.
     int max_bounce{31};
 
@@ -84,14 +106,29 @@ class Config
     /// Maximum event slots applied to SEventConfig.
     int maxslot{0};
 
+    /// Maximum simtrace records allocated for a launch.
+    std::int64_t max_simtrace{1000000000000LL};
+
+    /// Simulation time cutoff in nanoseconds.
+    float max_time{1.e27f};
+
     /// Optional compact photon/hit storage mode.
     ModeLite mode_lite{ModeLite::Unspecified};
 
     /// Optional hit merge mode, combined with mode_lite to choose hit output.
     ModeMerge mode_merge{ModeMerge::Unspecified};
 
+    /// Time window in nanoseconds used when merging hits.
+    float merge_window{0.f};
+
     /// Base directory for event output folders.
     std::filesystem::path output_dir{std::filesystem::current_path()};
+
+    /// Relative directory created below output_dir for event arrays.
+    std::string event_reldir{"ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-no_opticks_event_name}"};
+
+    /// Optical flag abbreviations selecting photons copied to hit output.
+    std::string hit_mask{"SD"};
 
     /// Per-event CPU/GPU timing CSV. Empty disables event timeline recording.
     std::filesystem::path event_timing_output{};
@@ -117,10 +154,35 @@ class Config
     int     ser_interval{0};
     SerHint ser_hint{SerHint::None};
 
+    /// Bit mask enabling propagation refinement diagnostics.
+    unsigned propagate_refine{0u};
+
+    /// Maximum propagation refinement distance in millimetres.
+    float propagate_refine_distance{5000.f};
+
+    /// Input genstep path or indexed path pattern.
+    std::string input_genstep{};
+
+    /// Input photon array path.
+    std::string input_photon{};
+
+    /// Geometry frame specification used to transform input photons.
+    std::string input_photon_frame{};
+
+    /// Replacement time for input photons; negative preserves stored times.
+    float input_photon_change_time{-1.f};
+
+    /// Time-selection expression when sourcing photons from a record array.
+    std::string input_photon_record_time{};
+
+    /// History slice used when sourcing photons from a record array.
+    std::string input_photon_record_slice{};
+
     storch torch{default_torch};
 
   private:
     std::string Locate(std::string filename) const;
+    void LoadLegacyEventConfig();
     void ReadConfig(std::string filepath);
     void Apply() const;
 };

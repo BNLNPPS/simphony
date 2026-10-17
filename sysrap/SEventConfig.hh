@@ -284,6 +284,7 @@ struct SYSRAP_API SEventConfig
 
     static int         RunningMode();
     static const char* RunningModeLabel();
+    static int         StartIndex();
 
     static bool IsRunningModeDefault();
     static bool IsRunningModeG4StateSave();
@@ -297,6 +298,7 @@ struct SYSRAP_API SEventConfig
     static int         EventSkipahead();
     static const char* G4StateSpec();
     static int         G4StateRerun();
+    static int         G4StateRerunConfigured();
 
     static int64_t MaxCurand();
     static int64_t MaxSlot();
@@ -430,7 +432,7 @@ struct SYSRAP_API SEventConfig
 
     static void SetMaxGenstep(int max_genstep);
     static void SetMaxPhoton( int max_photon);
-    static void SetMaxSimtrace( int max_simtrace);
+    static void SetMaxSimtrace( int64_t max_simtrace);
 
     static void SetMaxBounce( int max_bounce);
     static void SetMaxTime(   float max_time );

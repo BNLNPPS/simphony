@@ -325,6 +325,7 @@ SEventConfig::RunningMode controlled via envvar OPTICKS_RUNNING_MODE
 
 int         SEventConfig::RunningMode(){ return _RunningMode ; }
 const char* SEventConfig::RunningModeLabel(){ return SRM::Name(_RunningMode) ; }
+int         SEventConfig::StartIndex(){ return _StartIndex ; }
 
 bool SEventConfig::IsRunningModeDefault(){      return RunningMode() == SRM_DEFAULT ; }
 bool SEventConfig::IsRunningModeG4StateSave(){  return RunningMode() == SRM_G4STATE_SAVE ; }
@@ -354,6 +355,7 @@ int SEventConfig::G4StateRerun()
     bool rerun_enabled = IsRunningModeG4StateRerun() ;
     return rerun_enabled && _G4StateRerun > -1 ? _G4StateRerun : -1  ;
 }
+int SEventConfig::G4StateRerunConfigured(){ return _G4StateRerun ; }
 
 
 
@@ -578,6 +580,7 @@ void SEventConfig::SetRunningMode(const char* mode){ _RunningMode = SRM::Type(mo
 
 void SEventConfig::SetStartIndex(int index0){        _StartIndex = index0 ; LIMIT_Check() ; }
 void SEventConfig::SetNumEvent(int nevt){            _NumEvent = nevt ; LIMIT_Check() ; }
+void SEventConfig::SetEventSkipahead(int offset){     _EventSkipahead = offset ; LIMIT_Check() ; }
 void SEventConfig::SetG4StateSpec(const char* spec){ _G4StateSpec = spec ? strdup(spec) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetG4StateRerun(int id){          _G4StateRerun = id ; LIMIT_Check() ; }
 
@@ -586,7 +589,7 @@ void SEventConfig::SetMaxSlot(int max_slot){     _MaxSlot    = max_slot  ; LIMIT
 
 void SEventConfig::SetMaxGenstep(int max_genstep){ _MaxGenstep = max_genstep ; LIMIT_Check() ; }
 void SEventConfig::SetMaxPhoton( int max_photon){  _MaxPhoton  = max_photon  ; LIMIT_Check() ; }
-void SEventConfig::SetMaxSimtrace( int max_simtrace){  _MaxSimtrace  = max_simtrace  ; LIMIT_Check() ; }
+void SEventConfig::SetMaxSimtrace( int64_t max_simtrace){  _MaxSimtrace  = max_simtrace  ; LIMIT_Check() ; }
 
 void SEventConfig::SetMaxBounce( int max_bounce){  _MaxBounce  = max_bounce  ; LIMIT_Check() ; }
 void SEventConfig::SetMaxTime(   float max_time){   _MaxTime   = max_time  ; LIMIT_Check() ; }

@@ -159,6 +159,88 @@ std::string_view EventModeName(EventMode mode)
     return NamedEnumName(mode, EventModeInfos, "Minimal");
 }
 
+template <typename Enum, size_t N>
+Enum NamedEnumValue(
+    std::string_view                          name,
+    const std::array<NamedEnumInfo<Enum>, N>& infos,
+    Enum                                      fallback)
+{
+    const auto it = std::ranges::find(infos, name, &NamedEnumInfo<Enum>::name);
+    return it == infos.end() ? fallback : it->value;
+}
+
+ModeLite ModeLiteValue(std::int64_t value)
+{
+    switch (value)
+    {
+        case 0: return ModeLite::Standard;
+        case 1: return ModeLite::Lite;
+        case 2: return ModeLite::DebugCompare;
+        default: return ModeLite::Unspecified;
+    }
+}
+
+ModeMerge ModeMergeValue(std::int64_t value)
+{
+    switch (value)
+    {
+        case 0: return ModeMerge::Separate;
+        case 1: return ModeMerge::Merged;
+        default: return ModeMerge::Unspecified;
+    }
+}
+
+std::string StringOrEmpty(const char* value)
+{
+    return value ? value : "";
+}
+
+void WarnLegacyEventEnvironment()
+{
+    static constexpr std::array legacy_keys{
+        std::pair{"OPTICKS_INTEGRATION_MODE", "event.integration_mode"},
+        std::pair{"OPTICKS_EVENT_MODE", "event.event_mode"},
+        std::pair{"OPTICKS_RUNNING_MODE", "event.running_mode"},
+        std::pair{"OPTICKS_START_INDEX", "event.start_index"},
+        std::pair{"OPTICKS_NUM_EVENT", "event.num_event"},
+        std::pair{"OPTICKS_EVENT_SKIPAHEAD", "event.event_skipahead"},
+        std::pair{"OPTICKS_G4STATE_SPEC", "event.g4_state_spec"},
+        std::pair{"OPTICKS_G4STATE_RERUN", "event.g4_state_rerun"},
+        std::pair{"OPTICKS_MAX_SLOT", "event.maxslot"},
+        std::pair{"OPTICKS_MAX_GENSTEP", "event.max_genstep"},
+        std::pair{"OPTICKS_MAX_SIMTRACE", "event.max_simtrace"},
+        std::pair{"OPTICKS_MAX_BOUNCE", "event.max_bounce"},
+        std::pair{"OPTICKS_MAX_TIME", "event.max_time"},
+        std::pair{"OPTICKS_MODE_LITE", "event.mode_lite"},
+        std::pair{"OPTICKS_MODE_MERGE", "event.mode_merge"},
+        std::pair{"OPTICKS_MERGE_WINDOW", "event.merge_window"},
+        std::pair{"OPTICKS_OUT_FOLD", "event.output_dir"},
+        std::pair{"OPTICKS_EVENT_RELDIR", "event.event_reldir"},
+        std::pair{"OPTICKS_HIT_MASK", "event.hit_mask"},
+        std::pair{"OPTICKS_PROPAGATE_EPSILON", "event.propagate_epsilon"},
+        std::pair{"OPTICKS_PROPAGATE_EPSILON0", "event.propagate_epsilon0"},
+        std::pair{"OPTICKS_PROPAGATE_EPSILON0_MASK", "event.propagate_epsilon0_mask"},
+        std::pair{"OPTICKS_PROPAGATE_REFINE", "event.propagate_refine"},
+        std::pair{"OPTICKS_PROPAGATE_REFINE_DISTANCE", "event.propagate_refine_distance"},
+        std::pair{"OPTICKS_INPUT_GENSTEP", "event.input_genstep"},
+        std::pair{"OPTICKS_INPUT_PHOTON", "event.input_photon"},
+        std::pair{"OPTICKS_INPUT_PHOTON_FRAME", "event.input_photon_frame"},
+        std::pair{"OPTICKS_INPUT_PHOTON_CHANGE_TIME", "event.input_photon_change_time"},
+        std::pair{"OPTICKS_INPUT_PHOTON_RECORD_TIME", "event.input_photon_record_time"},
+        std::pair{"OPTICKS_INPUT_PHOTON_RECORD_SLICE", "event.input_photon_record_slice"},
+    };
+
+    for (const auto& [environment, json_key] : legacy_keys)
+    {
+        if (std::getenv(environment))
+        {
+            std::cerr << "Deprecated environment setting " << environment
+                      << " is in use; migrate to " << json_key
+                      << " (an explicit JSON value takes precedence).\n";
+        }
+    }
+}
+
 template <typename T>
 void Assign(const nlohmann::json& object, const char* key, T& value)
 {
@@ -230,8 +312,45 @@ void ResolveOutputPath(const std::filesystem::path& output_dir, std::filesystem:
 Config::Config(std::string config_name) :
     name{config_name}
 {
+    LoadLegacyEventConfig();
+    WarnLegacyEventEnvironment();
     ReadConfig(Locate(name + ".json"));
     Apply();
+}
+
+void Config::LoadLegacyEventConfig()
+{
+    event_mode = NamedEnumValue(
+        StringOrEmpty(SEventConfig::EventMode()), EventModeInfos, EventMode::Minimal);
+    integration_mode = SEventConfig::IntegrationMode();
+    running_mode = StringOrEmpty(SEventConfig::RunningModeLabel());
+    start_index = SEventConfig::StartIndex();
+    num_event = SEventConfig::NumEvent();
+    event_skipahead = SEventConfig::EventSkipahead();
+    g4_state_spec = StringOrEmpty(SEventConfig::G4StateSpec());
+    g4_state_rerun = SEventConfig::G4StateRerunConfigured();
+    max_bounce = static_cast<int>(SEventConfig::MaxBounce());
+    max_genstep = static_cast<int>(SEventConfig::MaxGenstep());
+    maxslot = static_cast<int>(SEventConfig::MaxSlot());
+    max_simtrace = SEventConfig::MaxSimtrace();
+    max_time = SEventConfig::MaxTime();
+    mode_lite = ModeLiteValue(SEventConfig::ModeLite());
+    mode_merge = ModeMergeValue(SEventConfig::ModeMerge());
+    merge_window = SEventConfig::MergeWindow();
+    output_dir = StringOrEmpty(SEventConfig::OutFold());
+    event_reldir = StringOrEmpty(SEventConfig::EventReldir());
+    hit_mask = SEventConfig::HitMaskLabel();
+    propagate_epsilon = SEventConfig::PropagateEpsilon();
+    propagate_epsilon0 = SEventConfig::PropagateEpsilon0();
+    propagate_epsilon0_mask = SEventConfig::PropagateEpsilon0MaskLabel();
+    propagate_refine = SEventConfig::PropagateRefine();
+    propagate_refine_distance = SEventConfig::PropagateRefineDistance();
+    input_genstep = StringOrEmpty(SEventConfig::InputGenstep());
+    input_photon = StringOrEmpty(SEventConfig::InputPhoton());
+    input_photon_frame = StringOrEmpty(SEventConfig::InputPhotonFrame());
+    input_photon_change_time = SEventConfig::InputPhotonChangeTime();
+    input_photon_record_time = StringOrEmpty(SEventConfig::InputPhotonRecordTime());
+    input_photon_record_slice = StringOrEmpty(SEventConfig::InputPhotonRecordSlice());
 }
 
 std::string Config::PtxPath(const std::string& ptx_name)
@@ -341,16 +460,36 @@ void Config::ReadConfig(std::string filepath)
         {
             const nlohmann::json& event_ = *it;
 
+            Assign(event_, "integration_mode", integration_mode);
+            Assign(event_, "running_mode", running_mode);
+            Assign(event_, "start_index", start_index);
+            Assign(event_, "num_event", num_event);
+            Assign(event_, "event_skipahead", event_skipahead);
+            Assign(event_, "g4_state_spec", g4_state_spec);
+            Assign(event_, "g4_state_rerun", g4_state_rerun);
             Assign(event_, "max_bounce", max_bounce);
             Assign(event_, "max_genstep", max_genstep);
             Assign(event_, "maxslot", maxslot);
+            Assign(event_, "max_simtrace", max_simtrace);
+            Assign(event_, "max_time", max_time);
             AssignNamedEnum(event_, "event", "event_mode", event_mode, EventModeInfos);
             AssignNamedEnum(event_, "event", "mode_lite", mode_lite, ModeLiteInfos);
             AssignNamedEnum(event_, "event", "mode_merge", mode_merge, ModeMergeInfos);
+            Assign(event_, "merge_window", merge_window);
             AssignOutputDir(event_, output_dir);
+            Assign(event_, "event_reldir", event_reldir);
+            Assign(event_, "hit_mask", hit_mask);
             Assign(event_, "propagate_epsilon", propagate_epsilon);
             Assign(event_, "propagate_epsilon0", propagate_epsilon0);
             Assign(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
+            Assign(event_, "propagate_refine", propagate_refine);
+            Assign(event_, "propagate_refine_distance", propagate_refine_distance);
+            Assign(event_, "input_genstep", input_genstep);
+            Assign(event_, "input_photon", input_photon);
+            Assign(event_, "input_photon_frame", input_photon_frame);
+            Assign(event_, "input_photon_change_time", input_photon_change_time);
+            Assign(event_, "input_photon_record_time", input_photon_record_time);
+            Assign(event_, "input_photon_record_slice", input_photon_record_slice);
         }
 
         if (const auto it = json.find("ser"); it != json.end())
@@ -392,21 +531,45 @@ void Config::Apply() const
 {
     const std::string event_mode_name{EventModeName(event_mode)};
     const std::string output_dir_str = output_dir.string();
+    const auto nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
 
+    SEventConfig::SetIntegrationMode(integration_mode);
     SEventConfig::SetEventMode(event_mode_name.c_str());
+    SEventConfig::SetRunningMode(running_mode.c_str());
+    SEventConfig::SetStartIndex(start_index);
+    SEventConfig::SetNumEvent(num_event);
+    SEventConfig::SetEventSkipahead(event_skipahead);
+    SEventConfig::SetG4StateSpec(nullable(g4_state_spec));
+    SEventConfig::SetG4StateRerun(g4_state_rerun);
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
     SEventConfig::SetMaxSlot(maxslot);
+    SEventConfig::SetMaxSimtrace(max_simtrace);
+    SEventConfig::SetMaxTime(max_time);
     if (mode_lite != ModeLite::Unspecified)
         SEventConfig::SetModeLite(static_cast<int>(mode_lite));
     if (mode_merge != ModeMerge::Unspecified)
         SEventConfig::SetModeMerge(static_cast<int>(mode_merge));
+    SEventConfig::SetMergeWindow(merge_window);
     SEventConfig::SetOutFold(output_dir_str.c_str());
+    SEventConfig::SetEventReldir(nullable(event_reldir));
+    SEventConfig::SetHitMask(hit_mask.c_str(), hit_mask.find('|') == std::string::npos ? ',' : '|');
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
-    SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
+    SEventConfig::SetPropagateEpsilon0Mask(
+        propagate_epsilon0_mask.c_str(),
+        propagate_epsilon0_mask.find('|') == std::string::npos ? ',' : '|');
+    SEventConfig::SetPropagateRefine(propagate_refine);
+    SEventConfig::SetPropagateRefineDistance(propagate_refine_distance);
+    SEventConfig::SetInputGenstep(nullable(input_genstep));
+    SEventConfig::SetInputPhoton(nullable(input_photon));
+    SEventConfig::SetInputPhotonFrame(nullable(input_photon_frame));
+    SEventConfig::SetInputPhotonChangeTime(input_photon_change_time);
+    SEventConfig::SetInputPhotonRecordTime(nullable(input_photon_record_time));
+    SEventConfig::SetInputPhotonRecordSlice(nullable(input_photon_record_slice));
     SEventConfig::_SerInterval = ser_interval;
     SEventConfig::_SerHint = static_cast<int>(ser_hint);
+
     EventTimingProfile::Configure(
         event_timing_profile_enabled,
         event_timing_profile_output,
