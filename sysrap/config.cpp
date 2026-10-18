@@ -467,6 +467,10 @@ void Config::ReadConfig(std::string filepath)
         {
             const nlohmann::json& event_ = *it;
 
+            if (event_.contains("mode"))
+                throw std::invalid_argument{
+                    "Unsupported event.mode key. Use event.event_mode instead."};
+
             Assign(event_, "integration_mode", integration_mode);
             Assign(event_, "running_mode", running_mode);
             Assign(event_, "start_index", start_index);
