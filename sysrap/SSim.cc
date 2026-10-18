@@ -499,7 +499,7 @@ Frame/event setup now lives below CSGFoundry, in SSim/stree and SEvt.
 
 void SSim::afterLoadOrCreate()
 {
-    SEvt::CreateOrReuse() ;   // creates 1/2 SEvt depending on OPTICKS_INTEGRATION_MODE
+    SEvt::CreateOrReuse(); // creates 1/2 SEvt depending on event.integration_mode
     assert(tree);
 
     sframe fr = tree->get_frame_moi();

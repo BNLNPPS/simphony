@@ -124,10 +124,6 @@ def run_single_mode(mode, num_events, photon_threshold=0, multiplicity=100,
         geant4.setupTracker("DRICH")
 
     elif mode == "gpu":
-        # Opticks env vars for hit gathering
-        os.environ.setdefault("OPTICKS_EVENT_MODE", "Minimal")
-        os.environ.setdefault("OPTICKS_INTEGRATION_MODE", "1")
-
         # Block CPU G4Step hits; only GPU-injected hits pass
         seq, act = geant4.setupTracker("DRICH")
         filt = DDG4.Filter(kernel, "EnergyDepositMinimumCut/Block")
@@ -142,6 +138,7 @@ def run_single_mode(mode, num_events, photon_threshold=0, multiplicity=100,
         kernel.steppingAction().adopt(stepping)
 
         run_action = DDG4.RunAction(kernel, "OpticsRun/OpticsRun1")
+        run_action.ConfigName = "dd4hep_gpu"
         run_action.SaveGeometry = False
         kernel.runAction().adopt(run_action)
 

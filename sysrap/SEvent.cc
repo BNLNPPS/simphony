@@ -152,16 +152,14 @@ NP* SEvent::MakeCerenkovGenstep(int idx_arg){ return MakeGenstep( OpticksGenstep
 NP* SEvent::MakeScintGenstep(   int idx_arg){ return MakeGenstep( OpticksGenstep_SCINTILLATION, idx_arg ) ; }
 NP* SEvent::MakeCarrierGenstep( int idx_arg){ return MakeGenstep( OpticksGenstep_CARRIER, idx_arg ) ; }
 
-
 /**
 SEvent::MakeGenstep
 ---------------------
 
 NB index_arg is userspace 0-based index, that is not the same as the internal SEvt::index
-which may be offset by OPTICKS_START_INDEX
+which may be offset by JSON ``event.start_index``
 
 **/
-
 
 NP* SEvent::MakeGenstep( int gentype, int index_arg )
 {

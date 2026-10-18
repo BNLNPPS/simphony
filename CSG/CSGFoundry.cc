@@ -3639,8 +3639,9 @@ int CSGFoundry::getFrame(sframe& fr, int inst_idx) const
 CSGFoundry::getFrameE
 -----------------------
 
-The frame and corresponding transform used can be controlled by several envvars,
-see CSGFoundry::getFrameE. Possible envvars include:
+The frame and corresponding transform can be selected by the ``INST`` or
+``MOI`` geometry-inspection environment variables. Otherwise the frame comes
+from JSON ``event.input_photon_frame``.
 
 +------------------------------+----------------------------+
 | envvar                       | Examples                   |
@@ -3649,9 +3650,6 @@ see CSGFoundry::getFrameE. Possible envvars include:
 +------------------------------+----------------------------+
 | MOI                          | Hama:0:1000 NNVT:0:1000    |
 +------------------------------+----------------------------+
-| OPTICKS_INPUT_PHOTON_FRAME   |                            |
-+------------------------------+----------------------------+
-
 
 The old frame path recorded metadata describing which environment variable
 selected the frame. That metadata is intentionally not preserved for sframe.
@@ -3679,7 +3677,7 @@ sframe CSGFoundry::getFrameE() const
     }
     else
     {
-        const char* ipf_ = SEventConfig::InputPhotonFrame();  // OPTICKS_INPUT_PHOTON_FRAME
+        const char* ipf_ = SEventConfig::InputPhotonFrame();
         const char* ipf = ipf_ ? ipf_ : "0" ;
         LOG_IF(info, VERBOSE) << " ipf " << ipf ;
         return getFrame(ipf);

@@ -201,8 +201,8 @@ serial and MT modes. In MT mode, CPU-side history folders are not produced, but
 ### File schemas
 
 The table assumes the default full photon representation and unmerged hits:
-`Config::mode_lite` is `ModeLite::Unspecified` or `ModeLite::Standard`, and
-`Config::mode_merge` is `ModeMerge::Unspecified` or `ModeMerge::Separate`.
+`Config::mode_lite` is `ModeLite::Standard`, and `Config::mode_merge` is
+`ModeMerge::Separate`.
 Lite and merge modes replace the photon and hit component names with
 `photonlite`, `hitlite`, `hitmerged`, or `hitlitemerged` after
 `Config::Apply` synchronizes the app-level policy to `SEventConfig`.

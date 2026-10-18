@@ -355,13 +355,13 @@ might be set to zero. However, there could then be a problem with self intersect
 in cases where these things happen within close to surfaces.
 
 +----------------------------------+-----------------------------------------+-------------------+
-|  envvar                          |  method                                 | default           |
+|  JSON key                        |  method                                 | default           |
 +==================================+=========================================+===================+
-| OPTICKS_PROPAGATE_EPSILON        |  SEventConfig::PropagateEpsilon()       |  0.05f            |
+| event.propagate_epsilon          |  SEventConfig::PropagateEpsilon()       |  0.05f            |
 +----------------------------------+-----------------------------------------+-------------------+
-| OPTICKS_PROPAGATE_EPSILON0       |  SEventConfig::PropagateEpsilon0()      |  0.05f            |
+| event.propagate_epsilon0         |  SEventConfig::PropagateEpsilon0()      |  0.05f            |
 +----------------------------------+-----------------------------------------+-------------------+
-| OPTICKS_PROPAGATE_EPSILON0_MASK  |  SEventConfig::PropagateEpsilon0Mask()  |  TO,CK,SI,SC,RE   |
+| event.propagate_epsilon0_mask    |  SEventConfig::PropagateEpsilon0Mask()  |  TO,CK,SI,SC,RE   |
 +----------------------------------+-----------------------------------------+-------------------+
 
 **/

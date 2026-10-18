@@ -39,20 +39,13 @@ QEvt::gatherComponent
    guided by SEventConfig::GatherComp
 
 
-Canonical configuration and compatibility
--------------------------------------------
+Canonical configuration
+-----------------------
 
 Applications should construct ``simphony::Config`` from a named JSON file.
 ``Config::Apply`` synchronizes its typed ``event`` values into this low-level,
 process-wide facade before event creation. See ``docs/configuration.md`` for
-the schema, defaults, and migration table.
-
-For one compatibility release, a supported set of ``OPTICKS_*`` variables is
-read during static initialization and used only when the selected JSON omits
-the corresponding key. ``Config`` warns when it observes one of those legacy
-variables. Programs that use this class without constructing ``Config`` still
-depend on the fallback, so their environment must be established before
-``libSysRap.so`` is loaded.
+the schema and defaults.
 
 Several values have dependents. Set them through ``Config`` before creating an
 ``SEvt``; changing a basis setting after initialization does not necessarily
@@ -164,47 +157,6 @@ struct SYSRAP_API SEventConfig
     static constexpr const char* WITH_STATE_LIMIT = "M3" ;
     static constexpr const char* NO_STATE_LIMIT = "G1000" ;  // 1000 billion
     static constexpr const char* NO_STATE_LIMIT_GENSTEP = "M10" ; // adhoc
-
-    static constexpr const char* kIntegrationMode = "OPTICKS_INTEGRATION_MODE" ;
-    static constexpr const char* kEventMode       = "OPTICKS_EVENT_MODE" ;
-    static constexpr const char* kRunningMode     = "OPTICKS_RUNNING_MODE" ;
-
-    static constexpr const char* kStartIndex   = "OPTICKS_START_INDEX" ;
-    static constexpr const char* kNumEvent     = "OPTICKS_NUM_EVENT" ;
-    static constexpr const char* kEventSkipahead  = "OPTICKS_EVENT_SKIPAHEAD" ;
-
-    static constexpr const char* kG4StateSpec  = "OPTICKS_G4STATE_SPEC" ;
-    static constexpr const char* kG4StateRerun = "OPTICKS_G4STATE_RERUN" ;
-
-    static constexpr const char* kMaxSlot      = "OPTICKS_MAX_SLOT" ;
-
-    static constexpr const char* kMaxGenstep   = "OPTICKS_MAX_GENSTEP" ;
-    static constexpr const char* kMaxSimtrace  = "OPTICKS_MAX_SIMTRACE" ;
-
-    static constexpr const char* kMaxBounce    = "OPTICKS_MAX_BOUNCE" ;
-    static constexpr const char* kMaxTime      = "OPTICKS_MAX_TIME" ;
-
-    static constexpr const char* kModeLite      = "OPTICKS_MODE_LITE" ;
-    static constexpr const char* kModeMerge     = "OPTICKS_MODE_MERGE" ;
-    static constexpr const char* kMergeWindow   = "OPTICKS_MERGE_WINDOW" ; // ns
-
-    static constexpr const char* kOutFold      = "OPTICKS_OUT_FOLD" ;
-    static constexpr const char* kEventReldir  = "OPTICKS_EVENT_RELDIR" ;
-    static constexpr const char* kHitMask      = "OPTICKS_HIT_MASK" ;
-
-    static constexpr const char* kPropagateEpsilon = "OPTICKS_PROPAGATE_EPSILON" ;
-    static constexpr const char* kPropagateEpsilon0 = "OPTICKS_PROPAGATE_EPSILON0" ;
-    static constexpr const char* kPropagateEpsilon0Mask = "OPTICKS_PROPAGATE_EPSILON0_MASK" ;
-    static constexpr const char* kPropagateRefine = "OPTICKS_PROPAGATE_REFINE" ;
-    static constexpr const char* kPropagateRefineDistance = "OPTICKS_PROPAGATE_REFINE_DISTANCE" ;
-
-    static constexpr const char* kInputGenstep     = "OPTICKS_INPUT_GENSTEP" ;
-    static constexpr const char* kInputPhoton      = "OPTICKS_INPUT_PHOTON" ;
-    static constexpr const char* kInputPhotonFrame = "OPTICKS_INPUT_PHOTON_FRAME" ;
-    static constexpr const char* kInputPhotonChangeTime = "OPTICKS_INPUT_PHOTON_CHANGE_TIME" ;
-    static constexpr const char* kInputPhotonRecordTime = "OPTICKS_INPUT_PHOTON_RECORD_TIME" ;
-    static constexpr const char* kInputPhotonRecordSlice = "OPTICKS_INPUT_PHOTON_RECORD_SLICE" ;
-
 
     static int         IntegrationMode();
     static bool        GPU_Simulation() ; // 1 or 3
@@ -415,7 +367,7 @@ struct SYSRAP_API SEventConfig
     static void SetSaveComp(const char* names, char delim=',') ;
     static bool IsCompConfigured();
 
-    // STATIC VALUES SET EARLY, MANY BASED ON ENVVARS
+    // STATIC VALUES SET EARLY FROM COMPILED DEFAULTS, THEN UPDATED BY Config::Apply
 
     static int         _IntegrationModeDefault ;
     static const char* _EventModeDefault ;

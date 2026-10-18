@@ -261,11 +261,13 @@ polarization are taken from the first of the straddling step points.
 When not straddling the photon is skipped, corresponding
 to it not being alive at the simulation time provided.
 
-Config example from ~/o/CSGOptiX/cxt_precision.sh with multiple times::
+JSON configuration example with multiple times::
 
-     export OPTICKS_INPUT_PHOTON=$AFOLD/record.npy
-     export OPTICKS_INPUT_PHOTON_RECORD_SLICE="TO BT BT BT SA"
-     export OPTICKS_INPUT_PHOTON_RECORD_TIME=[10:80:10]  # ns
+     "event": {
+       "input_photon": "/path/to/record.npy",
+       "input_photon_record_slice": "TO BT BT BT SA",
+       "input_photon_record_time": "[10:80:10]"
+     }
 
 Python analysis is simplified by arranging RECORD_SLICE
 and RECORD_TIME such that all photons result in the same number of

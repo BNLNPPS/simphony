@@ -9,16 +9,25 @@
 #include <G4Run.hh>
 
 #include <chrono>
+#include <mutex>
 
 #include <SEventConfig.hh>
 #include <SEvt.hh>
 #include <SSim.hh>
+
+#include <config.h>
 #include <simphony.h>
 
 #include "DD4hepSensorIdentifier.hh"
 
 namespace ddsimphony
 {
+
+namespace
+{
+std::once_flag config_once;
+std::string    active_config_name;
+} // namespace
 
 //---------------------------------------------------------------------------//
 /*!
@@ -62,6 +71,7 @@ OpticsRun::OpticsRun(dd4hep::sim::Geant4Context *ctxt, std::string const &name)
     dd4hep::InstanceCount::increment(this);
     declareProperty("SaveGeometry", save_geometry_);
     declareProperty("GeometryDirectory", geometry_directory_);
+    declareProperty("ConfigName", config_name_);
 }
 
 //---------------------------------------------------------------------------//
@@ -81,6 +91,20 @@ void OpticsRun::begin(G4Run const *run)
     }
 
     info("Initializing Simphony geometry (run #%d)", run->GetRunID());
+
+    std::call_once(config_once, [this]() {
+        info("Loading Simphony configuration %s.json", config_name_.c_str());
+        const simphony::Config config(config_name_);
+        active_config_name = config.name;
+    });
+    if (config_name_ != active_config_name)
+    {
+        except(
+            "OpticsRun configuration is already initialized from %s.json; cannot switch to %s.json",
+            active_config_name.c_str(),
+            config_name_.c_str());
+        return;
+    }
 
     // Add Geant4 10.x scintillation property aliases for Opticks GPU
     addOpticksPropertyAliases();

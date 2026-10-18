@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <ranges>
 #include <sstream>
 #include <stdexcept>
@@ -65,14 +64,12 @@ inline constexpr std::array TorchTypeInfos{
 };
 
 inline constexpr std::array ModeLiteInfos{
-    NamedEnumInfo<ModeLite>{ModeLite::Unspecified, "Unspecified"},
     NamedEnumInfo<ModeLite>{ModeLite::Standard, "Standard"},
     NamedEnumInfo<ModeLite>{ModeLite::Lite, "Lite"},
     NamedEnumInfo<ModeLite>{ModeLite::DebugCompare, "DebugCompare"},
 };
 
 inline constexpr std::array ModeMergeInfos{
-    NamedEnumInfo<ModeMerge>{ModeMerge::Unspecified, "Unspecified"},
     NamedEnumInfo<ModeMerge>{ModeMerge::Separate, "Separate"},
     NamedEnumInfo<ModeMerge>{ModeMerge::Merged, "Merged"},
 };
@@ -159,95 +156,6 @@ std::string_view EventModeName(EventMode mode)
     return NamedEnumName(mode, EventModeInfos, "Minimal");
 }
 
-template <typename Enum, size_t N>
-Enum NamedEnumValue(
-    std::string_view                          name,
-    const std::array<NamedEnumInfo<Enum>, N>& infos,
-    Enum                                      fallback)
-{
-    const auto it = std::ranges::find(infos, name, &NamedEnumInfo<Enum>::name);
-    return it == infos.end() ? fallback : it->value;
-}
-
-ModeLite ModeLiteValue(std::int64_t value)
-{
-    switch (value)
-    {
-    case 0:
-        return ModeLite::Standard;
-    case 1:
-        return ModeLite::Lite;
-    case 2:
-        return ModeLite::DebugCompare;
-    default:
-        return ModeLite::Unspecified;
-    }
-}
-
-ModeMerge ModeMergeValue(std::int64_t value)
-{
-    switch (value)
-    {
-    case 0:
-        return ModeMerge::Separate;
-    case 1:
-        return ModeMerge::Merged;
-    default:
-        return ModeMerge::Unspecified;
-    }
-}
-
-std::string StringOrEmpty(const char* value)
-{
-    return value ? value : "";
-}
-
-void WarnLegacyEventEnvironment()
-{
-    static constexpr std::array legacy_keys{
-        std::pair{"OPTICKS_INTEGRATION_MODE", "event.integration_mode"},
-        std::pair{"OPTICKS_EVENT_MODE", "event.event_mode"},
-        std::pair{"OPTICKS_RUNNING_MODE", "event.running_mode"},
-        std::pair{"OPTICKS_START_INDEX", "event.start_index"},
-        std::pair{"OPTICKS_NUM_EVENT", "event.num_event"},
-        std::pair{"OPTICKS_EVENT_SKIPAHEAD", "event.event_skipahead"},
-        std::pair{"OPTICKS_G4STATE_SPEC", "event.g4_state_spec"},
-        std::pair{"OPTICKS_G4STATE_RERUN", "event.g4_state_rerun"},
-        std::pair{"OPTICKS_MAX_SLOT", "event.maxslot"},
-        std::pair{"OPTICKS_MAX_GENSTEP", "event.max_genstep"},
-        std::pair{"OPTICKS_MAX_SIMTRACE", "event.max_simtrace"},
-        std::pair{"OPTICKS_MAX_BOUNCE", "event.max_bounce"},
-        std::pair{"OPTICKS_MAX_TIME", "event.max_time"},
-        std::pair{"OPTICKS_MODE_LITE", "event.mode_lite"},
-        std::pair{"OPTICKS_MODE_MERGE", "event.mode_merge"},
-        std::pair{"OPTICKS_MERGE_WINDOW", "event.merge_window"},
-        std::pair{"OPTICKS_OUT_FOLD", "event.output_dir"},
-        std::pair{"OPTICKS_EVENT_RELDIR", "event.event_reldir"},
-        std::pair{"OPTICKS_HIT_MASK", "event.hit_mask"},
-        std::pair{"OPTICKS_PROPAGATE_EPSILON", "event.propagate_epsilon"},
-        std::pair{"OPTICKS_PROPAGATE_EPSILON0", "event.propagate_epsilon0"},
-        std::pair{"OPTICKS_PROPAGATE_EPSILON0_MASK", "event.propagate_epsilon0_mask"},
-        std::pair{"OPTICKS_PROPAGATE_REFINE", "event.propagate_refine"},
-        std::pair{"OPTICKS_PROPAGATE_REFINE_DISTANCE", "event.propagate_refine_distance"},
-        std::pair{"OPTICKS_INPUT_GENSTEP", "event.input_genstep"},
-        std::pair{"OPTICKS_INPUT_PHOTON", "event.input_photon"},
-        std::pair{"OPTICKS_INPUT_PHOTON_FRAME", "event.input_photon_frame"},
-        std::pair{"OPTICKS_INPUT_PHOTON_CHANGE_TIME", "event.input_photon_change_time"},
-        std::pair{"OPTICKS_INPUT_PHOTON_RECORD_TIME", "event.input_photon_record_time"},
-        std::pair{"OPTICKS_INPUT_PHOTON_RECORD_SLICE", "event.input_photon_record_slice"},
-    };
-
-    for (const auto& [environment, json_key] : legacy_keys)
-    {
-        if (std::getenv(environment))
-        {
-            std::cerr << "Deprecated environment setting " << environment
-                      << " is in use; migrate to " << json_key
-                      << " (an explicit JSON value takes precedence).\n";
-        }
-    }
-}
-
 template <typename T>
 void Assign(const nlohmann::json& object, const char* key, T& value)
 {
@@ -319,48 +227,8 @@ void ResolveOutputPath(const std::filesystem::path& output_dir, std::filesystem:
 Config::Config(std::string config_name) :
     name{config_name}
 {
-    LoadLegacyEventConfig();
-    WarnLegacyEventEnvironment();
     ReadConfig(Locate(name + ".json"));
     Apply();
-}
-
-void Config::LoadLegacyEventConfig()
-{
-    event_mode = NamedEnumValue(
-        StringOrEmpty(SEventConfig::EventMode()), EventModeInfos, EventMode::Minimal);
-    integration_mode = SEventConfig::IntegrationMode();
-    running_mode = StringOrEmpty(SEventConfig::RunningModeLabel());
-    start_index = SEventConfig::StartIndex();
-    num_event = SEventConfig::NumEvent();
-    event_skipahead = SEventConfig::EventSkipahead();
-    g4_state_spec = StringOrEmpty(SEventConfig::G4StateSpec());
-    g4_state_rerun = SEventConfig::G4StateRerunConfigured();
-    max_bounce = static_cast<int>(SEventConfig::MaxBounce());
-    max_genstep = static_cast<int>(SEventConfig::MaxGenstep());
-    maxslot = static_cast<int>(SEventConfig::MaxSlot());
-    max_simtrace = SEventConfig::MaxSimtrace();
-    max_time = SEventConfig::MaxTime();
-    mode_lite = ModeLiteValue(SEventConfig::ModeLite());
-    mode_merge = ModeMergeValue(SEventConfig::ModeMerge());
-    merge_window = SEventConfig::MergeWindow();
-    const std::string legacy_output_dir = StringOrEmpty(SEventConfig::OutFold());
-    // The low-level sentinel is resolved by SEvt, but Config paths need a concrete app-level base.
-    if (std::getenv(SEventConfig::kOutFold) || legacy_output_dir != SEventConfig::_OutFoldDefault)
-        output_dir = legacy_output_dir;
-    event_reldir = StringOrEmpty(SEventConfig::EventReldir());
-    hit_mask = SEventConfig::HitMaskLabel();
-    propagate_epsilon = SEventConfig::PropagateEpsilon();
-    propagate_epsilon0 = SEventConfig::PropagateEpsilon0();
-    propagate_epsilon0_mask = SEventConfig::PropagateEpsilon0MaskLabel();
-    propagate_refine = SEventConfig::PropagateRefine();
-    propagate_refine_distance = SEventConfig::PropagateRefineDistance();
-    input_genstep = StringOrEmpty(SEventConfig::InputGenstep());
-    input_photon = StringOrEmpty(SEventConfig::InputPhoton());
-    input_photon_frame = StringOrEmpty(SEventConfig::InputPhotonFrame());
-    input_photon_change_time = SEventConfig::InputPhotonChangeTime();
-    input_photon_record_time = StringOrEmpty(SEventConfig::InputPhotonRecordTime());
-    input_photon_record_slice = StringOrEmpty(SEventConfig::InputPhotonRecordSlice());
 }
 
 std::string Config::PtxPath(const std::string& ptx_name)
@@ -560,10 +428,8 @@ void Config::Apply() const
     SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetMaxSimtrace(max_simtrace);
     SEventConfig::SetMaxTime(max_time);
-    if (mode_lite != ModeLite::Unspecified)
-        SEventConfig::SetModeLite(static_cast<int>(mode_lite));
-    if (mode_merge != ModeMerge::Unspecified)
-        SEventConfig::SetModeMerge(static_cast<int>(mode_merge));
+    SEventConfig::SetModeLite(static_cast<int>(mode_lite));
+    SEventConfig::SetModeMerge(static_cast<int>(mode_merge));
     SEventConfig::SetMergeWindow(merge_window);
     SEventConfig::SetOutFold(output_dir_str.c_str());
     SEventConfig::SetEventReldir(nullable(event_reldir));

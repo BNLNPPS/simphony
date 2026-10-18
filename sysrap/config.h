@@ -24,9 +24,6 @@ enum class EventMode
 
 enum class ModeLite : int
 {
-    /// Preserve the lower-level compatibility value when JSON says `Unspecified`.
-    Unspecified = -1,
-
     /// Store standard photon/hit components. ModeMerge still controls merged hits.
     Standard = 0,
 
@@ -39,9 +36,6 @@ enum class ModeLite : int
 
 enum class ModeMerge : int
 {
-    /// Preserve the lower-level compatibility value when JSON says `Unspecified`.
-    Unspecified = -1,
-
     /// Keep unmerged hit or hitlite components as the canonical hit output.
     Separate = 0,
 
@@ -62,10 +56,8 @@ enum class SerHint : int
  * Lower-level Opticks code still consumes this through SEventConfig after
  * Config::Apply has synchronized the selected values.
  *
- * Event settings use this precedence during the compatibility release:
- * an explicit JSON key, a deprecated `OPTICKS_*` environment fallback, then
- * the compiled default. Deprecated environment use is reported on stderr.
- * See `docs/configuration.md` for the complete schema and migration table.
+ * Event settings use an explicit JSON key when present and otherwise keep the
+ * typed compiled default. See `docs/configuration.md` for the complete schema.
  */
 class Config
 {
@@ -117,11 +109,11 @@ class Config
     /// JSON `event.max_time`; compiled default `1e27` ns. Optical propagation time cutoff.
     float max_time{1.e27f};
 
-    /// JSON `event.mode_lite`; default `Unspecified`; accepts all `ModeLite` names and selects layouts.
-    ModeLite mode_lite{ModeLite::Unspecified};
+    /// JSON `event.mode_lite`; default `Standard`; accepts all `ModeLite` names and selects layouts.
+    ModeLite mode_lite{ModeLite::Standard};
 
-    /// JSON `event.mode_merge`; default `Unspecified`; accepts all `ModeMerge` names and selects hit merging.
-    ModeMerge mode_merge{ModeMerge::Unspecified};
+    /// JSON `event.mode_merge`; default `Separate`; accepts all `ModeMerge` names and selects hit merging.
+    ModeMerge mode_merge{ModeMerge::Separate};
 
     /// JSON `event.merge_window`; compiled default `0` ns. Time window used when merging hits.
     float merge_window{0.f};
@@ -188,7 +180,6 @@ class Config
 
   private:
     std::string Locate(std::string filename) const;
-    void LoadLegacyEventConfig();
     void ReadConfig(std::string filepath);
     void Apply() const;
 };

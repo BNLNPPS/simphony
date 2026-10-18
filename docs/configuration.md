@@ -20,35 +20,26 @@ The public typed representation is `simphony::Config` in
 through `SEventConfig`, which remains the process-wide low-level facade used
 by Opticks code.
 
-## Precedence and compatibility
+## Defaults and discovery
 
-During the compatibility release, an event setting is selected in this
-order:
-
-1. an explicit key in the selected JSON file;
-2. its supported legacy `OPTICKS_*` environment variable;
-3. the application default (or the lower-level default for adapter-backed
-   values).
-
-An explicit JSON value always wins. When a supported legacy variable is
-present, `Config` writes a deprecation warning to standard error naming the
-replacement JSON key. The fallback exists for low-level programs that use
-`SEventConfig` without constructing `Config`; it is scheduled for removal
-after one compatibility release.
+An event setting is selected from an explicit key in the chosen JSON file or,
+when omitted, from the typed application default documented below. `Config`
+applies the complete result to the process-wide `SEventConfig` facade before
+event creation.
 
 `SIMPHONY_CONFIG_DIR` and `SIMPHONY_PTX_DIR` are discovery variables, not
 event settings, and remain supported.
 
-The DD4hep Python examples and the standalone async examples do not yet
-construct `Config`. They continue to use the supported legacy fallback in
-this release. New application entry points should construct `Config` before
-creating an `SEvt`, `G4CXOpticks`, or other event consumer.
+Application entry points must construct `Config` before creating an `SEvt`,
+`G4CXOpticks`, or other event consumer. The DD4hep `OpticsRun` action does so
+once, at the first begin-of-run, from its `ConfigName` property. Its default
+basename is `dd4hep_gpu`; attempting to select another configuration after
+initialization is rejected because `SEventConfig` is process-wide.
 
 ## Event schema
 
 All keys in this table belong to the top-level `event` object. Defaults are
-the effective application values used when neither JSON nor a supported
-legacy variable supplies a value.
+the effective application values used when JSON omits a key.
 
 | JSON key | Type and default | Purpose |
 |----------|------------------|---------|
@@ -65,8 +56,8 @@ legacy variable supplies a value.
 | `maxslot` | integer, `0` | Maximum CUDA launch slots. Zero selects the VRAM-based heuristic. The historical `maxslot` spelling is retained in JSON. |
 | `max_simtrace` | integer, `1000000000000` | Maximum number of simtrace records allocated for a launch. |
 | `max_time` | number, `1e27` ns | Propagation time cutoff; the default is effectively unlimited. |
-| `mode_lite` | name, lower-level `Standard` | Photon/hit representation: `Unspecified`, `Standard`, `Lite`, or `DebugCompare`. `Unspecified` preserves the compatibility value. |
-| `mode_merge` | name, lower-level `Separate` | Hit representation: `Unspecified`, `Separate`, or `Merged`. `Unspecified` preserves the compatibility value. |
+| `mode_lite` | name, `Standard` | Photon/hit representation: `Standard`, `Lite`, or `DebugCompare`. |
+| `mode_merge` | name, `Separate` | Hit representation: `Separate` or `Merged`. |
 | `merge_window` | number, `0` ns | Time window used when merged hit output is enabled. |
 | `output_dir` | path, current working directory | Base directory for event folders and relative timing outputs. Low-level tools that do not construct `Config` retain their own `$DefaultOutputDir` convention. |
 | `event_reldir` | string, `ALL${VERSION:-0}` | Relative directory below `output_dir` used for event arrays. |
@@ -117,40 +108,3 @@ Use `HitPhoton` for persisted final photons and hits, `HitPhotonSeq` when
 `seq.npy` is also required, and `DebugLite` when step-by-step `record.npy`
 output is required. Debug modes derive their component masks and diagnostic
 buffer maxima; those internals are not independent configuration knobs.
-
-## Supported legacy mapping
-
-These variables remain only as the one-release fallback described above.
-
-| Legacy variable | JSON key |
-|-----------------|----------|
-| `OPTICKS_EVENT_MODE` | `event.event_mode` |
-| `OPTICKS_INTEGRATION_MODE` | `event.integration_mode` |
-| `OPTICKS_RUNNING_MODE` | `event.running_mode` |
-| `OPTICKS_START_INDEX` | `event.start_index` |
-| `OPTICKS_NUM_EVENT` | `event.num_event` |
-| `OPTICKS_EVENT_SKIPAHEAD` | `event.event_skipahead` |
-| `OPTICKS_G4STATE_SPEC` | `event.g4_state_spec` |
-| `OPTICKS_G4STATE_RERUN` | `event.g4_state_rerun` |
-| `OPTICKS_MAX_BOUNCE` | `event.max_bounce` |
-| `OPTICKS_MAX_GENSTEP` | `event.max_genstep` |
-| `OPTICKS_MAX_SLOT` | `event.maxslot` |
-| `OPTICKS_MAX_SIMTRACE` | `event.max_simtrace` |
-| `OPTICKS_MAX_TIME` | `event.max_time` |
-| `OPTICKS_MODE_LITE` | `event.mode_lite` |
-| `OPTICKS_MODE_MERGE` | `event.mode_merge` |
-| `OPTICKS_MERGE_WINDOW` | `event.merge_window` |
-| `OPTICKS_OUT_FOLD` | `event.output_dir` |
-| `OPTICKS_EVENT_RELDIR` | `event.event_reldir` |
-| `OPTICKS_HIT_MASK` | `event.hit_mask` |
-| `OPTICKS_PROPAGATE_EPSILON` | `event.propagate_epsilon` |
-| `OPTICKS_PROPAGATE_EPSILON0` | `event.propagate_epsilon0` |
-| `OPTICKS_PROPAGATE_EPSILON0_MASK` | `event.propagate_epsilon0_mask` |
-| `OPTICKS_PROPAGATE_REFINE` | `event.propagate_refine` |
-| `OPTICKS_PROPAGATE_REFINE_DISTANCE` | `event.propagate_refine_distance` |
-| `OPTICKS_INPUT_GENSTEP` | `event.input_genstep` |
-| `OPTICKS_INPUT_PHOTON` | `event.input_photon` |
-| `OPTICKS_INPUT_PHOTON_FRAME` | `event.input_photon_frame` |
-| `OPTICKS_INPUT_PHOTON_CHANGE_TIME` | `event.input_photon_change_time` |
-| `OPTICKS_INPUT_PHOTON_RECORD_TIME` | `event.input_photon_record_time` |
-| `OPTICKS_INPUT_PHOTON_RECORD_SLICE` | `event.input_photon_record_slice` |

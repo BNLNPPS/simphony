@@ -126,7 +126,7 @@ void QSim::UploadComponents( const SSim* ssim  )
 
 
     unsigned skipahead_event_offset = SEventConfig::EventSkipahead()  ;
-    LOG(LEVEL) << "[ new QRng skipahead_event_offset : " << skipahead_event_offset << " " << SEventConfig::kEventSkipahead ;
+    LOG(LEVEL) << "[ new QRng skipahead_event_offset : " << skipahead_event_offset << " event.event_skipahead";
     QRng* rng = new QRng(skipahead_event_offset)  ;  // loads and uploads RNG
     LOG(LEVEL) << "] new QRng " << rng->desc()  ;
 
@@ -778,8 +778,6 @@ NP* QSim::simulate(const NP* gs, int eventID )
     return ht ;
 }
 
-
-
 /**
 QSim::MaybeSaveIGS
 --------------------
@@ -792,19 +790,17 @@ use the below envvars::
     export QSim__SAVE_IGS_PATH=$TMP/.opticks/igs.npy  ## default path below $TMP
 
 Saving gensteps prior to launch is useful for eventID that cause crashes,
-as the saved gensteps can then be used with input genstep running::
-
-    export OPTICKS_RUNNING_MODE=SRM_INPUT_GENSTEP
+as the saved gensteps can then be used with JSON
+``event.running_mode: "SRM_INPUT_GENSTEP"``.
 
 That enables fast cycle rerunning without Geant4 initalization, see eg::
 
     TEST=input_genstep_muon cxs_min.sh
 
-A potential cause of crashes is the heuristic OPTICKS_MAX_SLOT
+A potential cause of crashes is the ``event.maxslot`` heuristic
 determined based on available VRAM is too optimistically large.
-Try manually reducing slots to see if memory limits are the cause::
-
-    export OPTICKS_MAX_SLOT=M100
+Try reducing ``event.maxslot`` in the selected JSON file to see if memory
+limits are the cause.
 
 **/
 
@@ -1066,7 +1062,6 @@ Upping to 1M would be 100x 20M = 2000M  2GB
 template <typename T>
 extern void QSim_rng_sequence(  dim3 numBlocks, dim3 threadsPerBlock, qsim* d_sim, T* seq, unsigned ni, unsigned nj, unsigned id_offset );
 
-
 /**
 QSim::rng_sequence generate randoms in single CUDA launch
 -------------------------------------------------------------
@@ -1080,7 +1075,7 @@ nv : number randoms to generate for each item
 
 id_offset : acts on the rng_state array
 
-skipahead : used curand skipahead offsets depending on sim->evt->index and OPTICKS_EVENT_SKIPAHEAD
+skipahead : used curand skipahead offsets depending on sim->evt->index and ``event.event_skipahead``
 
 
 **/

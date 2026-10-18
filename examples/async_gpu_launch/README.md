@@ -33,20 +33,20 @@ A single `G4Mutex` ensures only one GPU kernel runs at a time.
 | `--async` | (default) Double-buffered async GPU processing |
 | `--sync`  | Original end-of-run batch GPU simulation |
 
-## Example-specific and compatibility variables
+## Configuration
 
-`GPU_PHOTON_FLUSH_THRESHOLD` is native to this example. The `OPTICKS_*`
-variables below are deprecated compatibility inputs retained because this
-standalone example does not yet construct `simphony::Config`. Config-backed
-applications should use the corresponding JSON keys documented in
-[`docs/configuration.md`](../../docs/configuration.md).
+The example constructs `simphony::Config` before creating its event state.
+Use `-c NAME` to load `NAME.json`; the default `async_gpu` profile sets
+`event.event_mode` to `Minimal` and `event.max_bounce` to 1000. See
+[`docs/configuration.md`](../../docs/configuration.md) for JSON discovery and
+the complete event schema.
+
+`GPU_PHOTON_FLUSH_THRESHOLD` remains an example-specific environment setting
+because it controls batching rather than Simphony event configuration.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GPU_PHOTON_FLUSH_THRESHOLD` | 10000000 | Photons per GPU batch |
-| `OPTICKS_MAX_BOUNCE` | 1000 | Compatibility fallback for `event.max_bounce` |
-| `OPTICKS_PROPAGATE_EPSILON` | - | Compatibility fallback for `event.propagate_epsilon` |
-| `OPTICKS_PROPAGATE_EPSILON0` | - | Compatibility fallback for `event.propagate_epsilon0` |
 
 ## Build (standalone)
 

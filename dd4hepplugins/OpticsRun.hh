@@ -18,6 +18,8 @@ namespace ddsimphony
  * Properties:
  *   - SaveGeometry (default: false) -- save Opticks geometry to disk
  *   - GeometryDirectory (default: "geometry") -- geometry export directory
+ *   - ConfigName (default: dd4hep_gpu) -- process-wide JSON config basename;
+ *     the first begin-of-run fixes it for the process lifetime
  */
 class OpticsRun final : public dd4hep::sim::Geant4RunAction
 {
@@ -34,6 +36,7 @@ class OpticsRun final : public dd4hep::sim::Geant4RunAction
   private:
     bool save_geometry_{false};
     std::string geometry_directory_{"geometry"};
+    std::string config_name_{"dd4hep_gpu"};
 };
 
 //---------------------------------------------------------------------------//

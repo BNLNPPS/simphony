@@ -1200,8 +1200,6 @@ NP* QEvt::PerLaunchMerge(sevent* evt, cudaStream_t stream ) // static
 template NP* QEvt::PerLaunchMerge<sphoton>(    sevent* evt, cudaStream_t stream);
 template NP* QEvt::PerLaunchMerge<sphotonlite>(sevent* evt, cudaStream_t stream);
 
-
-
 /**
 QEvt::FinalMerge
 ----------------
@@ -1211,7 +1209,7 @@ invoked from QSim::simulate_final_merge
 
 Conceptually the FinalMerge and PerLaunchMerge use the same processing
 with both flagmask selection and hit merging using (identity,timebucket) key
-with typical OPTICKS_MERGE_WINDOW of 1 (ns).  However the two cases differ
+with typical ``event.merge_window`` of 1 ns. However the two cases differ
 in their inputs:
 
 +----------------+---------------------------------------+----------------------------------+

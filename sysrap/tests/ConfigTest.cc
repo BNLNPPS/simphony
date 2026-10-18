@@ -3,7 +3,6 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -57,36 +56,18 @@ int main()
 
     setenv("SIMPHONY_CONFIG_DIR", directory.c_str(), 1);
 
-    unsetenv(SEventConfig::kOutFold);
-    SEventConfig::SetOutFold(SEventConfig::_OutFoldDefault);
-    WriteText(directory / "default-output.json", "{}\n");
-    const simphony::Config default_output("default-output");
-    assert(default_output.output_dir == fs::current_path());
-
-    const fs::path legacy_output_dir = directory / "legacy-output";
+    const fs::path stale_output_dir = directory / "stale-output";
     SEventConfig::SetIntegrationMode(2);
     SEventConfig::SetMaxTime(77.f);
-    SEventConfig::SetOutFold(legacy_output_dir.c_str());
-    SEventConfig::SetInputPhoton("legacy-photons.npy");
-    WriteText(directory / "legacy.json", "{}\n");
+    SEventConfig::SetModeLite(2);
+    SEventConfig::SetModeMerge(1);
+    SEventConfig::SetOutFold(stale_output_dir.c_str());
+    SEventConfig::SetInputPhoton("stale-photons.npy");
+    WriteText(directory / "defaults.json", "{}\n");
 
-    setenv("OPTICKS_MAX_TIME", "77", 1);
-    std::ostringstream     warning;
-    std::streambuf* const  previous_cerr = std::cerr.rdbuf(warning.rdbuf());
-    const simphony::Config legacy("legacy");
-    std::cerr.rdbuf(previous_cerr);
-    unsetenv("OPTICKS_MAX_TIME");
-
-    assert(legacy.integration_mode == 2);
-    assert(legacy.max_time == 77.f);
-    assert(legacy.output_dir == legacy_output_dir);
-    assert(legacy.input_photon == "legacy-photons.npy");
-    assert(SEventConfig::IntegrationMode() == 2);
-    assert(SEventConfig::MaxTime() == 77.f);
-    assert(std::strcmp(SEventConfig::OutFold(), legacy_output_dir.c_str()) == 0);
-    assert(std::strcmp(SEventConfig::InputPhoton(), "legacy-photons.npy") == 0);
-    assert(warning.str().find("OPTICKS_MAX_TIME") != std::string::npos);
-    assert(warning.str().find("event.max_time") != std::string::npos);
+    const simphony::Config defaults("defaults");
+    AssertEventDefaults(defaults);
+    AssertFacadeEventDefaults();
 
     WriteText(
         directory / "event.json",
@@ -177,6 +158,11 @@ int main()
     assert(std::strcmp(SEventConfig::InputPhotonRecordTime(), "[10:80:10]") == 0);
     assert(std::strcmp(SEventConfig::InputPhotonRecordSlice(), "TO BT SA") == 0);
 
+    WriteText(directory / "empty-event.json", "{\"event\": {}}\n");
+    const simphony::Config empty_event("empty-event");
+    AssertEventDefaults(empty_event);
+    AssertFacadeEventDefaults();
+
     EventTimingProfile::Clear();
     const simphony::Config config("timing");
 
@@ -258,6 +244,12 @@ int main()
         assert(config.event_mode == expected);
     };
     assert_event_mode("8x8SiPM_crystal", simphony::EventMode::Minimal);
+    const simphony::Config async_gpu("async_gpu");
+    assert(async_gpu.event_mode == simphony::EventMode::Minimal);
+    assert(async_gpu.max_bounce == 1000);
+    const simphony::Config dd4hep_gpu("dd4hep_gpu");
+    assert(dd4hep_gpu.event_mode == simphony::EventMode::Minimal);
+    assert(dd4hep_gpu.integration_mode == 1);
     assert_event_mode("dev", simphony::EventMode::DebugLite);
     assert_event_mode("dev_timing", simphony::EventMode::DebugLite);
     assert_event_mode("drich_aerogel", simphony::EventMode::HitPhoton);

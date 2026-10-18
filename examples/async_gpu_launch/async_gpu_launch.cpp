@@ -4,7 +4,7 @@
 // loop continues while the GPU processes accumulated gensteps in batches.
 //
 // Usage:
-//   async_gpu_launch -g apex.gdml -m run.mac [--async] [--sync]
+//   async_gpu_launch -g apex.gdml -m run.mac -c async_gpu [--async] [--sync]
 //
 // Default is --async.  Use --sync for the original end-of-run GPU mode.
 
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 
     argparse::ArgumentParser program("async_gpu_launch", "0.0.0");
 
-    string gdml_file, macro_name;
+    string gdml_file, macro_name, config_name;
     bool   interactive;
 
     program.add_argument("-g", "--gdml")
@@ -77,8 +77,9 @@ int main(int argc, char** argv)
 
     program.add_argument("-c", "--config")
         .help("config file name (without .json extension)")
-        .default_value(string(""))
-        .nargs(1);
+        .default_value(string("async_gpu"))
+        .nargs(1)
+        .store_into(config_name);
 
     program.add_argument("-i", "--interactive").help("open interactive viewer").flag().store_into(interactive);
 
@@ -98,6 +99,8 @@ int main(int argc, char** argv)
         cerr << program;
         return EXIT_FAILURE;
     }
+
+    const simphony::Config config(config_name);
 
     // Seed
     long seed;
