@@ -12,7 +12,8 @@
 #include "CSGMaker.h"
 #include "CSGScan.h"
 #include "CSGSolid.h"
-#include "G4CXOpticks.hh"
+#include "U4GDML.h"
+#include "simphony.h"
 
 struct CSGScanTest
 {
@@ -43,8 +44,10 @@ inline void CSGScanTest::init()
 {
     if (gdml_mode)
     {
-        G4CXOpticks::SetNoGPU(true);
-        G4CXOpticks::SetGeometry(ssys::getenvvar("SIMPHONY_GEOM_FILE"));
+        const G4VPhysicalVolume*  world = U4GDML::Read(ssys::getenvvar("SIMPHONY_GEOM_FILE"));
+        simphony::GeometryOptions options;
+        options.gpu = simphony::GpuRequirement::Disabled;
+        simphony::initialize(world, options);
         fd = CSGFoundry::Get();
     }
     else if (CSGMaker::CanMake(geom))

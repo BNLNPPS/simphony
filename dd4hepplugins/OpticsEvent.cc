@@ -11,12 +11,12 @@
 
 #include <chrono>
 
-#include <G4CXOpticks.hh>
 #include <NP.hh>
 #include <NPFold.h>
 #include <SComp.h>
 #include <SEvt.hh>
 #include <map>
+#include <simphony.h>
 #include <sphoton.h>
 
 namespace ddsimphony
@@ -62,10 +62,9 @@ void OpticsEvent::end(G4Event const *event)
 {
     int eventID = event->GetEventID();
 
-    G4CXOpticks *gx = G4CXOpticks::Get();
-    if (!gx)
+    if (!simphony::has_gpu())
     {
-        error("OpticsEvent::end -- G4CXOpticks not initialized");
+        error("OpticsEvent::end -- Simphony GPU runtime not initialized");
         return;
     }
 
@@ -92,7 +91,7 @@ void OpticsEvent::end(G4Event const *event)
     if (num_genstep > 0)
     {
         auto sim_t0 = std::chrono::high_resolution_clock::now();
-        gx->simulate(eventID, /*reset=*/false);
+        simphony::simulate(eventID, /*reset=*/false);
         auto sim_t1 = std::chrono::high_resolution_clock::now();
         double simulate_ms = std::chrono::duration<double, std::milli>(sim_t1 - sim_t0).count();
 
@@ -129,7 +128,7 @@ void OpticsEvent::end(G4Event const *event)
             injectHits(event, sev, num_hit);
 
         sev->endOfEvent(eventID);
-        gx->reset(eventID);
+        simphony::reset(eventID);
     }
     else
     {

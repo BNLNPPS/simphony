@@ -62,7 +62,7 @@
 #include "G4VUserDetectorConstruction.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-#include "g4cx/G4CXOpticks.hh"
+#include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/OpticksGenstep.h"
 #include "sysrap/SEvt.hh"
@@ -311,19 +311,18 @@ class GPUTaskManager
 
     void processGPUTask(int batch_id, std::shared_ptr<GenstepBuffer> buffer)
     {
-        // Only one GPU task at a time — G4CXOpticks/SEvt are not thread-safe
+        // Only one GPU task at a time — Simphony/SEvt are not thread-safe
         G4AutoLock gpu_lock(&gpu_mutex_);
 
         G4cout << "=== GPU Batch " << batch_id << " ===" << G4endl;
         G4cout << "  Photons:  " << buffer->photon_count << G4endl;
         G4cout << "  Gensteps: " << buffer->genstep_count << G4endl;
 
-        G4CXOpticks* gx = G4CXOpticks::Get();
         SEvt*        sev = SEvt::Get_EGPU();
 
-        if (!gx || !sev)
+        if (!simphony::has_gpu() || !sev)
         {
-            G4cerr << "GPUTaskManager: G4CXOpticks or SEvt not available" << G4endl;
+            G4cerr << "GPUTaskManager: Simphony or SEvt not available" << G4endl;
             return;
         }
 
@@ -335,7 +334,7 @@ class GPUTaskManager
 
         // Run GPU simulation
         auto start = std::chrono::high_resolution_clock::now();
-        gx->simulate(buffer->event_id, false);
+        simphony::simulate(buffer->event_id, false);
         cudaDeviceSynchronize();
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -352,7 +351,7 @@ class GPUTaskManager
         if (num_hits > 0)
             saveHits(batch_id, sev, num_hits);
 
-        gx->reset(buffer->event_id);
+        simphony::reset(buffer->event_id);
         completed_batches_++;
 
         G4cout << "=== GPU Batch " << batch_id << " Complete ===" << G4endl;
@@ -591,7 +590,7 @@ struct DetectorConstruction : G4VUserDetectorConstruction
     {
         parser_.Read(gdml_file_.string(), false);
         G4VPhysicalVolume* world = parser_.GetWorldVolume();
-        G4CXOpticks::SetGeometry(world);
+        simphony::initialize(world);
 
         G4LogicalVolumeStore*  lvStore = G4LogicalVolumeStore::GetInstance();
         static G4VisAttributes invisibleVisAttr(false);
@@ -735,10 +734,8 @@ struct RunAction : G4UserRunAction
         else
         {
             // Sync mode: run all gensteps at once
-            G4CXOpticks* gx = G4CXOpticks::Get();
-
             auto start = std::chrono::high_resolution_clock::now();
-            gx->simulate(0, false);
+            simphony::simulate(0, false);
             cudaDeviceSynchronize();
             auto                          end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = end - start;
@@ -766,6 +763,7 @@ struct RunAction : G4UserRunAction
                 gpu_h->save("gpu_hits.npy");
                 G4cout << "Saved GPU hits to gpu_hits.npy" << G4endl;
             }
+            simphony::reset(0);
         }
 
         // Save G4 hits

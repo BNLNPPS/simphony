@@ -57,7 +57,7 @@ independent of the optional detailed process profiler, which is controlled by
 - the basket-forming Geant4 interval before GPU dispatch and the CPU
   collection/reset interval afterward;
 - GPU submission, start, and completion timestamps for the blocking
-  `G4CXOpticks::simulate()` call, including transfers and synchronization;
+  `simphony::simulate()` call, including transfers and synchronization;
 - wall-clock, process-CPU, and event-thread CPU durations; and
 - generated genstep/photon counts and CPU/GPU hit counts.
 

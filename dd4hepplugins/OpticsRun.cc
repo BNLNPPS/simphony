@@ -10,10 +10,10 @@
 
 #include <chrono>
 
-#include <G4CXOpticks.hh>
 #include <SEventConfig.hh>
 #include <SEvt.hh>
 #include <SSim.hh>
+#include <simphony.h>
 
 #include "DD4hepSensorIdentifier.hh"
 
@@ -61,6 +61,7 @@ OpticsRun::OpticsRun(dd4hep::sim::Geant4Context *ctxt, std::string const &name)
 {
     dd4hep::InstanceCount::increment(this);
     declareProperty("SaveGeometry", save_geometry_);
+    declareProperty("GeometryDirectory", geometry_directory_);
 }
 
 //---------------------------------------------------------------------------//
@@ -79,7 +80,7 @@ void OpticsRun::begin(G4Run const *run)
         return;
     }
 
-    info("Initializing G4CXOpticks geometry (run #%d)", run->GetRunID());
+    info("Initializing Simphony geometry (run #%d)", run->GetRunID());
 
     // Add Geant4 10.x scintillation property aliases for Opticks GPU
     addOpticksPropertyAliases();
@@ -90,16 +91,17 @@ void OpticsRun::begin(G4Run const *run)
     // Unlike the default which requires GLOBAL_SENSOR_BOUNDARY_LIST env var,
     // this checks G4VSensitiveDetector directly on volumes.
     static DD4hepSensorIdentifier dd4hep_sid;
-    G4CXOpticks::SetSensorIdentifier(&dd4hep_sid);
+    simphony::GeometryOptions     options;
+    options.sensor_identifier = &dd4hep_sid;
+    simphony::initialize(world, options);
 
-    bool hasDevice = SEventConfig::HasDevice();
+    bool hasDevice = simphony::has_gpu();
     info("HasDevice=%s, IntegrationMode=%d", hasDevice ? "YES" : "NO", SEventConfig::IntegrationMode());
-    G4CXOpticks::SetGeometry(world);
 
     if (save_geometry_)
     {
         info("Saving Opticks geometry to disk");
-        G4CXOpticks::SaveGeometry();
+        simphony::save_geometry(geometry_directory_);
     }
 
     // Log boundary count
@@ -109,7 +111,7 @@ void OpticsRun::begin(G4Run const *run)
             info("Boundary table: %zu boundaries", sim->get_bnd()->names.size());
     }
 
-    info("G4CXOpticks geometry initialized successfully");
+    info("Simphony geometry initialized successfully");
 }
 
 //---------------------------------------------------------------------------//
@@ -123,15 +125,14 @@ void OpticsRun::end(G4Run const *run)
         int64_t num_photon = sev->getNumPhotonFromGenstep();
         if (num_genstep > 0)
         {
-            G4CXOpticks *gx = G4CXOpticks::Get();
-            if (gx)
+            if (simphony::has_gpu())
             {
                 int eventID = run->GetNumberOfEvent() > 0 ? run->GetNumberOfEvent() - 1 : 0;
                 info("Flushing %lld remaining photons from %lld gensteps", static_cast<long long>(num_photon),
                      static_cast<long long>(num_genstep));
 
                 auto t0 = std::chrono::high_resolution_clock::now();
-                gx->simulate(eventID, /*reset=*/false);
+                simphony::simulate(eventID, /*reset=*/false);
                 auto t1 = std::chrono::high_resolution_clock::now();
                 double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
 
@@ -140,13 +141,12 @@ void OpticsRun::end(G4Run const *run)
                      static_cast<long long>(num_photon), num_hit);
 
                 sev->endOfEvent(eventID);
-                gx->reset(eventID);
+                simphony::reset(eventID);
             }
         }
     }
 
-    info("Finalizing G4CXOpticks (run #%d)", run->GetRunID());
-    G4CXOpticks::Finalize();
+    info("Simphony run #%d complete", run->GetRunID());
 }
 
 //---------------------------------------------------------------------------//
