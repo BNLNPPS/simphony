@@ -66,9 +66,9 @@ pipeline in different ways.
 | Input | How it enters Simphony | When to use it |
 |---|---|---|
 | GDML file | `-g detector.gdml` on `simg4ox`, `GPURaytrace`, `GPUCerenkov`, and the other example applications | The simplest route for standalone studies |
-| Live Geant4 world | `G4CXOpticks::SetGeometry(world)` with a `G4VPhysicalVolume*` | Embedding Simphony in a Geant4 application |
+| Live Geant4 world | `simphony::initialize(world)` with a `G4VPhysicalVolume*` | Embedding Simphony in a Geant4 application |
 | DD4hep compact geometry | DD4hep builds the Geant4 world, then the Simphony DD4hep plugin passes that world into the same API | Experiments that already use DD4hep |
-| Saved `CSGFoundry` | Lower-level `G4CXOpticks` workflows load it through the configured geometry base | Reusing a deliberately persisted conversion |
+| Saved `CSGFoundry` | Lower-level `CSGFoundry::Load` / `CSGOptiX::Create` workflows load a persisted conversion | Reusing a deliberately persisted conversion |
 
 The standalone applications do not read DD4hep compact XML directly, and
 their `-g` option does not load a saved `CSGFoundry`. It always means a GDML

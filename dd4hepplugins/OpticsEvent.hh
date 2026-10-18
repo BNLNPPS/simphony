@@ -16,7 +16,7 @@ namespace ddsimphony
  *
  * At begin-of-event: prepares GPU event buffer (SEvt).
  * At end-of-event: triggers GPU optical photon simulation via
- * G4CXOpticks::simulate(), retrieves hits, injects them into DD4hep
+ * simphony::simulate(), retrieves hits, injects them into DD4hep
  * hit collections, and resets for next event.
  *
  * Requires setupTracker() to be called in the steering script so that

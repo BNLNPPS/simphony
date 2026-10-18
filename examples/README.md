@@ -17,6 +17,43 @@ combination in the file is handled by Simphony. See the [Geometry
 guide](../docs/geometry-requirements.md) for the current support table and a
 conversion-first workflow.
 
+### Building an external application
+
+After installing Simphony, standalone Geant4 applications link the public
+runtime target:
+
+```cmake
+find_package(simphony CONFIG REQUIRED)
+target_link_libraries(my_application PRIVATE simphony::simphony)
+target_compile_features(my_application PRIVATE cxx_std_20)
+```
+
+Include `simphony.h`, then call `simphony::initialize(world)` once the Geant4
+world is complete. For a custom sensor mapping, implement
+`simphony::SensorIdentifier` (included by that header) and pass it through
+`simphony::GeometryOptions::sensor_identifier`. Keep the world and identifier
+alive for the process lifetime. Reinitialization with the same inputs reuses
+the runtime; different inputs are rejected.
+
+After preparing gensteps in `SEvt`, call `simphony::simulate(event_id, false)`,
+retrieve results, and call `simphony::reset(event_id)` before the next launch.
+Async applications must serialize the entire genstep / launch / result / reset
+sequence because `SEvt` is process-wide. The `MC_Truth`, `async_gpu_launch`,
+and `async_gpu_std` directories show standalone builds against the installed
+package. Low-level event access still uses the installed SysRap headers.
+
+The DD4hep plugins use the same runtime. Build them in-tree when DD4hep is
+available or configure `dd4hepplugins/` against the installed package. The
+`OpticsRun` action reuses geometry across runs, flushes remaining batches at
+end-of-run, and retains the process-wide runtime. Set `SaveGeometry = True`
+and `GeometryDirectory` (default `geometry`) to export `origin.gdml` and
+`CSGFoundry/` to an explicit destination.
+
+For conversion without a GPU, use `GpuRequirement::Disabled` and
+`simphony::save_geometry(directory)`, or run `consgeo -g detector.gdml -o csg`.
+Saved-foundry rendering and simtrace remain available through the lower-level
+`CSGOptiX` tools; the public runtime initializes from a live Geant4 world.
+
 ### Application capabilities
 
 The example applications differ mainly in where photons originate and whether
@@ -24,8 +61,8 @@ Geant4 optical-photon tracking is also run for validation.
 
 | Feature | GPUCerenkov | GPURaytrace | simg4ox | GPUPhotonSourceMinimal | GPUPhotonFileSource |
 |---------|-------------|-------------|-----------------|------------------------|---------------------|
-| Cerenkov genstep collection | Yes | Yes | No | No | No |
-| Scintillation genstep collection | No | Yes | No | No | No |
+| Cerenkov genstep collection | Yes | Yes | Yes | No | No |
+| Scintillation genstep collection | No | Yes | Yes | No | No |
 | Wavelength shifting (WLS) | Yes | Yes | Yes | Yes | Yes |
 | Torch photon generation | No | No | Yes | Yes | No |
 | Photon input from text file | No | No | No | No | Yes |
@@ -35,8 +72,9 @@ Geant4 optical-photon tracking is also run for validation.
 
 `GPUCerenkov` and `GPURaytrace` collect gensteps from charged-particle
 interactions and pass them to Simphony for GPU photon generation and tracing.
-`simg4ox` and `GPUPhotonSourceMinimal` generate photons directly from
-a torch configuration. `simg4ox` runs both G4 and GPU tracking for
+`simg4ox` accepts a torch configuration or charged particles (`--particle`)
+for Cerenkov and scintillation gensteps. `GPUPhotonSourceMinimal` uses a
+torch configuration. `simg4ox` runs both G4 and GPU tracking for
 validation, while `GPUPhotonSourceMinimal` keeps only the GPU path.
 `GPUPhotonFileSource` reads user-defined photons from a text file.
 
