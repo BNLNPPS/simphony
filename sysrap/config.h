@@ -126,7 +126,7 @@ class Config
     /// JSON `event.merge_window`; compiled default `0` ns. Time window used when merging hits.
     float merge_window{0.f};
 
-    /// JSON `event.output_dir`; lower-level default `$DefaultOutputDir`. Event output base.
+    /// JSON `event.output_dir`; application default is the current working directory. Event output base.
     std::filesystem::path output_dir{std::filesystem::current_path()};
 
     /// JSON `event.event_reldir`; compiled default `ALL${VERSION:-0}`. Relative event subdirectory.

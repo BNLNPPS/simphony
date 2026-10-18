@@ -57,6 +57,12 @@ int main()
 
     setenv("SIMPHONY_CONFIG_DIR", directory.c_str(), 1);
 
+    unsetenv(SEventConfig::kOutFold);
+    SEventConfig::SetOutFold(SEventConfig::_OutFoldDefault);
+    WriteText(directory / "default-output.json", "{}\n");
+    const simphony::Config default_output("default-output");
+    assert(default_output.output_dir == fs::current_path());
+
     const fs::path legacy_output_dir = directory / "legacy-output";
     SEventConfig::SetIntegrationMode(2);
     SEventConfig::SetMaxTime(77.f);

@@ -27,7 +27,8 @@ order:
 
 1. an explicit key in the selected JSON file;
 2. its supported legacy `OPTICKS_*` environment variable;
-3. the compiled lower-level default.
+3. the application default (or the lower-level default for adapter-backed
+   values).
 
 An explicit JSON value always wins. When a supported legacy variable is
 present, `Config` writes a deprecation warning to standard error naming the
@@ -46,7 +47,7 @@ creating an `SEvt`, `G4CXOpticks`, or other event consumer.
 ## Event schema
 
 All keys in this table belong to the top-level `event` object. Defaults are
-the effective lower-level defaults used when neither JSON nor a supported
+the effective application values used when neither JSON nor a supported
 legacy variable supplies a value.
 
 | JSON key | Type and default | Purpose |
@@ -67,7 +68,7 @@ legacy variable supplies a value.
 | `mode_lite` | name, lower-level `Standard` | Photon/hit representation: `Unspecified`, `Standard`, `Lite`, or `DebugCompare`. `Unspecified` preserves the compatibility value. |
 | `mode_merge` | name, lower-level `Separate` | Hit representation: `Unspecified`, `Separate`, or `Merged`. `Unspecified` preserves the compatibility value. |
 | `merge_window` | number, `0` ns | Time window used when merged hit output is enabled. |
-| `output_dir` | path, `$DefaultOutputDir` | Base directory for event folders and relative timing outputs. |
+| `output_dir` | path, current working directory | Base directory for event folders and relative timing outputs. Low-level tools that do not construct `Config` retain their own `$DefaultOutputDir` convention. |
 | `event_reldir` | string, `ALL${VERSION:-0}` | Relative directory below `output_dir` used for event arrays. |
 | `hit_mask` | string, `SD` | Comma-delimited optical flag abbreviations selecting photons copied to hit output. |
 | `propagate_epsilon` | number, `0.05` mm | Ray-origin offset after a boundary crossing. |

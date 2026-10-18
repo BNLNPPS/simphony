@@ -344,7 +344,10 @@ void Config::LoadLegacyEventConfig()
     mode_lite = ModeLiteValue(SEventConfig::ModeLite());
     mode_merge = ModeMergeValue(SEventConfig::ModeMerge());
     merge_window = SEventConfig::MergeWindow();
-    output_dir = StringOrEmpty(SEventConfig::OutFold());
+    const std::string legacy_output_dir = StringOrEmpty(SEventConfig::OutFold());
+    // The low-level sentinel is resolved by SEvt, but Config paths need a concrete app-level base.
+    if (std::getenv(SEventConfig::kOutFold) || legacy_output_dir != SEventConfig::_OutFoldDefault)
+        output_dir = legacy_output_dir;
     event_reldir = StringOrEmpty(SEventConfig::EventReldir());
     hit_mask = SEventConfig::HitMaskLabel();
     propagate_epsilon = SEventConfig::PropagateEpsilon();
