@@ -42,8 +42,8 @@ using namespace std;
 
 const plog::Severity G4CXOpticks::LEVEL = SLOG::EnvLevel("G4CXOpticks", "DEBUG");
 
-U4SensorIdentifier* G4CXOpticks::SensorIdentifier = nullptr;
-void G4CXOpticks::SetSensorIdentifier(U4SensorIdentifier* sid)
+simphony::SensorIdentifier* G4CXOpticks::SensorIdentifier = nullptr;
+void G4CXOpticks::SetSensorIdentifier(simphony::SensorIdentifier* sid)
 {
     SensorIdentifier = sid;
 } // static
