@@ -17,7 +17,7 @@ and that needs the upload of QSim components first ?
 struct U4Tree ;
 struct NPFold ;
 struct NP ;
-struct U4SensorIdentifier ;
+struct U4SensorIdentifier;
 class G4VSensitiveDetector ;
 class G4VPhysicalVolume ;
 struct CSGFoundry ;
@@ -38,8 +38,8 @@ struct QSim ;
 struct G4CX_API G4CXOpticks
 {
     static const plog::Severity LEVEL ;
-    static U4SensorIdentifier* SensorIdentifier ;
-    static void SetSensorIdentifier( U4SensorIdentifier* sid );
+    static U4SensorIdentifier*  SensorIdentifier;
+    static void SetSensorIdentifier(U4SensorIdentifier* sid);
 
     static G4CXOpticks* INSTANCE ;
     static G4CXOpticks* Get();

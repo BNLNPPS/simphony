@@ -112,7 +112,7 @@ struct EventAction : G4UserEventAction
         sev->endOfEvent(eventID);
 
         // GPU-based simulation
-        G4CXOpticks *gx = G4CXOpticks::Get();
+        G4CXOpticks* gx = G4CXOpticks::Get();
 
         gx->simulate(eventID, false);
         cudaDeviceSynchronize();

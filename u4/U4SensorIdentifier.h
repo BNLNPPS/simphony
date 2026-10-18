@@ -31,13 +31,11 @@ U4SensorIdentifierDefault.h provided the default implementation.
 To override this default use G4CXOpticks::SetSensorIdentifier
 
 **/
-class G4VPhysicalVolume ;
+class G4VPhysicalVolume;
 
 struct U4SensorIdentifier
 {
-    virtual void setLevel(int _level) = 0 ;
-    virtual int getGlobalIdentity(const G4VPhysicalVolume* node_pv, const G4VPhysicalVolume* node_ppv ) = 0 ;
-    virtual int getInstanceIdentity(const G4VPhysicalVolume* instance_outer_pv ) const = 0 ;
+    virtual void setLevel(int _level) = 0;
+    virtual int getGlobalIdentity(const G4VPhysicalVolume* node_pv, const G4VPhysicalVolume* node_ppv) = 0;
+    virtual int getInstanceIdentity(const G4VPhysicalVolume* instance_outer_pv) const = 0;
 };
-
-

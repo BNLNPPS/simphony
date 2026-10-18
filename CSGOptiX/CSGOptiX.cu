@@ -415,7 +415,7 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
         float tmin = ( ctx.p.orient_boundary_flag & params.PropagateEpsilon0Mask ) ? params.tmin0 : params.tmin ;
 
         // A dormant reorder intrinsic can change dispatch; only a compile-time opt-out removes it.
-#if defined(SIMPHONY_ENABLE_SER) && OPTIX_VERSION >= 80000
+#if defined(SIMPHONY_ENABLE_SER)
         if (params.SerInterval > 0 && (bounce % params.SerInterval) == 0)
         {
             switch (params.SerHint)

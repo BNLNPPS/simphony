@@ -324,7 +324,7 @@ struct RunAction : G4UserRunAction
     {
         if (G4Threading::IsMasterThread())
         {
-            G4CXOpticks *gx = G4CXOpticks::Get();
+            G4CXOpticks* gx = G4CXOpticks::Get();
 
             auto start = std::chrono::high_resolution_clock::now();
             gx->simulate(0, false);

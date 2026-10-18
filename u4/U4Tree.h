@@ -101,7 +101,7 @@ struct U4Tree
 
     stree*                                      st ;
     const G4VPhysicalVolume* const              top ;
-    U4SensorIdentifier*                         sid ;
+    U4SensorIdentifier*                         sid;
     int                                         level ;
     // export SSim__stree_level=1 controls this
 
@@ -126,21 +126,19 @@ struct U4Tree
     int                                         solid_debug ;
 
     static U4Tree* Create(
-        stree* st,
+        stree*                         st,
         const G4VPhysicalVolume* const top,
-        U4SensorIdentifier* sid=nullptr
-        );
+        U4SensorIdentifier*            sid = nullptr);
 
     // using SSim::Get SSim::get_tree is tempting
     // but that would add SSim dependency and SSim is not header only
     // static U4Tree* Create( const G4VPhysicalVolume* const top, U4SensorIdentifier* sid=nullptr );
 
-private:
+  private:
     U4Tree(
-        stree* st,
-        const G4VPhysicalVolume* const top=nullptr,
-        U4SensorIdentifier* sid=nullptr
-        );
+        stree*                         st,
+        const G4VPhysicalVolume* const top = nullptr,
+        U4SensorIdentifier*            sid = nullptr);
 
     void init();
 
@@ -205,9 +203,6 @@ public:
     static void SimtraceScan( const G4VPhysicalVolume* const pv, const char* base );
 };
 
-
-
-
 /**
 U4Tree::Create
 ----------------
@@ -218,10 +213,9 @@ HMM: can these be moved into U4Tree ctor now ?
 
 **/
 inline U4Tree* U4Tree::Create(
-    stree* st,
+    stree*                         st,
     const G4VPhysicalVolume* const top,
-    U4SensorIdentifier* sid
-    )
+    U4SensorIdentifier*            sid)
 {
     if(st->level > 0) std::cout << "[ U4Tree::Create " << std::endl ;
 
@@ -252,7 +246,7 @@ inline U4Tree* U4Tree::Create(
     return tree ;
 }
 
-inline U4Tree::U4Tree(stree *st_, const G4VPhysicalVolume *const top_, U4SensorIdentifier *sid_) :
+inline U4Tree::U4Tree(stree* st_, const G4VPhysicalVolume* const top_, U4SensorIdentifier* sid_) :
     st(st_),
     top(top_),
     sid(sid_ ? sid_ : new U4SensorIdentifierDefault),

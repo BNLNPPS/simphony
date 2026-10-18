@@ -19,9 +19,8 @@ implementation use G4CXOpticks::SetSensorIdentifier.
 #include "sstr.h"
 #include "ssys.h"
 
-#include "U4SensorIdentifier.h"
 #include "U4Boundary.h"
-
+#include "U4SensorIdentifier.h"
 
 struct U4SensorIdentifierDefault : public U4SensorIdentifier
 {
