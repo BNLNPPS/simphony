@@ -38,14 +38,14 @@ reorder call into the photon propagation loop. Older SDKs exclude that code.
 The JSON configuration controls its execution:
 
 ```json
-{ "ser": { "interval": 0, "hint": 0 } }
+{ "ser": { "interval": 0, "hint": "none" } }
 ```
 
-Both values default to zero when omitted. A positive `interval` executes
-reordering every N bounces, including bounce zero; zero disables execution.
-`hint` selects the coherence key: 0 uses a constant key, 1 uses the bounce
-index divided by the interval, and 2 combines the low three boundary bits
-with whether the wavelength is below 200 nm. The call uses four hint bits.
+`interval` defaults to zero. A positive value executes reordering every N
+bounces, including bounce zero; zero disables execution. `hint` defaults to
+`none` and accepts `none` or `bounce`. The `none` mode supplies no application
+hint bits, leaving ordering to OptiX. The `bounce` mode supplies the low four
+bits of the bounce index divided by the interval. Other values are rejected.
 
 Retaining a dormant reorder intrinsic can change OptiX dispatch even when
 `interval` is zero. To remove SER from the compiled program, rebuild with:

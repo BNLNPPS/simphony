@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "EventTiming.hh"
+#include "SEventConfig.hh"
 #include "config.h"
 
 namespace
@@ -20,6 +21,12 @@ void WriteText(const fs::path& path, const std::string& text)
     output << text;
     output.close();
     assert(output);
+}
+
+void Require(bool condition, const char* message)
+{
+    if (!condition)
+        throw std::runtime_error(message);
 }
 } // namespace
 
@@ -89,6 +96,34 @@ int main()
         rejected_bad_index = true;
     }
     assert(rejected_bad_index);
+
+    WriteText(directory / "ser-none.json", "{\"ser\": {\"interval\": 8, \"hint\": \"none\"}}\n");
+    const simphony::Config ser_none("ser-none");
+    Require(ser_none.ser_hint == simphony::SerHint::None, "ser.hint none was not parsed");
+    Require(SEventConfig::_SerHint == 0, "ser.hint none was not applied");
+
+    WriteText(directory / "ser-bounce.json", "{\"ser\": {\"interval\": 8, \"hint\": \"bounce\"}}\n");
+    const simphony::Config ser_bounce("ser-bounce");
+    Require(ser_bounce.ser_hint == simphony::SerHint::Bounce, "ser.hint bounce was not parsed");
+    Require(SEventConfig::_SerHint == 1, "ser.hint bounce was not applied");
+
+    for (const auto& [name, value] : std::vector<std::pair<std::string, std::string>>{
+             {"bad-ser-number", "2"},
+             {"bad-ser-name", "\"boundary-wavelength\""},
+         })
+    {
+        WriteText(directory / (name + ".json"), "{\"ser\": {\"hint\": " + value + "}}\n");
+        bool rejected_bad_hint = false;
+        try
+        {
+            (void)simphony::Config(name);
+        }
+        catch (const std::runtime_error&)
+        {
+            rejected_bad_hint = true;
+        }
+        Require(rejected_bad_hint, "invalid ser.hint was accepted");
+    }
 
     EventTimingProfile::Configure(false);
     unsetenv("SIMPHONY_CONFIG_DIR");

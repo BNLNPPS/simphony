@@ -418,17 +418,15 @@ static __forceinline__ __device__ void simulate( const uint3& launch_idx, const 
 #if defined(SIMPHONY_ENABLE_SER) && OPTIX_VERSION >= 80000
         if (params.SerInterval > 0 && (bounce % params.SerInterval) == 0)
         {
-            unsigned ser_key = 0u;
             switch (params.SerHint)
             {
-            case 1:
-                ser_key = bounce / params.SerInterval;
+            case 0:
+                optixReorder();
                 break;
-            case 2:
-                ser_key = ((ctx.p.boundary() & 7u) << 1) | (ctx.p.wavelength < 200.f ? 1u : 0u);
+            case 1:
+                optixReorder(bounce / params.SerInterval, 4);
                 break;
             }
-            optixReorder(ser_key, 4);
         }
 #endif
 

@@ -25,7 +25,7 @@
 
   "ser": {
     "interval": 0,
-    "hint": 0
+    "hint": "none"
   },
 
   "event": {

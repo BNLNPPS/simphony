@@ -48,6 +48,12 @@ enum class ModeMerge : int
     Merged = 1
 };
 
+enum class SerHint : int
+{
+    None = 0,
+    Bounce = 1
+};
+
 /**
  * Provides access to all configuration types and data.
  *
@@ -109,7 +115,7 @@ class Config
     std::string propagate_epsilon0_mask{"TO,CK,SI,SC,RE"};
 
     int ser_interval{0};
-    int ser_hint{0};
+    SerHint ser_hint{SerHint::None};
 
     storch torch{default_torch};
 
