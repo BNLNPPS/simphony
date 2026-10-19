@@ -128,7 +128,7 @@ struct U4Tree
     static U4Tree* Create(
         stree*                         st,
         const G4VPhysicalVolume* const top,
-        U4SensorIdentifier*            sid = nullptr);
+        simphony::SensorIdentifier*    sid = nullptr);
 
     // using SSim::Get SSim::get_tree is tempting
     // but that would add SSim dependency and SSim is not header only
@@ -138,7 +138,7 @@ struct U4Tree
     U4Tree(
         stree*                         st,
         const G4VPhysicalVolume* const top = nullptr,
-        U4SensorIdentifier*            sid = nullptr);
+        simphony::SensorIdentifier*    sid = nullptr);
 
     void init();
 
@@ -246,7 +246,7 @@ inline U4Tree* U4Tree::Create(
     return tree ;
 }
 
-inline U4Tree::U4Tree(stree* st_, const G4VPhysicalVolume* const top_, U4SensorIdentifier* sid_) :
+inline U4Tree::U4Tree(stree* st_, const G4VPhysicalVolume* const top_, simphony::SensorIdentifier* sid_) :
     st(st_),
     top(top_),
     sid(sid_ ? sid_ : new U4SensorIdentifierDefault),
