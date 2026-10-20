@@ -19,7 +19,7 @@ int main(int argc, char** argv)
         ;
 
     if(VERBOSE) std::cout << "[ fd->getFrameE " << std::endl ;
-    sframe fr = fd->getFrameE() ;  // via INST, MOI, OPTICKS_INPUT_PHOTON_FRAME
+    sframe fr = fd->getFrameE(); // via INST, MOI, or event.input_photon_frame
     if(VERBOSE) std::cout << "] fd->getFrameE " << std::endl ;
 
     if(VERBOSE) std::cout << " [ fr.save " << std::endl ;

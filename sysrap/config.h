@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -23,9 +24,6 @@ enum class EventMode
 
 enum class ModeLite : int
 {
-    /// Preserve SEventConfig's lower-level default or OPTICKS_MODE_LITE value.
-    Unspecified = -1,
-
     /// Store standard photon/hit components. ModeMerge still controls merged hits.
     Standard = 0,
 
@@ -38,9 +36,6 @@ enum class ModeLite : int
 
 enum class ModeMerge : int
 {
-    /// Preserve SEventConfig's lower-level default or OPTICKS_MODE_MERGE value.
-    Unspecified = -1,
-
     /// Keep unmerged hit or hitlite components as the canonical hit output.
     Separate = 0,
 
@@ -60,6 +55,9 @@ enum class SerHint : int
  * Config is the authoritative source for app-level event output policy.
  * Lower-level Opticks code still consumes this through SEventConfig after
  * Config::Apply has synchronized the selected values.
+ *
+ * Event settings use an explicit JSON key when present and otherwise keep the
+ * typed compiled default. See `docs/configuration.md` for the complete schema.
  */
 class Config
 {
@@ -69,54 +67,115 @@ class Config
     /// Resolve a PTX file from SIMPHONY_PTX_DIR or configured search paths.
     static std::string PtxPath(const std::string& ptx_name = "CSGOptiX.ptx");
 
-    /// A unique name associated with this Config
+    /// Config basename selected by the application; default `dev` loads `dev.json`.
     std::string name{"dev"};
 
-    /// Maximum photon bounce count.
-    int max_bounce{31};
-
-    /// Maximum gensteps allocated for event uploads.
-    int max_genstep{10000000};
-
-    /// Maximum event slots applied to SEventConfig.
-    int maxslot{0};
-
-    /// Event persistence mode applied to SEventConfig.
+    /// JSON `event.event_mode`; default `Minimal`. Accepts all `EventMode` names and selects event I/O.
     EventMode event_mode{EventMode::Minimal};
 
-    /// Optional compact photon/hit storage mode.
-    ModeLite mode_lite{ModeLite::Unspecified};
+    /// JSON `event.integration_mode`; compiled default `-1`. Values: -1 disabled, 1 GPU, 2 CPU, 3 both.
+    int integration_mode{-1};
 
-    /// Optional hit merge mode, combined with mode_lite to choose hit output.
-    ModeMerge mode_merge{ModeMerge::Unspecified};
+    /// JSON `event.running_mode`; compiled default `SRM_DEFAULT`. Accepts an `SRM_*` name.
+    std::string running_mode{"SRM_DEFAULT"};
 
-    /// Base directory for event output folders.
+    /// JSON `event.start_index`; compiled default `0`. Offsets persisted event indices.
+    int start_index{0};
+
+    /// JSON `event.num_event`; compiled default `1`. Used by low-level multi-event helpers.
+    int num_event{1};
+
+    /// JSON `event.event_skipahead`; compiled default `100000`. Random values skipped between events.
+    int event_skipahead{100000};
+
+    /// JSON `event.g4_state_spec`; compiled default `1000:38`. Geant4 random-state allocation spec.
+    std::string g4_state_spec{"1000:38"};
+
+    /// JSON `event.g4_state_rerun`; compiled default `-1`. Photon index selected for a state rerun.
+    int g4_state_rerun{-1};
+
+    /// JSON `event.max_bounce`; compiled default `31`. Terminates photons after this many bounces.
+    int max_bounce{31};
+
+    /// JSON `event.max_genstep`; compiled default `10000000`. Maximum uploaded genstep count.
+    int max_genstep{10000000};
+
+    /// JSON `event.maxslot`; compiled default `0`. Zero selects a VRAM-based launch-slot heuristic.
+    int maxslot{0};
+
+    /// JSON `event.max_simtrace`; compiled default `10^12`. Maximum simtrace records per launch.
+    std::int64_t max_simtrace{1000000000000LL};
+
+    /// JSON `event.max_time`; compiled default `1e27` ns. Optical propagation time cutoff.
+    float max_time{1.e27f};
+
+    /// JSON `event.mode_lite`; default `Standard`; accepts all `ModeLite` names and selects layouts.
+    ModeLite mode_lite{ModeLite::Standard};
+
+    /// JSON `event.mode_merge`; default `Separate`; accepts all `ModeMerge` names and selects hit merging.
+    ModeMerge mode_merge{ModeMerge::Separate};
+
+    /// JSON `event.merge_window`; compiled default `0` ns. Time window used when merging hits.
+    float merge_window{0.f};
+
+    /// JSON `event.output_dir`; application default is the current working directory. Event output base.
     std::filesystem::path output_dir{std::filesystem::current_path()};
 
-    /// Per-event CPU/GPU timing CSV. Empty disables event timeline recording.
+    /// JSON `event.event_reldir`; compiled default `ALL${VERSION:-0}`. Relative event subdirectory.
+    std::string event_reldir{"ALL${VERSION:-0}"};
+
+    /// JSON `event.hit_mask`; compiled default `SD`. Comma-delimited photon flag abbreviations.
+    std::string hit_mask{"SD"};
+
+    /// JSON `event_timing.output`; compiled default empty. Empty disables the per-event timeline CSV.
     std::filesystem::path event_timing_output{};
 
-    /// Enable detailed lifecycle and memory profile sampling.
+    /// JSON `event_timing.profile.enabled`; compiled default `false`.
     bool event_timing_profile_enabled{false};
 
-    /// Detailed timing profile CSV path.
+    /// JSON `event_timing.profile.output`; compiled default `event_timing_profile.csv`.
     std::filesystem::path event_timing_profile_output{"event_timing_profile.csv"};
 
-    /// Integer substituted into a formatted detailed profile path.
+    /// JSON `event_timing.profile.path_index`; compiled default `0`. Substituted into a `%` path token.
     int event_timing_profile_path_index{0};
 
-    /// Ray offset after boundary crossing.
+    /// JSON `event.propagate_epsilon`; compiled default `0.05` mm. Offset after boundary crossing.
     float propagate_epsilon{0.05f};
 
-    /// Ray offset after bulk interaction.
+    /// JSON `event.propagate_epsilon0`; compiled default `0.05` mm. Offset after bulk interaction.
     float propagate_epsilon0{0.05f};
 
-    /// Flag mask selecting which bulk interactions use propagate_epsilon0.
+    /// JSON `event.propagate_epsilon0_mask`; compiled default `TO,CK,SI,SC,RE`.
     std::string propagate_epsilon0_mask{"TO,CK,SI,SC,RE"};
 
     int     ser_interval{0};
     SerHint ser_hint{SerHint::None};
 
+    /// JSON `event.propagate_refine`; compiled default `0`. Bit mask enabling refinement diagnostics.
+    unsigned propagate_refine{0u};
+
+    /// JSON `event.propagate_refine_distance`; compiled default `5000` mm.
+    float propagate_refine_distance{5000.f};
+
+    /// JSON `event.input_genstep`; compiled default empty. Genstep path or indexed path pattern.
+    std::string input_genstep{};
+
+    /// JSON `event.input_photon`; compiled default empty. Input `.npy` photon array.
+    std::string input_photon{};
+
+    /// JSON `event.input_photon_frame`; compiled default empty. Frame used to transform input photons.
+    std::string input_photon_frame{};
+
+    /// JSON `event.input_photon_change_time`; compiled default `-1` ns, which preserves stored times.
+    float input_photon_change_time{-1.f};
+
+    /// JSON `event.input_photon_record_time`; compiled default empty. Record time-selection expression.
+    std::string input_photon_record_time{};
+
+    /// JSON `event.input_photon_record_slice`; compiled default empty. Record history slice expression.
+    std::string input_photon_record_slice{};
+
+    /// JSON `torch`; typed optical source parameters. Defaults come from `default_torch`.
     storch torch{default_torch};
 
   private:

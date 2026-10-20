@@ -19,7 +19,7 @@ init_with_skipahead
 1. Initialize the Philox state with photon_idx as the curand subsequence.
 
 2. skipahead the curandState by skipahead_event_offset*event_idx
-   The offset can be configured using the OPTICKS_EVENT_SKIPAHEAD envvar.
+   The offset is configured with JSON ``event.event_skipahead``.
 
    Ideally the offset value should be more than maximum number of random values consumed
    in any photon of any event. In practice the number of random values consumed per photon will

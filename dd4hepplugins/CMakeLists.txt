@@ -43,6 +43,17 @@ endif()
 
 dd4hep_set_compiler_flags()
 
+# DD4hep's Geant4 wrapper forwards Geant4_CXX_FLAGS as raw options, including
+# the standard used to build Geant4. Remove that trailing option so this target's
+# portable cxx_std_20 requirement remains authoritative.
+if(TARGET Geant4::Interface)
+    get_target_property(_geant4_compile_options Geant4::Interface INTERFACE_COMPILE_OPTIONS)
+    if(_geant4_compile_options)
+        list(FILTER _geant4_compile_options EXCLUDE REGEX "^-std=.*$")
+        set_property(TARGET Geant4::Interface PROPERTY INTERFACE_COMPILE_OPTIONS "${_geant4_compile_options}")
+    endif()
+endif()
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -58,6 +69,7 @@ dd4hep_add_plugin(ddsimphony
     ${_u4}
     ${_sysrap}
 )
+
 target_compile_features(ddsimphony PRIVATE cxx_std_20)
 
 # STANDALONE changes class export macros in simphony headers;

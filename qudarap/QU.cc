@@ -246,14 +246,10 @@ it is necessary to set max_slot to something reasonable, otherwise with the
 default max_slot of zero, it gets set to a high value (eg M197 with 24GB)
 appropriate for production running with the available VRAM.
 
-One million is typically reasonable for debugging::
+One million is typically reasonable for debugging; configure
+``event.maxslot`` to ``1000000`` in the selected JSON file.
 
-   export OPTICKS_MAX_SLOT=M1
-
-)" ;
-
-
-
+)";
 
 void QU::_cudaMalloc( void** p2p, size_t size, const char* label )
 {

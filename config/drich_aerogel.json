@@ -24,7 +24,7 @@
   },
 
   "event": {
-    "mode": "HitPhoton",
+    "event_mode": "HitPhoton",
     "maxslot": 10000,
     "max_bounce": 31,
     "propagate_epsilon": 0.05,

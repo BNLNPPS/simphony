@@ -1,0 +1,6 @@
+{
+  "event": {
+    "event_mode": "Minimal",
+    "max_bounce": 1000
+  }
+}

@@ -29,10 +29,10 @@ echo "Threshold:   ${GPU_PHOTON_FLUSH_THRESHOLD:-10000000 (default)}"
 echo "Max queue:   ${GPU_MAX_QUEUE_SIZE:-3 (default)}"
 echo ""
 
-OPTICKS_MAX_BOUNCE=1000 \
 async_gpu_std \
     -g "$GDML" \
     -m "$MACRO" \
+    -c async_gpu \
     "$MODE"
 
 echo ""

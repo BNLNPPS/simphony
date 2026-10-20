@@ -7,6 +7,7 @@
 #include "SYSRAP_API_EXPORT.hh"
 
 struct NP ;
+struct storch;
 
 struct scontext ;
 struct salloc ;
@@ -39,54 +40,22 @@ QEvt::gatherComponent
    guided by SEventConfig::GatherComp
 
 
-Future
--------
+Canonical configuration
+-----------------------
 
-Static collection of methods and values approach is convenient and
-fits with the envvar controls while things are simple.
-But getting a bit awkward eg for automating max photon config
-based on available VRAM. Perhaps singleton future.
+Applications should construct ``simphony::Config`` from a named JSON file.
+``Config::Apply`` synchronizes its typed ``event`` values into this low-level,
+process-wide facade before event creation. See ``docs/configuration.md`` for
+the schema and defaults.
 
+Several values have dependents. Set them through ``Config`` before creating an
+``SEvt``; changing a basis setting after initialization does not necessarily
+recompute all dependent values:
 
-CAUTION that env setup is done prior to the static initialization that happens as libSysRap.so is loaded
-----------------------------------------------------------------------------------------------------------
-
-This means that when using a boost-python "main" must do environ setup prior to libSysRap.so
-being loaded. More specifically the compiler generates a function that sets the statics called::
-
-    _GLOBAL__sub_I_SEventConfig.cc
-
-
-TODO : More dynamic settings ?
--------------------------------
-
-Many settings (which exactly?) configured from envvars via static initializers
-at loading of libSysRap.so have side effects on other settings which mean that
-post initialization changes to those basis settings although they can be done
-they do not dynamically change the dependent settings. This can result in
-inconsistency, confusion and crashes.
-
-How to improve this:
-
-1. identify dependencies between settings and the initialization code that adds dependency
-2. rejig such that post-initialization setters propagate to dependent settings
-3. document dependency between settings
-
-**Another way is to reduce dependencies between settings,
-instead derive things from basis settings when they are needed.**
-
-+-----------------------------+------------------------------------------+
-|  Settings with dependents   |    Notes                                 |
-+=============================+==========================================+
-|  OPTICKS_EVENT_MODE         | Configs gather and save component masks  |
-+-----------------------------+------------------------------------------+
-|  OPTICKS_MODE_LITE          | Changes some comps to "lite" variants    |
-+-----------------------------+------------------------------------------+
-|  ... many more ?...         |                                          |
-+-----------------------------+------------------------------------------+
-
-It is possible that some settings have other consequences that mean that they
-cannot be changed. Document those and add asserts when change attempts are made.
+* ``event.event_mode`` derives gather/save masks and diagnostic buffer limits.
+* ``event.mode_lite`` and ``event.mode_merge`` select photon and hit variants.
+* ``event.maxslot: 0`` is replaced by a device-memory heuristic once a CUDA
+  device is selected.
 
 
 
@@ -109,69 +78,54 @@ Settings
 ------------
 
 EventMode
-    configures what will be persisted, ie what is in the SEvt
+    JSON ``event.event_mode`` configures what is gathered and persisted.
 RunningMode
-    configures how running is done, eg Default/DefaultSaveG4State/RerunG4State
+    JSON ``event.running_mode`` configures how running is done, for example
+    default, saved-Geant4-state, or rerun-Geant4-state workflows.
 
-HitMask OPTICKS_HIT_MASK a comma delimited string that determines which
-    subset of photons are downloaded into the "hit" array.
+HitMask (JSON ``event.hit_mask``)
+    is a comma-delimited string that determines which subset of photons is
+    downloaded into the "hit" array.
     Default is SD.  Settings that could be used::
 
         SD : SURFACE_DETECT
         EC : EFFICIENCY_COLLECT
         EX : EFFICIENCY_CULL
 
-MaxPhoton
-
 MaxSimtrace
+    JSON ``event.max_simtrace`` limits simtrace allocations.
 
-MaxCurand
-   Reserved for RNG-related launch sizing. Philox does not require
-   precomputed curandState files.
-
-
-MaxSlot OPTICKS_MAX_SLOT
+MaxSlot (JSON ``event.maxslot``)
     maximum CUDA launch slots
 
-    With OPTICKS_MAX_SLOT:0 SEventConfig::HeuristicMaxSlot_Rounded is
+    With ``event.maxslot: 0`` SEventConfig::HeuristicMaxSlot_Rounded is
     used to set MaxSlot to a VRAM appropriate value.
 
-    For non-zero OPTICKS_MAX_SLOT the specified value is used.
+    For a non-zero value the specified value is used.
 
     For large numbers of photons the value will determine how many
     launches are done.
 
 
-MaxRec
-    normally 0, disabling creation of the QEvt domain compressed step record buffer
+Record and diagnostic buffer limits
+    are derived from ``event.event_mode``. They are not independent runtime
+    settings.
 
-MaxRecord
-    normally 0, disabling creation of the QEvt full photon step record buffer.
-    When greater than zero causes QEvt::setNumPhoton to allocate the full
-    step record buffer, full recording requires a value of one greater
-    than the MaxBounce configured  (typically up to 16)
-
-MaxExtentDomain (mm)
-    only relevant to the domain compression of the compressed step records
-
-MaxTimeDomain (ns)
-    only relevant to the domain compression of the compressed step records
-
-MaxTime (ns)
+MaxTime (JSON ``event.max_time``, ns)
     truncation to simulation in addition to MaxBounce
 
 
 
 +-------------------------------+-----------------------------------------+---------------------------------------+
-| Method                        |  Default                                | envvar                                |
+| Method                        |  Default                                | JSON key                              |
 +===============================+=========================================+=======================================+
-| SEventConfig::OutFold         | "$DefaultOutputDir"                     | OPTICKS_OUT_FOLD                      |
+| SEventConfig::OutFold         | "$DefaultOutputDir"                     | event.output_dir                      |
 +-------------------------------+-----------------------------------------+---------------------------------------+
 
 
-EventName [OPTICKS_EVENT_NAME envvar]
-    When OPTICKS_EVENT_NAME is defined it controls the default event reldir used by SEvt::save
-    (requires kEventName to match the token used as part of _EventReldirDefault)
+EventReldir
+    Controls the relative event output directory. The canonical configuration
+    is ``event.event_reldir`` in the selected JSON file.
 
 **/
 
@@ -205,85 +159,18 @@ struct SYSRAP_API SEventConfig
     static constexpr const char* NO_STATE_LIMIT = "G1000" ;  // 1000 billion
     static constexpr const char* NO_STATE_LIMIT_GENSTEP = "M10" ; // adhoc
 
-    static constexpr const char* kIntegrationMode = "OPTICKS_INTEGRATION_MODE" ;
-    static constexpr const char* kEventMode       = "OPTICKS_EVENT_MODE" ;
-    static constexpr const char* kEventName       = "OPTICKS_EVENT_NAME" ;
-    static constexpr const char* kRunningMode     = "OPTICKS_RUNNING_MODE" ;
-
-    static constexpr const char* kStartIndex   = "OPTICKS_START_INDEX" ;
-    static constexpr const char* kNumEvent     = "OPTICKS_NUM_EVENT" ;
-    static constexpr const char* kNumPhoton    = "OPTICKS_NUM_PHOTON" ;
-    static constexpr const char* kNumGenstep   = "OPTICKS_NUM_GENSTEP" ;
-    static constexpr const char* kEventSkipahead  = "OPTICKS_EVENT_SKIPAHEAD" ;
-
-    static constexpr const char* kG4StateSpec  = "OPTICKS_G4STATE_SPEC" ;
-    static constexpr const char* kG4StateRerun = "OPTICKS_G4STATE_RERUN" ;
-
-    static constexpr const char* kMaxCurand    = "OPTICKS_MAX_CURAND" ;
-    static constexpr const char* kMaxSlot      = "OPTICKS_MAX_SLOT" ;
-
-    static constexpr const char* kMaxGenstep   = "OPTICKS_MAX_GENSTEP" ;
-    static constexpr const char* kMaxPhoton    = "OPTICKS_MAX_PHOTON" ;
-    static constexpr const char* kMaxSimtrace  = "OPTICKS_MAX_SIMTRACE" ;
-
-    static constexpr const char* kMaxBounce    = "OPTICKS_MAX_BOUNCE" ;
-    static constexpr const char* kMaxTime      = "OPTICKS_MAX_TIME" ;
-
-    static constexpr const char* kMaxRecord    = "OPTICKS_MAX_RECORD" ;
-    static constexpr const char* kMaxRec       = "OPTICKS_MAX_REC" ;
-    static constexpr const char* kMaxAux       = "OPTICKS_MAX_AUX" ;
-    static constexpr const char* kMaxSup       = "OPTICKS_MAX_SUP" ;
-    static constexpr const char* kMaxSeq       = "OPTICKS_MAX_SEQ" ;
-    static constexpr const char* kMaxPrd       = "OPTICKS_MAX_PRD" ;
-    static constexpr const char* kMaxTag       = "OPTICKS_MAX_TAG" ;
-    static constexpr const char* kMaxFlat      = "OPTICKS_MAX_FLAT" ;
-
-    static constexpr const char* kModeSave      = "OPTICKS_MODE_SAVE" ;
-    static constexpr const char* kModeClient    = "OPTICKS_MODE_CLIENT" ;
-    static constexpr const char* kModeLite      = "OPTICKS_MODE_LITE" ;
-    static constexpr const char* kModeMerge     = "OPTICKS_MODE_MERGE" ;
-    static constexpr const char* kMergeWindow   = "OPTICKS_MERGE_WINDOW" ; // ns
-
-    static constexpr const char* kMaxExtentDomain    = "OPTICKS_MAX_EXTENT_DOMAIN" ;
-    static constexpr const char* kMaxTimeDomain      = "OPTICKS_MAX_TIME_DOMAIN" ;
-
-    static constexpr const char* kOutPrefix    = "OPTICKS_OUT_PREFIX" ;
-    static constexpr const char* kOutFold      = "OPTICKS_OUT_FOLD" ;
-    static constexpr const char* kOutName      = "OPTICKS_OUT_NAME" ;
-    static constexpr const char* kEventReldir  = "OPTICKS_EVENT_RELDIR" ;
-    static constexpr const char* kHitMask      = "OPTICKS_HIT_MASK" ;
-    static constexpr const char* kRGMode       = "OPTICKS_RG_MODE" ;
-
-    // TODO: remove these, as looks like always get trumped by SEventConfig::Initialize_Comp
-    static constexpr const char* kGatherComp   = "OPTICKS_GATHER_COMP" ;
-    static constexpr const char* kSaveComp     = "OPTICKS_SAVE_COMP" ;
-
-    static constexpr const char* kPropagateEpsilon = "OPTICKS_PROPAGATE_EPSILON" ;
-    static constexpr const char* kPropagateEpsilon0 = "OPTICKS_PROPAGATE_EPSILON0" ;
-    static constexpr const char* kPropagateEpsilon0Mask = "OPTICKS_PROPAGATE_EPSILON0_MASK" ;
-    static constexpr const char* kPropagateRefine = "OPTICKS_PROPAGATE_REFINE" ;
-    static constexpr const char* kPropagateRefineDistance = "OPTICKS_PROPAGATE_REFINE_DISTANCE" ;
-
-    static constexpr const char* kInputGenstep     = "OPTICKS_INPUT_GENSTEP" ;
-    static constexpr const char* kInputGenstepSelection  = "OPTICKS_INPUT_GENSTEP_SELECTION" ;
-    static constexpr const char* kInputPhoton      = "OPTICKS_INPUT_PHOTON" ;
-    static constexpr const char* kInputPhotonFrame = "OPTICKS_INPUT_PHOTON_FRAME" ;
-    static constexpr const char* kInputPhotonChangeTime = "OPTICKS_INPUT_PHOTON_CHANGE_TIME" ;
-    static constexpr const char* kInputPhotonRecordTime = "OPTICKS_INPUT_PHOTON_RECORD_TIME" ;
-    static constexpr const char* kInputPhotonRecordSlice = "OPTICKS_INPUT_PHOTON_RECORD_SLICE" ;
-
-
     static int         IntegrationMode();
     static bool        GPU_Simulation() ; // 1 or 3
     static bool        CPU_Simulation() ; // 2 or 3
 
     static const char* EventMode();
-    static const char* EventName();
     static const char* DeviceName();
     static bool        HasDevice();
 
     static int         RunningMode();
     static const char* RunningModeLabel();
+    static const storch& Torch();
+    static int StartIndex();
 
     static bool IsRunningModeDefault();
     static bool IsRunningModeG4StateSave();
@@ -297,6 +184,7 @@ struct SYSRAP_API SEventConfig
     static int         EventSkipahead();
     static const char* G4StateSpec();
     static int         G4StateRerun();
+    static int G4StateRerunConfigured();
 
     static int64_t MaxCurand();
     static int64_t MaxSlot();
@@ -320,8 +208,6 @@ struct SYSRAP_API SEventConfig
     static int64_t MaxTag();
     static int64_t MaxFlat();
 
-    static int64_t ModeSave();
-    static int64_t ModeClient();
     static int64_t ModeLite();
     static int64_t ModeMerge();
     static float   MergeWindow();
@@ -346,7 +232,6 @@ struct SYSRAP_API SEventConfig
 
     static const char* _InputGenstepPath(int idx=-1);
     static const char* InputGenstep(int idx=-1);
-    static const char* InputGenstepSelection(int idx=-1);
     static bool InputGenstepPathExists(int idx);
 
 
@@ -414,12 +299,11 @@ struct SYSRAP_API SEventConfig
 
     static void SetIntegrationMode(int mode);   // IntegrationMode configures the integration of Opticks and Framework
     static void SetEventMode(const char* mode);   // EventMode configures what will be persisted, ie what is in the SEvt
-    static void SetEventName(const char* name);
     static void SetRunningMode(const char* mode); // RunningMode configures how running is done, eg Default/DefaultSaveG4State/RerunG4State/Torch
+    static void SetTorch(const storch& torch);
 
     static void SetStartIndex(int index0);
     static void SetNumEvent(int nevt);            // NumEvent is used by some tests
-    static void SetNumPhoton(const char* spec);   // NumPhoton is used by some tests
 
     static void SetEventSkipahead(int offset);
     static void SetG4StateSpec(const char* spec);
@@ -430,7 +314,7 @@ struct SYSRAP_API SEventConfig
 
     static void SetMaxGenstep(int max_genstep);
     static void SetMaxPhoton( int max_photon);
-    static void SetMaxSimtrace( int max_simtrace);
+    static void SetMaxSimtrace(int64_t max_simtrace);
 
     static void SetMaxBounce( int max_bounce);
     static void SetMaxTime(   float max_time );
@@ -444,8 +328,6 @@ struct SYSRAP_API SEventConfig
     static void SetMaxTag(    int max_tag);
     static void SetMaxFlat(   int max_flat);
 
-    static void SetModeSave( int mode );
-    static void SetModeClient( int mode );
     static void SetModeLite(  int mode );
     static void SetModeMerge( int mode );
     static void SetMergeWindow( float merge_window_ns );
@@ -474,7 +356,6 @@ struct SYSRAP_API SEventConfig
     static void SetPropagateRefine( unsigned refine ) ;
 
     static void SetInputGenstep(const char* input_genstep);
-    static void SetInputGenstepSelection(const char* input_genstep_selection);
     static void SetInputPhoton(const char* input_photon);
     static void SetInputPhotonFrame(const char* input_photon_frame);
     static void SetInputPhotonChangeTime( float t0 ) ;
@@ -489,16 +370,13 @@ struct SYSRAP_API SEventConfig
     static void SetSaveComp(const char* names, char delim=',') ;
     static bool IsCompConfigured();
 
-    // STATIC VALUES SET EARLY, MANY BASED ON ENVVARS
+    // STATIC VALUES SET EARLY FROM COMPILED DEFAULTS, THEN UPDATED BY Config::Apply
 
     static int         _IntegrationModeDefault ;
     static const char* _EventModeDefault ;
-    static const char* _EventNameDefault ;
     static const char* _RunningModeDefault ;
     static int         _StartIndexDefault ;
     static int         _NumEventDefault ;
-    static const char* _NumPhotonDefault ;
-    static const char* _NumGenstepDefault ;
 
     static int         _EventSkipaheadDefault ;
     static const char* _G4StateSpecDefault ;
@@ -508,11 +386,9 @@ struct SYSRAP_API SEventConfig
     static const char* _MaxBounceNotes ;
     static const char* _MaxTimeNotes ;
 
-    static const char* _MaxCurandDefault ;
     static const char* _MaxSlotDefault ;
 
     static const char* _MaxGenstepDefault ;
-    static const char* _MaxPhotonDefault ;
     static const char* _MaxSimtraceDefault ;
 
     static float _MaxTimeDefault  ;
@@ -526,8 +402,6 @@ struct SYSRAP_API SEventConfig
     static int _MaxTagDefault ;
     static int _MaxFlatDefault ;
 
-    static int _ModeSaveDefault ;
-    static int _ModeClientDefault ;
     static int _ModeLiteDefault ;
     static int _ModeMergeDefault ;
     static float _MergeWindowDefault ;
@@ -536,14 +410,8 @@ struct SYSRAP_API SEventConfig
     static float _MaxTimeDomainDefault  ;
 
     static const char* _OutFoldDefault ;
-    static const char* _OutNameDefault ;
     static const char* _EventReldirDefault ;
     static const char* _HitMaskDefault ;
-
-    static const char* _RGModeDefault ;
-
-    static const char* _GatherCompDefault ;
-    static const char* _SaveCompDefault ;
 
     static float       _PropagateEpsilonDefault  ;
     static float       _PropagateEpsilon0Default  ;
@@ -552,7 +420,6 @@ struct SYSRAP_API SEventConfig
     static unsigned    _PropagateRefineDefault  ;
 
     static const char* _InputGenstepDefault ;
-    static const char* _InputGenstepSelectionDefault ;
     static const char* _InputPhotonDefault ;
     static const char* _InputPhotonFrameDefault ;
     static float       _InputPhotonChangeTimeDefault ;
@@ -561,25 +428,12 @@ struct SYSRAP_API SEventConfig
 
     static int         _IntegrationMode ;
     static const char* _EventMode ;
-    static const char* _EventName ;
     static const char* _DeviceName ;
     static int         _RunningMode ;
+    static storch      _Torch;
     static int         _StartIndex ;
     static int         _NumEvent ;
 
-    static std::vector<int64_t>* _GetNumPhotonPerEvent();
-    static std::vector<int64_t>* _NumPhotonPerEvent ;
-
-    static std::vector<int64_t>* _GetNumGenstepPerEvent();
-    static std::vector<int64_t>* _NumGenstepPerEvent ;
-
-    static int64_t           _GetNumPhoton(int idx);
-    static int64_t           _GetNumGenstep(int idx);
-
-
-    static int               _GetNumEvent();
-    static int64_t           NumPhoton(int idx);  // some tests need varying photon count for each event
-    static int               NumGenstep(int idx); // some tests need varying numbers of genstep for each event
     static int               NumEvent();          // some tests use event count and need to detect last event
     static int               EventIndex(int idx) ;
     static int               EventIndexArg(int index) ;
@@ -608,8 +462,6 @@ struct SYSRAP_API SEventConfig
     static int _MaxTag ;
     static int _MaxFlat ;
 
-    static int _ModeSave ;
-    static int _ModeClient ;
     static int _ModeLite ;
     static int _ModeMerge ;
     static float _MergeWindow ;
@@ -635,7 +487,6 @@ struct SYSRAP_API SEventConfig
     static int      _SerHint;
 
     static const char* _InputGenstep ;
-    static const char* _InputGenstepSelection ;
     static const char* _InputPhoton ;
     static const char* _InputPhotonFrame ;
     static float       _InputPhotonChangeTime ;
@@ -649,9 +500,6 @@ struct SYSRAP_API SEventConfig
     static int   Initialize_COUNT ;
     static void  Initialize_Meta();
     static int   Initialize();
-
-    static void  Initialize_EventName();
-
 
     static const char* DebugHeavy_NOTE    ;
     static const char* DebugLite_NOTE     ;

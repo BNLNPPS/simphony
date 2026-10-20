@@ -212,20 +212,28 @@ see [Simulation inputs and outputs](inputs-outputs.md#output-protocol).
 
 ### Prerequisites
 
-The simulation must be run with `OPTICKS_EVENT_MODE` set so that output arrays
-are saved to disk. The default mode, `Minimal`, gathers hits into memory but
+The selected JSON configuration must set `event.event_mode` to a mode that
+saves output arrays. The default mode, `Minimal`, gathers hits into memory but
 does not write `.npy` event arrays.
 
 Use `HitPhoton` for final photon/hit summaries:
 
-```bash
-export OPTICKS_EVENT_MODE=HitPhoton
+```json
+{
+  "event": {
+    "event_mode": "HitPhoton"
+  }
+}
 ```
 
 Use `DebugLite` when you need `record.npy` for step-by-step traces:
 
-```bash
-export OPTICKS_EVENT_MODE=DebugLite
+```json
+{
+  "event": {
+    "event_mode": "DebugLite"
+  }
+}
 ```
 
 `HitPhotonSeq` saves `seq.npy` without `record.npy`; `DebugHeavy` saves the
@@ -236,14 +244,20 @@ matrix.
 ### Running a simulation with output saving
 
 ```bash
-OPTICKS_EVENT_MODE=DebugLite GPUPhotonSourceMinimal -g tests/geom/wls_test.gdml -c wls_test -m tests/run.mac -s 42
+GPUPhotonSourceMinimal -g tests/geom/wls_test.gdml -c wls_test -m tests/run.mac -s 42
 ```
+
+Here `config/wls_test.json` supplies the event mode. Copy or edit a named
+configuration when a different persistence mode is needed. See
+[Runtime configuration](configuration.md) for configuration discovery,
+defaults and the event schema. Legacy `OPTICKS_*` event settings are ignored.
 
 ### Output file location
 
-GPU event arrays are written under the configured output base (`event.output_dir` / `OPTICKS_OUT_FOLD`):
+GPU event arrays are written under JSON `event.output_dir` and
+`event.event_reldir`:
 
-    <output_base>/ALL0_no_opticks_event_name/A000/
+    <output_base>/ALL0/A000/
 
 The script also accepts the parent folder and auto-selects `A000` when it
 contains the GPU event. The exact path construction and configurable segments
@@ -256,7 +270,7 @@ are defined in the [output protocol](inputs-outputs.md#event-directory).
 python optiphy/ana/photon_history_summary.py <event_folder>
 
 # Auto-resolves A000 subfolder:
-python optiphy/ana/photon_history_summary.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
+python optiphy/ana/photon_history_summary.py /tmp/$USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0
 
 # Show step-by-step trace for specific photons, when record.npy is present:
 python optiphy/ana/photon_history_summary.py <path> --trace 0,227,235

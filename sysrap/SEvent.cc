@@ -21,9 +21,10 @@
 
 #include "OpticksGenstep.h"
 
+#include "SEvent.hh"
+#include "SEventConfig.hh"
 #include "SEvt.hh"
 #include "SGenstep.h"
-#include "SEvent.hh"
 
 const plog::Severity SEvent::LEVEL = SLOG::EnvLevel("SEvent", "DEBUG") ;
 
@@ -152,25 +153,24 @@ NP* SEvent::MakeCerenkovGenstep(int idx_arg){ return MakeGenstep( OpticksGenstep
 NP* SEvent::MakeScintGenstep(   int idx_arg){ return MakeGenstep( OpticksGenstep_SCINTILLATION, idx_arg ) ; }
 NP* SEvent::MakeCarrierGenstep( int idx_arg){ return MakeGenstep( OpticksGenstep_CARRIER, idx_arg ) ; }
 
-
 /**
 SEvent::MakeGenstep
 ---------------------
 
 NB index_arg is userspace 0-based index, that is not the same as the internal SEvt::index
-which may be offset by OPTICKS_START_INDEX
+which may be offset by JSON ``event.start_index``
 
 **/
-
 
 NP* SEvent::MakeGenstep( int gentype, int index_arg )
 {
     bool with_index = index_arg != -1 ;
     if(with_index) assert( index_arg >= 0 );  // index_arg is 0-based
 
-
-    int64_t num_ph = with_index ? SEventConfig::NumPhoton(index_arg)  : ssys::getenvint64spec("SEvent__MakeGenstep_num_ph", "100" ) ;
-    int64_t num_gs = with_index ? SEventConfig::NumGenstep(index_arg) : ssys::getenvint64spec("SEvent__MakeGenstep_num_gs", "1"   ) ;
+    const bool is_torch = gentype == OpticksGenstep_TORCH;
+    int64_t    num_ph = is_torch ? SEventConfig::Torch().numphoton
+                                 : ssys::getenvint64spec("SEvent__MakeGenstep_num_ph", "100");
+    int64_t    num_gs = is_torch ? 1 : ssys::getenvint64spec("SEvent__MakeGenstep_num_gs", "1");
 
     bool dump = ssys::getenvbool("SEvent_MakeGenstep_dump");
     const int M = 1000000 ;
@@ -202,10 +202,18 @@ NP* SEvent::MakeGenstep( int gentype, int index_arg )
 
     switch(gentype)
     {
-        case  OpticksGenstep_TORCH:         FillGenstep<storch>(   gs, gs_start, gs_stop, gs_ph, dump) ; break ;
-        case  OpticksGenstep_CERENKOV:      FillGenstep<scerenkov>(gs, gs_start, gs_stop, gs_ph, dump) ; break ;
-        case  OpticksGenstep_SCINTILLATION: FillGenstep<sscint>(   gs, gs_start, gs_stop, gs_ph, dump) ; break ;
-        case  OpticksGenstep_CARRIER:       FillGenstep<scarrier>( gs, gs_start, gs_stop, gs_ph, dump) ; break ;
+    case OpticksGenstep_TORCH:
+        *reinterpret_cast<storch*>(gs->bytes()) = SEventConfig::Torch();
+        break;
+    case OpticksGenstep_CERENKOV:
+        FillGenstep<scerenkov>(gs, gs_start, gs_stop, gs_ph, dump);
+        break;
+    case OpticksGenstep_SCINTILLATION:
+        FillGenstep<sscint>(gs, gs_start, gs_stop, gs_ph, dump);
+        break;
+    case OpticksGenstep_CARRIER:
+        FillGenstep<scarrier>(gs, gs_start, gs_stop, gs_ph, dump);
+        break;
     }
     return gs ;
 }

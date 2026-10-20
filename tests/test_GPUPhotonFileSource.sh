@@ -2,7 +2,6 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export OPTICKS_MAX_SLOT=M1
 
 SEED=42
 PASS=true

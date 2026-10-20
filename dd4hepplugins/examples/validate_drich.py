@@ -22,14 +22,9 @@ def setup_kernel(mode):
         os.environ["DRICH_1SECTOR_XML"] = os.path.join(_GEOM_DIR, "drich_1sector.xml")
 
     if mode == "gpu":
-        os.environ["OPTICKS_EVENT_MODE"] = "Minimal"
-        os.environ["OPTICKS_INTEGRATION_MODE"] = "1"
         # Ensure DDG4 can find the plugin
         import ctypes
         ctypes.CDLL("libddsimphony.so", ctypes.RTLD_GLOBAL)
-    else:
-        os.environ.pop("OPTICKS_EVENT_MODE", None)
-        os.environ.pop("OPTICKS_INTEGRATION_MODE", None)
 
     kernel = DDG4.Kernel()
     kernel.loadGeometry(str("file:" + compact))
@@ -61,6 +56,7 @@ def setup_kernel(mode):
         step_action = DDG4.SteppingAction(kernel, "OpticsSteppingAction/OpticsStep1")
         kernel.steppingAction().adopt(step_action)
         run_action = DDG4.RunAction(kernel, "OpticsRun/OpticsRun1")
+        run_action.ConfigName = "dd4hep_gpu"
         kernel.runAction().adopt(run_action)
         # OpticsEvent must be registered BEFORE ROOT output so hits are
         # injected into the collection before serialization.
@@ -96,7 +92,7 @@ def run_gpu():
     # Read hits from npy files
     base = os.path.join(os.environ.get("TMP", "/tmp/opticks_out"),
                         "GEOM", os.environ.get("GEOM", "simple"),
-                        "python3.13", "ALL0_no_opticks_event_name")
+                        "python3.13", "ALL0")
     total = 0
     if os.path.isdir(base):
         for d in sorted(os.listdir(base)):

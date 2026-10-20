@@ -1,11 +1,11 @@
-#include <sstream>
-#include <cstring>
 #include <cassert>
-#include <iostream>
+#include <cstdint>
+#include <cstring>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <vector>
 
-#include "ssys.h"
 #include "sseq.h"
 #include "sstr.h"
 #include "spath.h"
@@ -15,6 +15,7 @@
 #include "scontext.h"
 
 #include "sphoton.h"
+#include "torch.h"
 
 #include "SPath.hh"   // only SPath::Make to replace
 
@@ -32,12 +33,9 @@ const plog::Severity SEventConfig::LEVEL = SLOG::EnvLevel("SEventConfig", "DEBUG
 
 int         SEventConfig::_IntegrationModeDefault = -1 ;
 const char* SEventConfig::_EventModeDefault = Minimal ;
-const char* SEventConfig::_EventNameDefault = nullptr ;
 const char* SEventConfig::_RunningModeDefault = "SRM_DEFAULT" ;
 int         SEventConfig::_StartIndexDefault = 0 ;
 int         SEventConfig::_NumEventDefault = 1 ;
-const char* SEventConfig::_NumPhotonDefault = nullptr ;
-const char* SEventConfig::_NumGenstepDefault = nullptr ;
 int         SEventConfig::_EventSkipaheadDefault = 100000 ;  // APPROPRIATE SKIPAHEAD DEPENDS ON HOW MANY RANDOMS CONSUMED BY PHOTON SIMULATION
 const char* SEventConfig::_G4StateSpecDefault = "1000:38" ;
 const char* SEventConfig::_G4StateSpecNotes   = "38=2*17+4 is appropriate for MixMaxRng" ;
@@ -59,8 +57,6 @@ int SEventConfig::_MaxPrdDefault = 0 ;
 int SEventConfig::_MaxTagDefault = 0 ;
 int SEventConfig::_MaxFlatDefault = 0 ;
 
-int SEventConfig::_ModeSaveDefault = 0 ;
-int SEventConfig::_ModeClientDefault = 0 ;
 int SEventConfig::_ModeLiteDefault = 0 ;
 int SEventConfig::_ModeMergeDefault = 0 ;
 float SEventConfig::_MergeWindowDefault = 0.f ;  // ns
@@ -69,22 +65,13 @@ float SEventConfig::_MaxExtentDomainDefault = 1000.f ;  // mm  : domain compress
 float SEventConfig::_MaxTimeDomainDefault = 10.f ; // ns
 
 const char* SEventConfig::_OutFoldDefault = "$DefaultOutputDir" ;
-const char* SEventConfig::_OutNameDefault = nullptr ;
-const char* SEventConfig::_EventReldirDefault = "ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-no_opticks_event_name}" ; // coordinate with kEventName
-const char* SEventConfig::_RGModeDefault = "simulate" ;
+const char* SEventConfig::_EventReldirDefault = "ALL${VERSION:-0}";
 const char* SEventConfig::_HitMaskDefault = "SD" ;
 
 
 const char* SEventConfig::_MaxSlotDefault = "0" ;     // see SEventConfig::SetDevice : set according to VRAM
 const char* SEventConfig::_MaxGenstepDefault = NO_STATE_LIMIT_GENSTEP ;  // adhoc
-const char* SEventConfig::_MaxPhotonDefault = NO_STATE_LIMIT ;
 const char* SEventConfig::_MaxSimtraceDefault = NO_STATE_LIMIT ;
-const char* SEventConfig::_MaxCurandDefault = NO_STATE_LIMIT ;
-
-
-// HUH: former default was ALL_
-const char* SEventConfig::_GatherCompDefault = SComp::NONE_ ;
-const char* SEventConfig::_SaveCompDefault = SComp::NONE_ ;
 
 float SEventConfig::_PropagateEpsilonDefault = 0.05f ;
 float SEventConfig::_PropagateEpsilon0Default = 0.05f ;
@@ -94,224 +81,98 @@ float SEventConfig::_PropagateRefineDistanceDefault = 5000.f ;
 
 
 const char* SEventConfig::_InputGenstepDefault = nullptr ;
-const char* SEventConfig::_InputGenstepSelectionDefault = nullptr ;
 const char* SEventConfig::_InputPhotonDefault = nullptr ;
 const char* SEventConfig::_InputPhotonFrameDefault = nullptr ;
 float       SEventConfig::_InputPhotonChangeTimeDefault = -1.f ;   // -ve time means leave ASIS
 const char* SEventConfig::_InputPhotonRecordTimeDefault = nullptr ;   // ns
 const char* SEventConfig::_InputPhotonRecordSliceDefault = nullptr ;
 
-int         SEventConfig::_IntegrationMode = ssys::getenvint(kIntegrationMode, _IntegrationModeDefault );
-const char* SEventConfig::_EventMode = ssys::getenvvar(kEventMode, _EventModeDefault );
-const char* SEventConfig::_EventName  = ssys::getenvvar(kEventName,  _EventNameDefault );
+int         SEventConfig::_IntegrationMode = _IntegrationModeDefault;
+const char* SEventConfig::_EventMode = _EventModeDefault;
 const char* SEventConfig::_DeviceName  = nullptr ;
-int         SEventConfig::_RunningMode = SRM::Type(ssys::getenvvar(kRunningMode, _RunningModeDefault));
+int         SEventConfig::_RunningMode = SRM::Type(_RunningModeDefault);
+storch      SEventConfig::_Torch = default_torch;
 
+int SEventConfig::_StartIndex = _StartIndexDefault;
+int SEventConfig::_NumEvent = _NumEventDefault;
 
-
-
-int         SEventConfig::_StartIndex = ssys::getenvint(kStartIndex, _StartIndexDefault );
-int         SEventConfig::_NumEvent = ssys::getenvint(kNumEvent, _NumEventDefault );
-
-std::vector<int64_t>* SEventConfig::_GetNumPhotonPerEvent()
+int SEventConfig::NumEvent()
 {
-    const char* spec = ssys::getenvvar(kNumPhoton,  _NumPhotonDefault );
-    return sstr::ParseIntSpecList<int64_t>( spec, ',' );
+    return _NumEvent;
 }
-std::vector<int64_t>* SEventConfig::_NumPhotonPerEvent = _GetNumPhotonPerEvent() ;
-
-
-std::vector<int64_t>* SEventConfig::_GetNumGenstepPerEvent()
-{
-    const char* spec = ssys::getenvvar(kNumGenstep,  _NumGenstepDefault );
-    return sstr::ParseIntSpecList<int64_t>( spec, ',' );
-}
-std::vector<int64_t>* SEventConfig::_NumGenstepPerEvent = _GetNumGenstepPerEvent() ;
-
-
-/**
-SEventConfig::_GetNumPhoton
-----------------------------
-
-Used by some tests that define a sequence of photon counts as inputs::
-
-    OPTICKS_NUM_PHOTON=M1,2,3,4 OPTICKS_NUM_EVENT=4 SEventConfigTest
-    OPTICKS_NUM_PHOTON=G1,2,3,4 OPTICKS_NUM_EVENT=4 SEventConfigTest
-
-
-Expected to define the below of envvars with equal numbers of entries::
-
-   OPTICKS_NUM_PHOTON=M1,2,3,4
-   OPTICKS_NUM_GENSTEP=1,1,1,1
-
-
-**/
-int64_t SEventConfig::_GetNumPhoton(int idx)
-{
-    if(_NumPhotonPerEvent == nullptr) return 0 ;
-
-    int nevt0 = NumEvent() ;
-    int nevt1 = _NumPhotonPerEvent->size() ;
-    bool match = nevt0 == nevt1 ;
-    LOG_IF(fatal, !match)
-        << " NumEvent MISMATCH BETWEEN "
-        << std::endl
-        << " nevt0:_NumEvent               " << nevt0 << "( from " << kNumEvent  << ":" << ( getenv(kNumEvent) ? getenv(kNumEvent) : "-" ) << ") "
-        << " nevt1:_NumPhotonPerEvent.size " << nevt1 << "( from " << kNumPhoton << ":" << ( getenv(kNumPhoton) ? getenv(kNumPhoton) : "-" ) << ") "
-        ;
-    assert( match );
-    if(idx < 0 ) idx += nevt0 ;   // allow -ve indices to count from the back
-    if(idx >= nevt0) return 0 ;
-
-    return (*_NumPhotonPerEvent)[idx] ;
-}
-
-
-int64_t SEventConfig::_GetNumGenstep(int idx)
-{
-    if(_NumGenstepPerEvent == nullptr) return 0 ;
-
-    int nevt0 = NumEvent() ;
-    int nevt1 = _NumGenstepPerEvent->size() ;
-    bool match = nevt0 == nevt1 ;
-    LOG_IF(fatal, !match)
-        << " NumEvent MISMATCH BETWEEN "
-        << std::endl
-        << " nevt0:_NumEvent                " << nevt0 << "( from " << kNumEvent   << ":" << ( getenv(kNumEvent) ? getenv(kNumEvent) : "-" ) << ") "
-        << " nevt1:_NumGenstepPerEvent.size " << nevt1 << "( from " << kNumGenstep << ":" << ( getenv(kNumGenstep) ? getenv(kNumGenstep) : "-" ) << ") "
-        ;
-    assert( match );
-    if(idx < 0 ) idx += nevt0 ;   // allow -ve indices to count from the back
-    if(idx >= nevt0) return 0 ;
-
-    return (*_NumGenstepPerEvent)[idx] ;
-}
-
-
-/**
-SEventConfig::_GetNumEvent
---------------------------
-
-::
-
-    OPTICKS_NUM_EVENT=4 OPTICKS_NUM_PHOTON=M1:3 OPTICKS_NUM_GENSTEP=M1:3 SEventConfigTest
-
-**/
-
-int SEventConfig::_GetNumEvent()
-{
-    bool have_NumPhotonPerEvent = _NumPhotonPerEvent && _NumPhotonPerEvent->size() > 0 ;
-    bool have_NumGenstepPerEvent = _NumGenstepPerEvent && _NumGenstepPerEvent->size() > 0 ;
-
-    int numEvent_fromPhotonList  = have_NumPhotonPerEvent ? _NumPhotonPerEvent->size() : 0 ;
-    int numEvent_fromGenstepList = have_NumGenstepPerEvent ? _NumGenstepPerEvent->size() : 0 ;
-    int numEvent_fromList = std::max(numEvent_fromPhotonList, numEvent_fromGenstepList);
-
-    if( numEvent_fromPhotonList > 0 && numEvent_fromGenstepList > 0 )
-    {
-        assert( numEvent_fromPhotonList == numEvent_fromGenstepList );
-    }
-
-    bool override_NumEvent = numEvent_fromList > 0  && numEvent_fromList != _NumEvent ;
-
-    LOG_IF(error, override_NumEvent )
-        << " Overriding NumEvent "
-        << "(" << kNumEvent  << ")"
-        << " value " << _NumEvent
-        << " as inconsistent with NumPhoton OR NumGenstep list length "
-        << "\n"
-        << "(" << kNumPhoton << ")"
-        << " numEvent_fromPhotonList " << numEvent_fromPhotonList
-        << "\n"
-        << "(" << kNumGenstep << ")"
-        << " numEvent_fromGenstepList " << numEvent_fromGenstepList
-        ;
-    return override_NumEvent ? numEvent_fromList : _NumEvent ;
-}
-
-
-int64_t SEventConfig::NumPhoton( int idx){ return _GetNumPhoton(idx) ; }
-
-int SEventConfig::NumGenstep(int idx){ return _GetNumGenstep(idx) ; }
-int SEventConfig::NumEvent(){         return _GetNumEvent() ; }
 int SEventConfig::EventIndex(int idx){ return _StartIndex + idx ; }
 int SEventConfig::EventIndexArg(int index){ return index == MISSING_INDEX ? -1 : index - _StartIndex ; }
 
 bool SEventConfig::IsFirstEvent(int idx){ return idx == 0 ; }  // 0-based idx (such as Geant4 eventID)
 bool SEventConfig::IsLastEvent(int idx){ return idx == NumEvent()-1 ; }  // 0-based idx (such as Geant4 eventID)
 
+int         SEventConfig::_EventSkipahead = _EventSkipaheadDefault;
+const char* SEventConfig::_G4StateSpec = _G4StateSpecDefault;
+int         SEventConfig::_G4StateRerun = _G4StateRerunDefault;
 
-int         SEventConfig::_EventSkipahead = ssys::getenvint(kEventSkipahead, _EventSkipaheadDefault) ;
-const char* SEventConfig::_G4StateSpec  = ssys::getenvvar(kG4StateSpec,  _G4StateSpecDefault );
-int         SEventConfig::_G4StateRerun = ssys::getenvint(kG4StateRerun, _G4StateRerunDefault) ;
+int64_t SEventConfig::_MaxCurand = G * 1000;
+int64_t SEventConfig::_MaxSlot = 0;
+int64_t SEventConfig::_MaxGenstep = M * 10;
+int64_t SEventConfig::_MaxPhoton = G * 1000;
+int64_t SEventConfig::_MaxSimtrace = G * 1000;
 
-int64_t SEventConfig::_MaxCurand    = ssys::getenv_ParseInt64(kMaxCurand,   _MaxCurandDefault ) ;
-int64_t SEventConfig::_MaxSlot      = ssys::getenv_ParseInt64(kMaxSlot,     _MaxSlotDefault ) ;
-int64_t SEventConfig::_MaxGenstep   = ssys::getenv_ParseInt64(kMaxGenstep,  _MaxGenstepDefault ) ;
-int64_t SEventConfig::_MaxPhoton    = ssys::getenv_ParseInt64(kMaxPhoton,   _MaxPhotonDefault ) ;
-int64_t SEventConfig::_MaxSimtrace  = ssys::getenv_ParseInt64(kMaxSimtrace, _MaxSimtraceDefault ) ;
+float SEventConfig::_MaxTime = _MaxTimeDefault;
+int   SEventConfig::_MaxBounce = _MaxBounceDefault;
+int   SEventConfig::_MaxRecord = _MaxRecordDefault;
+int   SEventConfig::_MaxRec = _MaxRecDefault;
+int   SEventConfig::_MaxAux = _MaxAuxDefault;
+int   SEventConfig::_MaxSup = _MaxSupDefault;
+int   SEventConfig::_MaxSeq = _MaxSeqDefault;
+int   SEventConfig::_MaxPrd = _MaxPrdDefault;
+int   SEventConfig::_MaxTag = _MaxTagDefault;
+int   SEventConfig::_MaxFlat = _MaxFlatDefault;
 
-float SEventConfig::_MaxTime    = ssys::getenvfloat(kMaxTime, _MaxTimeDefault );    // ns
-int SEventConfig::_MaxBounce    = ssys::getenvint(kMaxBounce, _MaxBounceDefault ) ;
-int SEventConfig::_MaxRecord    = ssys::getenvint(kMaxRecord, _MaxRecordDefault ) ;
-int SEventConfig::_MaxRec       = ssys::getenvint(kMaxRec, _MaxRecDefault ) ;
-int SEventConfig::_MaxAux       = ssys::getenvint(kMaxAux, _MaxAuxDefault ) ;
-int SEventConfig::_MaxSup       = ssys::getenvint(kMaxSup, _MaxSupDefault ) ;
-int SEventConfig::_MaxSeq       = ssys::getenvint(kMaxSeq,  _MaxSeqDefault ) ;
-int SEventConfig::_MaxPrd       = ssys::getenvint(kMaxPrd,  _MaxPrdDefault ) ;
-int SEventConfig::_MaxTag       = ssys::getenvint(kMaxTag,  _MaxTagDefault ) ;
-int SEventConfig::_MaxFlat      = ssys::getenvint(kMaxFlat,  _MaxFlatDefault ) ;
+int   SEventConfig::_ModeLite = _ModeLiteDefault;
+int   SEventConfig::_ModeMerge = _ModeMergeDefault;
+float SEventConfig::_MergeWindow = _MergeWindowDefault;
 
-int SEventConfig::_ModeSave     = ssys::getenvint(  kModeSave, _ModeSaveDefault ) ;
-int SEventConfig::_ModeClient     = ssys::getenvint(  kModeClient, _ModeClientDefault ) ;
-int SEventConfig::_ModeLite      = ssys::getenvint(  kModeLite,  _ModeLiteDefault ) ;
-int SEventConfig::_ModeMerge     = ssys::getenvint(  kModeMerge, _ModeMergeDefault ) ;
-float SEventConfig::_MergeWindow = ssys::getenvfloat(kMergeWindow,  _MergeWindowDefault ) ;
+float SEventConfig::_MaxExtentDomain = _MaxExtentDomainDefault;
+float SEventConfig::_MaxTimeDomain = _MaxTimeDomainDefault;
 
-float SEventConfig::_MaxExtentDomain  = ssys::getenvfloat(kMaxExtentDomain, _MaxExtentDomainDefault );
-float SEventConfig::_MaxTimeDomain    = ssys::getenvfloat(kMaxTimeDomain,   _MaxTimeDomainDefault );    // ns
+const char* SEventConfig::_OutFold = _OutFoldDefault;
+const char* SEventConfig::_OutName = nullptr;
+const char* SEventConfig::_EventReldir = _EventReldirDefault;
+int         SEventConfig::_RGMode = SRG_SIMULATE;
+unsigned    SEventConfig::_HitMask = OpticksPhoton::GetFlagMask(_HitMaskDefault);
 
-const char* SEventConfig::_OutFold = ssys::getenvvar(kOutFold, _OutFoldDefault );
-const char* SEventConfig::_OutName = ssys::getenvvar(kOutName, _OutNameDefault );
-const char* SEventConfig::_EventReldir = ssys::getenvvar(kEventReldir, _EventReldirDefault );
-int SEventConfig::_RGMode = SRG::Type(ssys::getenvvar(kRGMode, _RGModeDefault)) ;
-unsigned SEventConfig::_HitMask  = OpticksPhoton::GetFlagMask(ssys::getenvvar(kHitMask, _HitMaskDefault )) ;
+unsigned SEventConfig::_GatherComp = 0u;
+unsigned SEventConfig::_SaveComp = 0u;
 
-unsigned SEventConfig::_GatherComp  = SComp::Mask(ssys::getenvvar(kGatherComp, _GatherCompDefault )) ;
-unsigned SEventConfig::_SaveComp    = SComp::Mask(ssys::getenvvar(kSaveComp,   _SaveCompDefault )) ;
-
-
-float SEventConfig::_PropagateEpsilon = ssys::getenvfloat(kPropagateEpsilon, _PropagateEpsilonDefault ) ;
-float SEventConfig::_PropagateEpsilon0 = ssys::getenvfloat(kPropagateEpsilon0, _PropagateEpsilon0Default ) ;
-unsigned SEventConfig::_PropagateEpsilon0Mask  = OpticksPhoton::GetFlagMask(ssys::getenvvar(kPropagateEpsilon0Mask, _PropagateEpsilon0MaskDefault )) ;
+float    SEventConfig::_PropagateEpsilon = _PropagateEpsilonDefault;
+float    SEventConfig::_PropagateEpsilon0 = _PropagateEpsilon0Default;
+unsigned SEventConfig::_PropagateEpsilon0Mask = OpticksPhoton::GetFlagMask(_PropagateEpsilon0MaskDefault);
 std::string SEventConfig::PropagateEpsilon0MaskLabel(){  return OpticksPhoton::FlagMaskLabel( _PropagateEpsilon0Mask ) ; }
-unsigned SEventConfig::_PropagateRefine = ssys::getenvunsigned(kPropagateRefine, _PropagateRefineDefault ) ;
-float SEventConfig::_PropagateRefineDistance = ssys::getenvfloat(kPropagateRefineDistance, _PropagateRefineDistanceDefault ) ;
+unsigned SEventConfig::_PropagateRefine = _PropagateRefineDefault;
+float    SEventConfig::_PropagateRefineDistance = _PropagateRefineDistanceDefault;
+
 int      SEventConfig::_SerInterval = 0;
 int      SEventConfig::_SerHint = 0;
 
-const char* SEventConfig::_InputGenstep = ssys::getenvvar(kInputGenstep, _InputGenstepDefault );
-const char* SEventConfig::_InputGenstepSelection = ssys::getenvvar(kInputGenstepSelection, _InputGenstepSelectionDefault );
-const char* SEventConfig::_InputPhoton = ssys::getenvvar(kInputPhoton, _InputPhotonDefault );
-const char* SEventConfig::_InputPhotonFrame = ssys::getenvvar(kInputPhotonFrame, _InputPhotonFrameDefault );
-float       SEventConfig::_InputPhotonChangeTime = ssys::getenvfloat(kInputPhotonChangeTime, _InputPhotonChangeTimeDefault ) ;
-const char* SEventConfig::_InputPhotonRecordTime = ssys::getenvvar(kInputPhotonRecordTime, _InputPhotonRecordTimeDefault ) ;
-const char* SEventConfig::_InputPhotonRecordSlice = ssys::getenvvar(kInputPhotonRecordSlice, _InputPhotonRecordSliceDefault );
-
+const char* SEventConfig::_InputGenstep = _InputGenstepDefault;
+const char* SEventConfig::_InputPhoton = _InputPhotonDefault;
+const char* SEventConfig::_InputPhotonFrame = _InputPhotonFrameDefault;
+float       SEventConfig::_InputPhotonChangeTime = _InputPhotonChangeTimeDefault;
+const char* SEventConfig::_InputPhotonRecordTime = _InputPhotonRecordTimeDefault;
+const char* SEventConfig::_InputPhotonRecordSlice = _InputPhotonRecordSliceDefault;
 
 int         SEventConfig::IntegrationMode(){ return _IntegrationMode ; }
 bool        SEventConfig::GPU_Simulation(){  return _IntegrationMode == 1 || _IntegrationMode == 3 ; }
 bool        SEventConfig::CPU_Simulation(){  return _IntegrationMode == 2 || _IntegrationMode == 3 ; }
 
 const char* SEventConfig::EventMode(){ return _EventMode ; }
-const char* SEventConfig::EventName(){ return _EventName ; }
 const char* SEventConfig::DeviceName(){ return _DeviceName ; }
 bool        SEventConfig::HasDevice(){ return _DeviceName != nullptr ; }
 
-
 /**
-SEventConfig::RunningMode controlled via envvar OPTICKS_RUNNING_MODE
-----------------------------------------------------------------------
+SEventConfig::RunningMode
+-------------------------
+
+Configured by JSON ``event.running_mode``. Accepted values include:
 
 * SRM_DEFAULT
 * SRM_TORCH
@@ -322,9 +183,16 @@ SEventConfig::RunningMode controlled via envvar OPTICKS_RUNNING_MODE
 
 **/
 
-
 int         SEventConfig::RunningMode(){ return _RunningMode ; }
 const char* SEventConfig::RunningModeLabel(){ return SRM::Name(_RunningMode) ; }
+const storch& SEventConfig::Torch()
+{
+    return _Torch;
+}
+int SEventConfig::StartIndex()
+{
+    return _StartIndex;
+}
 
 bool SEventConfig::IsRunningModeDefault(){      return RunningMode() == SRM_DEFAULT ; }
 bool SEventConfig::IsRunningModeG4StateSave(){  return RunningMode() == SRM_G4STATE_SAVE ; }
@@ -354,8 +222,10 @@ int SEventConfig::G4StateRerun()
     bool rerun_enabled = IsRunningModeG4StateRerun() ;
     return rerun_enabled && _G4StateRerun > -1 ? _G4StateRerun : -1  ;
 }
-
-
+int SEventConfig::G4StateRerunConfigured()
+{
+    return _G4StateRerun;
+}
 
 int64_t SEventConfig::MaxCurand(){ return _MaxCurand ; }
 int64_t SEventConfig::MaxSlot(){   return _MaxSlot ; }
@@ -377,8 +247,6 @@ int64_t SEventConfig::MaxPrd(){      return _MaxPrd ; }
 int64_t SEventConfig::MaxTag(){      return _MaxTag ; }
 int64_t SEventConfig::MaxFlat(){     return _MaxFlat ; }
 
-int64_t SEventConfig::ModeSave(){    return _ModeSave ; }
-int64_t SEventConfig::ModeClient(){    return _ModeClient ; }
 int64_t SEventConfig::ModeLite(){      return _ModeLite ; }
 int64_t SEventConfig::ModeMerge(){     return _ModeMerge ; }
 float   SEventConfig::MergeWindow(){   return _MergeWindow ; }
@@ -395,11 +263,10 @@ SEventConfig::EventReldir
 
 Usually left at the default of::
 
-     ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-no_opticks_event_name}
+     ALL${VERSION:-0}
 
-Note that if OPTICKS_EVENT_NAME is defined it is constrained by
-SEventConfig::Initialize_EventName to contain the build context string,
-eg Debug_Philox.
+Set ``event.event_reldir`` in JSON when a more descriptive output label is
+needed.
 
 **/
 const char* SEventConfig::EventReldir(){   return _EventReldir ; }
@@ -415,13 +282,12 @@ unsigned SEventConfig::PropagateEpsilon0Mask(){ return _PropagateEpsilon0Mask ; 
 unsigned SEventConfig::PropagateRefine(){         return _PropagateRefine ; }
 float    SEventConfig::PropagateRefineDistance(){ return _PropagateRefineDistance ; }
 
-
 /**
 SEventConfig::_InputGenstepPath
 --------------------------------
 
-OPTICKS_INPUT_GENSTEP
-    must provide a path with %d format tokens that are filled with idx
+JSON ``event.input_genstep`` may provide a path with ``%d`` format tokens that
+are filled with ``idx``.
 
 **/
 
@@ -433,30 +299,18 @@ const char* SEventConfig::InputGenstep(int idx)
 {
     return ( idx == -1 || _InputGenstep == nullptr ) ? _InputGenstep : _InputGenstepPath(idx) ;
 }
-const char* SEventConfig::InputGenstepSelection(int /*idx*/) // for now one selection for all eventID
-{
-    return _InputGenstepSelection  ;
-}
-
-
-
-
-
-
 bool SEventConfig::InputGenstepPathExists(int idx)
 {
     const char* path = SEventConfig::InputGenstep(idx);
     return path ? spath::Exists(path) : false ;
 }
 
-
-
 /**
-SEventConfig::InputPhoton control via OPTICKS_INPUT_PHOTON envvar
-------------------------------------------------------------------
+SEventConfig::InputPhoton
+-------------------------
 
-Pick the array of input_photons to use,
-default none, eg "RainXZ_Z230_10k_f8.npy"
+JSON ``event.input_photon`` selects the input-photon array, default none, for
+example ``RainXZ_Z230_10k_f8.npy``.
 
 * when configured SEvt::initInputPhoton loads the input photons array
 * within Opticks the photons are uploaded to the GPU with QEvt::setInputPhoton
@@ -481,13 +335,12 @@ Adding this fabricated input photon genstep kicks off the configured allocations
 
 const char* SEventConfig::InputPhoton(){   return _InputPhoton ; }
 
-
 /**
-SEventConfig::InputPhotonFrame control via OPTICKS_INPUT_PHOTON_FRAME envvar
-------------------------------------------------------------------------------
+SEventConfig::InputPhotonFrame
+------------------------------
 
-Pick the frame in which to inject the input photons,
-using MOI style specification eg "NNVT:0:1000"
+JSON ``event.input_photon_frame`` selects the frame in which to inject the
+input photons, using an MOI-style specification such as ``NNVT:0:1000``.
 
 
 **/
@@ -573,11 +426,20 @@ std::string SEventConfig::DescEventModeCheck()  // static
 
 void SEventConfig::SetIntegrationMode(int mode){ _IntegrationMode = mode ; LIMIT_Check() ; }
 void SEventConfig::SetEventMode(const char* mode){ _EventMode = mode ? strdup(mode) : nullptr ; LIMIT_Check() ; }
-void SEventConfig::SetEventName(const char* name){ _EventName = name ? strdup(name) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetRunningMode(const char* mode){ _RunningMode = SRM::Type(mode) ; LIMIT_Check() ; }
+void SEventConfig::SetTorch(const storch& torch)
+{
+    ORDER_Check();
+    _Torch = torch;
+}
 
 void SEventConfig::SetStartIndex(int index0){        _StartIndex = index0 ; LIMIT_Check() ; }
 void SEventConfig::SetNumEvent(int nevt){            _NumEvent = nevt ; LIMIT_Check() ; }
+void SEventConfig::SetEventSkipahead(int offset)
+{
+    _EventSkipahead = offset;
+    LIMIT_Check();
+}
 void SEventConfig::SetG4StateSpec(const char* spec){ _G4StateSpec = spec ? strdup(spec) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetG4StateRerun(int id){          _G4StateRerun = id ; LIMIT_Check() ; }
 
@@ -586,7 +448,11 @@ void SEventConfig::SetMaxSlot(int max_slot){     _MaxSlot    = max_slot  ; LIMIT
 
 void SEventConfig::SetMaxGenstep(int max_genstep){ _MaxGenstep = max_genstep ; LIMIT_Check() ; }
 void SEventConfig::SetMaxPhoton( int max_photon){  _MaxPhoton  = max_photon  ; LIMIT_Check() ; }
-void SEventConfig::SetMaxSimtrace( int max_simtrace){  _MaxSimtrace  = max_simtrace  ; LIMIT_Check() ; }
+void SEventConfig::SetMaxSimtrace(int64_t max_simtrace)
+{
+    _MaxSimtrace = max_simtrace;
+    LIMIT_Check();
+}
 
 void SEventConfig::SetMaxBounce( int max_bounce){  _MaxBounce  = max_bounce  ; LIMIT_Check() ; }
 void SEventConfig::SetMaxTime(   float max_time){   _MaxTime   = max_time  ; LIMIT_Check() ; }
@@ -600,8 +466,6 @@ void SEventConfig::SetMaxPrd(    int max_prd){     _MaxPrd     = max_prd     ; L
 void SEventConfig::SetMaxTag(    int max_tag){     _MaxTag     = max_tag     ; LIMIT_Check() ; }
 void SEventConfig::SetMaxFlat(    int max_flat){     _MaxFlat    = max_flat     ; LIMIT_Check() ; }
 
-void SEventConfig::SetModeSave(  int mode ){    _ModeSave  = mode  ; LIMIT_Check() ; ORDER_Check() ; }
-void SEventConfig::SetModeClient(  int mode ){    _ModeClient  = mode  ; LIMIT_Check() ; ORDER_Check() ; }
 void SEventConfig::SetModeLite(   int mode ){    _ModeLite   = mode  ; LIMIT_Check() ; ORDER_Check() ; }
 void SEventConfig::SetModeMerge(  int mode ){    _ModeMerge  = mode  ; LIMIT_Check() ; ORDER_Check() ; }
 void SEventConfig::SetMergeWindow( float merge_window_ns ){  _MergeWindow  = merge_window_ns    ; LIMIT_Check() ; ORDER_Check() ; }
@@ -646,7 +510,6 @@ void SEventConfig::SetPropagateRefine(        unsigned refine){       _Propagate
 void SEventConfig::SetPropagateRefineDistance(float refine_distance){ _PropagateRefineDistance = refine_distance ; LIMIT_Check() ; }
 
 void SEventConfig::SetInputGenstep(const char* ig){   _InputGenstep = ig ? strdup(ig) : nullptr ; LIMIT_Check() ; }
-void SEventConfig::SetInputGenstepSelection(const char* igsel){   _InputGenstepSelection = igsel ? strdup(igsel) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetInputPhoton(const char* ip){   _InputPhoton = ip ? strdup(ip) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetInputPhotonFrame(const char* ip){   _InputPhotonFrame = ip ? strdup(ip) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetInputPhotonChangeTime(float t0){    _InputPhotonChangeTime = t0 ; LIMIT_Check() ; }
@@ -775,8 +638,6 @@ void SEventConfig::LIMIT_Check()
    assert( _MaxTag    >= 0 && _MaxTag    <= 1 ) ;
    assert( _MaxFlat   >= 0 && _MaxFlat   <= 1 ) ;
 
-   assert( _ModeSave == 0 || _ModeSave == 1 );
-   assert( _ModeClient == 0 || _ModeClient == 1 );
    assert( _ModeLite  == 0 || _ModeLite == 1 || _ModeLite == 2 ) ;   // 2 is for debug, in production only 0 or 1 expected
    assert( _ModeMerge == 0 || _ModeMerge == 1 );
    assert( _MergeWindow >= 0.f );
@@ -805,209 +666,174 @@ std::string SEventConfig::Desc()
 {
     std::stringstream ss ;
     ss
-       << "[SEventConfig::Desc" << std::endl
-       << std::setw(25) << kIntegrationMode
-       << std::setw(20) << " IntegrationMode " << " : " << IntegrationMode()
-       << std::endl
-       << std::setw(25) << kEventMode
-       << std::setw(20) << " EventMode " << " : " << EventMode()
-       << std::endl
-       << std::setw(25) << kEventName
-       << std::setw(20) << " EventName " << " : " << ( EventName() ? EventName() : "-" )
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " DeviceName " << " : " << ( DeviceName() ? DeviceName() : "-" )
-       << std::endl
-       << std::setw(25) << kRunningMode
-       << std::setw(20) << " RunningMode " << " : " << RunningMode()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " RunningModeLabel " << " : " << RunningModeLabel()
-       << std::endl
-       << std::setw(25) << kNumEvent
-       << std::setw(20) << " NumEvent " << " : " << NumEvent()
-       << std::endl
-       << std::setw(25) << kNumPhoton
-       << std::setw(20) << " NumPhoton(0) " << " : " << NumPhoton(0)
-       << std::setw(20) << " NumPhoton(1) " << " : " << NumPhoton(1)
-       << std::setw(20) << " NumPhoton(-1) " << " : " << NumPhoton(-1)
-       << std::endl
-       << std::setw(25) << kNumGenstep
-       << std::setw(20) << " NumGenstep(0) " << " : " << NumGenstep(0)
-       << std::setw(20) << " NumGenstep(1) " << " : " << NumGenstep(1)
-       << std::setw(20) << " NumGenstep(-1) " << " : " << NumGenstep(-1)
-       << std::endl
-       << std::setw(25) << kG4StateSpec
-       << std::setw(20) << " G4StateSpec " << " : " << G4StateSpec()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " G4StateSpecNotes " << " : " << _G4StateSpecNotes
-       << std::endl
-       << std::setw(25) << kG4StateRerun
-       << std::setw(20) << " G4StateRerun " << " : " << G4StateRerun()
-       << std::endl
-       << std::setw(25) << kMaxCurand
-       << std::setw(20) << " MaxCurand " << " : " << MaxCurand()
-       << std::setw(20) << " MaxCurand/M " << " : " << MaxCurand()/M
-       << std::endl
-       << std::setw(25) << kMaxSlot
-       << std::setw(20) << " MaxSlot " << " : " << MaxSlot()
-       << std::setw(20) << " MaxSlot/M " << " : " << MaxSlot()/M
-       << std::endl
-       << std::setw(25) << kMaxGenstep
-       << std::setw(20) << " MaxGenstep " << " : " << MaxGenstep()
-       << std::setw(20) << " MaxGenstep/M " << " : " << MaxGenstep()/M
-       << std::endl
-       << std::setw(25) << kMaxPhoton
-       << std::setw(20) << " MaxPhoton " << " : " << MaxPhoton()
-       << std::setw(20) << " MaxPhoton/M " << " : " << MaxPhoton()/M
-       << std::endl
-       << std::setw(25) << kMaxSimtrace
-       << std::setw(20) << " MaxSimtrace " << " : " << MaxSimtrace()
-       << std::setw(20) << " MaxSimtrace/M " << " : " << MaxSimtrace()/M
-       << std::endl
-       << std::setw(25) << kMaxBounce
-       << std::setw(20) << " MaxBounce " << " : " << MaxBounce()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " MaxBounceNotes " << " : " << _MaxBounceNotes
-       << std::endl
-       << std::setw(25) << kMaxTime
-       << std::setw(20) << " MaxTime " << " : " << MaxTime()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " MaxTimeNotes " << " : " << _MaxTimeNotes
-       << std::endl
-       << std::setw(25) << kMaxRecord
-       << std::setw(20) << " MaxRecord " << " : " << MaxRecord()
-       << std::endl
-       << std::setw(25) << kMaxRec
-       << std::setw(20) << " MaxRec " << " : " << MaxRec()
-       << std::endl
-       << std::setw(25) << kMaxAux
-       << std::setw(20) << " MaxAux " << " : " << MaxAux()
-       << std::endl
-       << std::setw(25) << kMaxSup
-       << std::setw(20) << " MaxSup " << " : " << MaxSup()
-       << std::endl
-       << std::setw(25) << kMaxSeq
-       << std::setw(20) << " MaxSeq " << " : " << MaxSeq()
-       << std::endl
-       << std::setw(25) << kMaxPrd
-       << std::setw(20) << " MaxPrd " << " : " << MaxPrd()
-       << std::endl
-       << std::setw(25) << kMaxTag
-       << std::setw(20) << " MaxTag " << " : " << MaxTag()
-       << std::endl
-       << std::setw(25) << kMaxFlat
-       << std::setw(20) << " MaxFlat " << " : " << MaxFlat()
-       << std::endl
-       << std::setw(25) << kModeSave
-       << std::setw(20) << " ModeSave " << " : " << ModeSave()
-       << std::endl
-       << std::setw(25) << kModeClient
-       << std::setw(20) << " ModeClient " << " : " << ModeClient()
-       << std::endl
-       << std::setw(25) << kModeLite
-       << std::setw(20) << " ModeLite " << " : " << ModeLite()
-       << std::endl
-       << std::setw(25) << kModeMerge
-       << std::setw(20) << " ModeMerge " << " : " << ModeMerge()
-       << std::endl
-       << std::setw(25) << kMergeWindow
-       << std::setw(20) << " MergeWindow " << " : " << MergeWindow()
-       << std::endl
-       << std::setw(25) << kHitMask
-       << std::setw(20) << " HitMask " << " : " << HitMask()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " HitMaskLabel " << " : " << HitMaskLabel()
-       << std::endl
-       << std::setw(25) << kMaxExtentDomain
-       << std::setw(20) << " MaxExtentDomain " << " : " << MaxExtentDomain()
-       << std::endl
-       << std::setw(25) << kMaxTimeDomain
-       << std::setw(20) << " MaxTimeDomain " << " : " << MaxTimeDomain()
-       << std::endl
-       << std::setw(25) << kRGMode
-       << std::setw(20) << " RGMode " << " : " << RGMode()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " RGModeLabel " << " : " << RGModeLabel()
-       << std::endl
-       << std::setw(25) << kGatherComp
-       << std::setw(20) << " GatherComp " << " : " << GatherComp()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " DescGatherComp " << " : " << DescGatherComp()
-       << std::endl
-       << std::setw(25) << kSaveComp
-       << std::setw(20) << " SaveComp " << " : " << SaveComp()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " DescSaveComp " << " : " << DescSaveComp()
-       << std::endl
-       << std::setw(25) << kOutFold
-       << std::setw(20) << " OutFold " << " : " << OutFold()
-       << std::endl
-       << std::setw(25) << kOutName
-       << std::setw(20) << " OutName " << " : " << ( OutName() ? OutName() : "-" )
-       << std::endl
-       << std::setw(25) << kEventReldir
-       << std::setw(20) << " EventReldir " << " : " << ( EventReldir() ? EventReldir() : "-" )
-       << std::endl
-       << std::setw(25) << kPropagateEpsilon
-       << std::setw(20) << " PropagateEpsilon " << " : " << std::fixed << std::setw(10) << std::setprecision(4) << PropagateEpsilon()
-       << std::endl
-       << std::setw(25) << kPropagateEpsilon0
-       << std::setw(20) << " PropagateEpsilon0 " << " : " << std::fixed << std::setw(10) << std::setprecision(4) << PropagateEpsilon0()
-       << std::endl
-       << std::setw(25) << kPropagateEpsilon0Mask
-       << std::setw(20) << " PropagateEpsilon0Mask " << " : " << PropagateEpsilon0Mask()
-       << std::endl
-       << std::setw(25) << ""
-       << std::setw(20) << " PropagateEpsilon0MaskLabel " << " : " << PropagateEpsilon0MaskLabel()
-       << std::endl
-       << std::setw(25) << kPropagateRefine
-       << std::setw(20) << " PropagateRefine " << " : " << PropagateRefine()
-       << std::endl
-       << std::setw(25) << kPropagateRefineDistance
-       << std::setw(20) << " PropagateRefineDistance " << " : " << PropagateRefineDistance()
-       << std::endl
-       << std::setw(25) << kInputGenstep
-       << std::setw(20) << " InputGenstep " << " : " << ( InputGenstep() ? InputGenstep() : "-" )
-       << std::endl
-       << std::setw(25) << kInputGenstepSelection
-       << std::setw(20) << " InputGenstepSelection " << " : " << ( InputGenstepSelection() ? InputGenstepSelection() : "-" )
-       << std::endl
-       << std::setw(25) << kInputPhoton
-       << std::setw(20) << " InputPhoton " << " : " << ( InputPhoton() ? InputPhoton() : "-" )
-       << std::endl
-       << std::setw(25) << kInputPhotonChangeTime
-       << std::setw(20) << " InputPhotonChangeTime " << " : " << InputPhotonChangeTime()
-       << std::endl
-       << std::setw(25) << kInputPhotonRecordTime
-       << std::setw(20) << " InputPhotonRecordTime " << " : " << ( InputPhotonRecordTime() ? InputPhotonRecordTime() : "-" )
-       << std::endl
-       << std::setw(25) << kInputPhotonRecordSlice
-       << std::setw(20) << " InputPhotonRecordSlice " << " : " << ( InputPhotonRecordSlice() ? InputPhotonRecordSlice() : "-" )
-       << std::endl
-       << std::setw(25) << "RecordLimit() "
-       << std::setw(20) << " (sseq::SLOTS) " << " : " << RecordLimit()
-       << std::endl
-      ;
-
-
-    for(int i=0 ; i < NumEvent() ; i++)
-       ss << std::setw(25) << kNumPhoton
-          << std::setw(20) << " NumPhoton(" << std::setw(4) << i << ") "
-          << " : "
-          << std::setw(10) << NumPhoton(i)
-          << std::setw(10) << NumPhoton(i)/M << " (M) "
-          << std::setw(10) << NumPhoton(i)/G << " (G) "
-          << "\n"
-          ;
-
+        << "[SEventConfig::Desc" << std::endl
+        << std::setw(25) << "event.integration_mode"
+        << std::setw(20) << " IntegrationMode " << " : " << IntegrationMode()
+        << std::endl
+        << std::setw(25) << "event.event_mode"
+        << std::setw(20) << " EventMode " << " : " << EventMode()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " DeviceName " << " : " << (DeviceName() ? DeviceName() : "-")
+        << std::endl
+        << std::setw(25) << "event.running_mode"
+        << std::setw(20) << " RunningMode " << " : " << RunningMode()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " RunningModeLabel " << " : " << RunningModeLabel()
+        << std::endl
+        << std::setw(25) << "event.num_event"
+        << std::setw(20) << " NumEvent " << " : " << NumEvent()
+        << std::endl
+        << std::setw(25) << "event.g4_state_spec"
+        << std::setw(20) << " G4StateSpec " << " : " << G4StateSpec()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " G4StateSpecNotes " << " : " << _G4StateSpecNotes
+        << std::endl
+        << std::setw(25) << "event.g4_state_rerun"
+        << std::setw(20) << " G4StateRerun " << " : " << G4StateRerun()
+        << std::endl
+        << std::setw(25) << "MaxCurand"
+        << std::setw(20) << " MaxCurand " << " : " << MaxCurand()
+        << std::setw(20) << " MaxCurand/M " << " : " << MaxCurand() / M
+        << std::endl
+        << std::setw(25) << "event.maxslot"
+        << std::setw(20) << " MaxSlot " << " : " << MaxSlot()
+        << std::setw(20) << " MaxSlot/M " << " : " << MaxSlot() / M
+        << std::endl
+        << std::setw(25) << "event.max_genstep"
+        << std::setw(20) << " MaxGenstep " << " : " << MaxGenstep()
+        << std::setw(20) << " MaxGenstep/M " << " : " << MaxGenstep() / M
+        << std::endl
+        << std::setw(25) << "MaxPhoton"
+        << std::setw(20) << " MaxPhoton " << " : " << MaxPhoton()
+        << std::setw(20) << " MaxPhoton/M " << " : " << MaxPhoton() / M
+        << std::endl
+        << std::setw(25) << "event.max_simtrace"
+        << std::setw(20) << " MaxSimtrace " << " : " << MaxSimtrace()
+        << std::setw(20) << " MaxSimtrace/M " << " : " << MaxSimtrace() / M
+        << std::endl
+        << std::setw(25) << "event.max_bounce"
+        << std::setw(20) << " MaxBounce " << " : " << MaxBounce()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " MaxBounceNotes " << " : " << _MaxBounceNotes
+        << std::endl
+        << std::setw(25) << "event.max_time"
+        << std::setw(20) << " MaxTime " << " : " << MaxTime()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " MaxTimeNotes " << " : " << _MaxTimeNotes
+        << std::endl
+        << std::setw(25) << "MaxRecord"
+        << std::setw(20) << " MaxRecord " << " : " << MaxRecord()
+        << std::endl
+        << std::setw(25) << "MaxRec"
+        << std::setw(20) << " MaxRec " << " : " << MaxRec()
+        << std::endl
+        << std::setw(25) << "MaxAux"
+        << std::setw(20) << " MaxAux " << " : " << MaxAux()
+        << std::endl
+        << std::setw(25) << "MaxSup"
+        << std::setw(20) << " MaxSup " << " : " << MaxSup()
+        << std::endl
+        << std::setw(25) << "MaxSeq"
+        << std::setw(20) << " MaxSeq " << " : " << MaxSeq()
+        << std::endl
+        << std::setw(25) << "MaxPrd"
+        << std::setw(20) << " MaxPrd " << " : " << MaxPrd()
+        << std::endl
+        << std::setw(25) << "MaxTag"
+        << std::setw(20) << " MaxTag " << " : " << MaxTag()
+        << std::endl
+        << std::setw(25) << "MaxFlat"
+        << std::setw(20) << " MaxFlat " << " : " << MaxFlat()
+        << std::endl
+        << std::setw(25) << "event.mode_lite"
+        << std::setw(20) << " ModeLite " << " : " << ModeLite()
+        << std::endl
+        << std::setw(25) << "event.mode_merge"
+        << std::setw(20) << " ModeMerge " << " : " << ModeMerge()
+        << std::endl
+        << std::setw(25) << "event.merge_window"
+        << std::setw(20) << " MergeWindow " << " : " << MergeWindow()
+        << std::endl
+        << std::setw(25) << "event.hit_mask"
+        << std::setw(20) << " HitMask " << " : " << HitMask()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " HitMaskLabel " << " : " << HitMaskLabel()
+        << std::endl
+        << std::setw(25) << "MaxExtentDomain"
+        << std::setw(20) << " MaxExtentDomain " << " : " << MaxExtentDomain()
+        << std::endl
+        << std::setw(25) << "MaxTimeDomain"
+        << std::setw(20) << " MaxTimeDomain " << " : " << MaxTimeDomain()
+        << std::endl
+        << std::setw(25) << "RGMode"
+        << std::setw(20) << " RGMode " << " : " << RGMode()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " RGModeLabel " << " : " << RGModeLabel()
+        << std::endl
+        << std::setw(25) << "GatherComp"
+        << std::setw(20) << " GatherComp " << " : " << GatherComp()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " DescGatherComp " << " : " << DescGatherComp()
+        << std::endl
+        << std::setw(25) << "SaveComp"
+        << std::setw(20) << " SaveComp " << " : " << SaveComp()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " DescSaveComp " << " : " << DescSaveComp()
+        << std::endl
+        << std::setw(25) << "event.output_dir"
+        << std::setw(20) << " OutFold " << " : " << OutFold()
+        << std::endl
+        << std::setw(25) << "OutName"
+        << std::setw(20) << " OutName " << " : " << (OutName() ? OutName() : "-")
+        << std::endl
+        << std::setw(25) << "event.event_reldir"
+        << std::setw(20) << " EventReldir " << " : " << (EventReldir() ? EventReldir() : "-")
+        << std::endl
+        << std::setw(25) << "event.propagate_epsilon"
+        << std::setw(20) << " PropagateEpsilon " << " : " << std::fixed << std::setw(10) << std::setprecision(4) << PropagateEpsilon()
+        << std::endl
+        << std::setw(25) << "event.propagate_epsilon0"
+        << std::setw(20) << " PropagateEpsilon0 " << " : " << std::fixed << std::setw(10) << std::setprecision(4) << PropagateEpsilon0()
+        << std::endl
+        << std::setw(25) << "event.propagate_epsilon0_mask"
+        << std::setw(20) << " PropagateEpsilon0Mask " << " : " << PropagateEpsilon0Mask()
+        << std::endl
+        << std::setw(25) << ""
+        << std::setw(20) << " PropagateEpsilon0MaskLabel " << " : " << PropagateEpsilon0MaskLabel()
+        << std::endl
+        << std::setw(25) << "event.propagate_refine"
+        << std::setw(20) << " PropagateRefine " << " : " << PropagateRefine()
+        << std::endl
+        << std::setw(25) << "event.propagate_refine_distance"
+        << std::setw(20) << " PropagateRefineDistance " << " : " << PropagateRefineDistance()
+        << std::endl
+        << std::setw(25) << "event.input_genstep"
+        << std::setw(20) << " InputGenstep " << " : " << (InputGenstep() ? InputGenstep() : "-")
+        << std::endl
+        << std::setw(25) << "event.input_photon"
+        << std::setw(20) << " InputPhoton " << " : " << (InputPhoton() ? InputPhoton() : "-")
+        << std::endl
+        << std::setw(25) << "event.input_photon_change_time"
+        << std::setw(20) << " InputPhotonChangeTime " << " : " << InputPhotonChangeTime()
+        << std::endl
+        << std::setw(25) << "event.input_photon_record_time"
+        << std::setw(20) << " InputPhotonRecordTime " << " : " << (InputPhotonRecordTime() ? InputPhotonRecordTime() : "-")
+        << std::endl
+        << std::setw(25) << "event.input_photon_record_slice"
+        << std::setw(20) << " InputPhotonRecordSlice " << " : " << (InputPhotonRecordSlice() ? InputPhotonRecordSlice() : "-")
+        << std::endl
+        << std::setw(25) << "RecordLimit() "
+        << std::setw(20) << " (sseq::SLOTS) " << " : " << RecordLimit()
+        << std::endl;
     ss
        << DescEventMode()
        << std::endl
@@ -1227,27 +1053,10 @@ int SEventConfig::Initialize() // static
     if(Initialize_COUNT == 0)
     {
         Initialize_Meta() ;
-        Initialize_EventName() ;
         Initialize_Comp() ;
     }
     Initialize_COUNT += 1 ;
     return 0 ;
-}
-
-
-
-/**
-SEventConfig::Initialize_EventName
------------------------------------
-
-OPTICKS_EVENT_NAME is used as a label in the default event reldir.
-Build-configuration matching used to live here, but it was disabled
-before the build-matching helper was removed.
-
-**/
-
-void SEventConfig::Initialize_EventName()
-{
 }
 
 
@@ -1341,19 +1150,14 @@ const char* SEventConfig::PhotonCompOneName() // static
     return SComp::Name(PhotonCompOne());
 }
 
-
-
-
 /**
 SEventConfig::HitComp
 -----------------------
 
-Use::
-
-    export OPTICKS_MODE_LITE=0/1/2 # to control the variant of hit that is gathered+saved
+JSON ``event.mode_lite`` controls the variant of hit that is gathered and
+saved. Accepted names are ``Standard``, ``Lite``, and ``DebugCompare``.
 
 **/
-
 
 unsigned SEventConfig::HitComp() // static
 {
@@ -1374,8 +1178,6 @@ unsigned SEventConfig::HitComp() // static
     return comp ;
 }
 
-
-
 /**
 SEventConfig::HitCompOne
 -------------------------
@@ -1387,15 +1189,15 @@ Canonical usage from::
 
 
 +-----------------------------------------------+--------------------------+---------------------+------------------+
-|   Mode                                        |   HitCompOne             |   HitCompOneName    |  Note            |
+|   JSON mode                                   |   HitCompOne             |   HitCompOneName    |  Note            |
 +===============================================+==========================+=====================+==================+
-|    OPTICKS_MODE_LITE=0 OPTICKS_MODE_MERGE=0   |  SCOMP_HIT               |   hit               |                  |
+|    Standard, Separate                         |  SCOMP_HIT               |   hit               |                  |
 +-----------------------------------------------+--------------------------+---------------------+------------------+
-|    OPTICKS_MODE_LITE=0 OPTICKS_MODE_MERGE=1   |  SCOMP_HITMERGED         |   hitmerged         |                  |
+|    Standard, Merged                           |  SCOMP_HITMERGED         |   hitmerged         |                  |
 +-----------------------------------------------+--------------------------+---------------------+------------------+
-|    OPTICKS_MODE_LITE=1 OPTICKS_MODE_MERGE=0   |  SCOMP_HITLITE           |   hitlite           |                  |
+|    Lite, Separate                             |  SCOMP_HITLITE           |   hitlite           |                  |
 +-----------------------------------------------+--------------------------+---------------------+------------------+
-|    OPTICKS_MODE_LITE=1 OPTICKS_MODE_MERGE=1   |  SCOMP_HITLITEMERGED     |   hitlitemerged     |                  |
+|    Lite, Merged                               |  SCOMP_HITLITEMERGED     |   hitlitemerged     |                  |
 +-----------------------------------------------+--------------------------+---------------------+------------------+
 
 **/
@@ -1444,14 +1246,6 @@ const char* SEventConfig::HitCompOneName() // static
     return SComp::Name( HitCompOne() );
 }
 
-
-
-
-
-
-
-
-
 /**
 SEventConfig::Initialize_Comp_Simulate_
 ----------------------------------------
@@ -1462,7 +1256,7 @@ enum values like SCOMP_PHOTON are bitwise-ORed into the
 gather and save masks based on configured MAX values.
 
 +----------------------+--------------------------------------+--------------------------------------+------------------------+
-| OPTICKS_EVENT_MODE   |  gather : GPU -> CPU                 |   save : CPU -> file                 |   notes                |
+| event.event_mode     |  gather : GPU -> CPU                 |   save : CPU -> file                 |   notes                |
 +======================+======================================+======================================+========================+
 |  Nothing             | -                                    | -                                    |                        |
 +----------------------+--------------------------------------+--------------------------------------+------------------------+
@@ -1482,7 +1276,6 @@ gather and save masks based on configured MAX values.
 +----------------------+--------------------------------------+--------------------------------------+------------------------+
 
 **/
-
 
 void SEventConfig::Initialize_Comp_Simulate_(unsigned& gather_mask, unsigned& save_mask )
 {
@@ -1572,11 +1365,8 @@ void SEventConfig::Initialize_Comp_Simulate_(unsigned& gather_mask, unsigned& sa
             //gather_mask |= SCOMP_SEED ;   save_mask |= SCOMP_SEED ;  // only needed for deep debugging
         }
 
-
-
         // HUH: meaning of the below Max very different from above, thats confusing
-        // the below "Max" can be configured via envvar eg OPTICKS_MAX_LITE=1
-        // most of the below "Max" are only allowed to be 0 OR  1
+        // most of the below "Max" are only allowed to be 0 OR 1
 
         if(MaxRecord()>0){   gather_mask |= SCOMP_RECORD     ;  save_mask |= SCOMP_RECORD ; }
         if(MaxAux()>0){      gather_mask |= SCOMP_AUX        ;  save_mask |= SCOMP_AUX    ; }
@@ -1663,8 +1453,6 @@ NP* SEventConfig::Serialize() // static
     meta->set_meta<int>("MaxTag", MaxTag() );
     meta->set_meta<int>("MaxFlat", MaxFlat() );
 
-    meta->set_meta<int>("ModeSave", ModeSave() );
-    meta->set_meta<int>("ModeClient", ModeClient() );
     meta->set_meta<int>("ModeLite", ModeLite() );
     meta->set_meta<int>("ModeMerge", ModeMerge() );
     meta->set_meta<float>("MergeWindow", MergeWindow() );
@@ -1693,10 +1481,6 @@ NP* SEventConfig::Serialize() // static
 
     const char* ig  = InputGenstep() ;
     if(ig)  meta->set_meta<std::string>("InputGenstep", ig );
-
-    const char* igsel  = InputGenstepSelection() ;
-    if(igsel)  meta->set_meta<std::string>("InputGenstepSelection", igsel );
-
 
     const char* ip  = InputPhoton() ;
     if(ip)  meta->set_meta<std::string>("InputPhoton", ip );
@@ -1806,15 +1590,15 @@ void SEventConfig::SetDevice( size_t totalGlobalMem_bytes, std::string name )
     bool changed = mxs1 != mxs0  ;
 
     LOG(info)
-        << " Configured_MaxSlot/M " << mxs0/M
-        << " Final_MaxSlot/M " << mxs1/M
-        << " HeuristicMaxSlot_Rounded/M "  << hmxr/M
-        << " changed " << ( changed ? "YES" : "NO " )
-        << " DeviceName " << ( DeviceName() ? DeviceName() : "-" )
-        << " HasDevice " << ( HasDevice() ? "YES" : "NO " )
+        << " Configured_MaxSlot/M " << mxs0 / M
+        << " Final_MaxSlot/M " << mxs1 / M
+        << " HeuristicMaxSlot_Rounded/M " << hmxr / M
+        << " changed " << (changed ? "YES" : "NO ")
+        << " DeviceName " << (DeviceName() ? DeviceName() : "-")
+        << " HasDevice " << (HasDevice() ? "YES" : "NO ")
         << "\n"
-        << "(export OPTICKS_MAX_SLOT=0 # to use VRAM based HeuristicMaxPhoton) " ;
-        ;
+        << "(set event.maxslot to 0 to use the VRAM-based slot heuristic) ";
+    ;
 }
 
 

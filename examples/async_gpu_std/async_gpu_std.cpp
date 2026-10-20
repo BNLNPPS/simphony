@@ -5,7 +5,7 @@
 // std::queue, with no G4TaskGroup or G4Mutex.
 //
 // Usage:
-//   async_gpu_std -g apex.gdml -m run.mac [--async] [--sync] [-s SEED]
+//   async_gpu_std -g apex.gdml -m run.mac -c async_gpu [--async] [--sync] [-s SEED]
 
 #include <cstdlib>
 #include <cstring>
@@ -26,6 +26,7 @@
 #include "G4VUserActionInitialization.hh"
 
 #include "async_gpu_std.h"
+#include "config.h"
 #include "sysrap/OPTICKS_LOG.hh"
 
 struct ActionInitialization : public G4VUserActionInitialization
@@ -56,6 +57,7 @@ static void usage(const char* prog)
               << " [options]\n"
                  "  -g, --gdml PATH      GDML file (default: apex.gdml)\n"
                  "  -m, --macro PATH     Geant4 macro (default: run.mac)\n"
+                 "  -c, --config NAME    JSON config basename (default: async_gpu)\n"
                  "  -s, --seed N         random seed (default: time())\n"
                  "  -i, --interactive    open interactive viewer\n"
                  "      --async          double-buffered async GPU (default)\n"
@@ -69,6 +71,7 @@ int main(int argc, char** argv)
 
     std::string gdml_file = "apex.gdml";
     std::string macro_name = "run.mac";
+    std::string config_name = "async_gpu";
     long        seed = static_cast<long>(std::time(nullptr));
     bool        seed_set = false;
     bool        interactive = false;
@@ -90,6 +93,8 @@ int main(int argc, char** argv)
             gdml_file = next("--gdml");
         else if (a == "-m" || a == "--macro")
             macro_name = next("--macro");
+        else if (a == "-c" || a == "--config")
+            config_name = next("--config");
         else if (a == "-s" || a == "--seed")
         {
             seed = std::atol(next("--seed"));
@@ -113,6 +118,8 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
+
+    const simphony::Config config(config_name);
 
     CLHEP::HepRandom::setTheSeed(seed);
     G4cout << "Random seed: " << seed << (seed_set ? " (user)" : " (time)")

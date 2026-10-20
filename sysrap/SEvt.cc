@@ -153,19 +153,15 @@ int SEvt::getStage() const
     return stage ;
 }
 
-
 /**
 SEvt::SEvt
 -----------
 
 Instanciation invokes SEventConfig::Initialize()
 
-The config used depends on:
-
-1. envvars such as OPTICKS_EVENT_MODE that can change default config values
-2. static SEventConfig method calls done before SEvt instanciation
-   that change the default config values
-3. available VRAM as detected by (scontext)SEventConfig::CONTEXT
+The configuration is applied by ``simphony::Config`` through static
+``SEventConfig`` setters before SEvt instantiation. The available VRAM,
+detected by ``SEventConfig::CONTEXT``, can refine device-dependent limits.
 
 **/
 
@@ -375,16 +371,11 @@ NP* SEvt::LoadInputArray(const char* path) // static
     return a ;
 }
 
-
-
 /**
 SEvt::LoadInputGenstep_array
 -----------------------------
 
-::
-
-    export OPTICKS_INPUT_GENSTEP=$BASE/jok-tds/ALL0/p001/genstep.npy
-    ##export OPTICKS_INPUT_GENSTEP=$BASE/jok-tds/ALL0
+Set JSON ``event.input_genstep`` to the input ``genstep.npy`` path.
 
 
 HMM: when using a sequence of InputGenstep files need to
@@ -392,7 +383,6 @@ do this for every event, invoking with an idx argument ..
 so this cannot be static
 
 **/
-
 
 NP* SEvt::LoadInputGenstep_array(int idx) // static
 {
@@ -483,16 +473,14 @@ NP* SEvt::LoadInputPhoton_photon(const char* spec)
 SEvt::LoadInputPhoton_record
 ------------------------------
 
-This is is invoked when OPTICKS_INPUT_PHOTON
-resolves to a path ending with record.npy
+This is invoked when JSON ``event.input_photon`` resolves to a path ending
+with ``record.npy``.
 
 Creates input photon array by interpolation of
 step point positions from record array at
-simulation time given by OPTICKS_INPUT_PHOTON_RECORD_TIME
-(in ns).
+simulation time given by ``event.input_photon_record_time`` in ns.
 
 **/
-
 
 NP* SEvt::LoadInputPhoton_record(const char* spec)
 {
@@ -560,18 +548,13 @@ NP* SEvt::getInputGenstep_array() const { return input_genstep ; }
 bool SEvt::hasInputGenstep_array() const { return input_genstep != nullptr ; }
 bool SEvt::hasInputGenstep_arrayPath() const { return SEventConfig::InputGenstepPathExists(index) ; }
 
-
-
 /**
 SEvt::initInputPhoton
 -----------------------
 
 This is invoked by SEvt::init on instanciating the SEvt instance
-The default "SEventConfig::InputPhoton()" is nullptr meaning no input photons.
-This can be changed by setting an envvar in the script that runs the executable, eg::
-
-   export OPTICKS_INPUT_PHOTON=CubeCorners.npy
-   export OPTICKS_INPUT_PHOTON=$HOME/somedir/path/to/inphoton.npy
+The default ``SEventConfig::InputPhoton()`` is nullptr, meaning no input
+photons. Set JSON ``event.input_photon`` to a named input array or path.
 
 Or within the code of the executable, typically in the main prior to SEvt instanciation,
 using eg::
@@ -608,22 +591,16 @@ void SEvt::setInputPhoton(NP* p)
     assert( numphoton_expect  );
 }
 
-
-
-
-
-
 /**
 SEvt::getInputPhoton_
 ----------------------
 
-This variant always provides the untransformed input photons.
-That will be nullptr unless OPTICKS_INPUT_PHOTON is defined.
+This variant always provides the untransformed input photons. It is nullptr
+unless JSON ``event.input_photon`` is configured.
 
 **/
 NP* SEvt::getInputPhoton_() const { return input_photon ; }
 bool SEvt::hasInputPhoton() const { return input_photon != nullptr ; }
-
 
 /**
 SEvt::getInputPhoton
@@ -633,8 +610,9 @@ Returns the transformed input photon if present.
 For the transformed photons to  be present it is necessary to have called SEvt::setFrame
 That is done from on high by G4CXOpticks::setupFrame which gets invoked by G4CXOpticks::setGeometry
 
-The frame and corresponding transform used can be controlled by several envvars,
-see CSGFoundry::getFrameE. Possible envvars include:
+The frame and corresponding transform can be selected by the ``INST`` or
+``MOI`` geometry-inspection environment variables. Otherwise the frame comes
+from JSON ``event.input_photon_frame``; see ``CSGFoundry::getFrameE``.
 
 +------------------------------+----------------------------+
 | envvar                       | Examples                   |
@@ -643,9 +621,6 @@ see CSGFoundry::getFrameE. Possible envvars include:
 +------------------------------+----------------------------+
 | MOI                          | Hama:0:1000 NNVT:0:1000    |
 +------------------------------+----------------------------+
-| OPTICKS_INPUT_PHOTON_FRAME   |                            |
-+------------------------------+----------------------------+
-
 
 **/
 NP* SEvt::getInputPhoton() const {  return input_photon_transformed ? input_photon_transformed : input_photon  ; }
@@ -867,7 +842,7 @@ with_CEGS
      and the frame
 
 !with_CEGS
-     little used simtrace mode without CEGS and with OPTICKS_INPUT_PHOTON
+     little used simtrace mode without CEGS and with ``event.input_photon``
      that must be via record.npy SRecord::getSimtraceAtTime
 
 **/
@@ -898,7 +873,7 @@ NP* SEvt::createInputGenstep_simtrace()
     }
     else
     {
-        // simtrace mode without CEGS and with OPTICKS_INPUT_PHOTON that must be via record.npy SRecord::getSimtraceAtTime
+        // simtrace mode without CEGS and with event.input_photon that must be via record.npy SRecord::getSimtraceAtTime
         if( with_ip )
         {
             igs = SEvent::MakeInputPhotonGenstep(input_photon, OpticksGenstep_INPUT_PHOTON_SIMTRACE, nullptr) ;
@@ -963,7 +938,7 @@ NP* SEvt::createInputGenstep_simulate()
             else
             {
                 int index_arg = getIndexArg();
-                igs = SEvent::MakeTorchGenstep(index_arg);  // pass index to allow changing num photons per event
+                igs = SEvent::MakeTorchGenstep(index_arg); // retain the event index in genstep metadata
             }
         }
     }
@@ -1337,9 +1312,8 @@ SEvt* SEvt::CreateOrReuse_ECPU(){  return CreateOrReuse(ECPU) ; }
 SEvt::CreateOrReuse
 ---------------------
 
-Creates 0, 1 OR 2 SEvt depending on SEventConfig::IntegrationMode()::
-
-    OPTICKS_INTEGRATION_MODE (aka opticksMode)
+Creates 0, 1 OR 2 SEvt depending on JSON ``event.integration_mode`` (aka
+``opticksMode``), exposed by ``SEventConfig::IntegrationMode()``.
 
 +-----------------+----------+----------+--------------------------------------------+
 |  opticksMode    | num SEvt | SEvt idx | notes                                      |
@@ -1354,7 +1328,6 @@ Creates 0, 1 OR 2 SEvt depending on SEventConfig::IntegrationMode()::
 +-----------------+----------+----------+--------------------------------------------+
 
 **/
-
 
 void SEvt::CreateOrReuse()
 {
@@ -1593,12 +1566,11 @@ void SEvt::SetRunMetaString(const char* k, const char* v ) // static
     NP::SetMeta<std::string>(*rms, k, v );
 }
 
-
 /**
 SEvt::IsSaveNothing
 --------------------
 
-When using OPTICKS_EVENT_MODE of Minimal or Nothing
+When using ``event.event_mode`` of ``Minimal`` or ``Nothing``
 the saving of run metadata and directory creation
 can be disabled with::
 
@@ -1798,8 +1770,6 @@ void SEvt::beginOfEvent(int eventID)
             EventTimingCapture::Memory);
 }
 
-
-
 /**
 SEvt::endOfEvent
 ------------------
@@ -1809,8 +1779,7 @@ Called for example from::
    U4Recorder::EndOfEventAction
    QSim::simulate
 
-Only SEventConfig::SaveComp OPTICKS_SAVE_COMP are actually saved,
-so can switch off all saving wuth that config.
+Only components selected by SEventConfig::SaveComp are actually saved.
 
 **/
 
@@ -2093,7 +2062,6 @@ void SEvt::clear_genstep()
     LOG_IF(info, LIFECYCLE) << id() << " AFTER clear_genstep_vector " ;
 }
 
-
 /**
 SEvt::setIndex
 ---------------
@@ -2103,7 +2071,7 @@ index_arg
 
 index
     event index obtained from SEventConfig::EventIndex(index_arg)
-    which may be offset by the OPTICKS_START_INDEX envvar
+    which may be offset by JSON ``event.start_index``
 
 **/
 
@@ -2156,10 +2124,9 @@ std::string SEvt::descIndex() const
 {
     std::stringstream ss ;
     ss << "SEvt::descIndex"
-       << " index                " << index                  << " (internal index which may be offset by OPTICKS_START_INDEX) " << std::endl
+       << " index                " << index << " (internal index which may be offset by event.start_index) " << std::endl
        << " getIndexPresentation " << getIndexPresentation() << " (internal index presentation avoidsing MISSING_INDEX " << std::endl
-       << " getIndexArg          " << getIndexArg()          << " (external index removing any offsets, mapping back to eg Geant4 eventID " << std::endl
-       ;
+       << " getIndexArg          " << getIndexArg() << " (external index removing any offsets, mapping back to eg Geant4 eventID " << std::endl;
     std::string str = ss.str() ;
     return str ;
 }
@@ -2306,18 +2273,15 @@ sgs SEvt::addGenstep(const quad6& q_)
     //bool is_input_photon_gs = OpticksGenstep_::IsInputPhoton(gentype) ;
     bool is_cerenkov_gs = OpticksGenstep_::IsCerenkov(gentype);
 
-
     /*
     bool input_photon_with_normal_genstep = input_photon && !is_input_photon_gs  ;
     LOG_IF(fatal, input_photon_with_normal_genstep)
         << "input_photon_with_normal_genstep " << input_photon_with_normal_genstep
         << " MIXING input photons with other gensteps is not allowed "
-        << " for example avoid defining OPTICKS_INPUT_PHOTON when doing simtrace"
+        << " for example avoid configuring event.input_photon when doing simtrace"
         ;
     assert( input_photon_with_normal_genstep == false );
     */
-
-
 
     int gidx = int(gs.size())  ;  // 0-based genstep label index
     bool enabled = GIDX == -1 || GIDX == gidx ;
@@ -4101,7 +4065,6 @@ const char* SEvt::DefaultBase(const char* base_) // static
         outfold != nullptr &&
         strcmp(outfold, SEventConfig::_OutFoldDefault) != 0;
 
-    int64_t mode_save = SEventConfig::ModeSave();
     if (base_ != nullptr)
     {
         base = base_;
@@ -4111,22 +4074,16 @@ const char* SEvt::DefaultBase(const char* base_) // static
         // Honor explicit OutFold overrides from config/env for SEvt event folders.
         base = outfold;
     }
-    else if (mode_save == 0)
+    else
     {
         // controlled dir approach : good for campaigns
         base = spath::DefaultOutputDir();
-    }
-    else if( mode_save == 1 )
-    {
-        // relative to invoking directory approach : good for quick tests
-        base = BLANK ;
     }
 
     LOG_IF(info, DIRECTORY)
         << "\n"
         << " base_ [" << ( base_ ? base_ : "-" ) << "]\n"
         << " base  [" << ( base  ? base  : "-" ) << "]\n"
-        << " mode_save " << mode_save << "\n"
         ;
 
     return base ;
@@ -4172,11 +4129,11 @@ here too instead of hiding in Reldir
 +---------+----------------------------------------------------------------------------------------------+
 | base    |  "$TMP/GEOM/$GEOM/$ExecutableName"                                                           |
 +---------+----------------------------------------------------------------------------------------------+
-| reldir  |  "ALL${VERSION:-0}_${OPTICKS_EVENT_NAME:-no_opticks_event_name}"                             |
+| reldir  |  "ALL${VERSION:-0}"                                                                          |
 +---------+----------------------------------------------------------------------------------------------+
 | sidx    |  "A000"                                                                                      |
 +---------+----------------------------------------------------------------------------------------------+
-| path    |  "/tmp/blyth/opticks/GEOM/J25_4_0_opticks_Debug/python3.11/ALL0_no_opticks_event_name/A000"  |
+| path    |  "/tmp/blyth/opticks/GEOM/J25_4_0_opticks_Debug/python3.11/ALL0/A000"                        |
 +---------+----------------------------------------------------------------------------------------------+
 
 **/
@@ -4330,17 +4287,16 @@ or the directory argument provided.
 
 The FALLBACK_DIR which is used for the SEvt::DefaultDir is obtained from SEventConfig::OutFold
 which is normally "$DefaultOutputDir" $TMP/GEOM/$GEOM/ExecutableName
-This can be overridden using SEventConfig::SetOutFold or by setting the
-envvar OPTICKS_OUT_FOLD, which are now honored directly by SEvt::DefaultBase.
+Applications configure the output base with JSON ``event.output_dir``.
+Low-level callers can override it directly with ``SEventConfig::SetOutFold``.
 
 It is normally much easier to use the default of "$DefaultOutputDir" as this
 takes care of lots of the bookkeeping automatically.
 However in some circumstances such as with the B side of aligned running (U4RecorderTest)
-it is appropriate to use the override code or envvar to locate B side outputs together
+it is appropriate to use the override code to locate B side outputs together
 with the A side.
 
-
-**Override with TMP envvar rather than OPTICKS_OUT_FOLD to still have auto-bookkeeping**
+**Override the low-level default with TMP to retain automatic bookkeeping**
 
 Note that when needing to override the default output directory it is usually
 preferable to use TMP envvar as most of the automatic bookkeeping will still be done in that case.
@@ -4355,18 +4311,6 @@ The below examples are with GEOM envvar set to "Pasta" and "FewPMT" with differe
 |   /tmp/$USER/opticks                       |   /tmp/blyth/opticks/GEOM/Pasta/SEvtTest/ALL              |
 +--------------------------------------------+-----------------------------------------------------------+
 |   undefined                                |   /tmp/blyth/opticks/GEOM/FewPMT/U4SimulateTest/ALL0/000  |
-+--------------------------------------------+-----------------------------------------------------------+
-
-Only when more control of the output is needed is it appropriate to use OPTICKS_OUT_FOLD envvar.
-
-+--------------------------------------------+-----------------------------------------------------------+
-|  OPTICKS_OUT_FOLD envvar                   |  SEvt saveDir                                             |
-+============================================+===========================================================+
-|   undefined                                |   /tmp/blyth/opticks/GEOM/Pasta/SEvtTest/ALL              |
-+--------------------------------------------+-----------------------------------------------------------+
-|   /tmp/$USER/opticks                       |   /tmp/blyth/opticks/ALL                                  |
-+--------------------------------------------+-----------------------------------------------------------+
-|   /tmp/$USER/opticks/GEOM/$GEOM/SEvtTest   |   /tmp/blyth/opticks/GEOM/Pasta/SEvtTest/ALL              |
 +--------------------------------------------+-----------------------------------------------------------+
 
 * see tests/SEvtTest_saveDir
@@ -4457,7 +4401,7 @@ void SEvt::save(const char* dir_)
 
     // 2. early exit if nothing configured to save
 
-    LOG_IF(LEVEL, save_fold == nullptr) << " NOTHING TO SAVE SEventConfig::SaveCompLabel/OPTICKS_SAVE_COMP  " << save_comp ;
+    LOG_IF(LEVEL, save_fold == nullptr) << " NOTHING TO SAVE: SEventConfig::SaveCompLabel is empty " << save_comp;
     if(save_fold == nullptr) return ;
 
     // 3. when "seq" history array is configured for save and is present,
@@ -4548,20 +4492,6 @@ void SEvt::save(const char* dir_)
     // NB: NOT DELETING save_fold AS IT IS A SHALLOW COPY : IT DOES NOT OWN THE ARRAYS
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
 SEvt::saveExtra(name,a)
 ------------------------
@@ -4572,14 +4502,14 @@ The name is expected to end with ".npy"
 For example with name of "somearray.npy" might
 save to::
 
-    /data1/blyth/tmp/GEOM/SEVT_TEST/SEvtTest/ALL0_no_opticks_event_name/somearray.npy
+    /data1/blyth/tmp/GEOM/SEVT_TEST/SEvtTest/ALL0/somearray.npy
 
-The directory depends on the name of the executable eg "SEvtTest" and envvars::
+The directory depends on the name of the executable, for example
+``SEvtTest``, and the configured event relative directory. With defaults::
 
     TMP                  /data1/blyth/tmp
     GEOM                 SEVT_TEST
     VERSION              0
-    OPTICKS_EVENT_NAME   no_opticks_event_name
 
 **/
 
@@ -4596,7 +4526,6 @@ void SEvt::saveExtra( const char* name, const NP* a  ) const
     a->save(dir, name);
 }
 
-
 /**
 SEvt::saveExtra(base, name,a)
 ---------------------------------
@@ -4608,11 +4537,10 @@ but with the organizational reldir.  For example with base "/tmp"
 and name "somearray.npy" and no other envvars or SEvt index
 setup might save to::
 
-    /tmp/ALL0_no_opticks_event_name/somearray.npy
+    /tmp/ALL0/somearray.npy
 
-Setting envvars VERSION and OPTICKS_EVENT_NAME would
-change the reldir. Also setting an index on the event would
-add a subfold like "A000" or "B000".
+Setting JSON ``event.event_reldir`` changes the relative directory. Setting an
+index on the event adds a subfolder such as ``A000`` or ``B000``.
 
 **/
 

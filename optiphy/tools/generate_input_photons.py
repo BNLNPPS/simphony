@@ -40,7 +40,7 @@ class InputPhotons:
     @classmethod
     def BasePath(cls, name=None):
         if name is None:
-            name = os.environ.get("OPTICKS_INPUT_PHOTON", "RandomSpherical100_f4.npy")
+            name = "RandomSpherical100_f4.npy"
 
         return os.path.join(cls.DEFAULT_BASE, name)
 

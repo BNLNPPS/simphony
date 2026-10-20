@@ -6,16 +6,16 @@ photon_history_summary.py : Debug analysis of opticks GPU simulation output
 Reads photon.npy plus optional hit.npy, inphoton.npy, record.npy, and
 seq.npy from an opticks event folder and prints summary tables for debugging.
 
-Use OPTICKS_EVENT_MODE=HitPhoton for photon/hit summaries, HitPhotonSeq
+Set JSON event.event_mode to HitPhoton for photon/hit summaries, HitPhotonSeq
 when seq.npy is needed without full records, or DebugLite/DebugHeavy when
 record.npy step traces are needed.
 
 Usage::
 
-    python optiphy/ana/photon_history_summary.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name/A000
+    python optiphy/ana/photon_history_summary.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0/A000
 
     # or just the parent (auto-selects A000):
-    python optiphy/ana/photon_history_summary.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name
+    python optiphy/ana/photon_history_summary.py /tmp/MISSING_USER/opticks/GEOM/GEOM/GPUPhotonSourceMinimal/ALL0
 
     # show per-photon detail for first 20 photons:
     python optiphy/ana/photon_history_summary.py <path> --detail 20
@@ -501,7 +501,7 @@ def expected_output_path(executable="GPUPhotonSourceMinimal"):
     """Compute the expected opticks output path from environment variables.
 
     Opticks saves output to:
-        $TMP/GEOM/$GEOM/$ExecutableName/ALL0_no_opticks_event_name/A000/
+        $TMP/GEOM/$GEOM/$ExecutableName/ALL0/A000/
 
     Where:
         $TMP   defaults to /tmp/$USER/opticks
@@ -513,7 +513,7 @@ def expected_output_path(executable="GPUPhotonSourceMinimal"):
         tmp = f"/tmp/{user}/opticks"
     geom = os.environ.get("GEOM", "GEOM")
     return os.path.join(tmp, "GEOM", geom, executable,
-                        "ALL0_no_opticks_event_name", "A000")
+                        "ALL0", "A000")
 
 
 def print_output_path_help():
@@ -523,7 +523,7 @@ def print_output_path_help():
     print()
     print("Opticks saves .npy arrays to:")
     print()
-    print("    $TMP/GEOM/$GEOM/<ExecutableName>/ALL0_no_opticks_event_name/A000/")
+    print("    $TMP/GEOM/$GEOM/<ExecutableName>/ALL0/A000/")
     print()
     tmp = os.environ.get("TMP")
     if tmp is None:
@@ -572,8 +572,8 @@ def main():
     if not os.path.exists(os.path.join(path, "photon.npy")):
         print(f"Error: photon.npy not found in {path}")
         print()
-        print("Make sure the simulation was run with OPTICKS_EVENT_MODE=HitPhoton,")
-        print("HitPhotonSeq, DebugLite, or DebugHeavy so photon.npy is saved.")
+        print("Make sure JSON event.event_mode is HitPhoton, HitPhotonSeq,")
+        print("DebugLite, or DebugHeavy so photon.npy is saved.")
         print("Use DebugLite or DebugHeavy when record.npy traces are needed.")
         print()
         print_output_path_help()

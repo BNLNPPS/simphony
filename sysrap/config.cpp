@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <ranges>
 #include <sstream>
 #include <stdexcept>
@@ -17,6 +16,7 @@
 
 #include "EventTiming.hh"
 #include "SEventConfig.hh"
+#include "SRM.h"
 
 #include "config.h"
 #include "config_path.h"
@@ -54,6 +54,16 @@ inline constexpr std::array TorchGentypeInfos{
     NamedEnumInfo<unsigned>{OpticksGenstep_TORCH, "TORCH"},
 };
 
+inline constexpr std::array RunningModeInfos{
+    NamedEnumInfo<int>{SRM_DEFAULT, SRM::DEFAULT_},
+    NamedEnumInfo<int>{SRM_G4STATE_SAVE, SRM::G4STATE_SAVE_},
+    NamedEnumInfo<int>{SRM_G4STATE_RERUN, SRM::G4STATE_RERUN_},
+    NamedEnumInfo<int>{SRM_TORCH, SRM::TORCH_},
+    NamedEnumInfo<int>{SRM_INPUT_PHOTON, SRM::INPUT_PHOTON_},
+    NamedEnumInfo<int>{SRM_INPUT_GENSTEP, SRM::INPUT_GENSTEP_},
+    NamedEnumInfo<int>{SRM_GUN, SRM::GUN_},
+};
+
 inline constexpr std::array TorchTypeInfos{
     NamedEnumInfo<unsigned>{T_DISC, "disc"},
     NamedEnumInfo<unsigned>{T_LINE, "line"},
@@ -65,14 +75,12 @@ inline constexpr std::array TorchTypeInfos{
 };
 
 inline constexpr std::array ModeLiteInfos{
-    NamedEnumInfo<ModeLite>{ModeLite::Unspecified, "Unspecified"},
     NamedEnumInfo<ModeLite>{ModeLite::Standard, "Standard"},
     NamedEnumInfo<ModeLite>{ModeLite::Lite, "Lite"},
     NamedEnumInfo<ModeLite>{ModeLite::DebugCompare, "DebugCompare"},
 };
 
 inline constexpr std::array ModeMergeInfos{
-    NamedEnumInfo<ModeMerge>{ModeMerge::Unspecified, "Unspecified"},
     NamedEnumInfo<ModeMerge>{ModeMerge::Separate, "Separate"},
     NamedEnumInfo<ModeMerge>{ModeMerge::Merged, "Merged"},
 };
@@ -341,16 +349,41 @@ void Config::ReadConfig(std::string filepath)
         {
             const nlohmann::json& event_ = *it;
 
+            if (event_.contains("mode"))
+                throw std::invalid_argument{
+                    "Unsupported event.mode key. Use event.event_mode instead."};
+
+            Assign(event_, "integration_mode", integration_mode);
+            if (event_.contains("running_mode"))
+                running_mode = SRM::Name(ReadNamedEnum(event_, "event", "running_mode", RunningModeInfos));
+            Assign(event_, "start_index", start_index);
+            Assign(event_, "num_event", num_event);
+            Assign(event_, "event_skipahead", event_skipahead);
+            Assign(event_, "g4_state_spec", g4_state_spec);
+            Assign(event_, "g4_state_rerun", g4_state_rerun);
             Assign(event_, "max_bounce", max_bounce);
             Assign(event_, "max_genstep", max_genstep);
             Assign(event_, "maxslot", maxslot);
-            AssignNamedEnum(event_, "event", "mode", event_mode, EventModeInfos);
+            Assign(event_, "max_simtrace", max_simtrace);
+            Assign(event_, "max_time", max_time);
+            AssignNamedEnum(event_, "event", "event_mode", event_mode, EventModeInfos);
             AssignNamedEnum(event_, "event", "mode_lite", mode_lite, ModeLiteInfos);
             AssignNamedEnum(event_, "event", "mode_merge", mode_merge, ModeMergeInfos);
+            Assign(event_, "merge_window", merge_window);
             AssignOutputDir(event_, output_dir);
+            Assign(event_, "event_reldir", event_reldir);
+            Assign(event_, "hit_mask", hit_mask);
             Assign(event_, "propagate_epsilon", propagate_epsilon);
             Assign(event_, "propagate_epsilon0", propagate_epsilon0);
             Assign(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
+            Assign(event_, "propagate_refine", propagate_refine);
+            Assign(event_, "propagate_refine_distance", propagate_refine_distance);
+            Assign(event_, "input_genstep", input_genstep);
+            Assign(event_, "input_photon", input_photon);
+            Assign(event_, "input_photon_frame", input_photon_frame);
+            Assign(event_, "input_photon_change_time", input_photon_change_time);
+            Assign(event_, "input_photon_record_time", input_photon_record_time);
+            Assign(event_, "input_photon_record_slice", input_photon_record_slice);
         }
 
         if (const auto it = json.find("ser"); it != json.end())
@@ -392,21 +425,44 @@ void Config::Apply() const
 {
     const std::string event_mode_name{EventModeName(event_mode)};
     const std::string output_dir_str = output_dir.string();
+    const auto        nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
 
+    SEventConfig::SetIntegrationMode(integration_mode);
+    SEventConfig::SetEventMode(event_mode_name.c_str());
+    SEventConfig::SetRunningMode(running_mode.c_str());
+    SEventConfig::SetTorch(torch);
+    SEventConfig::SetStartIndex(start_index);
+    SEventConfig::SetNumEvent(num_event);
+    SEventConfig::SetEventSkipahead(event_skipahead);
+    SEventConfig::SetG4StateSpec(nullable(g4_state_spec));
+    SEventConfig::SetG4StateRerun(g4_state_rerun);
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
     SEventConfig::SetMaxSlot(maxslot);
-    SEventConfig::SetEventMode(event_mode_name.c_str());
-    if (mode_lite != ModeLite::Unspecified)
-        SEventConfig::SetModeLite(static_cast<int>(mode_lite));
-    if (mode_merge != ModeMerge::Unspecified)
-        SEventConfig::SetModeMerge(static_cast<int>(mode_merge));
+    SEventConfig::SetMaxSimtrace(max_simtrace);
+    SEventConfig::SetMaxTime(max_time);
+    SEventConfig::SetModeLite(static_cast<int>(mode_lite));
+    SEventConfig::SetModeMerge(static_cast<int>(mode_merge));
+    SEventConfig::SetMergeWindow(merge_window);
     SEventConfig::SetOutFold(output_dir_str.c_str());
+    SEventConfig::SetEventReldir(nullable(event_reldir));
+    SEventConfig::SetHitMask(hit_mask.c_str(), hit_mask.find('|') == std::string::npos ? ',' : '|');
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
-    SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
+    SEventConfig::SetPropagateEpsilon0Mask(
+        propagate_epsilon0_mask.c_str(),
+        propagate_epsilon0_mask.find('|') == std::string::npos ? ',' : '|');
+    SEventConfig::SetPropagateRefine(propagate_refine);
+    SEventConfig::SetPropagateRefineDistance(propagate_refine_distance);
+    SEventConfig::SetInputGenstep(nullable(input_genstep));
+    SEventConfig::SetInputPhoton(nullable(input_photon));
+    SEventConfig::SetInputPhotonFrame(nullable(input_photon_frame));
+    SEventConfig::SetInputPhotonChangeTime(input_photon_change_time);
+    SEventConfig::SetInputPhotonRecordTime(nullable(input_photon_record_time));
+    SEventConfig::SetInputPhotonRecordSlice(nullable(input_photon_record_slice));
     SEventConfig::_SerInterval = ser_interval;
     SEventConfig::_SerHint = static_cast<int>(ser_hint);
+
     EventTimingProfile::Configure(
         event_timing_profile_enabled,
         event_timing_profile_output,

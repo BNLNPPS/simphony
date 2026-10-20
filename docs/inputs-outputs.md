@@ -4,7 +4,9 @@ This guide collects the runtime configuration, application entry points, and
 GDML requirements that were previously documented in the top-level README. It
 also defines the persisted optical-event output protocol for Python readers.
 For the optical-surface physics implemented by Simphony, see
-[Physics](physics.md).
+[Physics](physics.md). For the complete JSON event schema, defaults, and
+configuration lifecycle, see
+[Runtime configuration](configuration.md).
 
 ## Geometry input
 
@@ -173,7 +175,7 @@ the lower-level event system by `Config::Apply`. With the default event
 relative directory, GPU event arrays are written below:
 
 ```text
-<Config.output_dir>/ALL0_no_opticks_event_name/A000/
+<Config.output_dir>/ALL0/A000/
 ```
 
 The path is assembled as:
@@ -181,7 +183,7 @@ The path is assembled as:
 | Segment | Source | Notes |
 |---------|--------|-------|
 | `<Config.output_dir>` | `Config::output_dir`, JSON `event.output_dir` | The app-level base directory for event output folders. The default JSON configs currently use `./`. |
-| `ALL0_no_opticks_event_name` | lower-level event relative directory default | Stable enough for readers as a default, but not a data-schema contract. |
+| `ALL0` | JSON `event.event_reldir`, default `ALL${VERSION:-0}` | `VERSION` defaults to `0`. This segment is configurable and is not part of the data-schema contract. |
 | `A000` | event instance and event index | `A` is the GPU `SEvt` instance, `B` is the CPU/G4 comparison instance. The numeric part is zero-padded event index width 3. |
 
 For run-level metadata, the same base and event relative directory are used
@@ -199,8 +201,8 @@ serial and MT modes. In MT mode, CPU-side history folders are not produced, but
 ### File schemas
 
 The table assumes the default full photon representation and unmerged hits:
-`Config::mode_lite` is `ModeLite::Unspecified` or `ModeLite::Standard`, and
-`Config::mode_merge` is `ModeMerge::Unspecified` or `ModeMerge::Separate`.
+`Config::mode_lite` is `ModeLite::Standard`, and `Config::mode_merge` is
+`ModeMerge::Separate`.
 Lite and merge modes replace the photon and hit component names with
 `photonlite`, `hitlite`, `hitmerged`, or `hitlitemerged` after
 `Config::Apply` synchronizes the app-level policy to `SEventConfig`.
@@ -221,7 +223,7 @@ configured component with no backing data may be omitted.
 
 ### Event modes
 
-`Config::event_mode`, read from JSON `event.mode`, controls both GPU-to-CPU
+`Config::event_mode`, read from JSON `event.event_mode`, controls both GPU-to-CPU
 gathering and CPU-to-file saving after `Config::Apply` synchronizes it to the
 lower-level event system. The app-level default is `EventMode::Minimal`.
 
@@ -366,9 +368,9 @@ Hits are selected from the final photon array by the configured hitmask:
 
 The current default hitmask is `SD`, meaning `SURFACE_DETECT` (`0x0040`).
 Some PMT efficiency workflows use `EC`, meaning `EFFICIENCY_COLLECT`
-(`0x2000`). The app-level `Config` interface does not currently expose the
-hitmask; the event metadata records the numeric `hitmask`, and readers should
-prefer that metadata over hard-coded assumptions.
+(`0x2000`). Configure this with JSON `event.hit_mask`. Event metadata records
+the numeric `hitmask`, and readers should prefer that metadata over hard-coded
+assumptions.
 
 `hit.npy` is a copy of the selected rows from `photon.npy`, not a different
 layout. The original photon index remains available through the packed `q3.y`
@@ -387,7 +389,7 @@ Use shape and dtype checks before decoding packed fields:
 from pathlib import Path
 import numpy as np
 
-event_dir = Path("path/from/Config.output_dir/ALL0_no_opticks_event_name/A000")
+event_dir = Path("path/from/Config.output_dir/ALL0/A000")
 record = np.load(event_dir / "record.npy")
 
 assert record.dtype == np.float32

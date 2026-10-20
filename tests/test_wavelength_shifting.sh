@@ -36,9 +36,6 @@ if ! command -v StandAloneGeant4Validation >/dev/null 2>&1; then
 fi
 
 source /opt/simphony/simphony-env.sh 2>/dev/null || true
-export OPTICKS_MAX_BOUNCE=100
-export OPTICKS_EVENT_MODE=HitPhoton
-export OPTICKS_MAX_SLOT=100000
 
 # Override USER/GEOM so opticks writes to a deterministic, test-only path
 # regardless of the developer's environment. Matches the convention used
@@ -46,7 +43,7 @@ export OPTICKS_MAX_SLOT=100000
 export USER=fakeuser
 export GEOM=fakegeom
 
-GPU_HIT_FILE="/tmp/${USER}/opticks/GEOM/${GEOM}/GPUPhotonSourceMinimal/ALL0_no_opticks_event_name/A000/hit.npy"
+GPU_HIT_FILE="/tmp/${USER}/opticks/GEOM/${GEOM}/GPUPhotonSourceMinimal/ALL0/A000/hit.npy"
 G4_HIT_FILE="g4_hits.npy"
 
 # Clear any stale outputs from a prior run so we never compare against

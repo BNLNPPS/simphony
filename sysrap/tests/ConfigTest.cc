@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -21,6 +22,74 @@ void WriteText(const fs::path& path, const std::string& text)
     output << text;
     output.close();
     assert(output);
+}
+
+void AssertEventDefaults(const simphony::Config& config)
+{
+    assert(config.event_mode == simphony::EventMode::Minimal);
+    assert(config.integration_mode == -1);
+    assert(config.running_mode == "SRM_DEFAULT");
+    assert(config.start_index == 0);
+    assert(config.num_event == 1);
+    assert(config.event_skipahead == 100000);
+    assert(config.g4_state_spec == "1000:38");
+    assert(config.g4_state_rerun == -1);
+    assert(config.max_bounce == 31);
+    assert(config.max_genstep == 10000000);
+    assert(config.maxslot == 0);
+    assert(config.max_simtrace == 1000000000000LL);
+    assert(config.max_time == 1.e27f);
+    assert(config.mode_lite == simphony::ModeLite::Standard);
+    assert(config.mode_merge == simphony::ModeMerge::Separate);
+    assert(config.merge_window == 0.f);
+    assert(config.output_dir == fs::current_path());
+    assert(config.event_reldir == "ALL${VERSION:-0}");
+    assert(config.hit_mask == "SD");
+    assert(config.propagate_epsilon == 0.05f);
+    assert(config.propagate_epsilon0 == 0.05f);
+    assert(config.propagate_epsilon0_mask == "TO,CK,SI,SC,RE");
+    assert(config.propagate_refine == 0u);
+    assert(config.propagate_refine_distance == 5000.f);
+    assert(config.input_genstep.empty());
+    assert(config.input_photon.empty());
+    assert(config.input_photon_frame.empty());
+    assert(config.input_photon_change_time == -1.f);
+    assert(config.input_photon_record_time.empty());
+    assert(config.input_photon_record_slice.empty());
+}
+
+void AssertFacadeEventDefaults()
+{
+    assert(std::strcmp(SEventConfig::EventMode(), "Minimal") == 0);
+    assert(SEventConfig::IntegrationMode() == -1);
+    assert(std::strcmp(SEventConfig::RunningModeLabel(), "SRM_DEFAULT") == 0);
+    assert(SEventConfig::StartIndex() == 0);
+    assert(SEventConfig::NumEvent() == 1);
+    assert(SEventConfig::EventSkipahead() == 100000);
+    assert(std::strcmp(SEventConfig::G4StateSpec(), "1000:38") == 0);
+    assert(SEventConfig::G4StateRerunConfigured() == -1);
+    assert(SEventConfig::MaxBounce() == 31);
+    assert(SEventConfig::MaxGenstep() == 10000000);
+    assert(SEventConfig::MaxSlot() == 0);
+    assert(SEventConfig::MaxSimtrace() == 1000000000000LL);
+    assert(SEventConfig::MaxTime() == 1.e27f);
+    assert(SEventConfig::ModeLite() == 0);
+    assert(SEventConfig::ModeMerge() == 0);
+    assert(SEventConfig::MergeWindow() == 0.f);
+    assert(std::strcmp(SEventConfig::OutFold(), fs::current_path().c_str()) == 0);
+    assert(std::strcmp(SEventConfig::EventReldir(), "ALL${VERSION:-0}") == 0);
+    assert(SEventConfig::HitMaskLabel() == "SD");
+    assert(SEventConfig::PropagateEpsilon() == 0.05f);
+    assert(SEventConfig::PropagateEpsilon0() == 0.05f);
+    assert(SEventConfig::PropagateEpsilon0MaskLabel() == "CK|SI|TO|RE|SC");
+    assert(SEventConfig::PropagateRefine() == 0u);
+    assert(SEventConfig::PropagateRefineDistance() == 5000.f);
+    assert(SEventConfig::InputGenstep() == nullptr);
+    assert(SEventConfig::InputPhoton() == nullptr);
+    assert(SEventConfig::InputPhotonFrame() == nullptr);
+    assert(SEventConfig::InputPhotonChangeTime() == -1.f);
+    assert(SEventConfig::InputPhotonRecordTime() == nullptr);
+    assert(SEventConfig::InputPhotonRecordSlice() == nullptr);
 }
 
 void Require(bool condition, const char* message)
@@ -54,6 +123,143 @@ int main()
                                   "}\n");
 
     setenv("SIMPHONY_CONFIG_DIR", directory.c_str(), 1);
+
+    const fs::path stale_output_dir = directory / "stale-output";
+    SEventConfig::SetIntegrationMode(2);
+    SEventConfig::SetMaxTime(77.f);
+    SEventConfig::SetModeLite(2);
+    SEventConfig::SetModeMerge(1);
+    SEventConfig::SetOutFold(stale_output_dir.c_str());
+    SEventConfig::SetInputPhoton("stale-photons.npy");
+    WriteText(directory / "defaults.json", "{}\n");
+
+    const simphony::Config defaults("defaults");
+    AssertEventDefaults(defaults);
+    AssertFacadeEventDefaults();
+
+    WriteText(
+        directory / "event.json",
+        R"json({
+  "event": {
+    "event_mode": "HitPhotonSeq",
+    "integration_mode": 3,
+    "running_mode": "SRM_G4STATE_RERUN",
+    "start_index": 11,
+    "num_event": 7,
+    "event_skipahead": 234567,
+    "g4_state_spec": "2000:38",
+    "g4_state_rerun": 23,
+    "max_bounce": 47,
+    "max_genstep": 7654321,
+    "maxslot": 123456,
+    "max_simtrace": 54321,
+    "max_time": 123.5,
+    "mode_lite": "Lite",
+    "mode_merge": "Merged",
+    "merge_window": 2.25,
+    "event_reldir": "events/test",
+    "hit_mask": "SD,SA",
+    "propagate_epsilon": 0.125,
+    "propagate_epsilon0": 0.25,
+    "propagate_epsilon0_mask": "TO,CK",
+    "propagate_refine": 1,
+    "propagate_refine_distance": 12.5,
+    "input_genstep": "gensteps_%03d.npy",
+    "input_photon": "photons.npy",
+    "input_photon_frame": "sensor:0:1",
+    "input_photon_change_time": 4.5,
+    "input_photon_record_time": "[10:80:10]",
+    "input_photon_record_slice": "TO BT SA"
+  }
+})json");
+
+    const simphony::Config event("event");
+    assert(event.event_mode == simphony::EventMode::HitPhotonSeq);
+    assert(event.integration_mode == 3);
+    assert(event.running_mode == "SRM_G4STATE_RERUN");
+    assert(event.start_index == 11);
+    assert(event.num_event == 7);
+    assert(event.event_skipahead == 234567);
+    assert(event.g4_state_spec == "2000:38");
+    assert(event.g4_state_rerun == 23);
+    assert(event.max_bounce == 47);
+    assert(event.max_genstep == 7654321);
+    assert(event.maxslot == 123456);
+    assert(event.max_simtrace == 54321);
+    assert(event.max_time == 123.5f);
+    assert(event.mode_lite == simphony::ModeLite::Lite);
+    assert(event.mode_merge == simphony::ModeMerge::Merged);
+    assert(event.merge_window == 2.25f);
+    assert(event.event_reldir == "events/test");
+    assert(event.hit_mask == "SD,SA");
+    assert(event.propagate_epsilon == 0.125f);
+    assert(event.propagate_epsilon0 == 0.25f);
+    assert(event.propagate_epsilon0_mask == "TO,CK");
+    assert(event.propagate_refine == 1u);
+    assert(event.propagate_refine_distance == 12.5f);
+    assert(event.input_genstep == "gensteps_%03d.npy");
+    assert(event.input_photon == "photons.npy");
+    assert(event.input_photon_frame == "sensor:0:1");
+    assert(event.input_photon_change_time == 4.5f);
+    assert(event.input_photon_record_time == "[10:80:10]");
+    assert(event.input_photon_record_slice == "TO BT SA");
+
+    assert(std::strcmp(SEventConfig::EventMode(), "HitPhotonSeq") == 0);
+    assert(SEventConfig::IntegrationMode() == 3);
+    assert(std::strcmp(SEventConfig::RunningModeLabel(), "SRM_G4STATE_RERUN") == 0);
+    assert(SEventConfig::EventIndex(0) == 11);
+    assert(SEventConfig::NumEvent() == 7);
+    assert(SEventConfig::EventSkipahead() == 234567);
+    assert(std::strcmp(SEventConfig::G4StateSpec(), "2000:38") == 0);
+    assert(SEventConfig::G4StateRerun() == 23);
+    assert(SEventConfig::MaxSimtrace() == 54321);
+    assert(SEventConfig::MaxTime() == 123.5f);
+    assert(SEventConfig::MergeWindow() == 2.25f);
+    assert(std::strcmp(SEventConfig::EventReldir(), "events/test") == 0);
+    assert(SEventConfig::HitMaskLabel() == "SD|SA");
+    assert(SEventConfig::PropagateRefine() == 1u);
+    assert(SEventConfig::PropagateRefineDistance() == 12.5f);
+    assert(std::strcmp(SEventConfig::InputGenstep(), "gensteps_%03d.npy") == 0);
+    assert(std::strcmp(SEventConfig::InputPhoton(), "photons.npy") == 0);
+    assert(std::strcmp(SEventConfig::InputPhotonFrame(), "sensor:0:1") == 0);
+    assert(SEventConfig::InputPhotonChangeTime() == 4.5f);
+    assert(std::strcmp(SEventConfig::InputPhotonRecordTime(), "[10:80:10]") == 0);
+    assert(std::strcmp(SEventConfig::InputPhotonRecordSlice(), "TO BT SA") == 0);
+
+    WriteText(directory / "empty-event.json", "{\"event\": {}}\n");
+    const simphony::Config empty_event("empty-event");
+    AssertEventDefaults(empty_event);
+    AssertFacadeEventDefaults();
+
+    for (const char* mode : {"SRM_DEFAULT", "SRM_G4STATE_SAVE", "SRM_G4STATE_RERUN",
+                             "SRM_TORCH", "SRM_INPUT_PHOTON", "SRM_INPUT_GENSTEP", "SRM_GUN"})
+    {
+        WriteText(directory / "running-mode.json",
+                  std::string{"{\"event\": {\"running_mode\": \""} + mode + "\"}}\n");
+        const simphony::Config running_mode("running-mode");
+        if (running_mode.running_mode != mode || std::strcmp(SEventConfig::RunningModeLabel(), mode) != 0)
+            throw std::runtime_error("Configured running mode did not reach SEventConfig");
+    }
+
+    for (const char* value : {"\"SRM_TRCH\"", "\"\"", "42", "null"})
+    {
+        WriteText(directory / "bad-running-mode.json",
+                  std::string{"{\"event\": {\"running_mode\": "} + value + "}}\n");
+        bool rejected = false;
+        try
+        {
+            (void)simphony::Config("bad-running-mode");
+        }
+        catch (const std::runtime_error& error)
+        {
+            const std::string message = error.what();
+            rejected = message.find("event.running_mode") != std::string::npos &&
+                       message.find("SRM_TORCH") != std::string::npos;
+        }
+        if (!rejected)
+            throw std::runtime_error("Invalid running mode was not rejected with accepted names");
+    }
+
     EventTimingProfile::Clear();
     const simphony::Config config("timing");
 
@@ -97,6 +303,23 @@ int main()
     }
     assert(rejected_bad_index);
 
+    WriteText(
+        directory / "legacy-event-mode.json",
+        "{\"event\": {\"mode\": \"DebugLite\"}}\n");
+    bool rejected_legacy_event_mode = false;
+    try
+    {
+        (void)simphony::Config("legacy-event-mode");
+    }
+    catch (const std::runtime_error& error)
+    {
+        const std::string message = error.what();
+        rejected_legacy_event_mode =
+            message.find("event.mode") != std::string::npos &&
+            message.find("event.event_mode") != std::string::npos;
+    }
+    assert(rejected_legacy_event_mode);
+
     WriteText(directory / "ser-none.json", "{\"ser\": {\"interval\": 8, \"hint\": \"none\"}}\n");
     const simphony::Config ser_none("ser-none");
     Require(ser_none.ser_hint == simphony::SerHint::None, "ser.hint none was not parsed");
@@ -128,5 +351,31 @@ int main()
     EventTimingProfile::Configure(false);
     unsetenv("SIMPHONY_CONFIG_DIR");
     fs::remove_all(directory);
+
+    setenv("SIMPHONY_CONFIG_DIR", SIMPHONY_SOURCE_CONFIG_DIR, 1);
+    const auto assert_event_mode = [](const char* name, simphony::EventMode expected) {
+        const simphony::Config config(name);
+        assert(config.event_mode == expected);
+    };
+    assert_event_mode("8x8SiPM_crystal", simphony::EventMode::Minimal);
+    const simphony::Config async_gpu("async_gpu");
+    assert(async_gpu.event_mode == simphony::EventMode::Minimal);
+    assert(async_gpu.max_bounce == 1000);
+    const simphony::Config dd4hep_gpu("dd4hep_gpu");
+    assert(dd4hep_gpu.event_mode == simphony::EventMode::Minimal);
+    assert(dd4hep_gpu.integration_mode == 1);
+    assert_event_mode("dev", simphony::EventMode::DebugLite);
+    assert_event_mode("dev_timing", simphony::EventMode::DebugLite);
+    assert_event_mode("drich_aerogel", simphony::EventMode::HitPhoton);
+    assert_event_mode("drich_direct_sensor", simphony::EventMode::HitPhoton);
+    assert_event_mode("drich_mirror", simphony::EventMode::HitPhoton);
+    assert_event_mode("dune_mock_wls_detector_box", simphony::EventMode::DebugLite);
+    assert_event_mode("pfrich", simphony::EventMode::Minimal);
+    assert_event_mode("pfrich_profiled", simphony::EventMode::Minimal);
+    assert_event_mode("sibling_pair", simphony::EventMode::HitPhoton);
+    assert_event_mode("sphere_leak", simphony::EventMode::DebugLite);
+    assert_event_mode("trap_iso", simphony::EventMode::DebugLite);
+    assert_event_mode("wls_test", simphony::EventMode::HitPhoton);
+    unsetenv("SIMPHONY_CONFIG_DIR");
     return 0;
 }

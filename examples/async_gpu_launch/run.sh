@@ -31,10 +31,10 @@ echo "Mode:      $MODE"
 echo "Threshold: ${GPU_PHOTON_FLUSH_THRESHOLD:-10000000 (default)}"
 echo ""
 
-OPTICKS_MAX_BOUNCE=1000 \
 async_gpu_launch \
     -g "$GDML" \
     -m "$MACRO" \
+    -c async_gpu \
     "$MODE"
 
 echo ""
