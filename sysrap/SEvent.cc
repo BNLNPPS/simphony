@@ -21,9 +21,10 @@
 
 #include "OpticksGenstep.h"
 
+#include "SEvent.hh"
+#include "SEventConfig.hh"
 #include "SEvt.hh"
 #include "SGenstep.h"
-#include "SEvent.hh"
 
 const plog::Severity SEvent::LEVEL = SLOG::EnvLevel("SEvent", "DEBUG") ;
 
@@ -166,8 +167,10 @@ NP* SEvent::MakeGenstep( int gentype, int index_arg )
     bool with_index = index_arg != -1 ;
     if(with_index) assert( index_arg >= 0 );  // index_arg is 0-based
 
-    int64_t num_ph = ssys::getenvint64spec("SEvent__MakeGenstep_num_ph", "100");
-    int64_t num_gs = ssys::getenvint64spec("SEvent__MakeGenstep_num_gs", "1");
+    const bool is_torch = gentype == OpticksGenstep_TORCH;
+    int64_t    num_ph = is_torch ? SEventConfig::Torch().numphoton
+                                 : ssys::getenvint64spec("SEvent__MakeGenstep_num_ph", "100");
+    int64_t    num_gs = is_torch ? 1 : ssys::getenvint64spec("SEvent__MakeGenstep_num_gs", "1");
 
     bool dump = ssys::getenvbool("SEvent_MakeGenstep_dump");
     const int M = 1000000 ;
@@ -199,10 +202,18 @@ NP* SEvent::MakeGenstep( int gentype, int index_arg )
 
     switch(gentype)
     {
-        case  OpticksGenstep_TORCH:         FillGenstep<storch>(   gs, gs_start, gs_stop, gs_ph, dump) ; break ;
-        case  OpticksGenstep_CERENKOV:      FillGenstep<scerenkov>(gs, gs_start, gs_stop, gs_ph, dump) ; break ;
-        case  OpticksGenstep_SCINTILLATION: FillGenstep<sscint>(   gs, gs_start, gs_stop, gs_ph, dump) ; break ;
-        case  OpticksGenstep_CARRIER:       FillGenstep<scarrier>( gs, gs_start, gs_stop, gs_ph, dump) ; break ;
+    case OpticksGenstep_TORCH:
+        *reinterpret_cast<storch*>(gs->bytes()) = SEventConfig::Torch();
+        break;
+    case OpticksGenstep_CERENKOV:
+        FillGenstep<scerenkov>(gs, gs_start, gs_stop, gs_ph, dump);
+        break;
+    case OpticksGenstep_SCINTILLATION:
+        FillGenstep<sscint>(gs, gs_start, gs_stop, gs_ph, dump);
+        break;
+    case OpticksGenstep_CARRIER:
+        FillGenstep<scarrier>(gs, gs_start, gs_stop, gs_ph, dump);
+        break;
     }
     return gs ;
 }

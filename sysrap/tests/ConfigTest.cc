@@ -163,6 +163,35 @@ int main()
     AssertEventDefaults(empty_event);
     AssertFacadeEventDefaults();
 
+    for (const char* mode : {"SRM_DEFAULT", "SRM_G4STATE_SAVE", "SRM_G4STATE_RERUN",
+                             "SRM_TORCH", "SRM_INPUT_PHOTON", "SRM_INPUT_GENSTEP", "SRM_GUN"})
+    {
+        WriteText(directory / "running-mode.json",
+                  std::string{"{\"event\": {\"running_mode\": \""} + mode + "\"}}\n");
+        const simphony::Config running_mode("running-mode");
+        if (running_mode.running_mode != mode || std::strcmp(SEventConfig::RunningModeLabel(), mode) != 0)
+            throw std::runtime_error("Configured running mode did not reach SEventConfig");
+    }
+
+    for (const char* value : {"\"SRM_TRCH\"", "\"\"", "42", "null"})
+    {
+        WriteText(directory / "bad-running-mode.json",
+                  std::string{"{\"event\": {\"running_mode\": "} + value + "}}\n");
+        bool rejected = false;
+        try
+        {
+            (void)simphony::Config("bad-running-mode");
+        }
+        catch (const std::runtime_error& error)
+        {
+            const std::string message = error.what();
+            rejected = message.find("event.running_mode") != std::string::npos &&
+                       message.find("SRM_TORCH") != std::string::npos;
+        }
+        if (!rejected)
+            throw std::runtime_error("Invalid running mode was not rejected with accepted names");
+    }
+
     EventTimingProfile::Clear();
     const simphony::Config config("timing");
 

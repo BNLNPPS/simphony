@@ -16,6 +16,7 @@
 
 #include "EventTiming.hh"
 #include "SEventConfig.hh"
+#include "SRM.h"
 
 #include "config.h"
 #include "config_path.h"
@@ -51,6 +52,16 @@ inline constexpr std::array EventModeInfos{
 
 inline constexpr std::array TorchGentypeInfos{
     NamedEnumInfo<unsigned>{OpticksGenstep_TORCH, "TORCH"},
+};
+
+inline constexpr std::array RunningModeInfos{
+    NamedEnumInfo<int>{SRM_DEFAULT, SRM::DEFAULT_},
+    NamedEnumInfo<int>{SRM_G4STATE_SAVE, SRM::G4STATE_SAVE_},
+    NamedEnumInfo<int>{SRM_G4STATE_RERUN, SRM::G4STATE_RERUN_},
+    NamedEnumInfo<int>{SRM_TORCH, SRM::TORCH_},
+    NamedEnumInfo<int>{SRM_INPUT_PHOTON, SRM::INPUT_PHOTON_},
+    NamedEnumInfo<int>{SRM_INPUT_GENSTEP, SRM::INPUT_GENSTEP_},
+    NamedEnumInfo<int>{SRM_GUN, SRM::GUN_},
 };
 
 inline constexpr std::array TorchTypeInfos{
@@ -343,7 +354,8 @@ void Config::ReadConfig(std::string filepath)
                     "Unsupported event.mode key. Use event.event_mode instead."};
 
             Assign(event_, "integration_mode", integration_mode);
-            Assign(event_, "running_mode", running_mode);
+            if (event_.contains("running_mode"))
+                running_mode = SRM::Name(ReadNamedEnum(event_, "event", "running_mode", RunningModeInfos));
             Assign(event_, "start_index", start_index);
             Assign(event_, "num_event", num_event);
             Assign(event_, "event_skipahead", event_skipahead);
@@ -418,6 +430,7 @@ void Config::Apply() const
     SEventConfig::SetIntegrationMode(integration_mode);
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetRunningMode(running_mode.c_str());
+    SEventConfig::SetTorch(torch);
     SEventConfig::SetStartIndex(start_index);
     SEventConfig::SetNumEvent(num_event);
     SEventConfig::SetEventSkipahead(event_skipahead);

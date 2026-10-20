@@ -15,6 +15,7 @@
 #include "scontext.h"
 
 #include "sphoton.h"
+#include "torch.h"
 
 #include "SPath.hh"   // only SPath::Make to replace
 
@@ -90,6 +91,7 @@ int         SEventConfig::_IntegrationMode = _IntegrationModeDefault;
 const char* SEventConfig::_EventMode = _EventModeDefault;
 const char* SEventConfig::_DeviceName  = nullptr ;
 int         SEventConfig::_RunningMode = SRM::Type(_RunningModeDefault);
+storch      SEventConfig::_Torch = default_torch;
 
 int SEventConfig::_StartIndex = _StartIndexDefault;
 int SEventConfig::_NumEvent = _NumEventDefault;
@@ -180,6 +182,10 @@ Configured by JSON ``event.running_mode``. Accepted values include:
 
 int         SEventConfig::RunningMode(){ return _RunningMode ; }
 const char* SEventConfig::RunningModeLabel(){ return SRM::Name(_RunningMode) ; }
+const storch& SEventConfig::Torch()
+{
+    return _Torch;
+}
 int SEventConfig::StartIndex()
 {
     return _StartIndex;
@@ -418,6 +424,11 @@ std::string SEventConfig::DescEventModeCheck()  // static
 void SEventConfig::SetIntegrationMode(int mode){ _IntegrationMode = mode ; LIMIT_Check() ; }
 void SEventConfig::SetEventMode(const char* mode){ _EventMode = mode ? strdup(mode) : nullptr ; LIMIT_Check() ; }
 void SEventConfig::SetRunningMode(const char* mode){ _RunningMode = SRM::Type(mode) ; LIMIT_Check() ; }
+void SEventConfig::SetTorch(const storch& torch)
+{
+    ORDER_Check();
+    _Torch = torch;
+}
 
 void SEventConfig::SetStartIndex(int index0){        _StartIndex = index0 ; LIMIT_Check() ; }
 void SEventConfig::SetNumEvent(int nevt){            _NumEvent = nevt ; LIMIT_Check() ; }

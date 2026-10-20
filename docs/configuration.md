@@ -30,8 +30,8 @@ event creation.
 `SIMPHONY_CONFIG_DIR` and `SIMPHONY_PTX_DIR` are discovery variables, not
 event settings, and remain supported.
 
-Application entry points must construct `Config` before creating an `SEvt`,
-`G4CXOpticks`, or other event consumer. The DD4hep `OpticsRun` action does so
+Application entry points must construct `Config` before creating an `SEvt`
+or initializing the Simphony runtime. The DD4hep `OpticsRun` action does so
 once, at the first begin-of-run, from its `ConfigName` property. Its default
 basename is `dd4hep_gpu`; attempting to select another configuration after
 initialization is rejected because `SEventConfig` is process-wide.
@@ -76,6 +76,9 @@ the effective application values used when JSON omits a key.
 
 The `torch` object configures generated optical photons, including
 `numphoton`, position, direction, polarization, wavelength, and source shape.
+The low-level `SRM_TORCH` workflow creates one genstep per event from these
+same typed settings. Invalid `running_mode` names are rejected while loading
+the profile, with the accepted names included in the error.
 The `event_timing` object configures the per-event timeline and detailed
 profile CSV outputs. See [Simulation inputs and outputs](inputs-outputs.md)
 and [Performance and debugging](performance-and-debugging.md) for those

@@ -5,7 +5,7 @@ GDML requirements that were previously documented in the top-level README. It
 also defines the persisted optical-event output protocol for Python readers.
 For the optical-surface physics implemented by Simphony, see
 [Physics](physics.md). For the complete JSON event schema, defaults, and
-legacy-environment migration table, see
+configuration lifecycle, see
 [Runtime configuration](configuration.md).
 
 ## Geometry input

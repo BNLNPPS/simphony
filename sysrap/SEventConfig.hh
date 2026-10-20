@@ -7,6 +7,7 @@
 #include "SYSRAP_API_EXPORT.hh"
 
 struct NP ;
+struct storch;
 
 struct scontext ;
 struct salloc ;
@@ -168,6 +169,7 @@ struct SYSRAP_API SEventConfig
 
     static int         RunningMode();
     static const char* RunningModeLabel();
+    static const storch& Torch();
     static int StartIndex();
 
     static bool IsRunningModeDefault();
@@ -298,6 +300,7 @@ struct SYSRAP_API SEventConfig
     static void SetIntegrationMode(int mode);   // IntegrationMode configures the integration of Opticks and Framework
     static void SetEventMode(const char* mode);   // EventMode configures what will be persisted, ie what is in the SEvt
     static void SetRunningMode(const char* mode); // RunningMode configures how running is done, eg Default/DefaultSaveG4State/RerunG4State/Torch
+    static void SetTorch(const storch& torch);
 
     static void SetStartIndex(int index0);
     static void SetNumEvent(int nevt);            // NumEvent is used by some tests
@@ -427,6 +430,7 @@ struct SYSRAP_API SEventConfig
     static const char* _EventMode ;
     static const char* _DeviceName ;
     static int         _RunningMode ;
+    static storch      _Torch;
     static int         _StartIndex ;
     static int         _NumEvent ;
 

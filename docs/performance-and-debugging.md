@@ -250,7 +250,7 @@ GPUPhotonSourceMinimal -g tests/geom/wls_test.gdml -c wls_test -m tests/run.mac 
 Here `config/wls_test.json` supplies the event mode. Copy or edit a named
 configuration when a different persistence mode is needed. See
 [Runtime configuration](configuration.md) for configuration discovery,
-precedence, and the temporary legacy-environment fallback.
+defaults and the event schema. Legacy `OPTICKS_*` event settings are ignored.
 
 ### Output file location
 
