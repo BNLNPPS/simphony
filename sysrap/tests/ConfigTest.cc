@@ -24,6 +24,74 @@ void WriteText(const fs::path& path, const std::string& text)
     assert(output);
 }
 
+void AssertEventDefaults(const simphony::Config& config)
+{
+    assert(config.event_mode == simphony::EventMode::Minimal);
+    assert(config.integration_mode == -1);
+    assert(config.running_mode == "SRM_DEFAULT");
+    assert(config.start_index == 0);
+    assert(config.num_event == 1);
+    assert(config.event_skipahead == 100000);
+    assert(config.g4_state_spec == "1000:38");
+    assert(config.g4_state_rerun == -1);
+    assert(config.max_bounce == 31);
+    assert(config.max_genstep == 10000000);
+    assert(config.maxslot == 0);
+    assert(config.max_simtrace == 1000000000000LL);
+    assert(config.max_time == 1.e27f);
+    assert(config.mode_lite == simphony::ModeLite::Standard);
+    assert(config.mode_merge == simphony::ModeMerge::Separate);
+    assert(config.merge_window == 0.f);
+    assert(config.output_dir == fs::current_path());
+    assert(config.event_reldir == "ALL${VERSION:-0}");
+    assert(config.hit_mask == "SD");
+    assert(config.propagate_epsilon == 0.05f);
+    assert(config.propagate_epsilon0 == 0.05f);
+    assert(config.propagate_epsilon0_mask == "TO,CK,SI,SC,RE");
+    assert(config.propagate_refine == 0u);
+    assert(config.propagate_refine_distance == 5000.f);
+    assert(config.input_genstep.empty());
+    assert(config.input_photon.empty());
+    assert(config.input_photon_frame.empty());
+    assert(config.input_photon_change_time == -1.f);
+    assert(config.input_photon_record_time.empty());
+    assert(config.input_photon_record_slice.empty());
+}
+
+void AssertFacadeEventDefaults()
+{
+    assert(std::strcmp(SEventConfig::EventMode(), "Minimal") == 0);
+    assert(SEventConfig::IntegrationMode() == -1);
+    assert(std::strcmp(SEventConfig::RunningModeLabel(), "SRM_DEFAULT") == 0);
+    assert(SEventConfig::StartIndex() == 0);
+    assert(SEventConfig::NumEvent() == 1);
+    assert(SEventConfig::EventSkipahead() == 100000);
+    assert(std::strcmp(SEventConfig::G4StateSpec(), "1000:38") == 0);
+    assert(SEventConfig::G4StateRerunConfigured() == -1);
+    assert(SEventConfig::MaxBounce() == 31);
+    assert(SEventConfig::MaxGenstep() == 10000000);
+    assert(SEventConfig::MaxSlot() == 0);
+    assert(SEventConfig::MaxSimtrace() == 1000000000000LL);
+    assert(SEventConfig::MaxTime() == 1.e27f);
+    assert(SEventConfig::ModeLite() == 0);
+    assert(SEventConfig::ModeMerge() == 0);
+    assert(SEventConfig::MergeWindow() == 0.f);
+    assert(std::strcmp(SEventConfig::OutFold(), fs::current_path().c_str()) == 0);
+    assert(std::strcmp(SEventConfig::EventReldir(), "ALL${VERSION:-0}") == 0);
+    assert(SEventConfig::HitMaskLabel() == "SD");
+    assert(SEventConfig::PropagateEpsilon() == 0.05f);
+    assert(SEventConfig::PropagateEpsilon0() == 0.05f);
+    assert(SEventConfig::PropagateEpsilon0MaskLabel() == "CK|SI|TO|RE|SC");
+    assert(SEventConfig::PropagateRefine() == 0u);
+    assert(SEventConfig::PropagateRefineDistance() == 5000.f);
+    assert(SEventConfig::InputGenstep() == nullptr);
+    assert(SEventConfig::InputPhoton() == nullptr);
+    assert(SEventConfig::InputPhotonFrame() == nullptr);
+    assert(SEventConfig::InputPhotonChangeTime() == -1.f);
+    assert(SEventConfig::InputPhotonRecordTime() == nullptr);
+    assert(SEventConfig::InputPhotonRecordSlice() == nullptr);
+}
+
 void Require(bool condition, const char* message)
 {
     if (!condition)
@@ -234,6 +302,23 @@ int main()
         rejected_bad_index = true;
     }
     assert(rejected_bad_index);
+
+    WriteText(
+        directory / "legacy-event-mode.json",
+        "{\"event\": {\"mode\": \"DebugLite\"}}\n");
+    bool rejected_legacy_event_mode = false;
+    try
+    {
+        (void)simphony::Config("legacy-event-mode");
+    }
+    catch (const std::runtime_error& error)
+    {
+        const std::string message = error.what();
+        rejected_legacy_event_mode =
+            message.find("event.mode") != std::string::npos &&
+            message.find("event.event_mode") != std::string::npos;
+    }
+    assert(rejected_legacy_event_mode);
 
     WriteText(directory / "ser-none.json", "{\"ser\": {\"interval\": 8, \"hint\": \"none\"}}\n");
     const simphony::Config ser_none("ser-none");

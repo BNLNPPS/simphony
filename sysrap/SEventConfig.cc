@@ -150,6 +150,9 @@ std::string SEventConfig::PropagateEpsilon0MaskLabel(){  return OpticksPhoton::F
 unsigned SEventConfig::_PropagateRefine = _PropagateRefineDefault;
 float    SEventConfig::_PropagateRefineDistance = _PropagateRefineDistanceDefault;
 
+int      SEventConfig::_SerInterval = 0;
+int      SEventConfig::_SerHint = 0;
+
 const char* SEventConfig::_InputGenstep = _InputGenstepDefault;
 const char* SEventConfig::_InputPhoton = _InputPhotonDefault;
 const char* SEventConfig::_InputPhotonFrame = _InputPhotonFrameDefault;
