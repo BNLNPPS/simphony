@@ -23,6 +23,11 @@
     "type": "disc"
   },
 
+  "ser": {
+    "interval": 0,
+    "hint": "none"
+  },
+
   "event": {
     "max_bounce": 31,
     "max_genstep": 10000000,

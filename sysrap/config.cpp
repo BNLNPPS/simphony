@@ -77,6 +77,11 @@ inline constexpr std::array ModeMergeInfos{
     NamedEnumInfo<ModeMerge>{ModeMerge::Merged, "Merged"},
 };
 
+inline constexpr std::array SerHintInfos{
+    NamedEnumInfo<SerHint>{SerHint::None, "none"},
+    NamedEnumInfo<SerHint>{SerHint::Bounce, "bounce"},
+};
+
 bool FileExists(const std::string& path)
 {
     if (path.empty())
@@ -348,6 +353,14 @@ void Config::ReadConfig(std::string filepath)
             Assign(event_, "propagate_epsilon0_mask", propagate_epsilon0_mask);
         }
 
+        if (const auto it = json.find("ser"); it != json.end())
+        {
+            const nlohmann::json& ser_ = *it;
+
+            Assign(ser_, "interval", ser_interval);
+            AssignNamedEnum(ser_, "ser", "hint", ser_hint, SerHintInfos);
+        }
+
         if (const auto it = json.find("event_timing"); it != json.end())
         {
             const nlohmann::json& event_timing = *it;
@@ -392,6 +405,8 @@ void Config::Apply() const
     SEventConfig::SetPropagateEpsilon(propagate_epsilon);
     SEventConfig::SetPropagateEpsilon0(propagate_epsilon0);
     SEventConfig::SetPropagateEpsilon0Mask(propagate_epsilon0_mask.c_str());
+    SEventConfig::_SerInterval = ser_interval;
+    SEventConfig::_SerHint = static_cast<int>(ser_hint);
     EventTimingProfile::Configure(
         event_timing_profile_enabled,
         event_timing_profile_output,

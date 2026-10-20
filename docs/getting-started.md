@@ -145,6 +145,7 @@ configure command after changing an option, then rebuild the affected targets.
 
 | Option | Default | Scope | Description |
 |---|---|---|---|
+| `SIMPHONY_ENABLE_SER` | `ON` | CSGOptiX PTX | Compile SER support with OptiX 8+. Set `OFF` to remove reorder intrinsics entirely; JSON `ser.interval=0` only disables their execution. See [SER controls](performance-and-debugging.md#shader-execution-reordering-ser). |
 | `SIMPHONY_RNG_REBUILD` | `OFF` | CSGOptiX PTX | Reconstruct the Philox RNG state after each OptiX trace instead of carrying it live. |
 
 

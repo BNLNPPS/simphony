@@ -31,6 +31,40 @@ To benchmark the experimental CSGOptiX RNG-state rebuild variant, see the
 It is a compile-time choice, so reconfigure and rebuild the PTX target before
 measuring each variant.
 
+### Shader execution reordering (SER)
+
+`SIMPHONY_ENABLE_SER` defaults to `ON`. With OptiX 8 or newer, this compiles a
+reorder call into the photon propagation loop. Older SDKs exclude that code.
+The JSON configuration controls its execution:
+
+```json
+{ "ser": { "interval": 0, "hint": "none" } }
+```
+
+`interval` defaults to zero. A positive value executes reordering every N
+bounces, including bounce zero; zero disables execution. `hint` defaults to
+`none` and accepts `none` or `bounce`. The `none` mode supplies no application
+hint bits, leaving ordering to OptiX. The `bounce` mode supplies the low four
+bits of the bounce index divided by the interval. Other values are rejected.
+
+Retaining a dormant reorder intrinsic can change OptiX dispatch even when
+`interval` is zero. To remove SER from the compiled program, rebuild with:
+
+```shell
+cmake -S . -B build -DSIMPHONY_ENABLE_SER=OFF
+cmake --build build --target csgoptix_ptx
+```
+
+This rebuilds the build-tree PTX; reinstall when using an installed copy.
+With SER compiled out, the JSON SER settings have no effect.
+
+Performance depends on the workload. Tests of an entry-call control on an
+RTX 4090 with OptiX 9 showed substantial gains for large DUNE showers, but
+regressions in some pfRICH workloads and rendering. Compare compiled-out,
+compiled-in with interval zero, and active reordering on representative
+jobs with identical seeds, slot limits, and output settings. Check output
+agreement and whole-job throughput before choosing a production setting.
+
 ### Interpreting `simg4ox` MT timings
 
 `simg4ox --threads N` parallelizes Geant4 CPU tracking of its configured torch
