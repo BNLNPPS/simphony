@@ -36,20 +36,15 @@ set(TEST_SOURCES
    U4TrackTest.cc
    U4GDMLTest.cc
    U4GDMLReadTest.cc 
-   U4PhysicalConstantsTest.cc
    U4RandomTest.cc
    U4UniformRandTest.cc
    U4EngineTest.cc
-   U4RandomMonitorTest.cc
    U4RandomArrayTest.cc
-
 
    U4VolumeMakerTest.cc
    U4LogTest.cc
    U4RotationMatrixTest.cc
    U4TransformTest.cc
-   U4TraverseTest.cc
-
 
    U4Material_MakePropertyFold_MakeTest.cc
    U4Material_MakePropertyFold_LoadTest.cc
@@ -61,8 +56,6 @@ set(TEST_SOURCES
 
    U4SensitiveDetectorTest.cc 
 
-   U4Debug_Test.cc 
-   U4Hit_Debug_Test.cc 
    U4PhysicsTableTest.cc 
 
    SpherePhiCutQuarterShellTest.cc

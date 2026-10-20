@@ -27,7 +27,6 @@ Boundary class changes need to match in all the below::
 #include "scuda.h"
 #include "squad.h"
 #include "sphoton.h"
-#include "SFastSimOpticalModel.hh"
 
 #include "U4StepStatus.h"
 #include "U4OpBoundaryProcess.h"

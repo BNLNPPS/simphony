@@ -1,10 +1,7 @@
-// ssys_test
-
 #include <string>
 #include <iostream>
 #include <iomanip>
 #include "ssys.h"
-
 
 struct ssys_test
 {
@@ -630,5 +627,3 @@ int main(int argc, char** argv)
 
     return rc ;
 }
-
-// ssys_test

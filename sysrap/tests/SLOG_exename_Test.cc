@@ -18,7 +18,6 @@
  */
 
 #include "OPTICKS_LOG.hh"
-#include "SLogger.hh"
 
 
 int main(int argc, char** argv)
@@ -29,9 +28,6 @@ int main(int argc, char** argv)
 
     LOG(info) << " exename " << exename ; 
 
-    const char* exename2 = SLogger::exename() ;  
-
-    LOG(info) << " exename2 " << exename2 ; 
 
 
 

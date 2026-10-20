@@ -1,5 +1,3 @@
-// SEvt_test
-
 #include "OpticksGenstep.h"
 #include "ssys.h"
 #include "SEvt.hh"
@@ -84,5 +82,3 @@ int main()
 {
     return SEvt_test::Main(); 
 }
-
-// SEvt_test

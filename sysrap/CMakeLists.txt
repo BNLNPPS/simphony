@@ -9,6 +9,7 @@ find_package(CUDAToolkit REQUIRED)
 configure_file(config_path.h.in config_path.h @ONLY)
 
 set(SOURCES
+    AngleCut.cc
     SYSRAP_LOG.cc 
     SLOG.cc 
     config.cpp
@@ -20,37 +21,13 @@ set(SOURCES
     SMeta.cc
 
     SPath.cc
-    SSeq.cc
-    STranche.cc
     SAr.cc
-    SArr.cc
-    SArgs.cc
     SVec.cc
-    SNameVec.cc
-    SMap.cc
-    SCount.cc
-    SDigest.cc
-    SArrayDigest.cc
 
-    SLauncher.cc
-    SRenderer.cc
-    SCtrl.cc
     SGeo.cc
-    SConstant.cc
 
-    STimes.cc
-    SLogger.cc
-    SSortKV.cc
-    SPairVec.cc
     ../third_party/solarmd5/md5.c
-    SColor.cc
-    SId.cc
-    SGDML.cc
-    S_get_option.cc
-    STime.cc
     SBit.cc
-    SEnabled.cc
-    SRand.cc
 
     CheckGeo.cc
 
@@ -60,17 +37,9 @@ set(SOURCES
     scsg.cc
 
     s_csg.cc
-    sn.cc
-    s_pa.cc
-    s_bb.cc
-    s_tv.cc
-
 
     SEvent.cc
     SFrameGenstep.cc
-
-    SThetaCut.cc 
-    SPhiCut.cc 
 
     SCenterExtentGenstep.cc
 
@@ -86,12 +55,11 @@ set(SOURCES
     SEvt.cc
     SSim.cc
 
-    SFastSim_Debug.cc
-    SFastSimOpticalModel.cc
 ) 
 
 
 set(HEADERS
+    AngleCut.hh
     OPTICKS_LOG.hh
     config.h
     torch.h
@@ -103,9 +71,6 @@ set(HEADERS
 
     PLOG.hh
     SLOG_INIT.hh  
-
-    SLaunchSequence.h 
-
 
     sproc.h
     EventTiming.hh
@@ -123,7 +88,6 @@ set(HEADERS
     schrono.h
     stimer.h
     sstamp.h
-    ssystime.h
 
     SBnd.h
     SPrd.h
@@ -135,15 +99,8 @@ set(HEADERS
     sdevice.h
     scontext.h
 
-    SSeq.hh
-    STranche.hh
-
     SVec.hh
     svec.h
-
-    SNameVec.hh
-    SMap.hh
-    SCount.hh
 
     slist.h
     sfreq.h 
@@ -185,47 +142,26 @@ set(HEADERS
     sbb.h
     
     sdigest.h
-    SDigest.hh
-
-    
 
     sdirect.h
-    SArrayDigest.hh
 
-    SLauncher.hh
-    SRenderer.hh
     SRandom.h
     s_seq.h
     S4Random.h
 
     SCF.h
 
-    SCtrl.hh
     SGeo.hh
-    SConstant.hh
     SEvt.hh
 
-    STimes.hh
-    SLogger.hh
-    SSortKV.hh
-    SPairVec.hh
     OpticksCSG.h
     PlainFormatter.hh
     SAr.hh
-    SArr.hh
-    SArgs.hh
-    S_get_option.hh
 
-    STime.hh
     s_time.h
 
-    SColor.hh
-    SId.hh
-    SGDML.hh
     SBit.hh
     SBitSet.h
-    SEnabled.hh
-    SRand.hh
 
     CheckGeo.hh
     SRng.hh
@@ -234,8 +170,6 @@ set(HEADERS
     SLabel.h 
 
     smath.h 
-    sblackbody.h
-    tcomplex.h
 
     srng.h
     srng_traits.h
@@ -365,10 +299,6 @@ set(HEADERS
 
     SFrameGenstep.hh
 
-    SThetaCut.hh
-    SPhiCut.hh
-
-
     SCenterExtentFrame.h
     SPresent.h
 
@@ -407,15 +337,9 @@ set(HEADERS
     SNameOrder.h
     S4.h 
 
-    S4RandomMonitor.h
     S4RandomArray.h
 
-
-    SFastSim_Debug.hh
-    SFastSimOpticalModel.hh
     STrackInfo.h
-    SPhoton_Debug.h
-    SUniformRand.h
 
     sgeomdefs.h 
     sfmt.h

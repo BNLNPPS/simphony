@@ -10,7 +10,7 @@ SOPTIX_Scene_Encapsulated_test.cc
 Other related tests::
 
     SCUDA_Mesh_test
-    ~/o/sysrap/tests/SCUDA_Mesh_test.cc
+    sysrap/tests/SCUDA_Mesh_test.cc
 
 **/
 

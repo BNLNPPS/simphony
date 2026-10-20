@@ -492,16 +492,11 @@ void SPath::Copy( const char* dstname, const char* srcname, const char* dir )
     dst << src.rdbuf();
 }
 
-
-
-
-
-
 /**
 SPath::mtime
 --------------
 
-This is used by STime::mtime which provides formatted time stamp strings. 
+Use s_time::Format to format the returned modification time.
 
 **/
 

@@ -22,11 +22,6 @@ set(SOURCES
     QRng.cu
 
     QTex.cc
-    QTexRotate.cc
-    QTex.cu
-    QTexMaker.cc
-    QTexLookup.cc
-    QTexLookup.cu
 
     QBase.cc
     QBnd.cc
@@ -43,13 +38,10 @@ set(SOURCES
 
     QCerenkovIntegral.cc
     QCerenkov.cc
-    QCerenkov.cu 
 
     QCK.cc
     QCK.hh
 
-    QPoly.cc
-    QPoly.cu
 
     QProp.cc
     QProp.cu
@@ -85,9 +77,6 @@ SET(HEADERS
     qrng.h
 
     QTex.hh
-    QTexRotate.hh
-    QTexMaker.hh
-    QTexLookup.hh
 
     QState.hh
 
@@ -113,7 +102,6 @@ SET(HEADERS
     QCerenkov.hh
     qcerenkov.h
 
-    QPoly.hh
 
     QProp.hh
     

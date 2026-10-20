@@ -6,26 +6,14 @@ set(TEST_SOURCES
 
    PythonImportTest.cc
    SArTest.cc
-   SArrTest.cc
-   SArgsTest.cc
-   STimesTest.cc
    SEnvTest.cc
    SSysTest.cc
    SSys2Test.cc
    SSys3Test.cc
    SPathTest.cc
-   STrancheTest.cc
    SVecTest.cc
-   SNameVecTest.cc
-   SMapTest.cc
-   SCountTest.cc
-   SSeqTest.cc
-   SSortKVTest.cc
-   SPairVecTest.cc
-   SDigestTest.cc
 
    SCFTest.cc
-
    
    PLogTest.cc 
    SLOG_Test.cc 
@@ -46,33 +34,23 @@ set(TEST_SOURCES
    OpticksCSGTest.cc
    hash_define_without_value.cc
    SDirectTest.cc 
-   S_get_option_Test.cc
-
-   SIdTest.cc
 
    ArrayTest.cc
    SBacktraceTest.cc
    SStackFrameTest.cc
-   SGDMLTest.cc
 
    SSetTest.cc
-   STimeTest.cc
-   SColorTest.cc
    SBitTest.cc
    SBitSetTest.cc
-   SEnabledTest.cc
    SBitFromStringTest.cc
-   SRandTest.cc
    CheckGeoTest.cc
 
    SGLMTest.cc
 
-   SConstantTest.cc
    CastTest.cc
 
    SRngTest.cc 
    SDirTest.cc
-   SDiceTest.cc
 
    stranTest.cc
    stranRotateTest.cc
@@ -91,8 +69,6 @@ set(TEST_SOURCES
    SEventConfigTest.cc
    SFrameConfigTest.cc
    SGeoConfigTest.cc
-
-
 
    SEvtTest.cc
    SEvtLoadTest.cc
@@ -113,13 +89,13 @@ set(TEST_SOURCES
 
    SEvt_test.cc
    smath_test.cc
+   s_time_test.cc
    sseq_index_test.cc
 
    ssys_test.cc
    srng_test.cc
 
    SEvt__createInputGenstep_configuredTest.cc
-
 )
 
 set(STREE_GDML_TEST_SOURCE
@@ -140,16 +116,15 @@ set(BASH_RUN_TEST_SOURCES
 
     SSceneLoadTest.cc
 )
+
 if(NLJSON_FOUND)
    list(APPEND TEST_SOURCES SMetaTest.cc)
 endif()
-
 
 foreach(SRC ${TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)
     add_executable(${TGT} ${SRC})
     target_link_libraries(${TGT} SysRap CUDA::cudart)
-
     add_test(${name}.${TGT} ${TGT})
 endforeach()
 
@@ -205,7 +180,6 @@ foreach(COLOR ${TEST_COLORS})
     add_test(${TEST} ${TGT} SEnvTest_C --info )  # arguments for the executable, the envvar prefix and debug level
     set_tests_properties(${TEST} PROPERTIES ENVIRONMENT "SEnvTest_COLOR=${COLOR}")
 endforeach()
-
 
 foreach(SRC ${BASH_RUN_TEST_SOURCES})
     get_filename_component(TGT ${SRC} NAME_WE)

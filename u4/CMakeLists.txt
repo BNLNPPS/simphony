@@ -18,11 +18,6 @@ set(SOURCES
     U4Random.cc
     U4SensitiveDetector.cc
 
-    U4Debug.cc
-    U4Scintillation_Debug.cc
-    U4Cerenkov_Debug.cc
-    U4Hit_Debug.cc
-
     ShimG4OpAbsorption.cc
     ShimG4OpRayleigh.cc
 
@@ -79,11 +74,6 @@ set(HEADERS
 
     U4Navigator.h
     U4Simtrace.h
-
-    U4Debug.hh
-    U4Scintillation_Debug.hh
-    U4Cerenkov_Debug.hh
-    U4Hit_Debug.hh
 
     ShimG4OpAbsorption.hh
     ShimG4OpRayleigh.hh

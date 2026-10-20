@@ -1,5 +1,3 @@
-// s_seq_test
-
 #include <iostream>
 #include "s_seq.h"
 
@@ -21,5 +19,3 @@ int main()
 
     return 0;
 };
-
-// s_seq_test

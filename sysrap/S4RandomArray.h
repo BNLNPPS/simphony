@@ -3,11 +3,10 @@
 S4RandomArray : Uses Current Engine, but collects the randoms
 ===============================================================
 
-Instanciation holds onto the current engine in m_engine and 
-replaces it with itself.  Flat calls to the engine are 
-then passed thru to the original engine and each random 
-is added to a vector.  See S4RandomMonitor.h 
-for simply logging the randoms. 
+Instanciation holds onto the current engine in m_engine and
+replaces it with itself.  Flat calls to the engine are
+then passed thru to the original engine and each random
+is added to a vector.
 
 NB tests which require Geant4 in u4/tests/U4RandomArrayTest.cc
 

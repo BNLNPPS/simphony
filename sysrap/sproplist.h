@@ -39,7 +39,7 @@ struct sproplist
     1 2 WLSABSLENGTH    1e12
     1 3 SPARE13         0.
     )";
-    // default GROUPVEL set to c_light_mm_per_ns, see U4PhysicalConstants.h 
+    // Default GROUPVEL is c_light in mm/ns.
 
     static constexpr const char* SURFACE = R"(
     0 0 EFFICIENCY      -2

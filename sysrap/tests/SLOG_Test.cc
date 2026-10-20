@@ -17,8 +17,13 @@
  * limitations under the License.
  */
 
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include "SLOG.hh"
-#include "SArgs.hh"
 
 
 void test_arguments(const char* exe)
@@ -73,17 +78,19 @@ void test_arguments(const char* exe)
 
     for(unsigned i=0 ; i < tt.size() ; i++)
     {
-        std::string t = tt[i]; 
+        std::string t = tt[i];
 
-        SArgs* a = new SArgs(exe, t.c_str()) ;
+        std::vector<std::string> args = {exe};
+        std::istringstream       options(t);
+        for (std::string option; options >> option;) args.push_back(option);
+        std::vector<char*> argv;
+        for (std::string& arg : args) argv.push_back(arg.data());
 
-        if(SLOG::instance != NULL) SLOG::instance = NULL ; 
+        if (SLOG::instance != NULL)
+            SLOG::instance = NULL;
 
-        SLOG* pl = j == 0 ?
-                             new SLOG(a->argc, a->argv, fallback ) 
-                          :
-                             new SLOG(a->argc, a->argv, fallback, prefix )
-                          ; 
+        SLOG* pl = j == 0 ? new SLOG(static_cast<int>(argv.size()), argv.data(), fallback)
+                          : new SLOG(static_cast<int>(argv.size()), argv.data(), fallback, prefix);
 
         std::stringstream ss ; 
         ss << "SLOG(..," << fallback ; 

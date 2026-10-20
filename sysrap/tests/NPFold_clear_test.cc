@@ -165,5 +165,3 @@ int main()
     NPFold_clear_test::main(); 
     return 0 ; 
 }
-
-// NPFold_clear_test

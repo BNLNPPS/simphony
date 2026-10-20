@@ -3,13 +3,13 @@
 U4UniformRand.h
 =================
 
-As this is headeronly and can benefit from a static UU 
+As this is headeronly and can benefit from a static UU
 include this header into a compilation unit with::
 
     #include "U4UniformRand.h"
     NP* U4UniformRand::UU = nullptr ;
 
-And where appropriate set the UU to a reference array of randoms. 
+And where appropriate set the UU to a reference array of randoms.
 
 
 Headers for random setup:
@@ -22,19 +22,8 @@ Randomize.h
     CLHEP level setup
 
 
-Tried to avoid duplication between this and SUniformRand.h using::
+The optional UU array holds reference random values for Find and Desc.
 
-    #include "Randomize.hh"
-    typedef SUniformRand<CLHEP::HepRandom> U4UniformRand ;
-
-It kinda works, see sysrap/tests/SUniformRand_test.cc, but runs 
-into duplicate symbol issues.  So are simply duplicating. 
-
-Actually maybe easier to get rid of U4UniformRand::UU and use some 
-another symbol like SEvt::UU (or SLOG::UU) to hold the randoms as 
-that can always be made accessible : and avoid duplicate symbols
-troubles ?
- 
 **/
 
 #include <string>

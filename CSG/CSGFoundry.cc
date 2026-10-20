@@ -3037,12 +3037,11 @@ NP* CSGFoundry::loadAux(const char* auxrel ) const
     return aux ;
 }
 
-
 /**
 CSGFoundry::MTime
 -------------------
 
-Use STime::Format(mtime) to convert the int into a timestamp string
+Use s_time::Format(mtime, nullptr) to convert the int into a timestamp string
 
 **/
 int CSGFoundry::MTime(const char* dir, const char* fname_) // static

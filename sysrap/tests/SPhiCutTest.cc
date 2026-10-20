@@ -25,12 +25,11 @@
 
 #include <vector>
 
+#include "AngleCut.hh"
+#include "OPTICKS_LOG.hh"
+#include "SMath.hh"
 #include "scuda.h"
 #include "squad.h"
-#include "SPhiCut.hh"
-#include "SMath.hh"
-#include "OPTICKS_LOG.hh"
-
 
 int main(int argc, char** argv)
 {

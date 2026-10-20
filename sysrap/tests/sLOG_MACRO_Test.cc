@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
-#include <cassert>
 #include "SLOG.hh"
-#include "SArgs.hh"
+#include <cassert>
+#include <iostream>
 
 #include "SYSRAP_LOG.hh"
 

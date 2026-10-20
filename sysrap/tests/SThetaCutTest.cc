@@ -1,7 +1,7 @@
+#include "AngleCut.hh"
+#include "OPTICKS_LOG.hh"
 #include "scuda.h"
 #include "squad.h"
-#include "SThetaCut.hh"
-#include "OPTICKS_LOG.hh"
 
 int main(int argc, char** argv)
 {

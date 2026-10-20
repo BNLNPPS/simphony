@@ -18,7 +18,11 @@
  */
 
 #include <cassert>
-#include "SArgs.hh"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "OPTICKS_LOG.hh"
 
@@ -98,15 +102,20 @@ int main(int /*argc_*/, char** argv_)
 
     for(unsigned i=0 ; i < tt.size() ; i++)
     {
-        std::string t = tt[i]; 
+        std::string t = tt[i];
 
-        SArgs* a = new SArgs(argv_[0], t.c_str()) ;
+        std::vector<std::string> args = {argv_[0]};
+        std::istringstream       options(t);
+        for (std::string option; options >> option;) args.push_back(option);
+        std::vector<char*> argv;
+        for (std::string& arg : args) argv.push_back(arg.data());
 
-        const char* uprefix = j == 0 ? NULL : prefix ; 
+        const char* uprefix = j == 0 ? NULL : prefix;
 
-        if(SLOG::instance != NULL) SLOG::instance = NULL ; 
+        if (SLOG::instance != NULL)
+            SLOG::instance = NULL;
 
-        SLOG* pl = new SLOG(a->argc, a->argv, fallback, uprefix );
+        SLOG* pl = new SLOG(static_cast<int>(argv.size()), argv.data(), fallback, uprefix);
 
         std::stringstream ss ; 
         ss << "SLOG(..," << fallback ; 

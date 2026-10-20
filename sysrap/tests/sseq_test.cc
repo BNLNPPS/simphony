@@ -1,5 +1,3 @@
-// sseq_test
-
 #include <iostream>
 #include <iomanip>
 #include <bitset>
@@ -495,4 +493,3 @@ int main()
 
     return rc ;
 }
-// sseq_test
