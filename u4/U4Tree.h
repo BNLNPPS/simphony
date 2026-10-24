@@ -120,10 +120,11 @@ struct U4Tree
     static constexpr const char* __DISABLE_ISUR_IMPLICIT = "U4Tree__DISABLE_ISUR_IMPLICIT" ;
     static constexpr const char* __MATERIAL_DEBUG = "U4Tree__MATERIAL_DEBUG" ;
     static constexpr const char* __SOLID_DEBUG = "U4Tree__SOLID_DEBUG" ;
-    bool                                        enable_osur ;
-    bool                                        enable_isur ;
-    int                                         material_debug ;
-    int                                         solid_debug ;
+
+    bool enable_osur;
+    bool enable_isur;
+    int  material_debug;
+    int  solid_debug;
 
     static U4Tree* Create(
         stree*                         st,
@@ -1311,5 +1312,3 @@ inline void U4Tree::SimtraceScan( const G4VPhysicalVolume* const pv, const char*
     U4Tree ut(&st, pv ) ;
     ut.simtrace_scan(base) ;
 }
-
-

@@ -214,5 +214,3 @@ int main()
     NP_delete_test::main(); 
     return 0 ; 
 }
-
-// NP_delete_test

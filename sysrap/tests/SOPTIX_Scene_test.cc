@@ -5,16 +5,16 @@ SOPTIX_Scene_test.cc : writes NPY pixel array with raytraced render of triangula
 ::
 
     SOPTIX_Scene_test
-    ~/o/sysrap/tests/SOPTIX_Scene_test.cc
+    sysrap/tests/SOPTIX_Scene_test.cc
 
 For an encapsulated version of this see::
 
-    ~/o/sysrap/tests/SOPTIX_Scene_Encapsulated_test.cc
+    sysrap/tests/SOPTIX_Scene_Encapsulated_test.cc
 
 Other related tests::
 
     SCUDA_Mesh_test
-    ~/o/sysrap/tests/SCUDA_Mesh_test.cc
+    sysrap/tests/SCUDA_Mesh_test.cc
 
 **/
 

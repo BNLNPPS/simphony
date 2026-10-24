@@ -20,7 +20,6 @@ Users::
     epsilon:opticks blyth$ opticks-fl STrackInfo
     ./sysrap/CMakeLists.txt
     ./sysrap/STrackInfo.h
-    ./sysrap/SFastSimOpticalModel.hh
 
     ./u4/U4Track.h
 

@@ -171,7 +171,7 @@ private:
     const CSGFoundry* getFoundry() const ;
     static std::string AnnotationTime( double dt, const char* extra=nullptr );
     const char* getDefaultSnapPath() const ;
-    void snap(const char* path, bool inverted); // part of SRenderer protocol base
+    void snap(const char* path, bool inverted);
 
 #ifdef WITH_FRAME_PHOTON
     void writeFramePhoton(const char* dir, const char* name);

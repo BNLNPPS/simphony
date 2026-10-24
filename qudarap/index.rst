@@ -17,6 +17,9 @@ QTex.hh
 QBnd.hh
     ggeo/GBndLib -> QTex "boundary texture"
 
+QCerenkov.hh
+    uploads boundary and property resources for GPU Cerenkov sampling
+
 QScint.hh
     ggeo/GScintillatorLib -> QTex "scintillation inverse-CDF texture"
 
@@ -43,9 +46,6 @@ QU.hh
 TODO
 ------
 
-QCerenkov 
-   treat it like QScint now that have workable icdf  
-
 QEvent/qevent  
    hold refs to gensteps, seeds, photons, ...
 
@@ -66,9 +66,6 @@ The pattern of having GPU and CPU counterparts is a useful one
 
 Expts
 --------
-
-qpoly.h QPoly.hh
-     extern "C" expt         
 
 qscint.h
      NOT USED ANYMORE : MOVED TO COLLECTIVE HANDLING IN qgs.h TO AVOID DUPLICATION

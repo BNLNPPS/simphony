@@ -1006,27 +1006,6 @@ Canonically invoked from SEvt::SEvt
 
 * SO: must make any static call adjustments before SEvt instanciation
 
-
-Call stack in OJ running::
-
-    (gdb) bt
-    #0  SEventConfig::Initialize () at /home/blyth/opticks/sysrap/SEventConfig.cc:1166
-    #1  0x00007fffbe757a88 in SEvt::SEvt (this=0xc5c7390) at /home/blyth/opticks/sysrap/SEvt.cc:180
-    #2  0x00007fffbe75c818 in SEvt::Create (ins=0) at /home/blyth/opticks/sysrap/SEvt.cc:1278
-    #3  0x00007fffbe75cb83 in SEvt::CreateOrReuse (idx=0) at /home/blyth/opticks/sysrap/SEvt.cc:1336
-    #4  0x00007fffbe75ce11 in SEvt::CreateOrReuse () at /home/blyth/opticks/sysrap/SEvt.cc:1380
-    #5  0x00007fffc0f99c11 in G4CXOpticks::SetGeometry_JUNO (world=0xa61bd30, sd=0xa230880, jpmt=0xc5933c0, jlut=0xc5c6120) at /home/blyth/opticks/g4cx/G4CXOpticks.cc:106
-    #6  0x00007fffbdd967a4 in LSExpDetectorConstruction_Opticks::Setup (opticksMode=1, world=0xa61bd30, sd=0xa230880, ppd=0x6595290, psd=0x6595e80, pmtscan=0x0)
-        at /home/blyth/junosw/Simulation/DetSimV2/DetSimOptions/src/LSExpDetectorConstruction_Opticks.cc:47
-    #7  0x00007fffbdd5b0e6 in LSExpDetectorConstruction::setupOpticks (this=0xa277810, world=0xa61bd30) at /home/blyth/junosw/Simulation/DetSimV2/DetSimOptions/src/LSExpDetectorConstruction.cc:472
-    #8  0x00007fffbdd5a986 in LSExpDetectorConstruction::Construct (this=0xa277810) at /home/blyth/junosw/Simulation/DetSimV2/DetSimOptions/src/LSExpDetectorConstruction.cc:393
-    #9  0x00007fffc67ca92e in G4RunManager::InitializeGeometry() () from /cvmfs/juno.ihep.ac.cn/el9_amd64_gcc11/Release/J25.4.0/ExternalLibs/Geant4/10.04.p02.juno/lib64/libG4run.so
-
-
-
-
-
-
 DebugHeavy
     far too heavy for most debugging/validation
 DebugLite

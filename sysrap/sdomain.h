@@ -4,13 +4,11 @@ sdomain.h
 ===========
 
 
-Regarding hc_eVnm see U4PhysicalConstantsTest, 
-there is slight difference from smath.h float value : could be arising from CLHEP version difference
+The hc_eVnm value differs slightly from the value in smath.h.
 
 Wavelength fine domain np.linspace(60,820,761)
 
 **/
-
 
 #include <string>
 #include <sstream>

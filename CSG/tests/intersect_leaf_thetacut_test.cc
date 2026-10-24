@@ -11,10 +11,10 @@ For a slightly higher level test see CSGNodeScanTest.cc
 #include <cmath>
 #include <csignal>
 
+#include "AngleCut.hh"
 #include "scuda.h"
-#include "squad.h"
 #include "sqat4.h"
-#include "SThetaCut.hh"
+#include "squad.h"
 
 #define DEBUG 1 
 #include "csg_intersect_leaf_head.h"

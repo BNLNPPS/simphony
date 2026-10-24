@@ -1093,8 +1093,6 @@ with params.raygenmode switch function inside CSGOptiX.cu:__raygen__rg
 As it is likely better to instead have multiple raygen entry points
 are retaining the distinct methods up here.
 
-*render* is also still needed to fulfil SRenderer protocol base
-
 **/
 double CSGOptiX::render_launch()
 {

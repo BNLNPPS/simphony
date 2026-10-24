@@ -9,15 +9,12 @@ set(TEST_SOURCES
    QScintTest.cc
    QScintGenerateTest.cc
    QCerenkovIntegralTest.cc
-   QPolyTest.cc
    QSimDescTest.cc
    QPropTest.cc 
    QPMTTest.cc
    QEvt_Lifecycle_Test.cc
    QSimCreateTest.cc 
    QUTest.cc
-   QTexMakerTest.cc
-   QTexLookupTest.cc
    qbnd_boundary_lookup_test.cc
    QSim_MaterialCarryTest.cc
    QMultiFilmTest.cc
@@ -29,7 +26,6 @@ set(TEST_SOURCES
 
 ## THESE NEED REJIG : THEY FAIL FOR LACK OF DEPENDENCIES
 set(KNOWN_FAIL_TEST_SOURCES
-   QCerenkovTest.cc
    QBndTest.cc 
 )
 

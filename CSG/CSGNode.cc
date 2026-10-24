@@ -5,12 +5,11 @@
 #include <sstream>
 #include <iomanip>
 
-#include "scuda.h"
-#include "sgeomtools.h"
-#include "SThetaCut.hh"
-#include "SPhiCut.hh"
+#include "AngleCut.hh"
 #include "OpticksCSG.h"
 #include "SLOG.hh"
+#include "scuda.h"
+#include "sgeomtools.h"
 
 #include "CSGNode.h"
 

@@ -81,4 +81,3 @@ int main()
 
     return 0 ;
 }
-// sseq_index_test
