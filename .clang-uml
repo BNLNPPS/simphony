@@ -1,0 +1,20 @@
+compilation_database_dir: build
+output_directory: diagrams
+
+diagrams:
+  repo_packages:
+    type: package
+    glob:
+      - CSG/*.cc
+      - CSGOptiX/*.cc
+      - qudarap/*.cc
+      - sysrap/*.cc
+      - u4/*.cc
+      - g4cx/*.cc
+      - src/*.cc
+    exclude:
+      paths:
+        - tests
+        - examples
+        - extra
+        - build
