@@ -355,8 +355,14 @@ void TestGpuReleaseBoundary(const fs::path& directory)
     recorder.EndGpu();
     recorder.ReleaseGpu();
     bool duplicate_rejected = false;
-    try { recorder.ReleaseGpu(); }
-    catch (const std::logic_error&) { duplicate_rejected = true; }
+    try
+    {
+        recorder.ReleaseGpu();
+    }
+    catch (const std::logic_error&)
+    {
+        duplicate_rejected = true;
+    }
     assert(duplicate_rejected);
     recorder.EndEvent(25, 7);
     recorder.Write(Metadata());
@@ -374,20 +380,34 @@ void TestGpuReleaseClockInversion(const fs::path& directory)
                  TimedSample(300, 0, 0), TimedSample(400, 0, 0),
                  TimedSample(500, 0, 0), TimedSample(450, 0, 0)});
     EventTimingRecorder recorder(directory / "release-inversion.csv", &NextSample);
-    recorder.BeginRun(); recorder.BeginEvent(0); recorder.SubmitGpu(1, 2);
-    recorder.BeginGpu(); recorder.EndGpu();
+    recorder.BeginRun();
+    recorder.BeginEvent(0);
+    recorder.SubmitGpu(1, 2);
+    recorder.BeginGpu();
+    recorder.EndGpu();
     bool rejected = false;
-    try { recorder.ReleaseGpu(); }
-    catch (const std::logic_error&) { rejected = true; }
+    try
+    {
+        recorder.ReleaseGpu();
+    }
+    catch (const std::logic_error&)
+    {
+        rejected = true;
+    }
     assert(rejected);
 }
-
 
 void ExpectMergeError(const std::function<void()>& action)
 {
     bool rejected = false;
-    try { action(); }
-    catch (const std::logic_error&) { rejected = true; }
+    try
+    {
+        action();
+    }
+    catch (const std::logic_error&)
+    {
+        rejected = true;
+    }
     assert(rejected);
 }
 
@@ -432,9 +452,9 @@ void TestSharedOriginWorkerMerge(const fs::path& directory)
     master.Write(metadata);
 
     std::ifstream csv(output);
-    std::string header, line;
+    std::string   header, line;
     assert(static_cast<bool>(std::getline(csv, header)));
-    const auto names = Split(header, ',');
+    const auto                                                names = Split(header, ',');
     std::vector<std::unordered_map<std::string, std::string>> rows;
     while (std::getline(csv, line))
     {
@@ -459,7 +479,7 @@ void TestSharedOriginWorkerMerge(const fs::path& directory)
     AssertNear(std::stod(rows[0].at("gpu_release_time_offset_s")), 0.9);
     AssertNear(std::stod(rows[1].at("gpu_start_time_offset_s")), 0.95);
     std::ifstream manifest_input(directory / "merged.manifest.json");
-    const auto manifest = nlohmann::json::parse(manifest_input);
+    const auto    manifest = nlohmann::json::parse(manifest_input);
     assert(manifest.at("event_count") == 2);
     assert(manifest.at("num_threads") == 2);
     assert(manifest.at("cpu_recorder_enabled") == false);
@@ -471,7 +491,7 @@ void TestSharedOriginWorkerMerge(const fs::path& directory)
 
 void TestWorkerMergeGuards(const fs::path& directory)
 {
-    const auto output = directory / "merge-guards.csv";
+    const auto          output = directory / "merge-guards.csv";
     EventTimingRecorder master(output), worker(output), duplicate(output);
     ExpectMergeError([&] { worker.BeginRunFrom(master); });
     master.BeginRun();
@@ -480,8 +500,11 @@ void TestWorkerMergeGuards(const fs::path& directory)
     ExpectMergeError([&] { master.Merge(master); });
     worker.BeginEvent(0);
     ExpectMergeError([&] { master.Merge(worker); });
-    worker.SubmitGpu(1, 100); worker.BeginGpu(); worker.EndGpu();
-    worker.ReleaseGpu(); worker.EndEvent(25, 7);
+    worker.SubmitGpu(1, 100);
+    worker.BeginGpu();
+    worker.EndGpu();
+    worker.ReleaseGpu();
+    worker.EndEvent(25, 7);
     master.Merge(worker);
     FinishWorkerEvent(duplicate, 0);
     ExpectMergeError([&] { master.Merge(duplicate); });

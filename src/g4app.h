@@ -374,8 +374,8 @@ struct Simg4oxSharedState
     std::condition_variable gpu_turn;
     std::unique_ptr<NP>     input_photon;
     G4int                   next_gpu_event{0};
-    EventTimingRecorder*    master_timing{nullptr};
-    std::mutex              timing_mutex;
+    EventTimingRecorder*                              master_timing{nullptr};
+    std::mutex                                        timing_mutex;
     std::vector<std::unique_ptr<EventTimingRecorder>> worker_timings;
 
     explicit Simg4oxSharedState(EventTimingRecorder* master_timing = nullptr) :
@@ -389,7 +389,7 @@ struct Simg4oxSharedState
             return nullptr;
         auto recorder = std::make_unique<EventTimingRecorder>(master_timing->output());
         recorder->SetWorkerId(G4Threading::G4GetThreadId());
-        auto* result = recorder.get();
+        auto*           result = recorder.get();
         std::lock_guard lock(timing_mutex);
         worker_timings.push_back(std::move(recorder));
         return result;
@@ -973,9 +973,9 @@ struct ActionInitialization : G4VUserActionInitialization
         // SEvt's CPU instance and its profiling/persistence helpers are
         // process-global. Keep the full CPU history recorder in serial mode;
         // MT workers still perform normal Geant4 tracking and collect SD hits.
-        SEvt* sev = (multithreaded || !cpu_recorder_enabled) ? nullptr
-                                    : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
-                                                       : SEvt::CreateOrReuse_ECPU());
+        SEvt*                sev = (multithreaded || !cpu_recorder_enabled) ? nullptr
+                                                                            : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
+                                                                                               : SEvt::CreateOrReuse_ECPU());
         EventTimingRecorder* local_timing = multithreaded ? shared_state->MakeWorkerTiming() : timing;
 
         SetUserAction(new PrimaryGenerator(cfg, sev, primary, local_timing));
