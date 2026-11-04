@@ -998,6 +998,54 @@ void EventTimingRecorder::BeginRun()
     rows_.clear();
     run_origin_ = Capture();
     run_started_ = true;
+    merged_ = false;
+}
+
+void EventTimingRecorder::SetWorkerId(int worker_id)
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "set worker ID");
+    if (!rows_.empty() || worker_id < -1)
+        throw std::logic_error("EventTimingRecorder worker ID must be set before recording");
+    worker_id_ = worker_id;
+}
+
+void EventTimingRecorder::BeginRunFrom(const EventTimingRecorder& master)
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "begin worker run");
+    master.RequireState(State::Idle, "share run origin");
+    if (this == &master || !master.run_started_ || master.merged_)
+        throw std::logic_error("EventTimingRecorder worker requires an active master run");
+    rows_.clear();
+    run_origin_ = master.run_origin_;
+    run_started_ = true;
+    merged_ = false;
+}
+
+void EventTimingRecorder::Merge(EventTimingRecorder& worker)
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "merge worker");
+    worker.RequireState(State::Idle, "finish worker before merge");
+    if (this == &worker || !run_started_ || !worker.run_started_ || merged_ || worker.merged_)
+        throw std::logic_error("EventTimingRecorder cannot merge an unstarted or already merged worker");
+    if (!(run_origin_ == worker.run_origin_))
+        throw std::logic_error("EventTimingRecorder cannot merge different run origins");
+    std::vector<Row> combined = rows_;
+    combined.insert(combined.end(), worker.rows_.begin(), worker.rows_.end());
+    std::sort(combined.begin(), combined.end(), [](const Row& a, const Row& b) {
+        return a.event_id < b.event_id;
+    });
+    for (std::size_t i = 1; i < combined.size(); ++i)
+        if (combined[i - 1].event_id == combined[i].event_id)
+            throw std::logic_error("EventTimingRecorder cannot merge duplicate event IDs");
+    rows_ = std::move(combined);
+    worker.rows_.clear();
+    worker.merged_ = true;
 }
 
 void EventTimingRecorder::BeginEvent(int event_id)
@@ -1005,11 +1053,12 @@ void EventTimingRecorder::BeginEvent(int event_id)
     if (!enabled())
         return;
     RequireState(State::Idle, "begin event");
-    if (!run_started_)
-        throw std::logic_error("EventTimingRecorder BeginEvent requires BeginRun");
+    if (!run_started_ || merged_)
+        throw std::logic_error("EventTimingRecorder BeginEvent requires an unmerged active run");
 
     Row row{};
     row.event_id = event_id;
+    row.worker_id = worker_id_;
     row.event_start = Capture();
     active_event_id_ = event_id;
     RequireOrdered(run_origin_, row.event_start, "event start");
@@ -1054,7 +1103,22 @@ void EventTimingRecorder::EndGpu()
     Row&                    row = ActiveRow();
     RequireOrdered(row.gpu_start, sample, "GPU end");
     row.gpu_end = sample;
+    row.gpu_release = sample;
     state_ = State::CpuPost;
+}
+
+void EventTimingRecorder::ReleaseGpu()
+{
+    if (!enabled())
+        return;
+    RequireState(State::CpuPost, "release GPU gate");
+    Row& row = ActiveRow();
+    if (row.gpu_released)
+        throw std::logic_error("EventTimingRecorder GPU gate already released");
+    const EventTimingSample sample = Capture();
+    RequireOrdered(row.gpu_end, sample, "GPU gate release");
+    row.gpu_release = sample;
+    row.gpu_released = true;
 }
 
 void EventTimingRecorder::EndEvent(
@@ -1066,7 +1130,7 @@ void EventTimingRecorder::EndEvent(
     RequireState(State::CpuPost, "end event");
     const EventTimingSample sample = Capture();
     Row&                    row = ActiveRow();
-    RequireOrdered(row.gpu_end, sample, "event end");
+    RequireOrdered(row.gpu_release, sample, "event end");
     row.num_gpu_hits = num_gpu_hits;
     row.num_g4_hits = num_g4_hits;
     row.event_end = sample;
@@ -1089,7 +1153,9 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
            "gpu_queue_delay_s,gpu_runtime_s,gpu_wait_runtime_s,"
            "primary_particle,primary_momentum_gev_c,primary_multiplicity,"
            "num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,"
-           "process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s\n";
+           "process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s,"
+           "gpu_release_time,gpu_release_time_offset_s,cpu_post_locked_runtime_s,"
+           "cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads\n";
 
     csv << std::setprecision(std::numeric_limits<double>::max_digits10);
     for (const Row& row : rows_)
@@ -1118,7 +1184,8 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
         const double thread_post = CpuSeconds(
             row.gpu_end, row.event_end, EventTimingCapture::ThreadCpu);
 
-        csv << "simg4ox_blocking,blocking," << row.event_id << ','
+        csv << (metadata.num_threads > 1 ? "simg4ox_synchronous,synchronous," : "simg4ox_blocking,blocking,")
+            << row.event_id << ','
             << absolute(row.event_start) << ',' << absolute(row.event_end) << ','
             << absolute(row.event_start) << ',' << absolute(row.event_end) << ','
             << absolute(row.event_start) << ',' << absolute(row.gpu_submit) << ','
@@ -1142,7 +1209,12 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
             << row.num_gensteps << ',' << row.num_photons << ','
             << row.num_gpu_hits << ',' << row.num_g4_hits << ','
             << process_pre << ',' << process_post << ',' << process_pre + process_post << ','
-            << thread_pre << ',' << thread_post << ',' << thread_pre + thread_post << '\n';
+            << thread_pre << ',' << thread_post << ',' << thread_pre + thread_post << ','
+            << absolute(row.gpu_release) << ',' << offset(row.gpu_release) << ','
+            << duration(row.gpu_end, row.gpu_release) << ','
+            << duration(row.gpu_release, row.event_end) << ','
+            << duration(row.gpu_start, row.gpu_release) << ','
+            << row.worker_id << ',' << metadata.num_threads << '\n';
     }
     return csv.str();
 }
@@ -1153,7 +1225,7 @@ std::string EventTimingRecorder::SerializeManifest(const EventTimingMetadata& me
     manifest.js["schema_version"] = 2;
     manifest.js["created_utc"] = UtcNow();
     manifest.js["application"] = "simg4ox";
-    manifest.js["dispatch_mode"] = "blocking";
+    manifest.js["dispatch_mode"] = metadata.num_threads > 1 ? "synchronous" : "blocking";
     manifest.js["clock"] = "std::chrono::steady_clock";
     manifest.js["geometry"] = metadata.geometry;
     manifest.js["config"] = metadata.config;
@@ -1170,6 +1242,14 @@ std::string EventTimingRecorder::SerializeManifest(const EventTimingMetadata& me
     manifest.js["cuda_driver_version"] = metadata.cuda_driver_version;
     manifest.js["cuda_runtime_version"] = metadata.cuda_runtime_version;
     manifest.js["event_count"] = rows_.size();
+    manifest.js["num_threads"] = metadata.num_threads;
+    manifest.js["cpu_recorder_enabled"] = metadata.cpu_recorder_enabled;
+    manifest.js["torch_seed"] = metadata.torch_seed;
+    manifest.js["torch_input_randomness"] = metadata.torch_seed == 0 ? "fixed-input timing repeats" : "not applicable";
+    manifest.js["run_origin_steady_ns"] = run_origin_.steady_time_ns;
+    manifest.js["process_cpu_scope"] = "whole process; MT intervals include other workers";
+    manifest.js["thread_cpu_scope"] = "calling event worker";
+    manifest.js["gpu_release_boundary"] = "after hit collection and reset; optional for legacy callers";
     return manifest.js.dump(2) + '\n';
 }
 

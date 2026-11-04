@@ -374,6 +374,33 @@ struct Simg4oxSharedState
     std::condition_variable gpu_turn;
     std::unique_ptr<NP>     input_photon;
     G4int                   next_gpu_event{0};
+    EventTimingRecorder*    master_timing{nullptr};
+    std::mutex              timing_mutex;
+    std::vector<std::unique_ptr<EventTimingRecorder>> worker_timings;
+
+    explicit Simg4oxSharedState(EventTimingRecorder* master_timing = nullptr) :
+        master_timing(master_timing)
+    {
+    }
+
+    EventTimingRecorder* MakeWorkerTiming()
+    {
+        if (!master_timing)
+            return nullptr;
+        auto recorder = std::make_unique<EventTimingRecorder>(master_timing->output());
+        recorder->SetWorkerId(G4Threading::G4GetThreadId());
+        auto* result = recorder.get();
+        std::lock_guard lock(timing_mutex);
+        worker_timings.push_back(std::move(recorder));
+        return result;
+    }
+
+    void MergeTimings()
+    {
+        std::lock_guard lock(timing_mutex);
+        for (auto& worker : worker_timings)
+            master_timing->Merge(*worker);
+    }
 
     void BeginRun()
     {
@@ -457,13 +484,13 @@ struct EventAction : G4UserEventAction
     std::vector<sphoton> SimulateOnGPU(const G4Event* event, bool has_gpu_work)
     {
         const PrimaryPhotonInfo* primary_info = nullptr;
-        if (order_gpu_events)
+        if (!sev && !particle_source)
         {
             primary_info = dynamic_cast<const PrimaryPhotonInfo*>(event->GetUserInformation());
             if (!primary_info)
             {
                 G4Exception("EventAction::SimulateOnGPU", "MissingPrimaryPhotonInfo", FatalException,
-                            "MT event is missing its generated photons for GPU processing");
+                            "Optical event is missing its generated photons for GPU processing");
                 return {};
             }
         }
@@ -473,14 +500,16 @@ struct EventAction : G4UserEventAction
         if (order_gpu_events)
             shared_state->gpu_turn.wait(lock, [&] { return event_id == shared_state->next_gpu_event; });
 
-        if (order_gpu_events)
+        if (timing)
+            timing->BeginGpu();
+
+        // The matched serial control and MT workers both preserve event-local
+        // torch input until acquisition of the process-global GPU event gate.
+        if (primary_info && has_gpu_work)
         {
             shared_state->input_photon = MakePhotonArray(primary_info->photons);
             SEvt::SetInputPhoton(shared_state->input_photon.get());
         }
-
-        if (timing)
-            timing->BeginGpu();
 
         std::vector<sphoton> gpu_hits;
         if (has_gpu_work)
@@ -504,11 +533,12 @@ struct EventAction : G4UserEventAction
             timing->EndGpu();
 
         if (order_gpu_events)
-        {
             ++shared_state->next_gpu_event;
-            lock.unlock();
+        if (timing)
+            timing->ReleaseGpu();
+        lock.unlock();
+        if (order_gpu_events)
             shared_state->gpu_turn.notify_all();
-        }
 
         return gpu_hits;
     }
@@ -531,12 +561,20 @@ struct EventAction : G4UserEventAction
             num_photons = sev->getNumPhotonCollected();
             sev->endOfEvent(event_id);
         }
+        else
+        {
+            const auto* input = dynamic_cast<const PrimaryPhotonInfo*>(event->GetUserInformation());
+            if (!input)
+                throw std::runtime_error("Optical event is missing its PrimaryPhotonInfo");
+            num_photons = static_cast<std::int64_t>(input->photons.size());
+            num_gensteps = num_photons > 0 ? 1 : 0; // One input-photon genstep.
+        }
 
         auto g4_hits = CollectG4Hits(event);
         if (timing)
             timing->SubmitGpu(num_gensteps, num_photons);
 
-        auto gpu_hits = SimulateOnGPU(event, !particle_source || num_gensteps > 0);
+        auto gpu_hits = SimulateOnGPU(event, particle_source ? num_gensteps > 0 : num_photons > 0);
 
         G4cout << "EventAction::EndOfEventAction: Event " << event_id
                << ": Collected GPU hits: " << gpu_hits.size() << G4endl;
@@ -839,6 +877,12 @@ struct RunAction : G4UserRunAction
 
     void BeginOfRunAction(const G4Run*) override
     {
+        if (G4Threading::IsWorkerThread())
+        {
+            if (timing)
+                timing->BeginRunFrom(*shared_state->master_timing);
+            return;
+        }
         if (!G4Threading::IsWorkerThread())
         {
             G4OpticalParameters* optical = G4OpticalParameters::Instance();
@@ -868,8 +912,8 @@ struct RunAction : G4UserRunAction
 
     void EndOfRunAction(const G4Run* run) override
     {
-        // Worker runs are merged by G4MTRunManager after their EndOfRunAction.
-        // Only the serial/master run owns the complete result.
+        // The master action runs after the worker-completion barrier and
+        // publishes the complete, merged result.
         if (G4Threading::IsWorkerThread())
             return;
 
@@ -883,6 +927,7 @@ struct RunAction : G4UserRunAction
         G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << g4_hits.size() << G4endl;
         if (timing)
         {
+            shared_state->MergeTimings();
             timing->Write(timing_metadata);
             G4cout << "RunAction::EndOfRunAction: Event timing: " << timing->output() << G4endl;
         }
@@ -895,6 +940,7 @@ struct ActionInitialization : G4VUserActionInitialization
     simphony::Config                    cfg;
     std::shared_ptr<Simg4oxSharedState> shared_state;
     bool                                multithreaded;
+    bool                                cpu_recorder_enabled;
     PrimaryParticleConfig               primary;
     EventTimingRecorder*                timing;
     EventTimingMetadata                 timing_metadata;
@@ -905,10 +951,12 @@ struct ActionInitialization : G4VUserActionInitialization
         bool                                multithreaded,
         const PrimaryParticleConfig&        primary,
         EventTimingRecorder*                timing,
-        EventTimingMetadata                 timing_metadata) :
+        EventTimingMetadata                 timing_metadata,
+        bool                                cpu_recorder_enabled = true) :
         cfg(cfg),
         shared_state(std::move(shared_state)),
         multithreaded(multithreaded),
+        cpu_recorder_enabled(cpu_recorder_enabled),
         primary(primary),
         timing(timing),
         timing_metadata(std::move(timing_metadata))
@@ -925,13 +973,14 @@ struct ActionInitialization : G4VUserActionInitialization
         // SEvt's CPU instance and its profiling/persistence helpers are
         // process-global. Keep the full CPU history recorder in serial mode;
         // MT workers still perform normal Geant4 tracking and collect SD hits.
-        SEvt* sev = multithreaded ? nullptr
-                                  : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
-                                                     : SEvt::CreateOrReuse_ECPU());
+        SEvt* sev = (multithreaded || !cpu_recorder_enabled) ? nullptr
+                                    : (primary.enabled ? SEvt::CreateOrReuse_EGPU()
+                                                       : SEvt::CreateOrReuse_ECPU());
+        EventTimingRecorder* local_timing = multithreaded ? shared_state->MakeWorkerTiming() : timing;
 
-        SetUserAction(new PrimaryGenerator(cfg, sev, primary, timing));
-        SetUserAction(new RunAction(cfg, shared_state, primary.enabled, timing, timing_metadata));
-        SetUserAction(new EventAction(sev, shared_state, multithreaded, primary.enabled, timing));
+        SetUserAction(new PrimaryGenerator(cfg, sev, primary, local_timing));
+        SetUserAction(new RunAction(cfg, shared_state, primary.enabled, local_timing, timing_metadata));
+        SetUserAction(new EventAction(sev, shared_state, multithreaded, primary.enabled, local_timing));
         SetUserAction(new TrackingAction(sev));
 
         if (sev)

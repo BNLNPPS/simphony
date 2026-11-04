@@ -1,3 +1,5 @@
+// These contract checks must also execute in Release study builds.
+#undef NDEBUG
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -162,7 +164,8 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
         "gpu_runtime_s,gpu_wait_runtime_s,primary_particle,primary_momentum_gev_c,"
         "primary_multiplicity,num_gensteps,num_photons,num_gpu_hits,num_g4_hits,"
         "process_cpu_pre_s,process_cpu_post_s,process_cpu_s,thread_cpu_pre_s,"
-        "thread_cpu_post_s,thread_cpu_s";
+        "thread_cpu_post_s,thread_cpu_s,gpu_release_time,gpu_release_time_offset_s,"
+        "cpu_post_locked_runtime_s,cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads";
     assert(header == expected_header);
 
     const auto row = ReadSingleRow(output);
@@ -192,6 +195,11 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
     AssertNear(value("process_cpu_post_s"), 0.0003);
     AssertNear(value("thread_cpu_pre_s"), 0.00015);
     AssertNear(value("thread_cpu_post_s"), 0.0002);
+
+    AssertNear(value("gpu_release_time_offset_s"), value("gpu_end_time_offset_s"));
+    AssertNear(value("cpu_post_locked_runtime_s"), 0.0);
+    AssertNear(value("cpu_post_unlocked_runtime_s"), value("cpu_post_runtime_s"));
+    AssertNear(value("gpu_gate_runtime_s"), value("gpu_runtime_s"));
 
     const fs::path manifest_path = directory / "events.manifest.json";
     std::ifstream  manifest_input(manifest_path);
@@ -328,6 +336,171 @@ void TestClockInversion(const fs::path& directory)
     assert(!fs::exists(output));
 }
 
+void TestGpuReleaseBoundary(const fs::path& directory)
+{
+    SetSequence({
+        TimedSample(1'000'000'000, 0, 0),
+        TimedSample(1'100'000'000, 0, 0),
+        TimedSample(1'300'000'000, 0, 0),
+        TimedSample(1'350'000'000, 0, 0),
+        TimedSample(1'750'000'000, 0, 0),
+        TimedSample(1'900'000'000, 0, 0),
+        TimedSample(2'000'000'000, 0, 0),
+    });
+    EventTimingRecorder recorder(directory / "release.csv", &NextSample);
+    recorder.BeginRun();
+    recorder.BeginEvent(0);
+    recorder.SubmitGpu(4, 500);
+    recorder.BeginGpu();
+    recorder.EndGpu();
+    recorder.ReleaseGpu();
+    bool duplicate_rejected = false;
+    try { recorder.ReleaseGpu(); }
+    catch (const std::logic_error&) { duplicate_rejected = true; }
+    assert(duplicate_rejected);
+    recorder.EndEvent(25, 7);
+    recorder.Write(Metadata());
+    const auto row = ReadSingleRow(directory / "release.csv");
+    AssertNear(std::stod(row.at("gpu_release_time_offset_s")), 0.9);
+    AssertNear(std::stod(row.at("cpu_post_locked_runtime_s")), 0.15);
+    AssertNear(std::stod(row.at("cpu_post_unlocked_runtime_s")), 0.1);
+    AssertNear(std::stod(row.at("gpu_gate_runtime_s")), 0.55);
+    assert(sequence_index == sequence.size());
+}
+
+void TestGpuReleaseClockInversion(const fs::path& directory)
+{
+    SetSequence({TimedSample(100, 0, 0), TimedSample(200, 0, 0),
+                 TimedSample(300, 0, 0), TimedSample(400, 0, 0),
+                 TimedSample(500, 0, 0), TimedSample(450, 0, 0)});
+    EventTimingRecorder recorder(directory / "release-inversion.csv", &NextSample);
+    recorder.BeginRun(); recorder.BeginEvent(0); recorder.SubmitGpu(1, 2);
+    recorder.BeginGpu(); recorder.EndGpu();
+    bool rejected = false;
+    try { recorder.ReleaseGpu(); }
+    catch (const std::logic_error&) { rejected = true; }
+    assert(rejected);
+}
+
+
+void ExpectMergeError(const std::function<void()>& action)
+{
+    bool rejected = false;
+    try { action(); }
+    catch (const std::logic_error&) { rejected = true; }
+    assert(rejected);
+}
+
+void FinishWorkerEvent(EventTimingRecorder& recorder, int event_id)
+{
+    recorder.BeginEvent(event_id);
+    recorder.SubmitGpu(1, 100);
+    recorder.BeginGpu();
+    recorder.EndGpu();
+    recorder.ReleaseGpu();
+    recorder.EndEvent(25, 7);
+}
+
+void TestSharedOriginWorkerMerge(const fs::path& directory)
+{
+    const auto output = directory / "merged.csv";
+    SetSequence({TimedSample(1'000'000'000, 0, 0)});
+    EventTimingRecorder master(output, &NextSample);
+    master.BeginRun();
+    EventTimingRecorder first(output, &NextSample), second(output, &NextSample);
+    first.SetWorkerId(0);
+    second.SetWorkerId(1);
+    first.BeginRunFrom(master);
+    second.BeginRunFrom(master);
+    assert(sequence_index == sequence.size()); // Cloning must not sample a new origin.
+
+    // Record event 1 first, while its CPU pre interval overlaps event 0.
+    SetSequence({TimedSample(1'200'000'000, 0, 0), TimedSample(1'400'000'000, 2, 2),
+                 TimedSample(1'950'000'000, 3, 3), TimedSample(2'200'000'000, 4, 4),
+                 TimedSample(2'300'000'000, 5, 5), TimedSample(2'400'000'000, 6, 6)});
+    FinishWorkerEvent(second, 1);
+    SetSequence({TimedSample(1'100'000'000, 0, 0), TimedSample(1'300'000'000, 2, 2),
+                 TimedSample(1'350'000'000, 3, 3), TimedSample(1'750'000'000, 4, 4),
+                 TimedSample(1'900'000'000, 5, 5), TimedSample(2'000'000'000, 6, 6)});
+    FinishWorkerEvent(first, 0);
+    master.Merge(second);
+    master.Merge(first);
+    EventTimingMetadata metadata = Metadata();
+    metadata.num_threads = 2;
+    metadata.cpu_recorder_enabled = false;
+    metadata.torch_seed = 0;
+    master.Write(metadata);
+
+    std::ifstream csv(output);
+    std::string header, line;
+    assert(static_cast<bool>(std::getline(csv, header)));
+    const auto names = Split(header, ',');
+    std::vector<std::unordered_map<std::string, std::string>> rows;
+    while (std::getline(csv, line))
+    {
+        const auto values = Split(line, ',');
+        assert(values.size() == names.size());
+        std::unordered_map<std::string, std::string> row;
+        for (std::size_t i = 0; i < names.size(); ++i)
+            row.emplace(names[i], values[i]);
+        rows.push_back(std::move(row));
+    }
+    assert(rows.size() == 2);
+    for (int i = 0; i < 2; ++i)
+    {
+        assert(rows[i].at("event_id") == std::to_string(i));
+        assert(rows[i].at("worker_id") == std::to_string(i));
+        assert(rows[i].at("num_threads") == "2");
+        assert(rows[i].at("dispatch_mode") == "synchronous");
+        assert(rows[i].at("num_photons") == "100");
+    }
+    AssertNear(std::stod(rows[0].at("start_offset_s")), 0.1);
+    AssertNear(std::stod(rows[1].at("start_offset_s")), 0.2);
+    AssertNear(std::stod(rows[0].at("gpu_release_time_offset_s")), 0.9);
+    AssertNear(std::stod(rows[1].at("gpu_start_time_offset_s")), 0.95);
+    std::ifstream manifest_input(directory / "merged.manifest.json");
+    const auto manifest = nlohmann::json::parse(manifest_input);
+    assert(manifest.at("event_count") == 2);
+    assert(manifest.at("num_threads") == 2);
+    assert(manifest.at("cpu_recorder_enabled") == false);
+    assert(manifest.at("torch_seed") == 0);
+    assert(manifest.at("run_origin_steady_ns") == 1'000'000'000);
+    ExpectMergeError([&] { master.Merge(first); });
+    ExpectMergeError([&] { first.BeginEvent(2); });
+}
+
+void TestWorkerMergeGuards(const fs::path& directory)
+{
+    const auto output = directory / "merge-guards.csv";
+    EventTimingRecorder master(output), worker(output), duplicate(output);
+    ExpectMergeError([&] { worker.BeginRunFrom(master); });
+    master.BeginRun();
+    worker.BeginRunFrom(master);
+    duplicate.BeginRunFrom(master);
+    ExpectMergeError([&] { master.Merge(master); });
+    worker.BeginEvent(0);
+    ExpectMergeError([&] { master.Merge(worker); });
+    worker.SubmitGpu(1, 100); worker.BeginGpu(); worker.EndGpu();
+    worker.ReleaseGpu(); worker.EndEvent(25, 7);
+    master.Merge(worker);
+    FinishWorkerEvent(duplicate, 0);
+    ExpectMergeError([&] { master.Merge(duplicate); });
+
+    EventTimingRecorder foreign(output, &NextSample);
+    SetSequence({TimedSample(1, 0, 0)});
+    foreign.BeginRun();
+    ExpectMergeError([&] { master.Merge(foreign); });
+    ExpectMergeError([&] { master.SetWorkerId(3); });
+
+    // Reusing the same worker for a later run must clear its merged marker.
+    master.BeginRun();
+    worker.BeginRunFrom(master);
+    FinishWorkerEvent(worker, 0);
+    master.Merge(worker);
+    master.Write(Metadata());
+    assert(ReadSingleRow(output).at("event_id") == "0");
+}
+
 void TestIoFailure(const fs::path& directory)
 {
     const fs::path regular_file = directory / "not-a-directory";
@@ -364,6 +537,10 @@ int main()
     TestInvalidTransitions(directory);
     TestClockInversion(directory);
     TestIoFailure(directory);
+    TestGpuReleaseBoundary(directory);
+    TestGpuReleaseClockInversion(directory);
+    TestSharedOriginWorkerMerge(directory);
+    TestWorkerMergeGuards(directory);
 
     fs::remove_all(directory);
     return 0;

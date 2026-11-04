@@ -2,6 +2,15 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS multithreaded)
 find_program(BASH_EXECUTABLE bash REQUIRED)
 
+add_test(
+    NAME Simphony.EventTimingValidator
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_timing_check.py
+)
+set_tests_properties(Simphony.EventTimingValidator PROPERTIES
+    LABELS "unit;timing"
+    TIMEOUT 30
+)
+
 add_executable(SimphonyApiTest SimphonyApiTest.cc)
 target_link_libraries(SimphonyApiTest PRIVATE simphony::simphony Geant4::G4gdml)
 
@@ -214,24 +223,29 @@ set_tests_properties(Integration.simg4ox_rng_rebuild.hits_match PROPERTIES
     LABELS "integration;rng-rebuild"
 )
 
-if(Geant4_multithreaded_FOUND)
-    set(SIMPHONY_SIMG4OX_MULTITHREAD_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_multithread")
-    file(MAKE_DIRECTORY "${SIMPHONY_SIMG4OX_MULTITHREAD_TEST_WORKDIR}")
+function(add_simg4ox_worker_timing_test TEST_NAME THREAD_COUNT)
+    set(TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}")
+    file(MAKE_DIRECTORY "${TEST_WORKDIR}")
 
     add_test(
-        NAME Integration.simg4ox_multithread
+        NAME "${TEST_NAME}"
         COMMAND ${CMAKE_COMMAND} -E env
                 REPO_DIR=${PROJECT_SOURCE_DIR}
                 PYTHON=${Python3_EXECUTABLE}
                 SIMG4OX_BIN=$<TARGET_FILE:simg4ox>
-                THREADS=2
+                THREADS=${THREAD_COUNT}
                 ${BASH_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_multithread.sh
     )
 
-    set_tests_properties(Integration.simg4ox_multithread PROPERTIES
-        WORKING_DIRECTORY "${SIMPHONY_SIMG4OX_MULTITHREAD_TEST_WORKDIR}"
-        LABELS "integration"
-        PROCESSORS 2
+    set_tests_properties("${TEST_NAME}" PROPERTIES
+        WORKING_DIRECTORY "${TEST_WORKDIR}"
+        LABELS "integration;timing"
+        PROCESSORS ${THREAD_COUNT}
         TIMEOUT 120
     )
+endfunction()
+
+add_simg4ox_worker_timing_test(Integration.simg4ox_serial_control 1)
+if(Geant4_multithreaded_FOUND)
+    add_simg4ox_worker_timing_test(Integration.simg4ox_multithread 2)
 endif()
