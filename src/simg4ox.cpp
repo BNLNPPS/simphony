@@ -34,6 +34,7 @@ int main(int argc, char** argv)
 
     string gdml_file, config_name, macro_name, particle_name;
     bool   interactive;
+    bool   no_cpu_recorder{false};
 
     program.add_argument("-g", "--gdml")
         .help("path to GDML file")
@@ -65,6 +66,11 @@ int main(int argc, char** argv)
         .default_value(1)
         .scan<'i', int>();
 
+    program.add_argument("--no-cpu-recorder")
+        .help("disable the full CPU SEvt history recorder for a matched serial/MT optical torch comparison")
+        .flag()
+        .store_into(no_cpu_recorder);
+
     program.add_argument("--particle")
         .help("Geant4 primary particle name; enables generated optical-photon offload (for example, mu-)")
         .store_into(particle_name);
@@ -94,6 +100,12 @@ int main(int argc, char** argv)
     if (num_threads < 1)
     {
         cerr << "--threads must be a positive integer" << endl;
+        return EXIT_FAILURE;
+    }
+
+    if (no_cpu_recorder && program.is_used("--particle"))
+    {
+        cerr << "--no-cpu-recorder is supported only for the optical-photon torch source" << endl;
         return EXIT_FAILURE;
     }
 
@@ -134,11 +146,11 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Charged gensteps use the process-global EGPU SEvt, and the recorder
-    // currently has one active event. Neither can safely serve MT workers.
-    if (num_threads > 1 && (primary.enabled || !cfg.event_timing_output.empty()))
+    // Charged gensteps still use the process-global EGPU SEvt. Optical timing
+    // uses independent worker recorders and is safe with MT torch tracking.
+    if (num_threads > 1 && primary.enabled)
     {
-        cerr << "charged-particle offload and event_timing.output require the serial Geant4 run manager (--threads 1)"
+        cerr << "charged-particle offload requires the serial Geant4 run manager (--threads 1)"
              << endl;
         return EXIT_FAILURE;
     }
@@ -153,6 +165,9 @@ int main(int argc, char** argv)
     timing_metadata.primary_particle = primary.particle;
     timing_metadata.primary_momentum_gev_c = primary.enabled ? primary.momentum_gev_c : 0.0;
     timing_metadata.primary_multiplicity = primary.enabled ? primary.multiplicity : cfg.torch.numphoton;
+    timing_metadata.num_threads = num_threads;
+    timing_metadata.cpu_recorder_enabled = num_threads == 1 && !no_cpu_recorder;
+    timing_metadata.torch_seed = primary.enabled ? -1 : 0;
 
     if (timing.enabled())
     {
@@ -213,9 +228,10 @@ int main(int argc, char** argv)
     run_mgr->SetUserInitialization(physics);
     run_mgr->SetUserInitialization(new DetectorConstruction(gdml_file));
 
-    auto shared_state = std::make_shared<Simg4oxSharedState>();
+    auto shared_state = std::make_shared<Simg4oxSharedState>(timing.enabled() ? &timing : nullptr);
     run_mgr->SetUserInitialization(new ActionInitialization(
-        cfg, shared_state, multithreaded, primary, timing.enabled() ? &timing : nullptr, timing_metadata));
+        cfg, shared_state, multithreaded, primary, timing.enabled() ? &timing : nullptr, timing_metadata,
+        !no_cpu_recorder));
 
     G4UIExecutive* uix = nullptr;
     G4VisManager*  vis = nullptr;

@@ -417,10 +417,16 @@ struct EventTimingMetadata
     int cuda_driver_version{0};
     /** CUDA runtime version encoded by the CUDA runtime API. */
     int cuda_runtime_version{0};
+    /** Configured Geant4 CPU worker count; one selects serial execution. */
+    int num_threads{1};
+    /** Whether the full process-global CPU SEvt history recorder is active. */
+    bool cpu_recorder_enabled{true};
+    /** Torch input seed (fixed at zero), or -1 for non-torch sources. */
+    long torch_seed{-1};
 };
 
 /**
- * Records the blocking CPU/GPU timeline of a serial event stream.
+ * Records one event stream, with optional worker-local recording and master merge.
  *
  * An empty output path disables the recorder and makes lifecycle methods
  * no-ops. An enabled recorder accepts one active event at a time in this
@@ -434,7 +440,8 @@ struct EventTimingMetadata
  * The event sequence may repeat before Write(). Each boundary captures
  * monotonic, process-CPU, and thread-CPU time. This class is intentionally
  * single-threaded and validates both lifecycle order and nondecreasing
- * monotonic timestamps.
+ * monotonic timestamps. MT workers use separate instances, clone the master's
+ * origin with BeginRunFrom(), and merge only after all workers have stopped.
  */
 class SYSRAP_API EventTimingRecorder
 {
@@ -462,6 +469,18 @@ class SYSRAP_API EventTimingRecorder
      * @throws std::logic_error if an event is active
      */
     void BeginRun();
+    /** Set the worker identity before recording; -1 denotes serial/master. */
+    void SetWorkerId(int worker_id);
+    /** Start a worker run using the master's exact origin without sampling.
+     * Both recorders must be idle and the master run must have started.
+     */
+    void BeginRunFrom(const EventTimingRecorder& master);
+    /** Merge a completed worker once, rejecting different origins or duplicate
+     * event IDs. Call after workers finish; this method is not synchronized.
+     * Completed rows are sorted by event ID. BeginRunFrom() reuses a worker
+     * for the next run after its rows have been consumed by Merge().
+     */
+    void Merge(EventTimingRecorder& worker);
     /**
      * Starts CPU pre-processing for one event.
      *
@@ -493,6 +512,11 @@ class SYSRAP_API EventTimingRecorder
      * timestamp precedes its start
      */
     void EndGpu();
+    /** Marks release of the GPU dispatch gate after hit collection/reset.
+     * Optional for legacy callers, which use EndGpu() as the release boundary.
+     * Throws outside CPU post-processing or on a duplicate release.
+     */
+    void ReleaseGpu();
     /**
      * Completes the active event and records output hit counts.
      *
@@ -535,6 +559,7 @@ class SYSRAP_API EventTimingRecorder
     struct Row
     {
         int               event_id{-1};
+        int               worker_id{-1};
         std::int64_t      num_gensteps{0};
         std::int64_t      num_photons{0};
         std::size_t       num_gpu_hits{0};
@@ -543,6 +568,8 @@ class SYSRAP_API EventTimingRecorder
         EventTimingSample gpu_submit;
         EventTimingSample gpu_start;
         EventTimingSample gpu_end;
+        EventTimingSample gpu_release;
+        bool              gpu_released{false};
         EventTimingSample event_end;
     };
 
@@ -563,6 +590,8 @@ class SYSRAP_API EventTimingRecorder
     SampleProvider        provider_{nullptr};
     State                 state_{State::Idle};
     bool                  run_started_{false};
+    bool                  merged_{false};
+    int                   worker_id_{-1};
     int                   active_event_id_{-1};
     EventTimingSample     run_origin_;
     std::vector<Row>      rows_;
