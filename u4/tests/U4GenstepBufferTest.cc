@@ -53,8 +53,14 @@ int main()
     G4Electron::Definition();
     G4Material                                   material("buffer_test", 1., 1. * g / mole, 1. * g / cm3);
     std::vector<std::future<std::vector<quad6>>> workers;
+#ifdef G4MULTITHREADED
+    constexpr auto launch_policy = std::launch::async;
+#else
+    // Serial Geant4 allocators are shared: construct and destroy tracks on this thread.
+    constexpr auto launch_policy = std::launch::deferred;
+#endif
     for (int worker = 0; worker < 4; ++worker)
-        workers.push_back(std::async(std::launch::async, [&material, worker] {
+        workers.push_back(std::async(launch_policy, [&material, worker] {
             return Collect(&material, 3 + worker);
         }));
     for (int worker = 0; worker < 4; ++worker)
