@@ -56,6 +56,23 @@ static spho secondary = {} ;    // updated by U4::GenPhotonEnd   at end of photo
 
 static bool dump = false ;
 
+static void CollectGenstep(quad6& genstep, std::vector<quad6>* buffer)
+{
+    if (buffer)
+    {
+        // Match SEvt's optional per-event genstep selection without touching
+        // its process-global event, material mapping, counters, or labels.
+        if (SEvt::GIDX != -1 && SEvt::GIDX != static_cast<int>(buffer->size()))
+            genstep.set_numphoton(0);
+        buffer->push_back(genstep);
+        return;
+    }
+    gs = SEvt::AddGenstep(genstep);
+    if (dump)
+        std::cout << "U4::CollectGenstep " << gs.desc() << std::endl;
+    LOG(U4::LEVEL) << gs.desc();
+}
+
 /**
 MakeGenstep... Hidden Functions only usable from this translation unit
 ------------------------------------------------------------------------
@@ -145,6 +162,17 @@ void U4::CollectGenstep_Scintillation(
     G4int          scnt,
     G4double       ScintillationTime)
 {
+    CollectGenstep_Scintillation(aTrack, aStep, numPhotons, scnt, ScintillationTime, nullptr);
+}
+
+void U4::CollectGenstep_Scintillation(
+    const G4Track*      aTrack,
+    const G4Step*       aStep,
+    G4int               numPhotons,
+    G4int               scnt,
+    G4double            ScintillationTime,
+    std::vector<quad6>* gensteps)
+{
     if (getenv(CollectGenstep_Scintillation_DISABLE))
     {
         LOG(error) << CollectGenstep_Scintillation_DISABLE;
@@ -158,11 +186,7 @@ void U4::CollectGenstep_Scintillation(
 
     quad6 gs_ = MakeGenstep_Scintillation(aTrack, aStep, numPhotons, scnt, ScintillationTime);
 
-    gs = SEvt::AddGenstep(gs_);    // returns sgs struct which is a simple 4 int label
-    // gs is private static genstep label
-
-    // if(dump) std::cout << "U4::CollectGenstep_Scintillation " << gs.desc() << std::endl ;
-    LOG(LEVEL) << gs.desc();
+    CollectGenstep(gs_, gensteps);
 }
 
 
@@ -261,6 +285,23 @@ void U4::CollectGenstep_G4Cerenkov_modified(
     G4double    meanNumberOfPhotons1,
     G4double    meanNumberOfPhotons2)
 {
+    CollectGenstep_G4Cerenkov_modified(aTrack, aStep, numPhotons, betaInverse, pmin, pmax,
+                                       maxCos, maxSin2, meanNumberOfPhotons1, meanNumberOfPhotons2, nullptr);
+}
+
+void U4::CollectGenstep_G4Cerenkov_modified(
+    const G4Track*      aTrack,
+    const G4Step*       aStep,
+    G4int               numPhotons,
+    G4double            betaInverse,
+    G4double            pmin,
+    G4double            pmax,
+    G4double            maxCos,
+    G4double            maxSin2,
+    G4double            meanNumberOfPhotons1,
+    G4double            meanNumberOfPhotons2,
+    std::vector<quad6>* gensteps)
+{
 
     if(getenv(CollectGenstep_G4Cerenkov_modified_DISABLE))
     {
@@ -278,19 +319,8 @@ void U4::CollectGenstep_G4Cerenkov_modified(
 
     quad6 gs_ = MakeGenstep_G4Cerenkov_modified( aTrack, aStep, numPhotons, betaInverse, pmin, pmax, maxCos, maxSin2, meanNumberOfPhotons1, meanNumberOfPhotons2 );
 
-    gs = SEvt::AddGenstep(gs_);    // returns sgs struct which is a simple 4 int label
-    // gs is primate static genstep label
-    // TODO: avoid the duplication betweek C and S with common SetGenstep private method
-
-    if(dump) std::cout << "U4::CollectGenstep_G4Cerenkov_modified " << gs.desc() << std::endl ;
-    LOG(LEVEL) << gs.desc();
+    CollectGenstep(gs_, gensteps);
 }
-
-
-
-
-
-
 
 /**
 U4::GenPhotonAncestor

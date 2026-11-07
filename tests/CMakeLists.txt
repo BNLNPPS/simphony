@@ -101,6 +101,24 @@ add_simg4ox_integration_test(optical_particle_rejected)
 add_simg4ox_integration_test(zero_genstep_profile)
 add_simg4ox_integration_test(particle_stacking_rejected)
 
+if(Geant4_multithreaded_FOUND)
+    foreach(CHARGED_CASE IN ITEMS cerenkov scintillation zero)
+        set(CHARGED_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_charged_mt/${CHARGED_CASE}")
+        file(MAKE_DIRECTORY "${CHARGED_WORKDIR}")
+        add_test(
+            NAME "Integration.simg4ox_charged_mt.${CHARGED_CASE}"
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_charged_multithread.py
+                    $<TARGET_FILE:simg4ox> "${CHARGED_CASE}"
+        )
+        set_tests_properties("Integration.simg4ox_charged_mt.${CHARGED_CASE}" PROPERTIES
+            WORKING_DIRECTORY "${CHARGED_WORKDIR}"
+            LABELS "integration;multithread;timing"
+            TIMEOUT 240
+        )
+    endforeach()
+endif()
+
 set(SIMPHONY_SIMG4OX_MULTIEVENT_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_multievent")
 file(MAKE_DIRECTORY "${SIMPHONY_SIMG4OX_MULTIEVENT_TEST_WORKDIR}")
 

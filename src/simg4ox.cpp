@@ -146,15 +146,6 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Charged gensteps still use the process-global EGPU SEvt. Optical timing
-    // uses independent worker recorders and is safe with MT torch tracking.
-    if (num_threads > 1 && primary.enabled)
-    {
-        cerr << "charged-particle offload requires the serial Geant4 run manager (--threads 1)"
-             << endl;
-        return EXIT_FAILURE;
-    }
-
     EventTimingRecorder timing(cfg.event_timing_output);
     EventTimingMetadata timing_metadata;
     timing_metadata.geometry = std::filesystem::absolute(gdml_file).string();
