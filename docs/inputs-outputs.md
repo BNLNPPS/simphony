@@ -79,7 +79,9 @@ tracking is also run for validation.
 ### `simg4ox` execution model
 
 `simg4ox` gives the same generated torch photons to Geant4 CPU tracking and
-Simphony GPU tracking.
+Simphony GPU tracking. With `--particle e-` (or another charged primary), Geant4
+instead tracks the primaries and collects Cerenkov/scintillation gensteps for
+GPU optical transport; optical secondaries are not placed on the CPU stack.
 
 Select the Geant4 run manager with `--threads N`. `N=1`, the default, uses the
 serial run manager. `N>1` requires a multithreaded Geant4 build and creates `N`
@@ -97,6 +99,8 @@ share one process-wide Opticks GPU context, so GPU launches are serialized in
 event-ID order while Geant4 CPU tracking remains multithreaded. Run-wide CPU
 and GPU hits are merged in event-ID order. Full CPU-side Opticks photon-history
 recording is available only with the serial run manager.
+Charged MT gensteps are event-local until their worker acquires the GPU gate.
+Both source modes support `--threads N`.
 
 ## Defining primary particles
 

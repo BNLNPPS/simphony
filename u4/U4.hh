@@ -86,8 +86,10 @@ usage from detector framework code.  For example this is done by:
 **/
 
 #include "plog/Severity.h"
+#include <vector>
 
-struct NP ; 
+struct NP;
+struct quad6;
 class G4VParticleChange ; 
 class G4Track ; 
 class G4Step ; 
@@ -109,6 +111,16 @@ struct U4_API U4
         G4int          scnt,
         G4double       ScintillationTime);
 
+    // Explicit event-local sinks do not access SEvt or shared photon labels.
+    // Material indices remain tagged until the GPU owner appends the buffer.
+    static void CollectGenstep_Scintillation(
+        const G4Track*      aTrack,
+        const G4Step*       aStep,
+        G4int               numPhotons,
+        G4int               scnt,
+        G4double            ScintillationTime,
+        std::vector<quad6>* gensteps);
+
     static const char* CollectGenstep_G4Cerenkov_modified_DISABLE ; 
     static const char* CollectGenstep_G4Cerenkov_modified_ZEROPHO ; 
     static void CollectGenstep_G4Cerenkov_modified( 
@@ -123,6 +135,19 @@ struct U4_API U4
         G4double    meanNumberOfPhotons1,
         G4double    meanNumberOfPhotons2
     );
+
+    static void CollectGenstep_G4Cerenkov_modified(
+        const G4Track*      aTrack,
+        const G4Step*       aStep,
+        G4int               numPhotons,
+        G4double            betaInverse,
+        G4double            pmin,
+        G4double            pmax,
+        G4double            maxCos,
+        G4double            maxSin2,
+        G4double            meanNumberOfPhotons1,
+        G4double            meanNumberOfPhotons2,
+        std::vector<quad6>* gensteps);
 
     // optical photon labelling 
     static void GenPhotonAncestor(const G4Track* aTrack );                    // prior to photon generation loop(s)

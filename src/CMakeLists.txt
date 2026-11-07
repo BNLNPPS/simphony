@@ -23,7 +23,7 @@ target_include_directories(consgeo PRIVATE
 )
 target_link_libraries(consgeo simphony_argparse)
 
-# simg4ox validates torch photons with serial/MT Geant4 and serialized OptiX launches
+# simg4ox supports torch and charged primaries with serial/MT Geant4 and serialized OptiX launches
 add_executable(simg4ox simg4ox.cpp g4app.h)
 target_compile_definitions(simg4ox PRIVATE SIMPHONY_VERSION="${PROJECT_VERSION}")
 

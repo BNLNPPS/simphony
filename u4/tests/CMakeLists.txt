@@ -30,6 +30,7 @@ set(TEST_SOURCES
    U4MaterialLegacyReemissionTest.cc
    U4ScintSpectrumTest.cc
    U4GenstepTest.cc
+   U4GenstepBufferTest.cc
    U4PhysicsStackingTest.cc
    U4MaterialPropertyVectorTest.cc
    U4TrackInfoTest.cc 

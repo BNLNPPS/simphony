@@ -68,9 +68,10 @@ agreement and whole-job throughput before choosing a production setting.
 ### Interpreting `simg4ox` MT timings
 
 `simg4ox --threads N` parallelizes Geant4 CPU tracking of its configured torch
-photons. It does not run multiple Simphony launches concurrently: the current
-process-wide GPU event context requires launches to be serialized in event-ID
-order. Consequently, an end-to-end `simg4ox` wall-clock measurement includes
+photons or charged primaries selected with `--particle`. It does not run multiple
+Simphony launches concurrently: the process-wide GPU event context requires
+launches to be serialized in event-ID order. Consequently, an end-to-end
+`simg4ox` wall-clock measurement includes
 parallel CPU work plus serialized GPU work and should not be interpreted as a
 pure GPU speed-up measurement.
 
@@ -80,8 +81,26 @@ Use `--no-cpu-recorder` with the optical torch source to compare serial and MT
 execution with the same CPU recording behavior. Both paths then omit the full
 CPU SEvt history/stepping recorder while retaining normal Geant4 tracking,
 velocity handling, and sensitive-detector hit collection. MT always uses this
-recording mode. The flag is rejected with `--particle`; charged-particle offload
-continues to require `--threads 1`.
+recording mode. The flag is rejected with `--particle`. Charged MT workers collect
+Cerenkov/scintillation gensteps in event-local buffers and transfer them to EGPU
+only after acquiring the GPU gate. Each worker waits for its event's GPU result;
+other workers can continue charged tracking. Genstep staging under that gate is
+included in host-observed GPU service time. Serial charged collection retains
+its existing direct-to-EGPU path.
+
+For example, run 20 GeV/c electrons in pfRICH with four CPU workers:
+
+```bash
+simg4ox -g tests/geom/pfrich_min_FINAL.gdml -c pfrich \
+    -m tests/run_mt.mac --particle e- --momentum-gev-c 20 \
+    --multiplicity 10 --threads 4 --seed 42
+```
+
+To compare CPU worker counts, run the same geometry, source configuration, and
+event macro with `--threads 1`, `2`, `4`, or `8`. Use a separate working directory
+or `event.output_dir` for each run. Enable `event_timing.output` to record the
+per-event CPU/GPU timelines described below. Keep the source settings, event
+count, random seeds, and GPU configuration fixed when comparing runs.
 
 Torch input generation uses seed zero for each event. The timing manifest
 records `torch_seed: 0` and labels these as fixed-input timing repeats. The
@@ -200,34 +219,20 @@ scripts/run_pfrich_timing.sh /tmp/simphony-pfrich-profiled pfrich_profiled
 
 The runner creates `pfrich_timing/events.csv`,
 `pfrich_timing/events.manifest.json`, and `pfrich_timing/simg4ox.stdout.log`.
-The output format was motivated by
-[teerex](https://github.com/plexoos/teerex), an external project for visualizing
-CPU/GPU scheduling. The CSV includes the timeline columns used by teerex:
-`scenario`, `dispatch_mode`, event and CPU phase boundaries, GPU
+The CSV records `scenario`, `dispatch_mode`, event and CPU phase boundaries, GPU
 submit/start/end and wait boundaries, run-local offsets, and measured durations.
 Producer-specific particle, genstep, photon, and hit columns are retained.
 
-The teerex marimo notebook, `notebooks/simload.py` in a teerex checkout, can
-visualize the results and compare a measured run with simulated blocking and
-asynchronous scheduling:
+For an MT timeline, group CPU generation and post-processing intervals by
+`worker_id` and plot GPU service intervals on a separate lane. Queue and GPU
+wait intervals describe workers waiting for results; they are not CPU busy
+time. Keep each run's monotonic origin separate when comparing independent
+processes.
 
-```bash
-cd /path/to/teerex
-uv run marimo edit notebooks/simload.py
-```
-
-The notebook accepts arbitrary CSV paths through its input control. The first
-event includes CUDA and OptiX warm-up, so steady-state comparisons should report
-it separately or exclude it explicitly. This small run matches the table's
-pfrich particle and momentum, but not its `10^5`-muon statistics.
-
-For an automated, headless busy-lane plot with numerical makespan and CPU/GPU
-busy totals:
-
-```bash
-cd /path/to/teerex
-MPLBACKEND=Agg uv run python -c 'from pathlib import Path; from teerex.analysis import read_many_csv, plot_run_timeline; p=Path("/tmp/simphony-pfrich-profiled/events.csv"); df=read_many_csv([p]); plot_run_timeline(df, run="simg4ox_blocking", outdir=p.parent, filename="cpu_gpu_busy_timeline.png")'
-```
+Initial events include CUDA, OptiX, and worker warm-up effects. Preserve the raw
+data and report any exclusions explicitly when comparing steady-state timings.
+This small run matches the table's pfrich particle and momentum, but not its
+`10^5`-muon statistics.
 
 ## Debug analysis with `optiphy/ana/photon_history_summary.py`
 

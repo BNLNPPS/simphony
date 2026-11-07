@@ -231,6 +231,31 @@ struct PrimaryPhotonInfo : G4VUserEventInformation
     std::vector<sphoton> photons;
 };
 
+struct PrimaryGenstepInfo : G4VUserEventInformation
+{
+    std::vector<quad6> gensteps;
+
+    void Print() const override
+    {
+    }
+
+    static PrimaryGenstepInfo& Get(const G4Event* event)
+    {
+        auto* info = dynamic_cast<PrimaryGenstepInfo*>(event->GetUserInformation());
+        if (!info)
+            throw std::runtime_error("Charged MT event is missing its genstep buffer");
+        return *info;
+    }
+
+    std::int64_t PhotonCount() const
+    {
+        std::int64_t count = 0;
+        for (const auto& genstep : gensteps)
+            count += genstep.numphoton();
+        return count;
+    }
+};
+
 struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 {
     simphony::Config      cfg;
@@ -255,6 +280,8 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
 
         if (primary.enabled)
         {
+            if (!sev)
+                event->SetUserInformation(new PrimaryGenstepInfo);
             G4ParticleDefinition* definition = G4ParticleTable::GetParticleTable()->FindParticle(primary.particle);
             if (!definition)
                 throw std::runtime_error("Unknown Geant4 particle: " + primary.particle);
@@ -511,6 +538,16 @@ struct EventAction : G4UserEventAction
             SEvt::SetInputPhoton(shared_state->input_photon.get());
         }
 
+        if (particle_source && !sev && has_gpu_work)
+        {
+            // Workers collect only into their G4Event. EGPU, material mapping,
+            // and all global Opticks state are accessed exclusively under the
+            // same gate as launch, hit collection, and reset.
+            SEvt* gpu_event = SEvt::Get_EGPU();
+            for (auto& genstep : PrimaryGenstepInfo::Get(event).gensteps)
+                gpu_event->addGenstep(genstep);
+        }
+
         std::vector<sphoton> gpu_hits;
         if (has_gpu_work)
         {
@@ -548,10 +585,16 @@ struct EventAction : G4UserEventAction
         const G4int event_id = event->GetEventID();
         std::int64_t num_gensteps = 0;
         std::int64_t num_photons = 0;
-        if (particle_source)
+        if (particle_source && sev)
         {
             num_gensteps = sev->getNumGenstepFromGenstep();
             num_photons = sev->getNumPhotonFromGenstep();
+        }
+        else if (particle_source)
+        {
+            const auto& input = PrimaryGenstepInfo::Get(event);
+            num_gensteps = static_cast<std::int64_t>(input.gensteps.size());
+            num_photons = input.PhotonCount();
         }
         else if (sev)
         {
@@ -675,6 +718,8 @@ struct SteppingAction : G4UserSteppingAction
     void CollectGensteps(const G4Step* step)
     {
         G4EventManager*    event_manager = G4EventManager::GetEventManager();
+        std::vector<quad6>* gensteps = sev ? nullptr
+                                           : &PrimaryGenstepInfo::Get(event_manager->GetConstCurrentEvent()).gensteps;
         G4TrackingManager* tracking_manager = event_manager ? event_manager->GetTrackingManager() : nullptr;
         G4SteppingManager* stepping_manager =
             tracking_manager ? tracking_manager->GetSteppingManager() : nullptr;
@@ -716,7 +761,7 @@ struct SteppingAction : G4UserSteppingAction
                 const G4double mean2 = cerenkov->GetAverageNumberOfPhotons(charge, beta2, material, rindex);
 
                 U4::CollectGenstep_G4Cerenkov_modified(track, step, num_photons, beta_inverse, pmin, pmax, max_cos,
-                                                       max_sin2, mean1, mean2);
+                                                       max_sin2, mean1, mean2, gensteps);
             }
             else if (process->GetProcessName() == "Scintillation")
             {
@@ -736,7 +781,7 @@ struct SteppingAction : G4UserSteppingAction
                     if (plan.counts[component] <= 0)
                         continue;
                     U4::CollectGenstep_Scintillation(
-                        track, step, plan.counts[component], component, plan.times[component]);
+                        track, step, plan.counts[component], component, plan.times[component], gensteps);
                 }
             }
         }
@@ -983,7 +1028,7 @@ struct ActionInitialization : G4VUserActionInitialization
         SetUserAction(new EventAction(sev, shared_state, multithreaded, primary.enabled, local_timing));
         SetUserAction(new TrackingAction(sev));
 
-        if (sev)
+        if (sev || primary.enabled)
             SetUserAction(new SteppingAction(sev, primary.enabled));
     }
 };
