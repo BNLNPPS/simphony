@@ -23,7 +23,7 @@ rm -f "${PWD}/g_hits.npy" "${PWD}/s_hits.npy" "${RUN_LOG}" \
     -c dev_timing \
     -s 42 \
     --no-cpu-recorder \
-    --threads "${THREADS}" 2>&1 | tee "${RUN_LOG}"
+    --threads "${THREADS}" --gpu-dispatch direct 2>&1 | tee "${RUN_LOG}"
 
 "${PYTHON}" "${REPO_DIR}/tests/check_simg4ox_multievent.py" \
     --log "${RUN_LOG}" \

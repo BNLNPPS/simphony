@@ -860,6 +860,11 @@ std::filesystem::path EventTimingProfile::Path()
     return FormatIndex(pattern, profile_path_index);
 }
 
+void EventTimingProfile::WriteStaged(const std::filesystem::path& path)
+{
+    WriteChecked(path, SerializeCsv(Records()));
+}
+
 void EventTimingProfile::Write(EventTimingWriteMode mode)
 {
     if (!Enabled())
@@ -1107,6 +1112,36 @@ void EventTimingRecorder::EndGpu()
     state_ = State::CpuPost;
 }
 
+void EventTimingRecorder::SetGpuDevice(int ordinal, const std::string& uuid)
+{
+    if (!enabled())
+        return;
+    RequireState(State::CpuPost, "assign GPU device");
+    if (ordinal < 0 || uuid.empty())
+        throw std::logic_error("GPU identity requires a nonnegative ordinal and UUID");
+    auto& row = ActiveRow();
+    row.gpu_device_id = ordinal;
+    row.gpu_uuid = uuid;
+}
+
+void EventTimingRecorder::SetGpuService(int ordinal, const std::string& uuid,
+                                        std::int64_t start_ns, std::int64_t end_ns,
+                                        std::int64_t cleanup_end_ns)
+{
+    if (!enabled())
+        return;
+    RequireState(State::CpuPost, "record GPU helper service");
+    auto& row = ActiveRow();
+    if (!(row.gpu_start.steady_time_ns <= start_ns && start_ns <= end_ns &&
+          end_ns <= cleanup_end_ns && cleanup_end_ns <= row.gpu_end.steady_time_ns))
+        throw std::logic_error("GPU helper service must lie inside its parent call interval");
+    SetGpuDevice(ordinal, uuid);
+    row.service_start_ns = start_ns;
+    row.service_end_ns = end_ns;
+    row.cleanup_end_ns = cleanup_end_ns;
+    row.helper_service = true;
+}
+
 void EventTimingRecorder::ReleaseGpu()
 {
     if (!enabled())
@@ -1155,7 +1190,9 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
            "num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,"
            "process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s,"
            "gpu_release_time,gpu_release_time_offset_s,cpu_post_locked_runtime_s,"
-           "cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads\n";
+           "cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads,"
+           "gpu_device_id,gpu_uuid,gpu_service_start_offset_s,gpu_service_end_offset_s,"
+           "gpu_cleanup_end_offset_s,gpu_dispatch\n";
 
     csv << std::setprecision(std::numeric_limits<double>::max_digits10);
     for (const Row& row : rows_)
@@ -1214,7 +1251,17 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
             << duration(row.gpu_end, row.gpu_release) << ','
             << duration(row.gpu_release, row.event_end) << ','
             << duration(row.gpu_start, row.gpu_release) << ','
-            << row.worker_id << ',' << metadata.num_threads << '\n';
+            << row.worker_id << ',' << metadata.num_threads << ','
+            << row.gpu_device_id << ',' << CsvField(row.gpu_uuid) << ',';
+        if (row.gpu_device_id < 0)
+            csv << "0,0,0,";
+        else if (row.helper_service)
+            csv << Seconds(row.service_start_ns - run_origin_.steady_time_ns) << ','
+                << Seconds(row.service_end_ns - run_origin_.steady_time_ns) << ','
+                << Seconds(row.cleanup_end_ns - run_origin_.steady_time_ns) << ',';
+        else
+            csv << offset(row.gpu_start) << ',' << offset(row.gpu_end) << ',' << offset(row.gpu_release) << ',';
+        csv << CsvField(metadata.gpu_dispatch) << '\n';
     }
     return csv.str();
 }
@@ -1237,6 +1284,17 @@ std::string EventTimingRecorder::SerializeManifest(const EventTimingMetadata& me
     manifest.js["primary_multiplicity"] = metadata.primary_multiplicity;
     manifest.js["random_seed"] = metadata.random_seed;
     manifest.js["gpu_name"] = metadata.gpu_name;
+    manifest.js["gpu_dispatch"] = metadata.gpu_dispatch;
+    manifest.js["num_gpus"] = metadata.gpu_devices.size();
+    manifest.js["gpu_devices"] = nlohmann::json::array();
+    for (const auto& device : metadata.gpu_devices)
+        manifest.js["gpu_devices"].push_back({{"ordinal", device.ordinal}, {"uuid", device.uuid}, {"name", device.name}, {"memory_bytes", device.memory_bytes}});
+    manifest.js["gpu_service_clock"] = "Linux CLOCK_MONOTONIC shared across local processes; offsets from parent run origin";
+    manifest.js["gpu_call_scope"] = metadata.gpu_dispatch == "pool"
+                                        ? "parent request through reply receipt, including IPC and helper cleanup"
+                                        : "direct staging and simulation through synchronization; excludes hit copy and reset";
+    manifest.js["gpu_service_scope"] = "staging and simulation through synchronization; host-observed, not hardware utilization";
+    manifest.js["gpu_cleanup_scope"] = "service end through hit copy and reset; excludes reply transfer";
     manifest.js["gpu_device_id"] = metadata.gpu_device_id;
     manifest.js["gpu_memory_bytes"] = metadata.gpu_memory_bytes;
     manifest.js["cuda_driver_version"] = metadata.cuda_driver_version;
@@ -1264,10 +1322,6 @@ void EventTimingRecorder::Write(const EventTimingMetadata& metadata) const
 {
     if (!enabled())
         return;
-    RequireState(State::Idle, "write output");
-    if (active_event_id_ >= 0)
-        throw std::logic_error("EventTimingRecorder cannot write with an active event");
-
     const std::filesystem::path manifest = ManifestPath();
     const std::filesystem::path parent = output_.parent_path();
     if (!parent.empty())
@@ -1283,8 +1337,7 @@ void EventTimingRecorder::Write(const EventTimingMetadata& metadata) const
     const std::filesystem::path manifest_temporary = TemporaryPath(manifest);
     try
     {
-        WriteChecked(csv_temporary, SerializeCsv(metadata));
-        WriteChecked(manifest_temporary, SerializeManifest(metadata));
+        WriteStaged(metadata, csv_temporary, manifest_temporary);
         ReplaceFile(csv_temporary, output_);
         ReplaceFile(manifest_temporary, manifest);
     }
@@ -1295,4 +1348,15 @@ void EventTimingRecorder::Write(const EventTimingMetadata& metadata) const
         std::filesystem::remove(manifest_temporary, ignored);
         throw;
     }
+}
+
+void EventTimingRecorder::WriteStaged(const EventTimingMetadata& metadata, const std::filesystem::path& csv,
+                                      const std::filesystem::path& manifest) const
+{
+    RequireState(State::Idle, "write output");
+    if (active_event_id_ >= 0)
+        throw std::logic_error("EventTimingRecorder cannot write with an active event");
+
+    WriteChecked(csv, SerializeCsv(metadata));
+    WriteChecked(manifest, SerializeManifest(metadata));
 }

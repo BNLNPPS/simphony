@@ -626,6 +626,7 @@ struct U
     static void        WriteString( const char* dir, const char* reldir, const char* name, const char* str );
     static void        WriteString( const char* dir, const char* name, const char* str );
     static void        WriteString( const char* path, const char* str );
+    static void CloseOutput(std::ofstream& stream, const char* path);
 
     static const char* ReadString( const char* dir, const char* reldir, const char* name);
     static const char* ReadString( const char* dir, const char* name);
@@ -1866,6 +1867,15 @@ inline void U::WriteString( const char* dir, const char* name, const char* str )
     WriteString(path.c_str(), str);
 }
 
+// close() also flushes buffered data. Both earlier write failures and flush/close
+// failures leave the stream failed, including an unsuccessful open.
+inline void U::CloseOutput(std::ofstream& stream, const char* path)
+{
+    stream.close();
+    if (!stream)
+        throw std::runtime_error(std::string("Unable to write output file: ") + path);
+}
+
 inline void U::WriteString( const char* path, const char* str )  // static
 {
     if(str == nullptr) return ;
@@ -1874,7 +1884,7 @@ inline void U::WriteString( const char* path, const char* str )  // static
 
     std::ofstream fp(path, std::ios::out);
     fp << str ;
-    fp.close();
+    CloseOutput(fp, path);
 }
 
 

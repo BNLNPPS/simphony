@@ -822,6 +822,12 @@ limits are the cause.
 
 void QSim::MaybeSaveIGS(int eventID, NP* igs) // static
 {
+    if (INSTANCE && INSTANCE->save_genstep_dump)
+    {
+        if (igs && SAVE_IGS_EVENTID == eventID)
+            INSTANCE->save_genstep_dump(*igs);
+        return;
+    }
     bool igs_null = igs == nullptr ;
     const char* igs_path = SAVE_IGS_PATH ? spath::Resolve(SAVE_IGS_PATH) : nullptr ;
     bool save_igs = igs && SAVE_IGS_EVENTID == eventID && igs_path ;

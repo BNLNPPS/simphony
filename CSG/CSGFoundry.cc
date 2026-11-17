@@ -2715,6 +2715,22 @@ void CSGFoundry::save(const char* base, const char* rel) const
     save_(dir.c_str());
 }
 
+void CSGFoundry::saveSnapshot(const char* base)
+{
+    const char* filter = save_opt;
+    save_opt = nullptr;
+    try
+    {
+        save(base);
+    }
+    catch (...)
+    {
+        save_opt = filter;
+        throw;
+    }
+    save_opt = filter;
+}
+
 /**
 CSGFoundry::saveAlt
 -----------------------

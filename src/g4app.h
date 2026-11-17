@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -55,6 +56,10 @@
 #include "G4VUserEventInformation.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
+#include "CSGFoundry.h"
+#include "GpuDirectory.h"
+#include "GpuEventPool.h"
+#include "RunOutput.h"
 #include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/SEvt.hh"
@@ -176,22 +181,55 @@ struct PhotonSD : public G4VSensitiveDetector
 
 struct DetectorConstruction : G4VUserDetectorConstruction
 {
-    std::filesystem::path gdml_file_;
-    G4GDMLParser          parser_;
+    std::filesystem::path     gdml_file_;
+    G4GDMLParser              parser_;
+    const simphony::Config&   config_;
+    simphony::GpuPoolOptions* gpu_options_;
 
-    DetectorConstruction(std::filesystem::path gdml_file) :
-        gdml_file_(std::move(gdml_file))
+    DetectorConstruction(std::filesystem::path gdml_file, const simphony::Config& config,
+                         simphony::GpuPoolOptions* gpu_options) :
+        gdml_file_(std::move(gdml_file)),
+        config_(config),
+        gpu_options_(gpu_options)
     {
     }
 
     G4VPhysicalVolume* Construct() override
     {
-        parser_.Read(gdml_file_.string(), false);
-        G4VPhysicalVolume* world = parser_.GetWorldVolume();
-
-        simphony::initialize(world);
-
-        return world;
+        try
+        {
+            if (gpu_options_ && !gpu_options_->geometry.empty())
+            {
+                std::filesystem::remove_all(gpu_options_->geometry);
+                gpu_options_->geometry.clear();
+            }
+            parser_.Read(gdml_file_.string(), false);
+            G4VPhysicalVolume*        world = parser_.GetWorldVolume();
+            simphony::GeometryOptions options;
+            if (gpu_options_)
+                options.gpu = simphony::GpuRequirement::Disabled;
+            simphony::initialize(world, options);
+            if (gpu_options_)
+            {
+                // GDML parsing can abort inside Geant4. Allocate the private
+                // snapshot only once the world has been translated successfully.
+                gpu_options_->geometry = simphony::CreateUniqueDirectory(
+                    std::filesystem::temp_directory_path() / "simg4ox-geometry-XXXXXX");
+                gpu_options_->config_file = gpu_options_->geometry / "config.json";
+                config_.WriteSnapshot(gpu_options_->config_file);
+                CSGFoundry::Get()->saveSnapshot(gpu_options_->geometry.c_str());
+            }
+            return world;
+        }
+        catch (...)
+        {
+            if (gpu_options_ && !gpu_options_->geometry.empty())
+            {
+                std::error_code ignored;
+                std::filesystem::remove_all(gpu_options_->geometry, ignored);
+            }
+            throw;
+        }
     }
 
     void ConstructSDandField() override
@@ -401,6 +439,10 @@ struct Simg4oxSharedState
     std::condition_variable gpu_turn;
     std::unique_ptr<NP>     input_photon;
     G4int                   next_gpu_event{0};
+    std::optional<simphony::GpuPoolOptions>           gpu_options;
+    std::unique_ptr<simphony::GpuEventPool>           gpu_pool;
+    std::vector<simphony::GpuDevice>                  gpu_devices;
+    std::once_flag                                    gpu_snapshot_cleanup;
     EventTimingRecorder*                              master_timing{nullptr};
     std::mutex                                        timing_mutex;
     std::vector<std::unique_ptr<EventTimingRecorder>> worker_timings;
@@ -429,10 +471,48 @@ struct Simg4oxSharedState
             master_timing->Merge(*worker);
     }
 
-    void BeginRun()
+    ~Simg4oxSharedState()
+    {
+        gpu_pool.reset();
+        RemoveGpuSnapshot();
+    }
+
+    void RemoveGpuSnapshot(const char* failure = nullptr) noexcept
+    {
+        // Concurrent failed workers must all wait for one complete removal
+        // before any of them can escape into Geant4's termination path.
+        std::call_once(gpu_snapshot_cleanup, [&] {
+            if (gpu_options)
+            {
+                std::error_code ignored;
+                std::filesystem::remove_all(gpu_options->geometry, ignored);
+            }
+            // Several workers may throw the same pool failure. Publish its
+            // diagnosis before any can enter std::terminate concurrently.
+            if (failure)
+                std::cerr << "simg4ox GPU failure: " << failure << std::endl;
+        });
+    }
+
+    void BeginRun(int run_id)
     {
         std::lock_guard lock(gpu_mutex);
         next_gpu_event = 0;
+        if (gpu_options)
+        {
+            auto options = *gpu_options;
+            options.run_id = run_id;
+            options.output /= "run-" + std::to_string(run_id);
+            try
+            {
+                gpu_pool = std::make_unique<simphony::GpuEventPool>(std::move(options));
+            }
+            catch (const std::exception& error)
+            {
+                RemoveGpuSnapshot(error.what());
+                throw;
+            }
+        }
     }
 };
 
@@ -510,10 +590,10 @@ struct EventAction : G4UserEventAction
 
     std::vector<sphoton> SimulateOnGPU(const G4Event* event, bool has_gpu_work)
     {
-        const PrimaryPhotonInfo* primary_info = nullptr;
+        PrimaryPhotonInfo* primary_info = nullptr;
         if (!sev && !particle_source)
         {
-            primary_info = dynamic_cast<const PrimaryPhotonInfo*>(event->GetUserInformation());
+            primary_info = dynamic_cast<PrimaryPhotonInfo*>(event->GetUserInformation());
             if (!primary_info)
             {
                 G4Exception("EventAction::SimulateOnGPU", "MissingPrimaryPhotonInfo", FatalException,
@@ -522,7 +602,49 @@ struct EventAction : G4UserEventAction
             }
         }
 
-        const G4int      event_id = event->GetEventID();
+        const G4int event_id = event->GetEventID();
+        if (shared_state->gpu_pool)
+        {
+            if (!has_gpu_work)
+            {
+                if (timing)
+                {
+                    timing->BeginGpu();
+                    timing->EndGpu();
+                    timing->ReleaseGpu();
+                }
+                return {};
+            }
+            simphony::GpuPayload payload;
+            payload.event_id = event_id;
+            payload.charged = particle_source;
+            if (particle_source)
+                payload.gensteps = std::move(PrimaryGenstepInfo::Get(event).gensteps);
+            else
+                payload.photons = std::move(primary_info->photons);
+            try
+            {
+                auto lease = shared_state->gpu_pool->Acquire(std::move(payload));
+                if (timing)
+                    timing->BeginGpu();
+                auto result = lease.Simulate();
+                if (timing)
+                {
+                    timing->EndGpu();
+                    timing->SetGpuService(lease.device().ordinal, lease.device().uuid,
+                                          result.service_start_ns, result.service_end_ns, result.cleanup_end_ns);
+                    timing->ReleaseGpu();
+                }
+                return std::move(result.hits);
+            }
+            catch (const std::exception& error)
+            {
+                // Geant4 may terminate on a worker exception instead of unwinding
+                // the master's shared state. Helpers already loaded the snapshot.
+                shared_state->RemoveGpuSnapshot(error.what());
+                throw;
+            }
+        }
         std::unique_lock lock(shared_state->gpu_mutex);
         if (order_gpu_events)
             shared_state->gpu_turn.wait(lock, [&] { return event_id == shared_state->next_gpu_event; });
@@ -572,7 +694,11 @@ struct EventAction : G4UserEventAction
         if (order_gpu_events)
             ++shared_state->next_gpu_event;
         if (timing)
+        {
+            if (has_gpu_work && !shared_state->gpu_devices.empty())
+                timing->SetGpuDevice(shared_state->gpu_devices.front().ordinal, shared_state->gpu_devices.front().uuid);
             timing->ReleaseGpu();
+        }
         lock.unlock();
         if (order_gpu_events)
             shared_state->gpu_turn.notify_all();
@@ -920,7 +1046,7 @@ struct RunAction : G4UserRunAction
         return new Simg4oxRun;
     }
 
-    void BeginOfRunAction(const G4Run*) override
+    void BeginOfRunAction(const G4Run* run) override
     {
         if (G4Threading::IsWorkerThread())
         {
@@ -939,44 +1065,62 @@ struct RunAction : G4UserRunAction
                     "Particle-source mode requires Cerenkov and scintillation photon stacking to remain disabled");
                 return;
             }
-            shared_state->BeginRun();
+            shared_state->BeginRun(run->GetRunID());
             if (timing)
                 timing->BeginRun();
         }
     }
 
-    void SaveHits(const std::vector<sphoton>& source, const char* name) const
+    static void SaveHits(const std::vector<sphoton>& source, const std::filesystem::path& path)
     {
-        NP* hits = NP::Make<float>(source.size(), 4, 4);
+        std::unique_ptr<NP> hits(NP::Make<float>(source.size(), 4, 4));
         if (!source.empty())
             std::memcpy(hits->bytes(), source.data(), source.size() * sizeof(sphoton));
-
-        hits->save(cfg.output_dir.string().c_str(), name);
-        delete hits;
+        hits->save(path.c_str());
     }
 
     void EndOfRunAction(const G4Run* run) override
     {
-        // The master action runs after the worker-completion barrier and
-        // publishes the complete, merged result.
+        // The master action runs after the worker-completion barrier.
         if (G4Threading::IsWorkerThread())
             return;
 
-        const auto* simg4ox_run = static_cast<const Simg4oxRun*>(run);
-        auto        gpu_hits = simg4ox_run->GPUHits();
-        auto        g4_hits = simg4ox_run->G4Hits();
-
-        SaveHits(gpu_hits, "s_hits.npy");
-        SaveHits(g4_hits, "g_hits.npy");
-        G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << gpu_hits.size() << G4endl;
-        G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << g4_hits.size() << G4endl;
-        if (timing)
+        try
         {
-            shared_state->MergeTimings();
-            timing->Write(timing_metadata);
-            G4cout << "RunAction::EndOfRunAction: Event timing: " << timing->output() << G4endl;
+            if (shared_state->gpu_pool)
+            {
+                shared_state->gpu_pool->Finish();
+                shared_state->gpu_pool.reset();
+            }
+            const auto* simg4ox_run = static_cast<const Simg4oxRun*>(run);
+            auto        gpu_hits = simg4ox_run->GPUHits();
+            auto        g4_hits = simg4ox_run->G4Hits();
+
+            simphony::RunOutput output;
+            SaveHits(gpu_hits, output.Stage(cfg.output_dir / "s_hits.npy"));
+            SaveHits(g4_hits, output.Stage(cfg.output_dir / "g_hits.npy"));
+            if (timing)
+            {
+                shared_state->MergeTimings();
+                const auto csv = output.Stage(timing->output());
+                const auto manifest = output.Stage(timing->ManifestPath());
+                timing->WriteStaged(timing_metadata, csv, manifest);
+            }
+            if (EventTimingProfile::Enabled())
+                EventTimingProfile::WriteStaged(output.Stage(EventTimingProfile::Path()));
+            output.Publish();
+
+            G4cout << "RunAction::EndOfRunAction: Total GPU hits: " << gpu_hits.size() << G4endl;
+            G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << g4_hits.size() << G4endl;
+            if (timing)
+                G4cout << "RunAction::EndOfRunAction: Event timing: " << timing->output() << G4endl;
         }
-        EventTimingProfile::Write(EventTimingWriteMode::Replace);
+        catch (const std::exception& error)
+        {
+            if (shared_state->gpu_options)
+                shared_state->RemoveGpuSnapshot(error.what());
+            throw;
+        }
     }
 };
 

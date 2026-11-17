@@ -66,6 +66,10 @@ def main() -> None:
             if missing:
                 raise AssertionError(f"Missing MT gate measurements: {sorted(missing)}")
 
+    manifest_path = args.timing_csv.with_suffix(".manifest.json")
+    manifest = json.loads(manifest_path.read_text())
+    devices = {device["ordinal"]: device["uuid"] for device in manifest.get("gpu_devices", [])}
+    gpu_intervals = {}
     previous_release = -math.inf
     worker_end = {}
     expected_dispatch = "synchronous" if args.threads > 1 else "blocking"
@@ -104,13 +108,44 @@ def main() -> None:
         event_end = float(row["end_offset_s"])
         if not math.isfinite(release) or not gpu_end <= release <= event_end:
             raise AssertionError(f"Event {event_id} has an invalid GPU gate release boundary")
-        if float(row["gpu_start_time_offset_s"]) + 1e-9 < previous_release:
-            raise AssertionError(f"Event {event_id} GPU dispatch gate overlaps the previous event")
-        previous_release = release
+        gpu_start = float(row["gpu_start_time_offset_s"])
+        backend = "direct"  # Legacy rows used the direct event-ID gate.
+        if "gpu_device_id" in row:
+            backend = row.get("gpu_dispatch")
+            if backend not in ("direct", "pool") or backend != manifest.get("gpu_dispatch"):
+                raise AssertionError(f"Event {event_id} has an unknown or inconsistent GPU backend")
+            device = int(row["gpu_device_id"])
+            has_work = int(row["num_photons"]) > 0 or int(row.get("num_gensteps", 0)) > 0
+            service = [float(row[column]) for column in
+                       ("gpu_service_start_offset_s", "gpu_service_end_offset_s", "gpu_cleanup_end_offset_s")]
+            if device >= 0:
+                if not has_work:
+                    raise AssertionError(f"Event {event_id} assigns a GPU to zero work")
+                if devices.get(device) != row["gpu_uuid"]:
+                    raise AssertionError(f"Event {event_id} references an unknown GPU")
+                limit = gpu_end if backend == "pool" else release
+                bounds = [gpu_start, *service, limit]
+                if not all(math.isfinite(value) for value in bounds) or any(
+                    right + 1e-9 < left for left, right in zip(bounds, bounds[1:])
+                ):
+                    raise AssertionError(f"Event {event_id} has invalid helper service boundaries")
+                if backend == "direct" and any(not math.isclose(a, b, rel_tol=0, abs_tol=1e-9)
+                    for a, b in zip(service, (gpu_start, gpu_end, release))):
+                    raise AssertionError(f"Event {event_id} direct service differs from parent boundaries")
+                if backend == "pool":
+                    gpu_intervals.setdefault(device, []).append((gpu_start, release))
+            elif device != -1 or has_work or row["gpu_uuid"]:
+                raise AssertionError(f"Event {event_id} has GPU work without a device assignment")
+            elif any(value != 0 for value in service):
+                raise AssertionError(f"Event {event_id} must have empty GPU service for zero work")
+        if backend == "direct":
+            if gpu_start + 1e-9 < previous_release:
+                raise AssertionError(f"Event {event_id} GPU dispatch gate overlaps or precedes the previous event's gate")
+            previous_release = release
         for column, expected in (
             ("cpu_post_locked_runtime_s", release - gpu_end),
             ("cpu_post_unlocked_runtime_s", event_end - release),
-            ("gpu_gate_runtime_s", release - float(row["gpu_start_time_offset_s"])),
+            ("gpu_gate_runtime_s", release - gpu_start),
         ):
             if column in row and not math.isclose(float(row[column]), expected, rel_tol=1e-6, abs_tol=1e-9):
                 raise AssertionError(f"Event {event_id} has inconsistent {column}")
@@ -132,8 +167,10 @@ def main() -> None:
         if args.require_photons and int(row["num_photons"]) <= 0:
             raise AssertionError(f"Event {event_id} did not produce GPU optical photons")
 
-    manifest_path = args.timing_csv.with_suffix(".manifest.json")
-    manifest = json.loads(manifest_path.read_text())
+    for device, intervals in gpu_intervals.items():
+        intervals.sort()
+        if any(right[0] + 1e-9 < left[1] for left, right in zip(intervals, intervals[1:])):
+            raise AssertionError(f"GPU dispatch gate overlaps on device {device}")
     if manifest["schema_version"] != 2:
         raise AssertionError("Manifest does not use the shared timeline schema version")
     if manifest["dispatch_mode"] != expected_dispatch:
@@ -151,7 +188,7 @@ def main() -> None:
 
     print(f"TIMING_EVENTS={len(rows)}")
     print(f"TIMING_CPU_BUSY_S={sum(float(row['cpu_runtime_s']) for row in rows):.9f}")
-    print(f"TIMING_GPU_BUSY_S={sum(float(row['gpu_runtime_s']) for row in rows):.9f}")
+    print(f"TIMING_PARENT_GPU_CALL_S={sum(float(row['gpu_runtime_s']) for row in rows):.9f}")
 
 
 if __name__ == "__main__":
