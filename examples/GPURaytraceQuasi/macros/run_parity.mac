@@ -1,0 +1,5 @@
+# Parity-comparison macro: 100 electrons in one run to reduce per-event
+# RNG-noise fluctuation in the OLD vs NEW (Quasi) hit-count comparison.
+/run/verbose 1
+/run/initialize
+/run/beamOn 100
