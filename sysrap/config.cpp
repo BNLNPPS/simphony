@@ -427,6 +427,7 @@ void Config::Apply() const
     const std::string output_dir_str = output_dir.string();
     const auto        nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
 
+    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetIntegrationMode(integration_mode);
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetRunningMode(running_mode.c_str());
@@ -438,7 +439,6 @@ void Config::Apply() const
     SEventConfig::SetG4StateRerun(g4_state_rerun);
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
-    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetMaxSimtrace(max_simtrace);
     SEventConfig::SetMaxTime(max_time);
     SEventConfig::SetModeLite(static_cast<int>(mode_lite));

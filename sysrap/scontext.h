@@ -23,11 +23,12 @@ This Initialize happens on instanciation of the first SEvt.
 
 **/
 
-#include <cstdlib>
-#include <csignal>
+#include "CUDA_CHECK.h"
 #include "sdevice.h"
 #include "ssys.h"
-#include "SEventConfig.hh"
+#include <atomic>
+#include <csignal>
+#include <cstdlib>
 
 struct scontext
 {
@@ -35,13 +36,12 @@ struct scontext
     static int level ;
 
     scontext();
-    void init();
     void initPersist();
-    void initConfig();
-    void initConfig_SetDevice(int idev);
+    int current_device_index() const;
 
     std::vector<sdevice> visible_devices ;
     std::vector<sdevice> all_devices ;
+    std::vector<std::atomic<int>> max_slot_overrides;
 
     std::string desc() const ;
     std::string brief() const ;
@@ -63,12 +63,9 @@ inline int scontext::level = ssys::getenvint(_level, 0 );
 
 inline scontext::scontext()
 {
-    init();
-}
-inline void scontext::init()
-{
     initPersist();
-    initConfig();
+    max_slot_overrides = std::vector<std::atomic<int>>(visible_devices.size());
+    for (auto& limit : max_slot_overrides) limit.store(0, std::memory_order_relaxed);
 }
 
 
@@ -108,52 +105,14 @@ inline void scontext::initPersist()
     if(level > 0) std::cout << "]scontext::initPersist" << std::endl ;
 }
 
-inline void scontext::initConfig()
+inline int scontext::current_device_index() const
 {
-    int numdev = visible_devices.size();
-    int idev = -1 ;
-
-    if(numdev == 0)
-    {
-        std::cerr << "scontext::initConfig : ZERO VISIBLE DEVICES - CHECK CUDA_VISIBLE_DEVICES envvar \n" ;
-    }
-    else if(numdev == 1)
-    {
-        idev = 0 ;
-    }
-    else if(numdev > 1)
-    {
-        idev = 0 ;
-        std::cerr
-            << "scontext::initConfig : WARNING - MORE THAN ONE VISIBLE DEVICES - DEFAULTING TO USE idev:[" << idev << "]\n"
-            << "scontext::initConfig : QUELL THIS WARNING BY SETTING/CHANGING CUDA_VISIBLE_DEVICES envvar TO SELECT ONE DEVICE\n"
-            ;
-    }
-
-    initConfig_SetDevice(idev);
+    if (visible_devices.empty())
+        return -1;
+    int index;
+    CUDA_CHECK(cudaGetDevice(&index));
+    return index;
 }
-
-inline void scontext::initConfig_SetDevice(int idev)
-{
-    int numdev = visible_devices.size();
-    bool idev_valid = idev >=0 && idev < numdev ;
-
-    if( !idev_valid || level > 0 ) std::cerr
-        << "scontext::initConfig_SetDevice "
-        << " numdev " << numdev
-        << " idev " << idev
-        << " level " << level
-        << " idev_valid " << ( idev_valid ? "YES" : "NO " )
-        << "\n"
-        ;
-
-    if(!idev_valid) return ;
-
-    std::string name = device_name(idev);
-    size_t vram = totalGlobalMem_bytes(idev);
-    SEventConfig::SetDevice(vram, name);
-}
-
 
 inline std::string scontext::desc() const
 {

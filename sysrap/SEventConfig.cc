@@ -1,9 +1,12 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #include "sseq.h"
@@ -68,8 +71,7 @@ const char* SEventConfig::_OutFoldDefault = "$DefaultOutputDir" ;
 const char* SEventConfig::_EventReldirDefault = "ALL${VERSION:-0}";
 const char* SEventConfig::_HitMaskDefault = "SD" ;
 
-
-const char* SEventConfig::_MaxSlotDefault = "0" ;     // see SEventConfig::SetDevice : set according to VRAM
+const char* SEventConfig::_MaxSlotDefault = "0";                         // zero sizes launches from the current device VRAM
 const char* SEventConfig::_MaxGenstepDefault = NO_STATE_LIMIT_GENSTEP ;  // adhoc
 const char* SEventConfig::_MaxSimtraceDefault = NO_STATE_LIMIT ;
 
@@ -89,7 +91,6 @@ const char* SEventConfig::_InputPhotonRecordSliceDefault = nullptr ;
 
 int         SEventConfig::_IntegrationMode = _IntegrationModeDefault;
 const char* SEventConfig::_EventMode = _EventModeDefault;
-const char* SEventConfig::_DeviceName  = nullptr ;
 int         SEventConfig::_RunningMode = SRM::Type(_RunningModeDefault);
 storch      SEventConfig::_Torch = default_torch;
 
@@ -165,8 +166,22 @@ bool        SEventConfig::GPU_Simulation(){  return _IntegrationMode == 1 || _In
 bool        SEventConfig::CPU_Simulation(){  return _IntegrationMode == 2 || _IntegrationMode == 3 ; }
 
 const char* SEventConfig::EventMode(){ return _EventMode ; }
-const char* SEventConfig::DeviceName(){ return _DeviceName ; }
-bool        SEventConfig::HasDevice(){ return _DeviceName != nullptr ; }
+int SEventConfig::DeviceIndex()
+{
+    const auto* context = CONTEXT.load();
+    return context ? context->current_device_index() : -1;
+}
+
+const char* SEventConfig::DeviceName()
+{
+    const int index = DeviceIndex();
+    return index < 0 ? nullptr : CONTEXT.load()->visible_devices.at(index).name;
+}
+
+bool SEventConfig::HasDevice()
+{
+    return DeviceIndex() >= 0;
+}
 
 /**
 SEventConfig::RunningMode
@@ -228,7 +243,29 @@ int SEventConfig::G4StateRerunConfigured()
 }
 
 int64_t SEventConfig::MaxCurand(){ return _MaxCurand ; }
-int64_t SEventConfig::MaxSlot(){   return _MaxSlot ; }
+int64_t SEventConfig::MaxSlot()
+{
+    const int index = DeviceIndex();
+    if (index < 0)
+        return _MaxSlot;
+
+    const auto*   context = CONTEXT.load();
+    const int     override = context->max_slot_overrides.at(index).load(std::memory_order_relaxed);
+    const int64_t limit = override != 0 ? override : _MaxSlot;
+    if (limit != 0)
+        return std::min(limit, OPTIX_MAX_LAUNCH_SLOTS);
+    return HeuristicMaxSlot_Rounded(context->visible_devices.at(index).totalGlobalMem, ModeLite(), ModeMerge());
+}
+
+void SEventConfig::SetDeviceMaxSlot(int max_slot)
+{
+    if (max_slot < 0)
+        throw std::invalid_argument("SetDeviceMaxSlot requires a non-negative limit");
+    const int index = DeviceIndex();
+    if (index < 0)
+        throw std::logic_error("SetDeviceMaxSlot requires an initialized CUDA device");
+    CONTEXT.load()->max_slot_overrides.at(index).store(max_slot, std::memory_order_relaxed);
+}
 
 int64_t SEventConfig::MaxGenstep(){  return _MaxGenstep ; }
 int64_t SEventConfig::MaxPhoton(){   return _MaxPhoton ; }
@@ -444,7 +481,13 @@ void SEventConfig::SetG4StateSpec(const char* spec){ _G4StateSpec = spec ? strdu
 void SEventConfig::SetG4StateRerun(int id){          _G4StateRerun = id ; LIMIT_Check() ; }
 
 void SEventConfig::SetMaxCurand(int max_curand){ _MaxCurand = max_curand ; LIMIT_Check() ; }
-void SEventConfig::SetMaxSlot(int max_slot){     _MaxSlot    = max_slot  ; LIMIT_Check() ; }
+void SEventConfig::SetMaxSlot(int max_slot)
+{
+    if (max_slot < 0)
+        throw std::invalid_argument("event.maxslot must be non-negative");
+    _MaxSlot = max_slot;
+    LIMIT_Check();
+}
 
 void SEventConfig::SetMaxGenstep(int max_genstep){ _MaxGenstep = max_genstep ; LIMIT_Check() ; }
 void SEventConfig::SetMaxPhoton( int max_photon){  _MaxPhoton  = max_photon  ; LIMIT_Check() ; }
@@ -983,16 +1026,24 @@ const char* SEventConfig::OutDir(const char* reldir)
     return dir ;
 }
 
-
-scontext* SEventConfig::CONTEXT = nullptr ;
+std::atomic<scontext*> SEventConfig::CONTEXT{nullptr};
 salloc*   SEventConfig::ALLOC = nullptr ;
 
-std::string SEventConfig::GetGPUMeta(){ return CONTEXT ? CONTEXT->brief() : "ERR-NO-SEventConfig-CONTEXT" ; }
+std::string SEventConfig::GetGPUMeta()
+{
+    const auto* context = CONTEXT.load();
+    return context ? context->brief() : "ERR-NO-SEventConfig-CONTEXT";
+}
 
 void SEventConfig::Initialize_Meta()
 {
-    CONTEXT = new scontext ;
-    ALLOC = new salloc ;
+    static salloc   alloc;
+    static scontext context;
+    const int       index = context.current_device_index();
+    if (index >= 0)
+        LOG(info) << DescDevice(context.totalGlobalMem_bytes(index), context.device_name(index));
+    ALLOC = &alloc;
+    CONTEXT.store(&context);
 }
 
 
@@ -1019,22 +1070,15 @@ Future
 
 **/
 
-int SEventConfig::Initialize_COUNT = 0 ;
-int SEventConfig::Initialize() // static
+std::atomic<int> SEventConfig::Initialize_COUNT{0};
+int SEventConfig::Initialize()
 {
-    LOG_IF(LEVEL, Initialize_COUNT > 0 )
-        << "SEventConfig::Initialize() called more than once " << std::endl
-        << " this is now done automatically at SEvt::SEvt usually from main "
-        << " (IN SOME CASES ITS CONVENIENT TO HAVE MORE THAN ONE SEvt, THOUGH "
-        << "  SO MAYBE SHOULD MOVE THIS TO OPTICKS_LOG/SLOG ? "
-        ;
-
-    if(Initialize_COUNT == 0)
-    {
-        Initialize_Meta() ;
-        Initialize_Comp() ;
-    }
-    Initialize_COUNT += 1 ;
+    static std::once_flag once;
+    std::call_once(once, [] {
+        Initialize_Comp();
+        Initialize_Meta();
+    });
+    ++Initialize_COUNT;
     return 0 ;
 }
 
@@ -1415,7 +1459,7 @@ NP* SEventConfig::Serialize() // static
 
     meta->set_meta<int>("G4StateRerun", G4StateRerun() );
     meta->set_meta<int>("MaxCurand", MaxCurand() );
-    meta->set_meta<int>("MaxSlot", MaxSlot() );
+    meta->set_meta<int64_t>("MaxSlot", MaxSlot());
     meta->set_meta<int>("MaxGenstep", MaxGenstep() );
     meta->set_meta<int>("MaxPhoton", MaxPhoton() );
     meta->set_meta<int>("MaxSimtrace", MaxSimtrace() );
@@ -1493,20 +1537,6 @@ void SEventConfig::Save(const char* dir ) // static
 }
 
 /**
-SEventConfig::SetDevice
--------------------------
-
-Invoked at first SEvt instanciation::
-
-    SEventConfig::SetDevice
-    scontext::initConfig
-    scontext::init
-    scontext::scontext
-    SEventConfig::Initialize_Meta
-    SEventConfig::Initialize
-    SEvt::SEvt
-    SEvt::Create
-
 Maximum number of photon slots that can be simulated in a single GPU
 launch depends on:
 
@@ -1548,49 +1578,6 @@ TODO: measure total VRAM usage during large photon number scan to
 provide some parameters to use in a better heuristic and get idea
 of variability. Expect linear with some pedestal.
 
-**/
-
-void SEventConfig::SetDevice( size_t totalGlobalMem_bytes, std::string name )
-{
-    SetDeviceName( name.empty() ? nullptr : name.c_str() ) ;
-    LOG(info) << DescDevice(totalGlobalMem_bytes, name) ;
-
-    size_t mxs0 = MaxSlot();
-    int lite = ModeLite();
-    int merge = ModeMerge();
-
-    size_t hmxr = HeuristicMaxSlot_Rounded(totalGlobalMem_bytes, lite, merge );
-
-    bool MaxSlot_is_zero = mxs0 == 0 ;
-    if(MaxSlot_is_zero) SetMaxSlot(hmxr)
-;
-    size_t mxs1  = MaxSlot();
-
-    bool changed = mxs1 != mxs0  ;
-
-    LOG(info)
-        << " Configured_MaxSlot/M " << mxs0 / M
-        << " Final_MaxSlot/M " << mxs1 / M
-        << " HeuristicMaxSlot_Rounded/M " << hmxr / M
-        << " changed " << (changed ? "YES" : "NO ")
-        << " DeviceName " << (DeviceName() ? DeviceName() : "-")
-        << " HasDevice " << (HasDevice() ? "YES" : "NO ")
-        << "\n"
-        << "(set event.maxslot to 0 to use the VRAM-based slot heuristic) ";
-    ;
-}
-
-
-void SEventConfig::SetDeviceName( const char* name )
-{
-    _DeviceName = name ? strdup(name) : nullptr ;
-}
-
-
-/**
-SEventConfig::HeuristicMaxSlot
--------------------------------
-
 Currently no accounting for the configured debug arrays.
 Are assuming production type running.
 
@@ -1615,12 +1602,11 @@ size_t SEventConfig::HeuristicMaxSlot( size_t totalGlobalMem_bytes, int lite, in
     return size_t(vram_ceiling / (bytes_per_photon * headroom) * 0.98f);
 }
 
-
 /**
 SEventConfig::HeuristicMaxSlot_Rounded
 -----------------------------------------
 
-Rounded down to nearest million.
+Rounded down to nearest million and capped at the OptiX launch limit.
 
 **/
 
@@ -1628,7 +1614,7 @@ size_t SEventConfig::HeuristicMaxSlot_Rounded( size_t totalGlobalMem_bytes, int 
 {
     size_t hmx = HeuristicMaxSlot(totalGlobalMem_bytes, lite, merge );
     size_t hmx_M = hmx/M ;
-    return hmx_M*M ;
+    return std::min<size_t>(hmx_M * M, OPTIX_MAX_LAUNCH_SLOTS);
 }
 
 std::string SEventConfig::DescDevice(size_t totalGlobalMem_bytes, std::string name )  // static
@@ -1639,7 +1625,7 @@ std::string SEventConfig::DescDevice(size_t totalGlobalMem_bytes, std::string na
     size_t hmx = HeuristicMaxSlot(totalGlobalMem_bytes, lite, merge );
     size_t hmx_M = hmx/M ;
     size_t hmxr = HeuristicMaxSlot_Rounded(totalGlobalMem_bytes, lite, merge);
-    size_t mxs  = MaxSlot();
+    int64_t mxs = _MaxSlot == 0 ? static_cast<int64_t>(hmxr) : std::min(_MaxSlot, OPTIX_MAX_LAUNCH_SLOTS);
 
     int wid = 35 ;
     std::stringstream ss ;

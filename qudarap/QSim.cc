@@ -1,5 +1,7 @@
 
 #include <csignal>
+#include <memory>
+#include <stdexcept>
 
 #include "SLOG.hh"
 
@@ -491,12 +493,25 @@ double QSim::simulate(int eventID, bool reset_)
 
     sev->beginOfEvent(eventID);  // set SEvt index and tees up frame gensteps for simtrace and input photon simulate running
 
-    NP* igs = sev->makeGenstepArrayFromVector();
+    std::unique_ptr<NP> gensteps(sev->makeGenstepArrayFromVector());
+    NP*                 igs = gensteps.get();
 
     MaybeSaveIGS(eventID, igs);
 
     std::vector<sslice> igs_slice ;
-    int64_t tot_ph_0 = SGenstep::GetGenstepSlices( igs_slice, igs, SEventConfig::MaxSlot() );
+    const size_t        max_slot = sev->evt->max_slot;
+    int64_t             tot_ph_0;
+    try
+    {
+        tot_ph_0 = SGenstep::GetGenstepSlices(igs_slice, igs, max_slot);
+    }
+    catch (const std::length_error&)
+    {
+        sev->clear_genstep();
+        sev->clear_extra();
+        sev->reset_counter();
+        throw;
+    }
 
     //bool xxl = tot_ph_0 > SGenstep::MAX_SLOT_PER_SLICE ;
     bool xxl = tot_ph_0 > 100*M ;
@@ -505,16 +520,15 @@ double QSim::simulate(int eventID, bool reset_)
 
     LOG(xxl ? info : LEVEL)
         << " eventID " << std::setw(6) << eventID
-        << " igs " << ( igs ? igs->sstr() : "-" )
+        << " igs " << (igs ? igs->sstr() : "-")
         << " tot_ph_0 " << tot_ph_0
-        << " tot_ph_0/M " << tot_ph_0/M
-        << " xxl " << ( xxl ? "YES" : "NO " )
-        << " MaxSlot " << SEventConfig::MaxSlot()
-        << " MaxSlot/M " << SEventConfig::MaxSlot()/M
+        << " tot_ph_0/M " << tot_ph_0 / M
+        << " xxl " << (xxl ? "YES" : "NO ")
+        << " MaxSlot " << max_slot
+        << " MaxSlot/M " << max_slot / M
         << " sslice::Desc(igs_slice)\n"
         << sslice::Desc(igs_slice)
-        << " num_slice " << num_slice
-        ;
+        << " num_slice " << num_slice;
 
     const EventTimingSample t_LBEG = EventTimingProfile::Mark("QSim__simulate_LBEG");
 
@@ -526,6 +540,9 @@ double QSim::simulate(int eventID, bool reset_)
 
         LOG(LEVEL) << sl.idx_desc(i) ;
 
+        // QEvt takes ownership on the first upload and keeps the array until reset.
+        if (i == 0)
+            gensteps.release();
         int rc = qev->setGenstepUpload_NP(igs, &sl ) ;
         LOG_IF(error, rc != 0) << " QEvt::setGenstep ERROR : have qev but no gensteps collected : will skip cx.simulate " ;
 
@@ -566,8 +583,7 @@ double QSim::simulate(int eventID, bool reset_)
         tot_gdt += EventTimingSample::elapsedNs(t_POST, t_DOWN);
     }
 
-
-    size_t max_slot_M = SEventConfig::MaxSlot()/M;
+    size_t                  max_slot_M = max_slot / M;
     const std::string       annotation = EventTimingProfile::Annotation({{"slice", static_cast<std::uint64_t>(num_slice)},
                                                                          {"max_slot_M", static_cast<std::uint64_t>(max_slot_M)}});
     const EventTimingSample t_LEND = EventTimingProfile::Mark("QSim__simulate_LEND", annotation);

@@ -67,6 +67,7 @@ set(TEST_SOURCES
    GenstepTest.cc
    SUTest.cc
    SEventConfigTest.cc
+   SEventDeviceConfigTest.cc
    SFrameConfigTest.cc
    SGeoConfigTest.cc
 
@@ -127,6 +128,14 @@ foreach(SRC ${TEST_SOURCES})
     target_link_libraries(${TGT} SysRap CUDA::cudart)
     add_test(${name}.${TGT} ${TGT})
 endforeach()
+
+find_package(Threads REQUIRED)
+target_link_libraries(SEventDeviceConfigTest Threads::Threads)
+add_test(NAME ${name}.SEventDeviceConfigTest.single COMMAND SEventDeviceConfigTest --single-device)
+add_test(NAME ${name}.SEventDeviceConfigTest.no_device COMMAND SEventDeviceConfigTest --no-device)
+set_tests_properties(${name}.SEventDeviceConfigTest.no_device PROPERTIES ENVIRONMENT "CUDA_VISIBLE_DEVICES=")
+set_tests_properties(${name}.SEventDeviceConfigTest ${name}.SEventDeviceConfigTest.single
+    PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
 
 target_compile_definitions(EventTimingProfileReportTest PRIVATE
     EVENT_TIMING_PROFILE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/EventTimingProfileFixture.csv"
