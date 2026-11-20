@@ -36,10 +36,11 @@ qudarap/QEvt.cc
 
 **/
 
+#include <csignal>
+#include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <limits>
-#include <csignal>
 
 struct quad6 ;
 struct NP ;
@@ -231,13 +232,13 @@ inline const quad6& SGenstep::GetGenstep(const NP* gs, unsigned gs_idx )
     return q ;
 }
 
-
 /**
 SGenstep::GetGenstepSlices
 --------------------------
 
 Populates the genstep slice vector with gs[start:stop] slices
-that do not exceed max_photon for the total number of photons.
+that do not exceed max_slot for the total number of photons.
+A genstep must fit in one slice.
 
 The third argument *max_slot* was formerly incorrectly named *max_photon*,
 which is wrong because its the VRAM constrained *max_slot* which is relevant
@@ -271,23 +272,13 @@ inline size_t SGenstep::GetGenstepSlices(std::vector<sslice>& slice, const NP* g
         const quad6& q = qq[i] ;
         size_t num_ph = GetNumPhoton(q);
 
-        bool slice_too_big = num_ph > MAX_SLOT_PER_SLICE ;
-        if(slice_too_big ) std::cerr
-            << "SGenstep::GetGenstepSlices FATAL "
-            << " slice_too_big " << ( slice_too_big ? "YES" : "NO " )
-            << " i " << i
-            << " num_gs " << num_gs
-            << " num_ph " << num_ph
-            << " MAX_SLOT_PER_SLICE " << MAX_SLOT_PER_SLICE
-            << "\n"
-            ;
-        assert( !slice_too_big );
-
+        if (num_ph > max_slot)
+            throw std::length_error("Genstep " + std::to_string(i) + " has " + std::to_string(num_ph) +
+                                    " photons but the launch has only " + std::to_string(max_slot) + " slots");
 
         tot_ph += num_ph ;
 
-        size_t cand = sl.ph_count + num_ph ;
-        extend_slice = cand <= max_slot ;
+        extend_slice = num_ph <= max_slot - sl.ph_count;
 
         if(0) std::cout
             << "SGenstep::GetGenstepSlices"

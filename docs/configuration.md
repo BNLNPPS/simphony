@@ -17,8 +17,8 @@ SIMPHONY_CONFIG_DIR=$PWD/config \
 
 The public typed representation is `simphony::Config` in
 `sysrap/config.h`. `Config` parses the selected file and applies event values
-through `SEventConfig`, which remains the process-wide low-level facade used
-by Opticks code.
+through `SEventConfig`, the low-level configuration interface for Simphony's
+GPU transport.
 
 ## Defaults and discovery
 
@@ -53,7 +53,7 @@ the effective application values used when JSON omits a key.
 | `g4_state_rerun` | integer, `-1` | Photon index selected when `running_mode` enables a saved-state rerun. |
 | `max_bounce` | integer, `31` | Maximum optical-photon bounce count. |
 | `max_genstep` | integer, `10000000` | Maximum number of uploaded gensteps. |
-| `maxslot` | integer, `0` | Maximum CUDA launch slots. Zero selects the VRAM-based heuristic. The historical `maxslot` spelling is retained in JSON. |
+| `maxslot` | unsigned 64-bit integer, `0` | Maximum photon slots per CUDA launch. Each device inherits this setting. Zero sizes launches from the selected device's VRAM. The GPU limit is 2³⁰ slots, and each genstep must fit in one launch. JSON integers above `INT_MAX` are stored as 2³⁰ in the job configuration. |
 | `max_simtrace` | integer, `1000000000000` | Maximum number of simtrace records allocated for a launch. |
 | `max_time` | number, `1e27` ns | Propagation time cutoff; the default is effectively unlimited. |
 | `mode_lite` | name, `Standard` | Photon/hit representation: `Standard`, `Lite`, or `DebugCompare`. |

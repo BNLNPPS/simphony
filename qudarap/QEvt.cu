@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdexcept>
+#include <string>
 
 #include "scuda.h"
 #include "squad.h"
@@ -9,6 +11,13 @@
 #include "iexpand.h"
 #include "strided_range.h"
 #include <thrust/device_vector.h>
+
+void QEvt_checkSeedCapacity(size_t num_seed, size_t max_slot)
+{
+    if (num_seed > max_slot)
+        throw std::length_error("Genstep upload requires " + std::to_string(num_seed) +
+                                " seeds but the event has only " + std::to_string(max_slot) + " slots");
+}
 
 /**
 _QEvt_checkEvt
@@ -83,9 +92,9 @@ because are grabbing single ints "numphoton" from each quad6 6*4 genstep
 
 extern "C" unsigned QEvt_count_genstep_photons(sevent* evt)
 {
-    typedef typename thrust::device_vector<int>::iterator Iterator;
+    using Iterator = thrust::device_vector<unsigned>::iterator;
 
-    thrust::device_ptr<int> t_gs = thrust::device_pointer_cast( (int*)evt->genstep ) ;
+    auto t_gs = thrust::device_pointer_cast(reinterpret_cast<unsigned*>(evt->genstep));
 
 #ifdef DEBUG_QEVENT
     printf("//QEvt_count_genstep_photons sevent::genstep_numphoton_offset %d  sevent::genstep_itemsize  %d  \n",
@@ -97,7 +106,9 @@ extern "C" unsigned QEvt_count_genstep_photons(sevent* evt)
         t_gs + evt->num_genstep*sevent::genstep_itemsize ,
         sevent::genstep_itemsize );    // begin, end, stride
 
-    evt->num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end() );
+    const size_t num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end(), size_t{0});
+    QEvt_checkSeedCapacity(num_seed, evt->max_slot);
+    evt->num_seed = num_seed;
 
 #ifdef DEBUG_QEVENT
     //thrust::for_each( gs_pho.begin(), gs_pho.end(), printf_functor() );
@@ -144,14 +155,15 @@ extern "C" void QEvt_fill_seed_buffer(sevent* evt )
     printf("//QEvt_fill_seed_buffer evt.num_genstep %zu evt.num_seed %zu evt.max_photon %zu \n", evt->num_genstep, evt->num_seed, evt->max_photon );
 #endif
 
+    QEvt_checkSeedCapacity(evt->num_seed, evt->max_slot);
     assert( evt->seed && evt->num_seed > 0 );
     assert( evt->num_seed <= evt->max_photon );
 
     thrust::device_ptr<int> t_seed = thrust::device_pointer_cast(evt->seed) ;
 
-    typedef typename thrust::device_vector<int>::iterator Iterator;
+    using Iterator = thrust::device_vector<unsigned>::iterator;
 
-    thrust::device_ptr<int> t_gs = thrust::device_pointer_cast( (int*)evt->genstep ) ;
+    auto t_gs = thrust::device_pointer_cast(reinterpret_cast<unsigned*>(evt->genstep));
 
     strided_range<Iterator> gs_pho(
            t_gs + sevent::genstep_numphoton_offset,
@@ -180,9 +192,9 @@ It is invoked from QEvt::setGenstep
 
 extern "C" void QEvt_count_genstep_photons_and_fill_seed_buffer(sevent* evt )
 {
-    typedef typename thrust::device_vector<int>::iterator Iterator;
+    using Iterator = thrust::device_vector<unsigned>::iterator;
 
-    thrust::device_ptr<int> t_gs = thrust::device_pointer_cast( (int*)evt->genstep ) ;
+    auto t_gs = thrust::device_pointer_cast(reinterpret_cast<unsigned*>(evt->genstep));
 
 #ifdef DEBUG_QEVENT
     printf("//QEvt_count_genstep_photons sevent::genstep_numphoton_offset %d  sevent::genstep_itemsize  %d  \n",
@@ -195,7 +207,9 @@ extern "C" void QEvt_count_genstep_photons_and_fill_seed_buffer(sevent* evt )
         t_gs + evt->num_genstep*sevent::genstep_itemsize ,
         sevent::genstep_itemsize );    // begin, end, stride
 
-    evt->num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end() );
+    const size_t num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end(), size_t{0});
+    QEvt_checkSeedCapacity(num_seed, evt->max_slot);
+    evt->num_seed = num_seed;
 
 #ifdef DEBUG_QEVENT
     printf("//QEvt_count_genstep_photons_and_fill_seed_buffer evt.num_genstep %zu evt.num_seed %zu evt.max_photon %zu \n", evt->num_genstep, evt->num_seed, evt->max_photon );
