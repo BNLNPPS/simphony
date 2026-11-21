@@ -329,6 +329,8 @@ struct CSG_API CSGFoundry : public SGeo
     const char* getSaveOpt() const ;
 
     void save(const char* base, const char* rel=nullptr ) const ;
+    // Write a reloadable helper snapshot with every CSG and SSim component.
+    void saveSnapshot(const char* base);
     void saveAlt() const ;
 
     // these argumentless methods require CFBASE envvar or geom member to be set

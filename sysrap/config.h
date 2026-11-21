@@ -64,6 +64,12 @@ class Config
   public:
     Config(std::string config_name = "dev");
 
+    /// Load an explicit file without searching the configured directories.
+    static Config FromFile(const std::filesystem::path& filepath);
+
+    /// Save the exact document read by this instance without reopening the source.
+    void WriteSnapshot(const std::filesystem::path& filepath) const;
+
     /// Resolve a PTX file from SIMPHONY_PTX_DIR or configured search paths.
     static std::string PtxPath(const std::string& ptx_name = "CSGOptiX.ptx");
 
@@ -179,9 +185,12 @@ class Config
     storch torch{default_torch};
 
   private:
-    std::string Locate(std::string filename) const;
-    void ReadConfig(std::string filepath);
+    Config(const std::filesystem::path& filepath, std::string config_name);
+    static std::string Locate(std::string filename);
+    void ReadConfig(const std::filesystem::path& filepath);
     void Apply() const;
+
+    std::string document_;
 };
 
 } // namespace simphony

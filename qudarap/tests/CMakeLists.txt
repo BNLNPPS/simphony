@@ -90,6 +90,7 @@ foreach(SRC ${TEST_SOURCES})
     endif()
 
     if(TGT STREQUAL QEvt_Lifecycle_Test)
+        add_test(NAME ${name}.${TGT}.slot_capacity COMMAND ${TGT} --slot-capacity)
         foreach(INPUT_PHOTON_NAME ${QUDARAP_INPUT_PHOTON_NAMES})
             set(TEST_NAME ${name}.${TGT}.${INPUT_PHOTON_NAME})
             add_test(

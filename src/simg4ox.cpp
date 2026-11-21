@@ -1,6 +1,9 @@
+#include "nlohmann/json.hpp"
+#include <cmath>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include <argparse/argparse.hpp>
 
@@ -21,6 +24,9 @@
 #include "sysrap/OPTICKS_LOG.hh"
 #include "sysrap/SEventConfig.hh"
 
+#include "GpuDirectory.h"
+#include "GpuWorker.h"
+#include "GpuWorkerProtocol.h"
 #include "config.h"
 #include "g4app.h"
 
@@ -28,6 +34,9 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+    if (argc > 1 && std::string_view(argv[1]) == simphony::GpuWorkerFlag)
+        return simphony::RunGpuWorker(argc, argv);
+
     OPTICKS_LOG(argc, argv);
 
     argparse::ArgumentParser program("simg4ox", "0.0.0");
@@ -66,6 +75,15 @@ int main(int argc, char** argv)
         .default_value(1)
         .scan<'i', int>();
 
+    program.add_argument("--gpu-dispatch")
+        .help("GPU dispatch: auto uses a helper per visible GPU for MT jobs; direct uses the first GPU; pool forces helpers")
+        .default_value(std::string("auto"));
+    program.add_argument("--gpu-timeout")
+        .help("positive helper startup/request timeout in seconds")
+        .default_value(3600.0)
+        .scan<'g', double>();
+    program.add_argument("--list-gpus").help("print CUDA-visible devices as JSON and exit").flag();
+
     program.add_argument("--no-cpu-recorder")
         .help("disable the full CPU SEvt history recorder for a matched serial/MT optical torch comparison")
         .flag()
@@ -103,6 +121,33 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    const auto   gpu_dispatch = program.get<std::string>("--gpu-dispatch");
+    const double gpu_timeout = program.get<double>("--gpu-timeout");
+    if (gpu_dispatch != "auto" && gpu_dispatch != "direct" && gpu_dispatch != "pool")
+    {
+        std::cerr << "--gpu-dispatch must be auto, direct, or pool" << std::endl;
+        return EXIT_FAILURE;
+    }
+    if (gpu_dispatch == "pool" && num_threads == 1)
+    {
+        std::cerr << "--gpu-dispatch pool requires --threads > 1" << std::endl;
+        return EXIT_FAILURE;
+    }
+    if (!std::isfinite(gpu_timeout) || gpu_timeout <= 0)
+    {
+        std::cerr << "--gpu-timeout must be positive and finite" << std::endl;
+        return EXIT_FAILURE;
+    }
+    try
+    {
+        simphony::gpu_wire::deadlineAfter(simphony::gpu_wire::Clock::now(), gpu_timeout);
+    }
+    catch (const std::invalid_argument&)
+    {
+        std::cerr << "--gpu-timeout exceeds the representable clock interval" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     if (no_cpu_recorder && program.is_used("--particle"))
     {
         cerr << "--no-cpu-recorder is supported only for the optical-photon torch source" << endl;
@@ -125,12 +170,32 @@ int main(int argc, char** argv)
     }
 #endif
 
+    const auto visible_devices = simphony::DiscoverGpuDevices();
+    if (program.get<bool>("--list-gpus"))
+    {
+        nlohmann::json listed = nlohmann::json::array();
+        for (const auto& device : visible_devices)
+            listed.push_back({{"ordinal", device.ordinal}, {"uuid", device.uuid}, {"name", device.name}, {"memory_bytes", device.memory_bytes}});
+        std::cout << listed.dump() << std::endl;
+        return EXIT_SUCCESS;
+    }
+    if (visible_devices.empty())
+    {
+        std::cerr << "simg4ox requires at least one CUDA-visible GPU" << std::endl;
+        return EXIT_FAILURE;
+    }
+    const bool use_gpu_pool = num_threads > 1 &&
+                              (gpu_dispatch == "pool" || (gpu_dispatch == "auto" && visible_devices.size() > 1));
+    std::vector<simphony::GpuDevice> used_devices = use_gpu_pool
+                                                        ? visible_devices
+                                                        : std::vector<simphony::GpuDevice>{visible_devices.front()};
     simphony::Config cfg(config_name);
 
     // Device discovery used to happen as a side effect of constructing the
     // serial CPU SEvt. MT workers deliberately do not share that instance, so
     // initialize global event/device metadata explicitly on the master.
-    SEventConfig::Initialize();
+    if (!use_gpu_pool)
+        SEventConfig::Initialize();
 
     PrimaryParticleConfig primary;
     primary.enabled = program.is_used("--particle");
@@ -157,6 +222,9 @@ int main(int argc, char** argv)
     timing_metadata.primary_momentum_gev_c = primary.enabled ? primary.momentum_gev_c : 0.0;
     timing_metadata.primary_multiplicity = primary.enabled ? primary.multiplicity : cfg.torch.numphoton;
     timing_metadata.num_threads = num_threads;
+    timing_metadata.gpu_dispatch = use_gpu_pool ? "pool" : "direct";
+    for (const auto& device : used_devices)
+        timing_metadata.gpu_devices.push_back({device.ordinal, device.uuid, device.name, device.memory_bytes});
     timing_metadata.cpu_recorder_enabled = num_threads == 1 && !no_cpu_recorder;
     timing_metadata.torch_seed = primary.enabled ? -1 : 0;
 
@@ -217,9 +285,31 @@ int main(int argc, char** argv)
            << ", CPU threads: " << configured_threads << G4endl;
 
     run_mgr->SetUserInitialization(physics);
-    run_mgr->SetUserInitialization(new DetectorConstruction(gdml_file));
-
     auto shared_state = std::make_shared<Simg4oxSharedState>(timing.enabled() ? &timing : nullptr);
+    shared_state->gpu_devices = used_devices;
+    if (use_gpu_pool)
+    {
+        try
+        {
+            auto& options = shared_state->gpu_options.emplace();
+            options.devices = used_devices;
+            options.executable = "/proc/self/exe";
+            options.timeout_seconds = gpu_timeout;
+            const auto output_dir = std::filesystem::absolute(simphony::ResolveRunOutputPath(cfg.output_dir));
+            std::filesystem::create_directories(output_dir);
+            options.output = simphony::CreateUniqueDirectory(output_dir / "gpu-workers-XXXXXX");
+            G4cout << "simg4ox: GPU worker output: " << options.output << G4endl;
+        }
+        catch (const std::exception& error)
+        {
+            shared_state->RemoveGpuSnapshot(error.what());
+            delete run_mgr;
+            return EXIT_FAILURE;
+        }
+    }
+    G4cout << "simg4ox: GPU dispatch: " << (use_gpu_pool ? "pool" : "direct")
+           << ", GPUs: " << used_devices.size() << G4endl;
+    run_mgr->SetUserInitialization(new DetectorConstruction(gdml_file, cfg, shared_state->gpu_options ? &*shared_state->gpu_options : nullptr));
     run_mgr->SetUserInitialization(new ActionInitialization(
         cfg, shared_state, multithreaded, primary, timing.enabled() ? &timing : nullptr, timing_metadata,
         !no_cpu_recorder));
@@ -234,17 +324,22 @@ int main(int argc, char** argv)
         vis->Initialize();
     }
 
-    G4UImanager* ui = G4UImanager::GetUIpointer();
-    ui->ApplyCommand("/control/execute " + macro_name);
-
-    if (interactive)
+    int status = EXIT_SUCCESS;
+    try
     {
-        uix->SessionStart();
+        G4UImanager::GetUIpointer()->ApplyCommand("/control/execute " + macro_name);
+        if (interactive)
+            uix->SessionStart();
+    }
+    catch (const std::exception& error)
+    {
+        shared_state->RemoveGpuSnapshot(error.what());
+        status = EXIT_FAILURE;
     }
 
     delete uix;
     delete vis;
     delete run_mgr;
 
-    return EXIT_SUCCESS;
+    return status;
 }

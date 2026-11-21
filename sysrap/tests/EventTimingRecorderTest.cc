@@ -165,7 +165,8 @@ void TestGoldenCsvAndManifest(const fs::path& directory)
         "primary_multiplicity,num_gensteps,num_photons,num_gpu_hits,num_g4_hits,"
         "process_cpu_pre_s,process_cpu_post_s,process_cpu_s,thread_cpu_pre_s,"
         "thread_cpu_post_s,thread_cpu_s,gpu_release_time,gpu_release_time_offset_s,"
-        "cpu_post_locked_runtime_s,cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads";
+        "cpu_post_locked_runtime_s,cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads,"
+        "gpu_device_id,gpu_uuid,gpu_service_start_offset_s,gpu_service_end_offset_s,gpu_cleanup_end_offset_s,gpu_dispatch";
     assert(header == expected_header);
 
     const auto row = ReadSingleRow(output);
@@ -524,6 +525,49 @@ void TestWorkerMergeGuards(const fs::path& directory)
     assert(ReadSingleRow(output).at("event_id") == "0");
 }
 
+// A helper's CPU counters must never replace the parent worker samples.
+void TestGpuHelperService(const fs::path& directory)
+{
+    const fs::path output = directory / "helper.csv";
+    SetSequence({TimedSample(1'000'000'000, 0, 0),
+                 TimedSample(1'100'000'000, 100, 100),
+                 TimedSample(1'200'000'000, 200, 200),
+                 TimedSample(1'300'000'000, 300, 300),
+                 TimedSample(1'900'000'000, 400, 400),
+                 TimedSample(1'950'000'000, 450, 450),
+                 TimedSample(2'000'000'000, 500, 500)});
+    EventTimingRecorder recorder(output, &NextSample);
+    recorder.BeginRun();
+    recorder.BeginEvent(3);
+    recorder.SubmitGpu(2, 100);
+    recorder.BeginGpu();
+    recorder.EndGpu();
+    bool rejected = false;
+    try
+    {
+        recorder.SetGpuService(1, "GPU-test", 1'250'000'000, 1'700'000'000, 1'800'000'000);
+    }
+    catch (const std::logic_error&)
+    {
+        rejected = true;
+    }
+    assert(rejected); // A helper cannot begin before its parent dispatched it.
+    recorder.SetGpuService(1, "GPU-test", 1'400'000'000, 1'700'000'000, 1'800'000'000);
+    recorder.ReleaseGpu();
+    recorder.EndEvent(5, 0);
+    auto metadata = Metadata();
+    metadata.gpu_dispatch = "pool";
+    metadata.gpu_devices.push_back({1, "GPU-test", "test", 1024});
+    recorder.Write(metadata);
+    auto row = ReadSingleRow(output);
+    assert(row.at("gpu_uuid") == "GPU-test");
+    assert(row.at("gpu_device_id") == "1");
+    AssertNear(std::stod(row.at("gpu_service_start_offset_s")), .4);
+    AssertNear(std::stod(row.at("gpu_service_end_offset_s")), .7);
+    AssertNear(std::stod(row.at("gpu_cleanup_end_offset_s")), .8);
+    AssertNear(std::stod(row.at("thread_cpu_post_s")), 100e-9);
+}
+
 void TestIoFailure(const fs::path& directory)
 {
     const fs::path regular_file = directory / "not-a-directory";
@@ -560,6 +604,7 @@ int main()
     TestInvalidTransitions(directory);
     TestClockInversion(directory);
     TestIoFailure(directory);
+    TestGpuHelperService(directory);
     TestGpuReleaseBoundary(directory);
     TestGpuReleaseClockInversion(directory);
     TestSharedOriginWorkerMerge(directory);

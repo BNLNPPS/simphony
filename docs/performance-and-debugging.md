@@ -68,12 +68,12 @@ agreement and whole-job throughput before choosing a production setting.
 ### Interpreting `simg4ox` MT timings
 
 `simg4ox --threads N` parallelizes Geant4 CPU tracking of its configured torch
-photons or charged primaries selected with `--particle`. It does not run multiple
-Simphony launches concurrently: the process-wide GPU event context requires
-launches to be serialized in event-ID order. Consequently, an end-to-end
-`simg4ox` wall-clock measurement includes
-parallel CPU work plus serialized GPU work and should not be interpreted as a
-pure GPU speed-up measurement.
+photons or charged primaries selected with `--particle`. The direct backend
+serializes launches in event-ID order within its process-wide GPU context.
+With multiple visible GPUs, automatic dispatch uses separate helpers and can
+process different events concurrently. An end-to-end wall-clock measurement
+includes CPU generation, queueing, optical transport, and output work; it is
+not a pure GPU speed-up measurement. The diagram below shows the direct backend.
 
 ![Serial and multithreaded simg4ox event-processing timelines](assets/simg4ox-event-processing.svg)
 
@@ -144,8 +144,8 @@ serial execution; `num_threads` records the configured worker count. The
 manifest also records `num_threads`, `cpu_recorder_enabled`, `torch_seed`, and
 `run_origin_steady_ns`. Serial dispatch remains `blocking`; MT dispatch is
 `synchronous` because workers remain occupied through the GPU queue and
-GPU-dependent post work. GPU launches and lock-held cleanup remain serialized
-in event-ID order. With the CPU recorder disabled, host input-photon setup is
+GPU-dependent post work. In the direct backend, GPU launches and lock-held cleanup
+remain serialized in event-ID order. With the CPU recorder disabled, host input-photon setup is
 performed after gate acquisition and included in the measured GPU service.
 
 Thread CPU intervals describe the calling event worker. Process CPU intervals
@@ -327,3 +327,65 @@ flagmask histories, wavelength statistics, and position/time statistics.
 When `seq.npy` is present it also prints ranked step-sequence histories. When
 `record.npy` is present it prints step-count distributions and the detail
 commands include per-step positions, wavelengths, boundaries, and flags.
+
+## Multiple GPUs in one Geant4 MT job
+
+`simg4ox` discovers the devices visible to CUDA. With `--threads` greater than one,
+its default `--gpu-dispatch auto` starts one GPU helper process per visible device
+when more than one device is visible. For example, this job uses eight Geant4
+workers and automatically dispatches to the GPUs visible on the host.
+
+```sh
+simg4ox --threads 8 --gdml geom.gdml --macro run.mac
+```
+
+Each helper runs the same `simg4ox` executable in an internal GPU worker mode.
+The parent owns the Geant4 event simulation. Its workers produce event-local
+gensteps or optical-photon inputs, wait for an available helper, and receive
+their own event's hits. Different helpers can run
+concurrently. Each helper has its own geometry, CUDA/OptiX state, and event buffers.
+Helpers load a temporary snapshot of the translated CSG geometry and simulation
+arrays. This does not re-export the Geant4 world to GDML, so nested assemblies
+remain supported.
+
+Use `simg4ox --list-gpus` to inspect the visible device ordinals and UUIDs.
+`CUDA_VISIBLE_DEVICES` limits the pool to devices assigned to the job; discovery
+does not reserve GPUs or determine whether another process is using them.
+With one visible GPU, auto mode keeps the existing direct backend. Serial
+`--threads 1` jobs also keep the direct backend. `--gpu-dispatch direct` selects
+the first visible GPU even when several are visible. `--gpu-dispatch pool`
+requires MT and forces helpers, including with one visible GPU, for an overhead
+control. `--gpu-timeout` sets the positive helper startup/request/finalization deadline in
+seconds (default 3600). A failed or stalled helper fails the job rather than
+silently dropping an event.
+After all helpers exit successfully, the master stages the merged hits, event
+timings, and profile before publishing them. If publication fails, it restores
+outputs from the previous run.
+
+There is at most one outstanding request per helper. Waiting Geant4 workers hold
+their own event payload, bounding the number of pending payloads by the worker
+count. Keeping every GPU busy requires at least as many Geant4 workers as GPUs
+and enough events ready for optical transport. Events can finish out of order.
+Final hit arrays are assembled in event-ID order. Event and photon RNG identities
+are preserved when changing devices. GPU
+helpers are restarted for each `beamOn` run and always use the configuration
+document loaded by the parent at startup. Each pool job creates a unique directory
+under the expanded `event.output_dir` and prints its path at startup. Each helper
+writes its diagnostics beneath `gpu-workers-<suffix>/run-<run-id>/gpu-<ordinal>/`.
+Nested and tokenized `event.event_reldir` paths are supported. Each
+expanded path must stay inside the worker's directory and contain no parent
+(`..`) components. Each helper reports its launch capacity at startup. A torch
+event needs a helper that fits all its input photons. For a charged event the
+largest individual genstep must fit, and the backend can process the event in
+multiple launches on that helper.
+
+The event timing CSV includes device UUID/ordinal and separate GPU-backend
+service and cleanup intervals. In helper mode the parent GPU-call interval
+includes request/reply transfer and helper cleanup. In direct mode the existing
+GPU-call boundary precedes hit copying and reset. Compare the explicit backend
+service/cleanup fields across modes. CPU counters always belong to the parent
+Geant4 worker/process; helper CPU consumption is not included in those counters.
+All helper monotonic timestamps use the same Linux host clock as the parent.
+Host service includes transfers and synchronization, so overlapping service
+intervals are evidence of concurrent backend activity, not a measurement of SM
+utilization. Use kernel profiling when kernel overlap is the question.

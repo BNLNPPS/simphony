@@ -8129,6 +8129,7 @@ inline void NP::save_string_(const char* path, const char* ext, const std::strin
     if(VERBOSE) std::cout << "NP::save_string_ str_path [" << str_path  << "]" << std::endl ;
     std::ofstream fps(str_path.c_str(), std::ios::out);
     fps << str ;
+    U::CloseOutput(fps, str_path.c_str());
 }
 
 inline void NP::save_strings_(const char* path, const char* ext, const std::vector<std::string>& vstr ) const
@@ -8144,6 +8145,7 @@ inline void NP::save_strings_(const char* path, const char* ext, const std::vect
         const std::string& str = vstr[i] ;
         fps << str << delim ;
     }
+    U::CloseOutput(fps, vstr_path.c_str());
 }
 
 
@@ -8186,12 +8188,14 @@ inline void NP::save(const char* path_) const
           << "\n"
           ;
 
-    assert( rc == 0 );
+    if (rc != 0)
+        throw std::runtime_error(std::string("Cannot create output directory for ") + path);
 
     std::string hdr = make_header();
     std::ofstream fpa(path, std::ios::out|std::ios::binary);
     fpa << hdr ;
     fpa.write( bytes(), arr_bytes() );
+    U::CloseOutput(fpa, path);
 
     save_meta( path);
     save_names(path);
@@ -8489,8 +8493,8 @@ inline void NP::WriteNames(
 {
     // if(names.size() == 0) return ;   DONT EARLY EXIT AS MORE REASONABLE TO TRUNCATE THE FILE WHEN THERE ARE NO NAMES
     int rc = U::MakeDirsForFile(path);
-    if( rc != 0 ) std::cerr << "NP::WriteNames ERR creating dirs " << std::endl ;
-    assert( rc == 0 );
+    if (rc != 0)
+        throw std::runtime_error(std::string("Cannot create output directory for ") + path);
 
     unsigned names_size = names.size() ;
     unsigned num_names = num_names_ == 0 ? names_size : num_names_ ;
@@ -8501,7 +8505,7 @@ inline void NP::WriteNames(
 
     std::ofstream stream(path, mode );
     for( unsigned i=0 ; i < num_names ; i++) stream << names[i] << std::endl ;
-    stream.close();
+    U::CloseOutput(stream, path);
 }
 
 
@@ -8523,14 +8527,14 @@ inline void NP::WriteNames_Simple(
     const std::vector<std::string>& names )
 {
     int rc = U::MakeDirsForFile(path);
-    if( rc != 0 ) std::cerr << "NP::WriteNames_Simple ERR creating dirs " << std::endl ;
-    assert( rc == 0 );
+    if (rc != 0)
+        throw std::runtime_error(std::string("Cannot create output directory for ") + path);
 
     INT num_names = names.size();
     std::ios_base::openmode mode = std::ios::out|std::ios::binary ;
     std::ofstream fp(path, mode );
     for( INT i=0 ; i < num_names ; i++) fp << names[i] << std::endl ;
-    fp.close();
+    U::CloseOutput(fp, path);
 }
 
 

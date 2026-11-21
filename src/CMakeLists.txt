@@ -23,11 +23,16 @@ target_include_directories(consgeo PRIVATE
 )
 target_link_libraries(consgeo simphony_argparse)
 
-# simg4ox supports torch and charged primaries with serial/MT Geant4 and serialized OptiX launches
-add_executable(simg4ox simg4ox.cpp g4app.h)
+# The pool and its protocol are private to simg4ox.
+add_library(simg4ox_gpu_pool STATIC GpuEventPool.cc)
+target_include_directories(simg4ox_gpu_pool PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(simg4ox_gpu_pool PUBLIC SysRap)
+
+# simg4ox supports torch and charged primaries with serial/MT Geant4
+add_executable(simg4ox simg4ox.cpp GpuWorker.cc g4app.h)
 target_compile_definitions(simg4ox PRIVATE SIMPHONY_VERSION="${PROJECT_VERSION}")
 
-target_link_libraries(simg4ox SysRap ${Geant4_LIBRARIES} simphony simphony_argparse)
+target_link_libraries(simg4ox simg4ox_gpu_pool SysRap ${Geant4_LIBRARIES} simphony simphony_argparse)
 
 target_include_directories(simg4ox PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>

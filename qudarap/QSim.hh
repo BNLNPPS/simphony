@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 #include "QUDARAP_API_EXPORT.hh"
 #include "plog/Severity.h"
@@ -132,6 +133,8 @@ public:
     NP*    simulate(const NP* gs, int eventID );     // higher level API for use from CSGOptiXService.h
 
     static void MaybeSaveIGS(int eventID, NP* igs);
+    // Optional destination for a backend with a private diagnostics directory.
+    std::function<void(const NP&)> save_genstep_dump;
 
     unsigned long long get_photon_slot_offset() const ;
 

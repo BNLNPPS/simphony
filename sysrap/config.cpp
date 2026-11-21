@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <ranges>
 #include <sstream>
 #include <stdexcept>
@@ -236,10 +237,29 @@ void ResolveOutputPath(const std::filesystem::path& output_dir, std::filesystem:
 } // namespace
 
 Config::Config(std::string config_name) :
-    name{config_name}
+    Config(Locate(config_name + ".json"), config_name)
 {
-    ReadConfig(Locate(name + ".json"));
+}
+
+Config::Config(const std::filesystem::path& filepath, std::string config_name) :
+    name{std::move(config_name)}
+{
+    ReadConfig(filepath);
     Apply();
+}
+
+Config Config::FromFile(const std::filesystem::path& filepath)
+{
+    return Config(filepath, filepath.stem().string());
+}
+
+void Config::WriteSnapshot(const std::filesystem::path& filepath) const
+{
+    std::ofstream snapshot(filepath, std::ios::binary);
+    snapshot << document_;
+    snapshot.close();
+    if (!snapshot)
+        throw std::runtime_error("Could not write config snapshot " + filepath.string());
 }
 
 std::string Config::PtxPath(const std::string& ptx_name)
@@ -272,7 +292,7 @@ std::string Config::PtxPath(const std::string& ptx_name)
     throw std::runtime_error(errmsg.str());
 }
 
-std::string Config::Locate(std::string filename) const
+std::string Config::Locate(std::string filename)
 {
     std::vector<std::string> search_paths;
 
@@ -314,14 +334,17 @@ std::string Config::Locate(std::string filename) const
 /**
  * Expects a valid filepath.
  */
-void Config::ReadConfig(std::string filepath)
+void Config::ReadConfig(const std::filesystem::path& filepath)
 {
     nlohmann::json json;
 
     try
     {
-        std::ifstream ifs(filepath);
-        ifs >> json;
+        std::ifstream config(filepath, std::ios::binary);
+        if (!config)
+            throw std::runtime_error("Could not open config file " + filepath.string());
+        document_.assign(std::istreambuf_iterator<char>(config), std::istreambuf_iterator<char>());
+        std::istringstream(document_) >> json;
 
         if (const auto it = json.find("torch"); it != json.end())
         {
@@ -413,11 +436,11 @@ void Config::ReadConfig(std::string filepath)
     }
     catch (nlohmann::json::exception& e)
     {
-        throw std::runtime_error{"Failed reading config parameters from " + filepath + "\n" + e.what()};
+        throw std::runtime_error{"Failed reading config parameters from " + filepath.string() + "\n" + e.what()};
     }
     catch (std::invalid_argument& e)
     {
-        throw std::runtime_error{"Invalid config value in " + filepath + "\n" + e.what()};
+        throw std::runtime_error{"Invalid config value in " + filepath.string() + "\n" + e.what()};
     }
 }
 
@@ -427,6 +450,7 @@ void Config::Apply() const
     const std::string output_dir_str = output_dir.string();
     const auto        nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
 
+    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetIntegrationMode(integration_mode);
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetRunningMode(running_mode.c_str());
@@ -438,7 +462,6 @@ void Config::Apply() const
     SEventConfig::SetG4StateRerun(g4_state_rerun);
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
-    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetMaxSimtrace(max_simtrace);
     SEventConfig::SetMaxTime(max_time);
     SEventConfig::SetModeLite(static_cast<int>(mode_lite));

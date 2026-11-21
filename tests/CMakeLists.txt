@@ -267,3 +267,67 @@ add_simg4ox_worker_timing_test(Integration.simg4ox_serial_control 1)
 if(Geant4_multithreaded_FOUND)
     add_simg4ox_worker_timing_test(Integration.simg4ox_multithread 2)
 endif()
+
+add_executable(GpuWorkerProtocolTest GpuWorkerProtocolTest.cc)
+target_link_libraries(GpuWorkerProtocolTest PRIVATE simg4ox_gpu_pool)
+add_test(NAME Simphony.GpuWorkerProtocol COMMAND GpuWorkerProtocolTest)
+set_tests_properties(Simphony.GpuWorkerProtocol PROPERTIES LABELS "unit;multi-gpu" TIMEOUT 30)
+
+add_test(NAME Simphony.GpuDispatch.options
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_gpu_options.py $<TARGET_FILE:simg4ox> options)
+set_tests_properties(Simphony.GpuDispatch.options PROPERTIES LABELS "unit;multi-gpu" TIMEOUT 60)
+
+set_tests_properties(Simphony.Api PROPERTIES FIXTURES_SETUP gpu_worker_geometry)
+add_test(NAME Simphony.GpuWorkerProtocol.parent_death
+    COMMAND GpuWorkerProtocolTest --parent-death $<TARGET_FILE:simg4ox>
+            "${SIMPHONY_API_TEST_WORKDIR}/geometry" "${PROJECT_SOURCE_DIR}/config/dev.json")
+set_tests_properties(Simphony.GpuWorkerProtocol.parent_death PROPERTIES
+    FIXTURES_REQUIRED gpu_worker_geometry LABELS "integration;multi-gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 120)
+
+add_test(NAME Simphony.GpuWorkerProtocol.finalization
+    COMMAND GpuWorkerProtocolTest --finalization $<TARGET_FILE:simg4ox>
+            "${SIMPHONY_API_TEST_WORKDIR}/geometry")
+set_tests_properties(Simphony.GpuWorkerProtocol.finalization PROPERTIES
+    FIXTURES_REQUIRED gpu_worker_geometry LABELS "integration;multi-gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 120)
+
+if(Geant4_multithreaded_FOUND)
+    add_test(NAME Integration.simg4ox_multi_gpu.directories
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_gpu_options.py $<TARGET_FILE:simg4ox> directories)
+    set_tests_properties(Integration.simg4ox_multi_gpu.directories PROPERTIES
+        LABELS "integration;multi-gpu" SKIP_RETURN_CODE 77 TIMEOUT 90)
+    foreach(MULTI_GPU_CASE IN ITEMS cerenkov scintillation zero torch nested frozen_config)
+        set(MULTI_GPU_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_multi_gpu/${MULTI_GPU_CASE}")
+        file(MAKE_DIRECTORY "${MULTI_GPU_WORKDIR}")
+        add_test(NAME "Integration.simg4ox_multi_gpu.${MULTI_GPU_CASE}"
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_multi_gpu.py
+                    $<TARGET_FILE:simg4ox> "${MULTI_GPU_CASE}")
+        set_tests_properties("Integration.simg4ox_multi_gpu.${MULTI_GPU_CASE}" PROPERTIES
+            WORKING_DIRECTORY "${MULTI_GPU_WORKDIR}"
+            LABELS "integration;multithread;multi-gpu;timing"
+            SKIP_RETURN_CODE 77 TIMEOUT 720 RUN_SERIAL TRUE)
+    endforeach()
+    foreach(FAILURE_PHASE IN ITEMS startup request finalization parent_hits parent_timing parent_profile geometry_parse geometry_save filtered_snapshot)
+        add_test(NAME "Integration.simg4ox_gpu_failure.${FAILURE_PHASE}"
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_gpu_failure.py
+                    $<TARGET_FILE:simg4ox> "${FAILURE_PHASE}")
+        set_tests_properties("Integration.simg4ox_gpu_failure.${FAILURE_PHASE}" PROPERTIES
+            LABELS "integration;multi-gpu" TIMEOUT 60 RUN_SERIAL TRUE SKIP_RETURN_CODE 77)
+    endforeach()
+
+    foreach(DIAGNOSTIC IN ITEMS metadata igs igs_directory_link igs_file_link traversal token_traversal symlink_traversal nested_token)
+        add_test(NAME Integration.simg4ox_multi_gpu.diagnostics.${DIAGNOSTIC}
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_gpu_diagnostics.py
+                    $<TARGET_FILE:simg4ox> ${DIAGNOSTIC})
+        set_tests_properties(Integration.simg4ox_multi_gpu.diagnostics.${DIAGNOSTIC} PROPERTIES
+            LABELS "integration;multi-gpu" SKIP_RETURN_CODE 77 TIMEOUT 120)
+    endforeach()
+endif()
+
+add_test(NAME Simphony.GpuWorkerProtocol.truncated_header
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_gpu_diagnostics.py
+            $<TARGET_FILE:simg4ox> truncated "${SIMPHONY_API_TEST_WORKDIR}/geometry")
+set_tests_properties(Simphony.GpuWorkerProtocol.truncated_header PROPERTIES
+    FIXTURES_REQUIRED gpu_worker_geometry LABELS "integration;multi-gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 60)

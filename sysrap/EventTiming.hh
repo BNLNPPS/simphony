@@ -378,6 +378,8 @@ class SYSRAP_API EventTimingProfile
      * @throws std::runtime_error if directory creation, I/O, parsing, or rename fails
      */
     static void Write(EventTimingWriteMode mode = EventTimingWriteMode::Replace);
+    /** Writes a checked, complete profile to a caller-owned staging file. */
+    static void WriteStaged(const std::filesystem::path& path);
 };
 
 /**
@@ -387,6 +389,14 @@ class SYSRAP_API EventTimingProfile
  * are also repeated in every event CSV row. Momentum is measured in GeV/c and
  * GPU memory in bytes.
  */
+struct EventTimingGpuDevice
+{
+    int           ordinal{-1};
+    std::string   uuid;
+    std::string   name;
+    std::uint64_t memory_bytes{0};
+};
+
 struct EventTimingMetadata
 {
     /** Geometry selection used by the run. */
@@ -409,6 +419,8 @@ struct EventTimingMetadata
     long random_seed{-1};
     /** CUDA device name. */
     std::string gpu_name;
+    std::string                       gpu_dispatch{"direct"};
+    std::vector<EventTimingGpuDevice> gpu_devices;
     /** CUDA device ordinal, or -1 when not reported. */
     int gpu_device_id{-1};
     /** Total device memory in bytes. */
@@ -512,6 +524,11 @@ class SYSRAP_API EventTimingRecorder
      * timestamp precedes its start
      */
     void EndGpu();
+    /** Assign direct-backend device identity; call after EndGpu, before ReleaseGpu. */
+    void SetGpuDevice(int ordinal, const std::string& uuid);
+    /** Record helper monotonic timestamps; CPU samples remain parent-worker-local. */
+    void SetGpuService(int ordinal, const std::string& uuid, std::int64_t start_ns,
+                       std::int64_t end_ns, std::int64_t cleanup_end_ns);
     /** Marks release of the GPU dispatch gate after hit collection/reset.
      * Optional for legacy callers, which use EndGpu() as the release boundary.
      * Throws outside CPU post-processing or on a duplicate release.
@@ -538,6 +555,11 @@ class SYSRAP_API EventTimingRecorder
      * @throws std::runtime_error if directory creation or output I/O fails
      */
     void Write(const EventTimingMetadata& metadata) const;
+    /** Returns the final path for the manifest adjacent to the timeline. */
+    std::filesystem::path ManifestPath() const;
+    /** Writes the timeline and manifest to caller-owned staging files. */
+    void WriteStaged(const EventTimingMetadata& metadata, const std::filesystem::path& csv,
+                     const std::filesystem::path& manifest) const;
 
   private:
     /** Internal lifecycle states for the single active event. */
@@ -560,6 +582,10 @@ class SYSRAP_API EventTimingRecorder
     {
         int               event_id{-1};
         int               worker_id{-1};
+        int               gpu_device_id{-1};
+        std::string       gpu_uuid;
+        std::int64_t      service_start_ns{0}, service_end_ns{0}, cleanup_end_ns{0};
+        bool              helper_service{false};
         std::int64_t      num_gensteps{0};
         std::int64_t      num_photons{0};
         std::size_t       num_gpu_hits{0};
@@ -584,7 +610,6 @@ class SYSRAP_API EventTimingRecorder
         std::string_view         operation) const;
     std::string SerializeCsv(const EventTimingMetadata& metadata) const;
     std::string SerializeManifest(const EventTimingMetadata& metadata) const;
-    std::filesystem::path ManifestPath() const;
 
     std::filesystem::path output_;
     SampleProvider        provider_{nullptr};

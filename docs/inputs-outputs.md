@@ -94,12 +94,14 @@ simg4ox -g tests/geom/opticks_raindrop.gdml -c dev \
     -m tests/run_mt.mac -s 42 --threads 4
 ```
 
-In MT mode, actions and sensitive detectors are worker-local. Completed events
-share one process-wide Opticks GPU context, so GPU launches are serialized in
-event-ID order while Geant4 CPU tracking remains multithreaded. Run-wide CPU
-and GPU hits are merged in event-ID order. Full CPU-side Opticks photon-history
+In MT mode, actions and sensitive detectors are worker-local. With one visible
+GPU, completed events share one process-wide Opticks context and GPU launches
+are serialized in event-ID order. With multiple visible GPUs, the default
+dispatch starts one helper per device and sends ready events to available helpers.
+Geant4 CPU tracking remains multithreaded in both modes. Run-wide CPU and GPU
+hits are merged in event-ID order. Full CPU-side Opticks photon-history
 recording is available only with the serial run manager.
-Charged MT gensteps are event-local until their worker acquires the GPU gate.
+Charged MT gensteps remain event-local until their worker acquires a GPU.
 Both source modes support `--threads N`.
 
 ## Defining primary particles
@@ -415,3 +417,19 @@ step_count = step_used.sum(axis=1)
 
 For `photon.npy`, `hit.npy`, and `inphoton.npy`, use the same decoding with
 shape `(N, 4, 4)` and `q3 = arr.view(np.uint32)[:, 3, :]`.
+
+### Device identity in multi-GPU event timings
+
+The optional additive timing columns `gpu_device_id` and `gpu_uuid` identify the
+backend assigned to each event; zero-work events use `-1` and an empty UUID.
+`gpu_service_start_offset_s`, `gpu_service_end_offset_s`, and
+`gpu_cleanup_end_offset_s` delimit backend staging/transport/synchronization and
+subsequent hit-copy/reset work. Offsets share the parent run's monotonic origin.
+`gpu_dispatch` is `direct` or `pool`; the manifest lists `gpu_devices`, `num_gpus`,
+and the timing boundary definitions. The existing `dispatch_mode` still describes
+the synchronous/blocking Geant4 worker behavior.
+
+Final `s_hits.npy` and `g_hits.npy` preserve event-ID ordering even when GPUs
+complete events out of order. Per-event hit counts in the timing CSV delimit each
+event's slice of those arrays. Throughput and occupancy analyses must use actual
+completion timestamps rather than assuming event IDs complete in sequence.

@@ -57,7 +57,7 @@ def main():
             # Positive counts must come from the scintillation collector.
             env["U4__CollectGenstep_G4Cerenkov_modified_DISABLE"] = "1"
         command = [str(args.binary.resolve()), "--gdml", str(geometry), "--config", "charged",
-                   "--macro", str(macro), "--threads", str(threads), "--particle", particle,
+                   "--macro", str(macro), "--threads", str(threads), "--gpu-dispatch", "direct", "--particle", particle,
                    "--momentum-gev-c", "0.0014219697254161214" if scintillation else "20",
                    "--multiplicity", "2" if scintillation else "10", "--seed", "42"]
         with (output / "stdout.log").open("w") as log:
