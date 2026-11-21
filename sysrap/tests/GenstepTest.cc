@@ -1,7 +1,10 @@
 #include <cassert>
 #include <cstring>
+#include <memory>
+#include <stdexcept>
 
 #include "OpticksGenstep.h"
+#include "SGenstep.h"
 
 void test_retired_codes()
 {
@@ -31,9 +34,31 @@ void test_current_optical_codes()
     assert(OpticksGenstep_::GenstepToPhotonFlag(OpticksGenstep_SCINTILLATION) == SCINTILLATION);
 }
 
+void test_launch_capacity()
+{
+    std::vector<sslice>       slices;
+    const std::unique_ptr<NP> fitting(SGenstep::MakeTestArray(std::vector<int>{750, 750}));
+    const size_t              count = SGenstep::GetGenstepSlices(slices, fitting.get(), 1000);
+    if (count != 1500 || slices.size() != 2 || !slices[0].matches(0, 1, 0, 750) || !slices[1].matches(1, 2, 750, 750))
+        throw std::runtime_error("Expected two 750-photon launches with a 1000-slot capacity");
+
+    const std::unique_ptr<NP> oversized(SGenstep::MakeTestArray(std::vector<int>{10000}));
+    slices.clear();
+    try
+    {
+        SGenstep::GetGenstepSlices(slices, oversized.get(), 1000);
+    }
+    catch (const std::length_error&)
+    {
+        return;
+    }
+    throw std::runtime_error("Expected a 10000-photon genstep to be rejected for a 1000-slot launch");
+}
+
 int main()
 {
     test_retired_codes();
     test_current_optical_codes();
+    test_launch_capacity();
     return 0;
 }

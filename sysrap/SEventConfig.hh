@@ -1,10 +1,11 @@
 #pragma once
+#include "SYSRAP_API_EXPORT.hh"
+#include "plog/Severity.h"
+#include <atomic>
+#include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
-#include <limits>
-#include <cstdint>
-#include "plog/Severity.h"
-#include "SYSRAP_API_EXPORT.hh"
 
 struct NP ;
 struct storch;
@@ -54,8 +55,7 @@ recompute all dependent values:
 
 * ``event.event_mode`` derives gather/save masks and diagnostic buffer limits.
 * ``event.mode_lite`` and ``event.mode_merge`` select photon and hit variants.
-* ``event.maxslot: 0`` is replaced by a device-memory heuristic once a CUDA
-  device is selected.
+* ``event.maxslot: 0`` uses the selected CUDA device's memory to size launches.
 
 
 
@@ -98,10 +98,11 @@ MaxSimtrace
 MaxSlot (JSON ``event.maxslot``)
     maximum CUDA launch slots
 
-    With ``event.maxslot: 0`` SEventConfig::HeuristicMaxSlot_Rounded is
-    used to set MaxSlot to a VRAM appropriate value.
-
-    For a non-zero value the specified value is used.
+    Each CUDA device inherits the job setting. Zero sizes launches from its VRAM.
+    GPU limits are capped at the OptiX launch limit. After Initialize(), workers
+    may call SetDeviceMaxSlot for their current CUDA device. Event descriptors
+    capture the effective limit at creation and use it for their buffers and launches.
+    Passing zero restores the job setting for that device.
 
     For large numbers of photons the value will determine how many
     launches are done.
@@ -154,6 +155,7 @@ struct SYSRAP_API SEventConfig
     static constexpr const int64_t G = 1000000000 ;
     static constexpr const int64_t M = 1000000 ;
     static constexpr const int64_t K = 1000 ;
+    static constexpr int64_t       OPTIX_MAX_LAUNCH_SLOTS = int64_t{1} << 30;
 
     static constexpr const char* WITH_STATE_LIMIT = "M3" ;
     static constexpr const char* NO_STATE_LIMIT = "G1000" ;  // 1000 billion
@@ -164,6 +166,7 @@ struct SYSRAP_API SEventConfig
     static bool        CPU_Simulation() ; // 2 or 3
 
     static const char* EventMode();
+    static int DeviceIndex(); // CUDA-visible index, or -1 before discovery or without a device
     static const char* DeviceName();
     static bool        HasDevice();
 
@@ -311,6 +314,7 @@ struct SYSRAP_API SEventConfig
 
     static void SetMaxCurand( int max_curand);
     static void SetMaxSlot(   int max_slot);
+    static void SetDeviceMaxSlot(int max_slot);
 
     static void SetMaxGenstep(int max_genstep);
     static void SetMaxPhoton( int max_photon);
@@ -428,7 +432,6 @@ struct SYSRAP_API SEventConfig
 
     static int         _IntegrationMode ;
     static const char* _EventMode ;
-    static const char* _DeviceName ;
     static int         _RunningMode ;
     static storch      _Torch;
     static int         _StartIndex ;
@@ -493,11 +496,11 @@ struct SYSRAP_API SEventConfig
     static const char* _InputPhotonRecordTime ;
     static const char* _InputPhotonRecordSlice ;
 
-    static scontext* CONTEXT ;
+    static std::atomic<scontext*> CONTEXT;
     static salloc*   ALLOC ;
     static std::string GetGPUMeta();
 
-    static int   Initialize_COUNT ;
+    static std::atomic<int> Initialize_COUNT;
     static void  Initialize_Meta();
     static int   Initialize();
 
@@ -529,10 +532,8 @@ struct SYSRAP_API SEventConfig
 
     static constexpr const char* NAME = "SEventConfig.npy" ;
     static NP* Serialize();
+    static NP* SerializeWithMaxSlot(int64_t max_slot);
     static void Save(const char* dir) ;
-
-    static void SetDevice( size_t totalGlobalMem_bytes, std::string name );
-    static void SetDeviceName( const char* name );
 
     static size_t HeuristicMaxSlot(         size_t totalGlobalMem_bytes, int lite, int merge );
     static size_t HeuristicMaxSlot_Rounded( size_t totalGlobalMem_bytes, int lite, int merge );

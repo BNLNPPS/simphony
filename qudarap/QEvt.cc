@@ -1,8 +1,8 @@
-#include <cuda_runtime.h>
-#include <sstream>
 #include <csignal>
-
-
+#include <cuda_runtime.h>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
 
 #include "SEvt.hh"
 
@@ -96,15 +96,14 @@ Q: Where is the SEvt::EGPU instanciated ?
 
 **/
 
-QEvt::QEvt()
-    :
+QEvt::QEvt() :
     sev(SEvt::Get_EGPU()),
     photon_selector(sev ? sev->photon_selector : nullptr),
     photonlite_selector(sev ? sev->photonlite_selector : nullptr),
     evt(sev ? sev->evt : nullptr),
-    d_evt(QU::device_alloc<sevent>(1,"QEvt::QEvt/sevent")),
+    d_evt(QU::device_alloc<sevent>(1, "QEvt::QEvt/sevent")),
     gs(nullptr),
-    gss(nullptr),
+    photon_slot_offset(0),
     input_photon(nullptr),
     upload_count(0)
 {
@@ -195,35 +194,36 @@ Uploads all OR a slice of the gensteps
 
 **/
 
+extern void QEvt_checkSeedCapacity(size_t num_seed, size_t max_slot); // QEvt.cu
 
-int QEvt::setGenstepUpload_NP(const NP* gs_, const sslice* gss_ )
+int QEvt::setGenstepUpload_NP(const NP* gensteps, const sslice* gss)
 {
-    LOG_IF( fatal, gs_ == nullptr ) << " gs_ null " ;
-    assert( gs_ );
+    SGenstep::Check(gensteps);
+    if (gensteps == nullptr)
+        return 1;
+    LOG(LEVEL) << " gs " << gensteps->sstr() << SGenstep::Desc(gensteps, 10);
 
-    gs = gs_ ;
-    gss = gss_ ? new sslice(*gss_) : nullptr ;
+    const size_t num_gs = gensteps->shape[0];
+    const size_t gs_start = gss ? gss->gs_start : 0;
+    const size_t gs_stop = gss ? gss->gs_stop : num_gs;
+    if (gs_stop > num_gs || gs_start > gs_stop || gs_stop > std::numeric_limits<int>::max())
+        throw std::out_of_range("Invalid genstep upload slice");
+    if (gs_start == gs_stop)
+        return 1;
+    if (gs_stop - gs_start > evt->max_genstep)
+        throw std::length_error("Genstep upload exceeds the event genstep capacity");
 
-    SGenstep::Check(gs);
+    // Validate the input before overwriting any part of the previous launch.
+    const size_t num_seed = SGenstep::GetPhotonTotal(gensteps, gs_start, gs_stop);
+    QEvt_checkSeedCapacity(num_seed, evt->max_slot);
 
-    LOG(LEVEL)
-        << " gs " << ( gs ? gs->sstr() : "-" )
-        << SGenstep::Desc(gs, 10)
-        ;
+    const auto* qq = reinterpret_cast<const quad6*>(gensteps->bytes());
+    const int   rc = setGenstepUpload(qq, gs_start, gs_stop);
+    if (rc != 0)
+        return rc;
 
-    int64_t num_gs = gs ? gs->shape[0] : 0 ;
-
-    int64_t gs_start = gss ? gss->gs_start : 0 ;
-    int64_t gs_stop  = gss ? gss->gs_stop  : num_gs ;
-
-    assert( gs_start >= 0 && gs_start <  num_gs );
-    assert( gs_stop  >= 1 && gs_stop  <= num_gs );
-
-    const char* data = gs ? gs->bytes() : nullptr ;
-    const quad6* qq = (const quad6*)data ;
-
-    int rc = setGenstepUpload(qq, gs_start, gs_stop );
-
+    gs = gensteps;
+    photon_slot_offset = gss ? gss->ph_offset : 0;
     if(gss == nullptr) return rc ;
 
 
@@ -254,11 +254,9 @@ int QEvt::setGenstepUpload_NP(const NP* gs_, const sslice* gss_ )
     return rc ;
 }
 
-
 unsigned long long QEvt::get_photon_slot_offset() const
 {
-    typedef unsigned long long ULL ;
-    return gss ? ULL(gss->ph_offset) : 0ull ;   // (sslice)gss::ph_offset is int64_t
+    return photon_slot_offset;
 }
 
 
@@ -275,6 +273,7 @@ void QEvt::clear()
 {
     delete gs ;
     gs = nullptr ;
+    photon_slot_offset = 0;
 }
 
 

@@ -3998,7 +3998,7 @@ void SEvt::add_array( const char* k, const NP* a )
 
 void SEvt::addEventConfigArray()
 {
-    extrafold->add(SEventConfig::NAME, SEventConfig::Serialize() );
+    extrafold->add(SEventConfig::NAME, SEventConfig::SerializeWithMaxSlot(evt->max_slot));
 }
 
 /**
