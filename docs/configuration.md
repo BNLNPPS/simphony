@@ -53,7 +53,7 @@ the effective application values used when JSON omits a key.
 | `g4_state_rerun` | integer, `-1` | Photon index selected when `running_mode` enables a saved-state rerun. |
 | `max_bounce` | integer, `31` | Maximum optical-photon bounce count. |
 | `max_genstep` | integer, `10000000` | Maximum number of uploaded gensteps. |
-| `maxslot` | non-negative integer, `0` | Maximum photon slots per CUDA launch. Each device inherits this setting. Zero sizes launches from the selected device's VRAM. Effective GPU limits are capped at the OptiX limit of 2³⁰ slots, and each genstep must fit in a single launch. |
+| `maxslot` | unsigned 64-bit integer, `0` | Maximum photon slots per CUDA launch. Each device inherits this setting. Zero sizes launches from the selected device's VRAM. The GPU limit is 2³⁰ slots, and each genstep must fit in one launch. JSON integers above `INT_MAX` are stored as 2³⁰ in the job configuration. |
 | `max_simtrace` | integer, `1000000000000` | Maximum number of simtrace records allocated for a launch. |
 | `max_time` | number, `1e27` ns | Propagation time cutoff; the default is effectively unlimited. |
 | `mode_lite` | name, `Standard` | Photon/hit representation: `Standard`, `Lite`, or `DebugCompare`. |

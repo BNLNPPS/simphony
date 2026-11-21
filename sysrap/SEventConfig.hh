@@ -532,6 +532,7 @@ struct SYSRAP_API SEventConfig
 
     static constexpr const char* NAME = "SEventConfig.npy" ;
     static NP* Serialize();
+    static NP* SerializeWithMaxSlot(int64_t max_slot);
     static void Save(const char* dir) ;
 
     static size_t HeuristicMaxSlot(         size_t totalGlobalMem_bytes, int lite, int merge );

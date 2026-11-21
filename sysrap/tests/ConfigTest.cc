@@ -3,6 +3,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -96,6 +97,39 @@ void Require(bool condition, const char* message)
 {
     if (!condition)
         throw std::runtime_error(message);
+}
+
+void CheckMaxSlot(const fs::path& directory)
+{
+    const auto read = [&](const std::string& value) {
+        WriteText(directory / "maxslot.json", "{\"event\":{\"maxslot\":" + value + "}}");
+        return simphony::Config("maxslot");
+    };
+
+    for (const char* value : {"-4294967296", "-0.5", "1.0", "true", "18446744073709551616"})
+    {
+        try
+        {
+            (void)read(value);
+        }
+        catch (const std::runtime_error& error)
+        {
+            Require(std::string(error.what()).find("event.maxslot") != std::string::npos,
+                    "Invalid maxslot error must identify the JSON setting");
+            continue;
+        }
+        throw std::runtime_error(std::string("Accepted invalid event.maxslot ") + value);
+    }
+
+    const int max_int = std::numeric_limits<int>::max();
+    const int ceiling = static_cast<int>(SEventConfig::OPTIX_MAX_LAUNCH_SLOTS);
+    for (const auto& [value, expected] : std::vector<std::pair<std::string, int>>{
+             {"0", 0}, {std::to_string(max_int), max_int}, {"4294967297", ceiling}, {"18446744073709551615", ceiling}})
+    {
+        const simphony::Config config = read(value);
+        Require(config.maxslot == expected && SEventConfig::MaxSlot() == expected,
+                "Wrong job slot limit after JSON conversion");
+    }
 }
 } // namespace
 
@@ -230,6 +264,7 @@ int main()
     const simphony::Config empty_event("empty-event");
     AssertEventDefaults(empty_event);
     AssertFacadeEventDefaults();
+    CheckMaxSlot(directory);
 
     for (const char* mode : {"SRM_DEFAULT", "SRM_G4STATE_SAVE", "SRM_G4STATE_RERUN",
                              "SRM_TORCH", "SRM_INPUT_PHOTON", "SRM_INPUT_GENSTEP", "SRM_GUN"})

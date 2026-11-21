@@ -1437,12 +1437,17 @@ void SEventConfig::Initialize_Comp_Render_(unsigned& gather_mask, unsigned& save
 SEventConfig::Serialize
 -----------------------
 
-Called for example from SEvt::addEventConfigArray
+Standalone configuration dumps use the current device limit.
+SEvt::addEventConfigArray supplies the limit captured by its event descriptor.
 
 **/
 
-
 NP* SEventConfig::Serialize() // static
+{
+    return SerializeWithMaxSlot(MaxSlot());
+}
+
+NP* SEventConfig::SerializeWithMaxSlot(int64_t max_slot)
 {
     NP* meta = NP::Make<int>(1) ;
 
@@ -1459,7 +1464,7 @@ NP* SEventConfig::Serialize() // static
 
     meta->set_meta<int>("G4StateRerun", G4StateRerun() );
     meta->set_meta<int>("MaxCurand", MaxCurand() );
-    meta->set_meta<int64_t>("MaxSlot", MaxSlot());
+    meta->set_meta<int64_t>("MaxSlot", max_slot);
     meta->set_meta<int>("MaxGenstep", MaxGenstep() );
     meta->set_meta<int>("MaxPhoton", MaxPhoton() );
     meta->set_meta<int>("MaxSimtrace", MaxSimtrace() );

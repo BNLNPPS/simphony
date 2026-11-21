@@ -468,6 +468,13 @@ the launch.
 
 bool QSim::KEEP_SUBFOLD = ssys::getenvbool(QSim__simulate_KEEP_SUBFOLD);
 
+static void ClearRejectedEvent(SEvt* event)
+{
+    event->clear_genstep();
+    event->clear_extra();
+    event->reset_counter();
+}
+
 double QSim::simulate(int eventID, bool reset_)
 {
     EventTimingProfile::SetTag(eventID, "A%0.3d_");
@@ -507,9 +514,7 @@ double QSim::simulate(int eventID, bool reset_)
     }
     catch (const std::length_error&)
     {
-        sev->clear_genstep();
-        sev->clear_extra();
-        sev->reset_counter();
+        ClearRejectedEvent(sev);
         throw;
     }
 
@@ -540,10 +545,9 @@ double QSim::simulate(int eventID, bool reset_)
 
         LOG(LEVEL) << sl.idx_desc(i) ;
 
-        // QEvt takes ownership on the first upload and keeps the array until reset.
-        if (i == 0)
-            gensteps.release();
-        int rc = qev->setGenstepUpload_NP(igs, &sl ) ;
+        int rc = qev->setGenstepUpload_NP(igs, &sl);
+        if (rc == 0)
+            gensteps.release(); // QEvt keeps the same array across slices until reset.
         LOG_IF(error, rc != 0) << " QEvt::setGenstep ERROR : have qev but no gensteps collected : will skip cx.simulate " ;
 
         LOG_IF(info, ALLOC)
@@ -911,7 +915,7 @@ double QSim::simtrace(int eventID)
 
     sev->beginOfEvent(eventID);
 
-    NP* igs = sev->makeGenstepArrayFromVector();
+    std::unique_ptr<NP> igs(sev->makeGenstepArrayFromVector());
 
     LOG_IF(fatal, igs==nullptr)
          << " igs NULL "
@@ -919,7 +923,18 @@ double QSim::simtrace(int eventID)
          ;
 
     assert(igs);
-    int rc = qev->setGenstepUpload_NP(igs) ;
+    int rc;
+    try
+    {
+        rc = qev->setGenstepUpload_NP(igs.get());
+        if (rc == 0)
+            igs.release();
+    }
+    catch (const std::length_error&)
+    {
+        ClearRejectedEvent(sev);
+        throw;
+    }
 
     LOG_IF(error, rc != 0) << " QEvt::setGenstep ERROR : no gensteps collected : will skip cx.simtrace " ;
 
@@ -934,7 +949,7 @@ double QSim::simtrace(int eventID)
     sev->topfold->concat();
     sev->topfold->clear_subfold();
 
-    sev->endOfEvent(eventID);
+    reset(eventID);
 
     return dt ;
 }
@@ -1607,11 +1622,10 @@ void QSim::fake_propagate( const NP* prd, unsigned type )
     int num_ip = ip ? ip->shape[0] : 0 ;
     assert( num_ip > 0 );
 
-    quad2* d_prd = UploadFakePRD(ip, prd) ;
-
-    NP* igs = sev->makeGenstepArrayFromVector();
-
-    int rc = qev->setGenstepUpload_NP(igs);
+    std::unique_ptr<NP> gensteps(sev->makeGenstepArrayFromVector());
+    int                 rc = qev->setGenstepUpload_NP(gensteps.get());
+    if (rc == 0)
+        gensteps.release();
     assert( rc == 0 );
     if(rc!=0) std::raise(SIGINT);
 
@@ -1636,6 +1650,7 @@ void QSim::fake_propagate( const NP* prd, unsigned type )
     unsigned threads_per_block = 512 ;
     configureLaunch1D( num_photon, threads_per_block );
 
+    quad2* d_prd = UploadFakePRD(ip, prd);
     QSim_fake_propagate_launch(numBlocks, threadsPerBlock, d_sim, d_prd );
 
     cudaDeviceSynchronize();

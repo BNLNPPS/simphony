@@ -14,7 +14,9 @@
  */
 
 #include "CUDA_CHECK.h"
+#include "NPFold.h"
 #include "SEventConfig.hh"
+#include "SEvt.hh"
 #include "scuda.h"
 #include "squad.h"
 
@@ -31,6 +33,7 @@
 #include <iostream>
 #include <latch>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 
@@ -146,8 +149,14 @@ int main(int argc, char** argv)
     SEventConfig::SetMaxSlot(std::numeric_limits<int>::max());
     expectDevice(numDevices - 1, optixLimit);
     SEventConfig::SetMaxSlot(jobLimit);
+    SEvt* event = SEvt::Create_EGPU();
     SEventConfig::SetDeviceMaxSlot(std::numeric_limits<int>::max());
     expectDevice(numDevices - 1, optixLimit);
+    event->addEventConfigArray();
+    const NP* eventConfig = event->extrafold->get(SEventConfig::NAME);
+    require(eventConfig && eventConfig->get_meta<int64_t>("MaxSlot", -1) == jobLimit, "event metadata lost its captured launch limit");
+    const std::unique_ptr<NP> currentConfig(SEventConfig::Serialize());
+    require(currentConfig->get_meta<int64_t>("MaxSlot", -1) == optixLimit, "standalone metadata lost the current device limit");
     SEventConfig::SetDeviceMaxSlot(0);
     expectDevice(numDevices - 1, jobLimit);
 }

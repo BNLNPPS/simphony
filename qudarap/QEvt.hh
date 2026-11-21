@@ -104,7 +104,7 @@ private:
     sevent*           evt ;
     sevent*           d_evt ;
     const NP*         gs ;
-    sslice*           gss ;
+    unsigned long long photon_slot_offset;
 
     NP*               input_photon ;
 public:
@@ -119,12 +119,12 @@ public:
     A2: Dont need the meta, need the method that access the underlying SEvt.
     **/
 public:
-    // PRIMARY ACTION OF QEvt : genstep uploading
-    //int setGenstep();
-    int setGenstepUpload_NP(const NP* gs);
-    int setGenstepUpload_NP(const NP* gs,  const sslice* sl );
-    unsigned long long get_photon_slot_offset() const ;
-    void clear();
+  // clear() deletes the last successfully uploaded array. Call it before replacing an
+  // array that QEvt should dispose of. A failed upload leaves the current array intact.
+  int setGenstepUpload_NP(const NP* gs);
+  int setGenstepUpload_NP(const NP* gs, const sslice* sl);
+  unsigned long long get_photon_slot_offset() const;
+  void clear();
 private:
 
     int setGenstepUpload(const quad6* qq0, int num_gs );

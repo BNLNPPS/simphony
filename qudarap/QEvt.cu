@@ -12,7 +12,7 @@
 #include "strided_range.h"
 #include <thrust/device_vector.h>
 
-static void CheckSeedCapacity(size_t num_seed, size_t max_slot)
+void QEvt_checkSeedCapacity(size_t num_seed, size_t max_slot)
 {
     if (num_seed > max_slot)
         throw std::length_error("Genstep upload requires " + std::to_string(num_seed) +
@@ -107,7 +107,7 @@ extern "C" unsigned QEvt_count_genstep_photons(sevent* evt)
         sevent::genstep_itemsize );    // begin, end, stride
 
     const size_t num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end(), size_t{0});
-    CheckSeedCapacity(num_seed, evt->max_slot);
+    QEvt_checkSeedCapacity(num_seed, evt->max_slot);
     evt->num_seed = num_seed;
 
 #ifdef DEBUG_QEVENT
@@ -155,7 +155,7 @@ extern "C" void QEvt_fill_seed_buffer(sevent* evt )
     printf("//QEvt_fill_seed_buffer evt.num_genstep %zu evt.num_seed %zu evt.max_photon %zu \n", evt->num_genstep, evt->num_seed, evt->max_photon );
 #endif
 
-    CheckSeedCapacity(evt->num_seed, evt->max_slot);
+    QEvt_checkSeedCapacity(evt->num_seed, evt->max_slot);
     assert( evt->seed && evt->num_seed > 0 );
     assert( evt->num_seed <= evt->max_photon );
 
@@ -208,7 +208,7 @@ extern "C" void QEvt_count_genstep_photons_and_fill_seed_buffer(sevent* evt )
         sevent::genstep_itemsize );    // begin, end, stride
 
     const size_t num_seed = thrust::reduce(gs_pho.begin(), gs_pho.end(), size_t{0});
-    CheckSeedCapacity(num_seed, evt->max_slot);
+    QEvt_checkSeedCapacity(num_seed, evt->max_slot);
     evt->num_seed = num_seed;
 
 #ifdef DEBUG_QEVENT
