@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <string_view>
 
+#include <cuda_runtime.h>
+
 #include "NP.hh"
 #include "OPTICKS_LOG.hh"
 #include "QEvt.hh"
