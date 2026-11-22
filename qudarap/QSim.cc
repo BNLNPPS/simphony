@@ -1,5 +1,7 @@
 
 #include <csignal>
+#include <memory>
+#include <stdexcept>
 
 #include "SLOG.hh"
 
@@ -466,6 +468,13 @@ the launch.
 
 bool QSim::KEEP_SUBFOLD = ssys::getenvbool(QSim__simulate_KEEP_SUBFOLD);
 
+static void ClearRejectedEvent(SEvt* event)
+{
+    event->clear_genstep();
+    event->clear_extra();
+    event->reset_counter();
+}
+
 double QSim::simulate(int eventID, bool reset_)
 {
     EventTimingProfile::SetTag(eventID, "A%0.3d_");
@@ -491,12 +500,23 @@ double QSim::simulate(int eventID, bool reset_)
 
     sev->beginOfEvent(eventID);  // set SEvt index and tees up frame gensteps for simtrace and input photon simulate running
 
-    NP* igs = sev->makeGenstepArrayFromVector();
+    std::unique_ptr<NP> gensteps(sev->makeGenstepArrayFromVector());
+    NP*                 igs = gensteps.get();
 
     MaybeSaveIGS(eventID, igs);
 
     std::vector<sslice> igs_slice ;
-    int64_t tot_ph_0 = SGenstep::GetGenstepSlices( igs_slice, igs, SEventConfig::MaxSlot() );
+    const size_t        max_slot = sev->evt->max_slot;
+    int64_t             tot_ph_0;
+    try
+    {
+        tot_ph_0 = SGenstep::GetGenstepSlices(igs_slice, igs, max_slot);
+    }
+    catch (const std::length_error&)
+    {
+        ClearRejectedEvent(sev);
+        throw;
+    }
 
     //bool xxl = tot_ph_0 > SGenstep::MAX_SLOT_PER_SLICE ;
     bool xxl = tot_ph_0 > 100*M ;
@@ -505,16 +525,15 @@ double QSim::simulate(int eventID, bool reset_)
 
     LOG(xxl ? info : LEVEL)
         << " eventID " << std::setw(6) << eventID
-        << " igs " << ( igs ? igs->sstr() : "-" )
+        << " igs " << (igs ? igs->sstr() : "-")
         << " tot_ph_0 " << tot_ph_0
-        << " tot_ph_0/M " << tot_ph_0/M
-        << " xxl " << ( xxl ? "YES" : "NO " )
-        << " MaxSlot " << SEventConfig::MaxSlot()
-        << " MaxSlot/M " << SEventConfig::MaxSlot()/M
+        << " tot_ph_0/M " << tot_ph_0 / M
+        << " xxl " << (xxl ? "YES" : "NO ")
+        << " MaxSlot " << max_slot
+        << " MaxSlot/M " << max_slot / M
         << " sslice::Desc(igs_slice)\n"
         << sslice::Desc(igs_slice)
-        << " num_slice " << num_slice
-        ;
+        << " num_slice " << num_slice;
 
     const EventTimingSample t_LBEG = EventTimingProfile::Mark("QSim__simulate_LBEG");
 
@@ -526,7 +545,9 @@ double QSim::simulate(int eventID, bool reset_)
 
         LOG(LEVEL) << sl.idx_desc(i) ;
 
-        int rc = qev->setGenstepUpload_NP(igs, &sl ) ;
+        int rc = qev->setGenstepUpload_NP(igs, &sl);
+        if (rc == 0)
+            gensteps.release(); // QEvt keeps the same array across slices until reset.
         LOG_IF(error, rc != 0) << " QEvt::setGenstep ERROR : have qev but no gensteps collected : will skip cx.simulate " ;
 
         LOG_IF(info, ALLOC)
@@ -566,8 +587,7 @@ double QSim::simulate(int eventID, bool reset_)
         tot_gdt += EventTimingSample::elapsedNs(t_POST, t_DOWN);
     }
 
-
-    size_t max_slot_M = SEventConfig::MaxSlot()/M;
+    size_t                  max_slot_M = max_slot / M;
     const std::string       annotation = EventTimingProfile::Annotation({{"slice", static_cast<std::uint64_t>(num_slice)},
                                                                          {"max_slot_M", static_cast<std::uint64_t>(max_slot_M)}});
     const EventTimingSample t_LEND = EventTimingProfile::Mark("QSim__simulate_LEND", annotation);
@@ -895,7 +915,7 @@ double QSim::simtrace(int eventID)
 
     sev->beginOfEvent(eventID);
 
-    NP* igs = sev->makeGenstepArrayFromVector();
+    std::unique_ptr<NP> igs(sev->makeGenstepArrayFromVector());
 
     LOG_IF(fatal, igs==nullptr)
          << " igs NULL "
@@ -903,7 +923,18 @@ double QSim::simtrace(int eventID)
          ;
 
     assert(igs);
-    int rc = qev->setGenstepUpload_NP(igs) ;
+    int rc;
+    try
+    {
+        rc = qev->setGenstepUpload_NP(igs.get());
+        if (rc == 0)
+            igs.release();
+    }
+    catch (const std::length_error&)
+    {
+        ClearRejectedEvent(sev);
+        throw;
+    }
 
     LOG_IF(error, rc != 0) << " QEvt::setGenstep ERROR : no gensteps collected : will skip cx.simtrace " ;
 
@@ -918,7 +949,7 @@ double QSim::simtrace(int eventID)
     sev->topfold->concat();
     sev->topfold->clear_subfold();
 
-    sev->endOfEvent(eventID);
+    reset(eventID);
 
     return dt ;
 }
@@ -1591,11 +1622,10 @@ void QSim::fake_propagate( const NP* prd, unsigned type )
     int num_ip = ip ? ip->shape[0] : 0 ;
     assert( num_ip > 0 );
 
-    quad2* d_prd = UploadFakePRD(ip, prd) ;
-
-    NP* igs = sev->makeGenstepArrayFromVector();
-
-    int rc = qev->setGenstepUpload_NP(igs);
+    std::unique_ptr<NP> gensteps(sev->makeGenstepArrayFromVector());
+    int                 rc = qev->setGenstepUpload_NP(gensteps.get());
+    if (rc == 0)
+        gensteps.release();
     assert( rc == 0 );
     if(rc!=0) std::raise(SIGINT);
 
@@ -1620,6 +1650,7 @@ void QSim::fake_propagate( const NP* prd, unsigned type )
     unsigned threads_per_block = 512 ;
     configureLaunch1D( num_photon, threads_per_block );
 
+    quad2* d_prd = UploadFakePRD(ip, prd);
     QSim_fake_propagate_launch(numBlocks, threadsPerBlock, d_sim, d_prd );
 
     cudaDeviceSynchronize();

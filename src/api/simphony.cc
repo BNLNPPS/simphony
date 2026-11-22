@@ -80,8 +80,7 @@ void initialize(const G4VPhysicalVolume* world, const GeometryOptions& options)
     bool create_gpu = false;
     if (options.gpu != GpuRequirement::Disabled)
     {
-        if (SEventConfig::CONTEXT == nullptr)
-            SEventConfig::Initialize();
+        SEventConfig::Initialize();
         create_gpu = SEventConfig::HasDevice();
         if (options.gpu == GpuRequirement::Required && !create_gpu)
             throw std::runtime_error("simphony requires a CUDA-capable GPU, but none is available");

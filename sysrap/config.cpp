@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <ranges>
 #include <sstream>
 #include <stdexcept>
@@ -363,7 +365,15 @@ void Config::ReadConfig(std::string filepath)
             Assign(event_, "g4_state_rerun", g4_state_rerun);
             Assign(event_, "max_bounce", max_bounce);
             Assign(event_, "max_genstep", max_genstep);
-            Assign(event_, "maxslot", maxslot);
+            if (const auto it = event_.find("maxslot"); it != event_.end())
+            {
+                if (!it->is_number_integer() || (!it->is_number_unsigned() && it->get<std::int64_t>() < 0))
+                    throw std::invalid_argument("event.maxslot must be a non-negative integer");
+
+                const auto slots = it->get<std::uint64_t>();
+                maxslot = slots > std::numeric_limits<int>::max() ? static_cast<int>(SEventConfig::OPTIX_MAX_LAUNCH_SLOTS)
+                                                                  : static_cast<int>(slots);
+            }
             Assign(event_, "max_simtrace", max_simtrace);
             Assign(event_, "max_time", max_time);
             AssignNamedEnum(event_, "event", "event_mode", event_mode, EventModeInfos);
@@ -427,6 +437,7 @@ void Config::Apply() const
     const std::string output_dir_str = output_dir.string();
     const auto        nullable = [](const std::string& value) { return value.empty() ? nullptr : value.c_str(); };
 
+    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetIntegrationMode(integration_mode);
     SEventConfig::SetEventMode(event_mode_name.c_str());
     SEventConfig::SetRunningMode(running_mode.c_str());
@@ -438,7 +449,6 @@ void Config::Apply() const
     SEventConfig::SetG4StateRerun(g4_state_rerun);
     SEventConfig::SetMaxBounce(max_bounce);
     SEventConfig::SetMaxGenstep(max_genstep);
-    SEventConfig::SetMaxSlot(maxslot);
     SEventConfig::SetMaxSimtrace(max_simtrace);
     SEventConfig::SetMaxTime(max_time);
     SEventConfig::SetModeLite(static_cast<int>(mode_lite));
