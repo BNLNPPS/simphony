@@ -52,7 +52,9 @@ struct QUDARAP_API QTex
     char     getFilterMode() const ; 
     bool     getNormalizedCoords() const ; 
 
-    virtual ~QTex();  
+    virtual ~QTex();
+    QTex(const QTex&) = delete;
+    QTex& operator=(const QTex&) = delete;
 
     void init(); 
     std::string desc() const ; 

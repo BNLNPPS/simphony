@@ -18,6 +18,7 @@ OptiX implementation of CSGFoundry geometry upload and launch.
 
 // sysrap
 #include "EventTiming.hh"
+#include "SGpuWorkerLocal.hh"
 #include "smeta.h"
 #include "spath.h"
 #include "sproc.h"
@@ -279,11 +280,15 @@ HMM:that was optimized down to under 1s, by removal of some unused stree.h stuff
 
 **/
 
-void CSGOptiX::InitGeo(  CSGFoundry* fd )
+CSGDeviceGeometry CSGOptiX::InitGeo(CSGFoundry* fd)
 {
-    LOG(LEVEL) << "[" ; ;
+    if (SGpuWorkerLocal::active)
+    {
+        fd->inst_find_unique();
+        return fd->uploadGeometry();
+    }
     fd->upload();
-    LOG(LEVEL) << "]" ; ;
+    return fd->deviceGeometry();
 }
 
 
@@ -311,9 +316,7 @@ CSGOptiX* CSGOptiX::Create(CSGFoundry* fd )
     InitEvt(fd);
     InitSim(ssim);    // QSim instanciation after uploading SSim arrays
     InitMeta();       // recording GPU, switches etc.. into run metadata
-    InitGeo(fd);      // uploads geometry
-
-    CSGOptiX* cx = new CSGOptiX(fd) ;
+    CSGOptiX* cx = new CSGOptiX(fd, InitGeo(fd));
 
     if(!SEventConfig::IsRGModeRender())
     {
@@ -367,7 +370,11 @@ Instanciated at near to main level in both running modes:
 
 **/
 
-CSGOptiX::CSGOptiX(const CSGFoundry* foundry_) :
+CSGOptiX::CSGOptiX(const CSGFoundry* foundry_) : CSGOptiX(foundry_, foundry_->deviceGeometry())
+{
+}
+
+CSGOptiX::CSGOptiX(const CSGFoundry* foundry_, const CSGDeviceGeometry& geometry) :
     sglm(SGLM::Get()),
     flight(SGeoConfig::FlightConfig()),
     foundry(foundry_),
@@ -387,10 +394,18 @@ CSGOptiX::CSGOptiX(const CSGFoundry* foundry_) :
     sim(QSim::Get()),
     qev(sim == nullptr ? nullptr : sim->qev) // QEvt
 {
-    init();
+    try
+    {
+        init(geometry);
+    }
+    catch (...)
+    {
+        destroy();
+        throw;
+    }
 }
 
-void CSGOptiX::init()
+void CSGOptiX::init(const CSGDeviceGeometry& geometry)
 {
     sglm->addlog("CSGOptiX::init", "start");
 
@@ -413,7 +428,7 @@ void CSGOptiX::init()
     initCheckSim();
     initStack();
     initParams();
-    initGeometry();
+    initGeometry(geometry);
     initSimulate();
 
 
@@ -527,7 +542,7 @@ void CSGOptiX::initStack()
 
 void CSGOptiX::initParams()
 {
-    params->device_alloc();
+    device_params = Params::device_alloc();
 }
 
 /**
@@ -540,20 +555,20 @@ from the uploaded CSGFoundry with SBT::createGeom.
 
 **/
 
-void CSGOptiX::initGeometry()
+void CSGOptiX::initGeometry(const CSGDeviceGeometry& geometry)
 {
     LOG(LEVEL) << "[" ;
-    params->node = foundry->d_node ;
-    params->plan = foundry->d_plan ;
+    params->node = geometry.node ;
+    params->plan = geometry.plan ;
     params->tran = nullptr ;
-    params->itra = foundry->d_itra ;
+    params->itra = geometry.itra ;
 
     bool is_uploaded =  params->node != nullptr ;
     LOG_IF(fatal, !is_uploaded) << "foundry must be uploaded prior to CSGOptiX::initGeometry " ;
     assert( is_uploaded );
 
     LOG(LEVEL) << "[ sbt.setFoundry " ;
-    sbt->setFoundry(foundry);
+    sbt->setFoundry(foundry, geometry.prim);
     params->handle = sbt->getTOPHandle() ;
     LOG(LEVEL) << "] sbt.setFoundry " ;
     LOG(LEVEL) << "]" ;
@@ -657,6 +672,12 @@ void CSGOptiX::destroy()
     LOG(LEVEL);
     delete sbt ;
     delete pip ;
+    if (device_params) cudaFree(device_params);
+    delete params;
+    delete framebuf;
+    delete meta;
+    delete ctx;
+    std::free(const_cast<char*>(optixpath));
 }
 
 
@@ -973,7 +994,7 @@ void CSGOptiX::prepareParam()
         case SRG_SIMULATE : prepareParamSimulate() ; break ;
     }
 
-    params->upload();
+    params->upload(device_params);
     LOG_IF(level, !flight) << params->detail();
 }
 
@@ -1045,7 +1066,7 @@ double CSGOptiX::launch()
 
     if(DEBUG_SKIP_LAUNCH == false)
     {
-        CUdeviceptr d_param = (CUdeviceptr)Params::d_param ; ;
+        CUdeviceptr d_param = (CUdeviceptr)device_params;
         assert( d_param && "must alloc and upload params before launch");
 
         //cudaStream_t stream = SMgr::Stream();
@@ -1348,7 +1369,7 @@ void CSGOptiX::saveMeta(const char* path) const
 
 void CSGOptiX::write_Ctx_log(const char* dir) const
 {
-    std::string ctxlog = Ctx::GetLOG() ;
+    std::string ctxlog = ctx->getLog();
     spath::Write(ctxlog.c_str() , dir, CTX_LOGNAME  );
 }
 

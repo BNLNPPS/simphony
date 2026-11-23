@@ -74,7 +74,15 @@ SBT::SBT(const PIP* pip_)
     foundry(nullptr),
     scene(nullptr)
 {
-    init();
+    try
+    {
+        init();
+    }
+    catch (...)
+    {
+        destroy();
+        throw;
+    }
 }
 
 SBT::~SBT()
@@ -103,6 +111,14 @@ void SBT::destroy()
     vias.clear();
     for (SOPTIX_BuildInput* bi : vbis) delete bi;
     vbis.clear();
+    // Triangulated groups own their uploaded mesh and per-part build inputs.
+    for (const auto& [index, group] : xgas)
+    {
+        for (const auto* input : group->bis) delete input;
+        delete group->cmg;
+        delete group;
+    }
+    xgas.clear();
     destroyRaygen();
     destroyMiss();
     destroyHitgroup();
@@ -126,7 +142,8 @@ void SBT::createRaygen()
 
 void SBT::destroyRaygen()
 {
-    CUDA_CHECK( cudaFree( reinterpret_cast<void*>( d_raygen ) ) );
+    CUDA_CHECK_NOEXCEPT( cudaFree( reinterpret_cast<void*>( d_raygen ) ) );
+    delete raygen;
 }
 
 void SBT::updateRaygen()
@@ -162,7 +179,8 @@ void SBT::createMiss()
 
 void SBT::destroyMiss()
 {
-    CUDA_CHECK( cudaFree( reinterpret_cast<void*>( d_miss ) ) );
+    CUDA_CHECK_NOEXCEPT( cudaFree( reinterpret_cast<void*>( d_miss ) ) );
+    delete miss;
 }
 
 void SBT::updateMiss()
@@ -211,8 +229,9 @@ Canonical invokation from CSGOptiX::CSGOptiX//CSGOptiX::initGeometry
 
 **/
 
-void SBT::setFoundry(const CSGFoundry* foundry_)
+void SBT::setFoundry(const CSGFoundry* foundry_, const CSGPrim* prims)
 {
+    device_prims = prims;
     foundry = foundry_ ;          // analytic
     scene = foundry->getScene();  // triangulated
 
@@ -328,15 +347,15 @@ void SBT::createGAS(unsigned gas_idx)
         assert(mg);
 
         SOPTIX_MeshGroup* xmg = SOPTIX_MeshGroup::Create( mg ) ;
-        gas = SOPTIX_Accel::Create(Ctx::context, xmg->bis );
+        gas = SOPTIX_Accel::Create(properties->context, xmg->bis );
         xgas[gas_idx] = xmg ;
     }
     else
     {
         // analytic geometry
-        SCSGPrimSpec ps = foundry->getPrimSpec(gas_idx);
+        SCSGPrimSpec ps = foundry->getPrimSpecDevice(gas_idx, device_prims);
         bi = new SOPTIX_BuildInput_CPA(ps) ;
-        gas = SOPTIX_Accel::Create(Ctx::context, bi );
+        gas = SOPTIX_Accel::Create(properties->context, bi );
         vbis.push_back(bi);
     }
     vgas[gas_idx] = gas ;
@@ -410,7 +429,7 @@ void SBT::createIAS(unsigned ias_idx)
     LOG(LEVEL) << descIAS(inst);
 
     SOPTIX_BuildInput* ia = new SOPTIX_BuildInput_IA(instances) ;
-    SOPTIX_Accel* ias = SOPTIX_Accel::Create(Ctx::context, ia );
+    SOPTIX_Accel* ias = SOPTIX_Accel::Create(properties->context, ia );
     vias.push_back(ias);
     vbis.push_back(ia);
 }
@@ -1002,7 +1021,8 @@ void SBT::UploadHitGroup(OptixShaderBindingTable& sbt, CUdeviceptr& d_hitgroup, 
 
 void SBT::destroyHitgroup()
 {
-    CUDA_CHECK( cudaFree( reinterpret_cast<void*>( d_hitgroup ) ) );
+    CUDA_CHECK_NOEXCEPT( cudaFree( reinterpret_cast<void*>( d_hitgroup ) ) );
+    delete[] hitgroup;
 }
 
 

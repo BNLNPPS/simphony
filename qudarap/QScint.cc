@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include <sstream>
 #include <csignal>
 
@@ -25,7 +26,7 @@
 const plog::Severity QScint::LEVEL = SLOG::EnvLevel("QScint", "DEBUG"); 
 
 const QScint* QScint::INSTANCE = nullptr ; 
-const QScint* QScint::Get(){ return INSTANCE ;  }
+const QScint* QScint::Get(){ return SGpuWorkerLocal::get<QScint>(INSTANCE) ;  }
 
 /**
 QScint::QScint
@@ -36,6 +37,14 @@ QScint::QScint
 
 **/
 
+
+QScint::~QScint()
+{
+    delete tex;
+    delete scint;
+    if (dsrc) delete src;
+}
+
 QScint::QScint(const NP* icdf, unsigned hd_factor )
     :
     dsrc(icdf->ebyte == 8 ? icdf : nullptr),
@@ -44,7 +53,7 @@ QScint::QScint(const NP* icdf, unsigned hd_factor )
     scint(MakeInstance(tex)),
     d_scint(QU::UploadArray<qscint>(scint, 1, "QScint::QScint/d_scint"))
 {
-    INSTANCE = this ; 
+    SGpuWorkerLocal::get<QScint>(INSTANCE) = this ;
 }
 
 

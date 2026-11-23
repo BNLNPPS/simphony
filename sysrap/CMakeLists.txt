@@ -318,6 +318,7 @@ set(HEADERS
     SComp.h 
 
     SEventConfig.hh
+    SGpuWorkerLocal.hh
     SRM.h 
     SFrameConfig.hh
     SGeoConfig.hh

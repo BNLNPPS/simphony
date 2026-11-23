@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 /**
 QPMT.cc
 ==========
@@ -41,17 +42,38 @@ template<typename T>
 const QPMT<T>* QPMT<T>::INSTANCE = nullptr ;
 
 template<typename T>
-const QPMT<T>* QPMT<T>::Get(){ return INSTANCE ;  }
+const QPMT<T>* QPMT<T>::Get(){ return SGpuWorkerLocal::get<QPMT<T>>(INSTANCE) ;  }
 
 
+
+
+template<typename T>
+QPMT<T>::~QPMT()
+{
+    delete rindex_prop;
+    delete qeshape_prop;
+    delete cetheta_prop;
+    delete cecosth_prop;
+    delete s_qeshape_prop;
+    delete rindex3;
+    delete rindex;
+    delete qeshape;
+    delete cetheta;
+    delete cecosth;
+    delete thickness;
+    delete lcqs;
+    delete s_qeshape;
+    delete s_qescale;
+    delete pmt;
+}
 
 template<typename T>
 inline std::string QPMT<T>::Desc() // static
 {
     std::stringstream ss ;
     ss << "QPMT<" << ( sizeof(T) == 4 ? "float" : "double" ) << "> " ;
-    ss << " INSTANCE:" << ( INSTANCE ? "YES" : "NO " ) << " " ;
-    if(INSTANCE) ss << INSTANCE->desc() ;
+    ss << " INSTANCE:" << ( Get() ? "YES" : "NO " ) << " " ;
+    if(Get()) ss << Get()->desc() ;
     std::string str = ss.str();
     return str ;
 }
@@ -71,7 +93,7 @@ inline void QPMT<T>::init()
 {
     LOG(LEVEL) << "[" ;
 
-    INSTANCE = this ;
+    SGpuWorkerLocal::get<QPMT<T>>(INSTANCE) = this ;
 
     const int ni = s_pmt::NUM_CAT ;   // 3:NNVT/HAMA/NNVT_HiQE
     const int nj = s_pmt::NUM_LAYR ;  // 4:Pyrex/ARC/PHC/Vacuum

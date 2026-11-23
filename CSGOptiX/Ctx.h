@@ -9,6 +9,7 @@ Instanciated by CSGOptiX::initCtx dump properties using: CSGOptiX=INFO
 **/
 
 #include <optix.h>
+#include <mutex>
 #include <vector>
 #include <string>
 #include "plog/Severity.h"
@@ -18,16 +19,18 @@ struct Properties ;
 struct Ctx 
 {
     static const plog::Severity LEVEL ; 
-    static std::vector<std::string> LOGLINES ; 
-    static std::string GetLOG(); 
+    std::string getLog() const;
+    std::vector<std::string> loglines;
+    mutable std::mutex log_mutex;
 
-    static OptixDeviceContext context ;
-    static void log_cb( unsigned int level, const char* tag, const char* message, void* /*cbdata */); 
+    OptixDeviceContext context = nullptr;
+    static void log_cb( unsigned int level, const char* tag, const char* message, void* cbdata);
 
    
     Properties* props  ; 
 
-    Ctx(); 
+    Ctx();
+    ~Ctx();
 
     std::string desc() const ; 
 

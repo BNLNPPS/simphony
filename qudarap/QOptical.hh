@@ -35,6 +35,9 @@ struct QUDARAP_API QOptical
     static const QOptical*      Get(); 
 
     QOptical(const NP* optical);
+    ~QOptical();
+    QOptical(const QOptical&) = delete;
+    QOptical& operator=(const QOptical&) = delete;
     void init(); 
 
     std::string desc() const ; 

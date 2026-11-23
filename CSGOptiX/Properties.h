@@ -19,6 +19,7 @@ OptiX 7.0::
 **/
 
 #include <string>
+#include <optix.h>
 
 struct Properties 
 {
@@ -32,7 +33,8 @@ struct Properties
     unsigned limitMaxSbtRecordsPerGas ;
     unsigned limitMaxSbtOffset ;   
 
-    Properties(); 
+    OptixDeviceContext context;
+    explicit Properties(OptixDeviceContext context);
 
     unsigned visibilityMask_FULL() const ;
     unsigned visibilityMask(unsigned idx) const ;

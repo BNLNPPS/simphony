@@ -79,6 +79,9 @@ struct QUDARAP_API QPMT
 
     // .h
     QPMT(const NPFold* pf);
+    ~QPMT();
+    QPMT(const QPMT&) = delete;
+    QPMT& operator=(const QPMT&) = delete;
 
     // .cc
     void init();

@@ -91,11 +91,10 @@ struct Params
 
 
 #ifndef __CUDACC__
-    static Params* d_param ;
 
     Params(int raygenmode, unsigned width, unsigned height, unsigned depth);
-    void device_alloc();
-    void upload();
+    static Params* device_alloc();
+    void upload(Params* device_params) const;
 
     std::string desc() const ;
     std::string detail() const ;

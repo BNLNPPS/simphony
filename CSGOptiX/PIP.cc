@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cassert>
 
+#include <cstdio>
 #include <optix.h>
 #include <optix_stubs.h>
 #include <optix_stack_size.h>
@@ -17,11 +18,25 @@
 
 #include "OPTIX_CHECK.h"
 
-#include "Ctx.h"
+#include "Properties.h"
 #include "Binding.h"
 #include "OPT.h"
 #include "PIP.h"
 #include "SLOG.hh"
+
+namespace
+{
+// A failed launch can also make the cleanup calls report an error.
+template <class Handle, class Destroy>
+void release(Handle& handle, Destroy destroy) noexcept
+{
+    if (!handle) return;
+    const auto status = destroy(handle);
+    if (status != OPTIX_SUCCESS)
+        std::fprintf(stderr, "OptiX pipeline cleanup failed: %s\n", optixGetErrorString(status));
+    handle = nullptr;
+}
+}
 
 const plog::Severity PIP::LEVEL = SLOG::EnvLevel("PIP", "DEBUG"); 
 
@@ -122,9 +137,17 @@ PIP::PIP(const char* ptx_path_, const Properties* properties_ )
     properties(properties_),
     pipeline_compile_options(CreatePipelineOptions(num_payload_values,num_attribute_values)),
     program_group_options(CreateProgramGroupOptions()),
-    module(CreateModule(ptx_path_,pipeline_compile_options))
+    module(CreateModule(properties->context, ptx_path_,pipeline_compile_options))
 {
-    init(); 
+    try
+    {
+        init();
+    }
+    catch (...)
+    {
+        destroy();
+        throw;
+    }
 }
 
 
@@ -211,7 +234,7 @@ std::string PIP::Desc_ModuleCompileOptions(const OptixModuleCompileOptions& modu
     return str ; 
 }
 
-OptixModule PIP::CreateModule(const char* ptx_path, OptixPipelineCompileOptions& pipeline_compile_options ) // static 
+OptixModule PIP::CreateModule(OptixDeviceContext context, const char* ptx_path, OptixPipelineCompileOptions& pipeline_compile_options ) // static
 {
     std::string ptx ; 
     bool ptx_ok = spath::Read(ptx, ptx_path ); 
@@ -257,7 +280,7 @@ OptixModule PIP::CreateModule(const char* ptx_path, OptixPipelineCompileOptions&
     char log[2048]; // For error reporting from OptiX creation functions
 
     OPTIX_CHECK_LOG( optixModuleCreate(
-                Ctx::context,
+                context,
                 &module_compile_options,
                 &pipeline_compile_options,
                 ptx.c_str(),
@@ -272,7 +295,7 @@ OptixModule PIP::CreateModule(const char* ptx_path, OptixPipelineCompileOptions&
 
 void PIP::destroyModule()
 {
-    OPTIX_CHECK( optixModuleDestroy( module ) );
+    release(module, optixModuleDestroy);
 }
 
 
@@ -302,7 +325,7 @@ void PIP::createRaygenPG()
     unsigned num_program_groups = 1 ; 
 
     OPTIX_CHECK_LOG( optixProgramGroupCreate(
-                Ctx::context,
+                properties->context,
                 &desc,
                 num_program_groups,
                 &program_group_options,
@@ -317,7 +340,7 @@ void PIP::createRaygenPG()
 
 void PIP::destroyRaygenPG()
 {
-    OPTIX_CHECK( optixProgramGroupDestroy( raygen_pg ) );
+    release(raygen_pg, optixProgramGroupDestroy);
 }
 
 
@@ -342,7 +365,7 @@ void PIP::createMissPG()
     unsigned num_program_groups = 1 ; 
 
     OPTIX_CHECK_LOG( optixProgramGroupCreate(
-                Ctx::context,
+                properties->context,
                 &desc,
                 num_program_groups,
                 &program_group_options,
@@ -357,7 +380,7 @@ void PIP::createMissPG()
 
 void PIP::destroyMissPG()
 {
-    OPTIX_CHECK( optixProgramGroupDestroy( miss_pg ) );
+    release(miss_pg, optixProgramGroupDestroy);
 }
 
 
@@ -386,7 +409,7 @@ void PIP::createHitgroupPG()
     desc_ana.hitgroup.entryFunctionNameAH = nullptr;
 
     OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        Ctx::context,
+        properties->context,
         &desc_ana,
         num_program_groups,
         &program_group_options,
@@ -410,7 +433,7 @@ void PIP::createHitgroupPG()
     desc_tri.hitgroup.entryFunctionNameAH = nullptr;
 
     OPTIX_CHECK_LOG(optixProgramGroupCreate(
-        Ctx::context,
+        properties->context,
         &desc_tri,
         num_program_groups,
         &program_group_options,
@@ -425,8 +448,8 @@ void PIP::createHitgroupPG()
 
 void PIP::destroyHitgroupPG()
 {
-    OPTIX_CHECK( optixProgramGroupDestroy( hitgroup_pg ) );
-    OPTIX_CHECK(optixProgramGroupDestroy(hitgroup_pg_tri));
+    release(hitgroup_pg, optixProgramGroupDestroy);
+    release(hitgroup_pg_tri, optixProgramGroupDestroy);
 }
 
 
@@ -464,7 +487,7 @@ void PIP::linkPipeline(unsigned max_trace_depth)
     char log[2048]; 
 
     OPTIX_CHECK_LOG( optixPipelineCreate(
-                Ctx::context,
+                properties->context,
                 &pipeline_compile_options,
                 &pipeline_link_options,
                 program_groups,
@@ -480,7 +503,7 @@ void PIP::linkPipeline(unsigned max_trace_depth)
 
 void PIP::destroyPipeline()
 {
-    OPTIX_CHECK( optixPipelineDestroy( pipeline ) );
+    release(pipeline, optixPipelineDestroy);
 }
 
 

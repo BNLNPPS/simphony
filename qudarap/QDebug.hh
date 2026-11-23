@@ -29,7 +29,10 @@ struct QUDARAP_API QDebug
     static const QDebug* Get(); 
     static qdebug* MakeInstance(); 
 
-    QDebug(); 
+    QDebug();
+    ~QDebug();
+    QDebug(const QDebug&) = delete;
+    QDebug& operator=(const QDebug&) = delete;
 
     qdebug*      dbg ; 
     qdebug*      d_dbg ;

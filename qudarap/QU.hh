@@ -16,6 +16,7 @@ struct QUDARAP_API QU
     static bool MEMCHECK ;
 
     static salloc* alloc ;
+    static salloc* GetAlloc();
 
     static void alloc_add(const char* label, uint64_t num_items, uint64_t sizeof_item );
 

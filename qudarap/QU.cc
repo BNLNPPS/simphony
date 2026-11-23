@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include <cassert>
 
 #include "NP.hh"
@@ -43,10 +44,19 @@ bool QU::MEMCHECK = ssys::getenvbool(_MEMCHECK);
 salloc* QU::alloc = nullptr ;
 
 
+salloc* QU::GetAlloc()
+{
+    if (SGpuWorkerLocal::active) {
+        static thread_local salloc worker;
+        return &worker;
+    }
+    if (!alloc) alloc = SEventConfig::ALLOC;
+    return alloc;
+}
+
 void QU::alloc_add(const char* label, uint64_t num_items, uint64_t sizeof_item ) // static
 {
-   if(!alloc) alloc = SEventConfig::ALLOC ;
-   if(alloc ) alloc->add(label, num_items, sizeof_item );
+    if (auto* record = GetAlloc()) record->add(label, num_items, sizeof_item);
 }
 
 
@@ -256,6 +266,8 @@ void QU::_cudaMalloc( void** p2p, size_t size, const char* label )
     cudaError_t err = cudaMalloc(p2p, size ) ;
     if( err != cudaSuccess )
     {
+        if (SGpuWorkerLocal::active)
+            throw QUDA_Exception((std::string(label) + ": " + cudaGetErrorString(err)).c_str());
         const char* out = spath::Resolve("$DefaultOutputDir") ;
         salloc* estimate = SEventConfig::AllocEstimate();
 
@@ -286,7 +298,7 @@ void QU::_cudaMalloc( void** p2p, size_t size, const char* label )
         LOG(error) << msg ;
 
         sdirectory::MakeDirs(out,0);
-        alloc->save(out) ;
+        if (alloc) alloc->save(out);
 
         throw QUDA_Exception( msg.c_str() );
     }

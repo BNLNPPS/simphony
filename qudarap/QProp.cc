@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include "NP.hh"
 
 #if defined(MOCK_CURAND)
@@ -26,7 +27,7 @@ template<typename T>
 const QProp<T>* QProp<T>::INSTANCE = nullptr ;
 
 template<typename T>
-const QProp<T>* QProp<T>::Get(){ return INSTANCE ; }
+const QProp<T>* QProp<T>::Get(){ return SGpuWorkerLocal::get<QProp<T>>(INSTANCE) ; }
 
 template<typename T>
 qprop<T>* QProp<T>::getDevicePtr() const
@@ -101,7 +102,7 @@ QProp<T>::QProp(const NP* a_)
 template<typename T>
 void QProp<T>::init()
 {
-    INSTANCE = this ;
+    SGpuWorkerLocal::get<QProp<T>>(INSTANCE) = this ;
     assert( a->uifc == 'f' );
     assert( a->shape.size() == 3 );
     assert( nv == ni*nj*nk ) ;
@@ -168,6 +169,8 @@ void QProp<T>::cleanup()
 template<typename T>
 QProp<T>::~QProp()
 {
+    delete a;
+    delete prop;
 }
 
 template<typename T>

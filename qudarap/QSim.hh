@@ -66,6 +66,10 @@ struct QUDARAP_API QSim
     static QSim* INSTANCE ;
     static QSim* Get();
     static QSim* Create();
+    static void ReleaseWorkerComponents();
+    ~QSim();
+    QSim(const QSim&) = delete;
+    QSim& operator=(const QSim&) = delete;
 
     static void UploadComponents(const SSim* ssim);
 

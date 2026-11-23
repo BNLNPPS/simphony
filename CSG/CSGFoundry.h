@@ -96,6 +96,15 @@ queries. SEvt frame access has moved to SSim/stree.
 
 **/
 
+/** Addresses of the immutable CSG arrays uploaded to one CUDA context. */
+struct CSGDeviceGeometry
+{
+    CSGPrim* prim;
+    CSGNode* node;
+    float4* plan;
+    qat4* itra;
+};
+
 struct CSG_API CSGFoundry : public SGeo
 {
     static const plog::Severity LEVEL ;
@@ -215,7 +224,8 @@ struct CSG_API CSGFoundry : public SGeo
 
     SCSGPrimSpec getPrimSpec(       unsigned solidIdx) const ;
     SCSGPrimSpec getPrimSpecHost(   unsigned solidIdx) const ;
-    SCSGPrimSpec getPrimSpecDevice( unsigned solidIdx) const ;
+    SCSGPrimSpec getPrimSpecDevice(unsigned solidIdx) const;
+    SCSGPrimSpec getPrimSpecDevice(unsigned solidIdx, const CSGPrim* device_prims) const;
     void        checkPrimSpec(     unsigned solidIdx) const ;
     void        checkPrimSpec() const ;
 
@@ -353,6 +363,8 @@ struct CSG_API CSGFoundry : public SGeo
     template<typename T> void loadArray( std::vector<T>& vec, const char* dir, const char* name, bool optional=false );
 
     void upload();
+    CSGDeviceGeometry uploadGeometry() const;
+    CSGDeviceGeometry deviceGeometry() const { return {d_prim, d_node, d_plan, d_itra}; }
     bool isUploaded() const ;
 
     void inst_find_unique();

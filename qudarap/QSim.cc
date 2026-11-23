@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 
 #include <csignal>
 #include <memory>
@@ -60,13 +61,48 @@ const bool  QSim::ALLOC  = ssys::getenvbool(_QSim__ALLOC);
 
 
 QSim* QSim::INSTANCE = nullptr ;
-QSim* QSim::Get(){ return INSTANCE ; }
+QSim* QSim::Get(){ return SGpuWorkerLocal::get<QSim>(INSTANCE) ; }
+
+
+namespace
+{
+// Keep the wrappers alive through the last launch. The worker releases them
+// while its CUDA context is still current, including during failed startup.
+thread_local std::vector<std::shared_ptr<void>> worker_components;
+
+template<class T>
+T* retainWorkerComponent(T* component)
+{
+    if (SGpuWorkerLocal::active) worker_components.emplace_back(component);
+    return component;
+}
+}
+
+void QSim::ReleaseWorkerComponents()
+{
+    if (!SGpuWorkerLocal::active) return;
+    while (!worker_components.empty()) worker_components.pop_back();
+    *QU::GetAlloc() = salloc{};
+    SGpuWorkerLocal::get<QBase>(QBase::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QRng>(QRng::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QOptical>(QOptical::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QBnd>(QBnd::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QDebug>(QDebug::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QProp<float>>(QProp<float>::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QScint>(QScint::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QWls>(QWls::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QCerenkov>(QCerenkov::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QPMT<float>>(QPMT<float>::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QMultiFilm>(QMultiFilm::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QEvt>(QEvt::INSTANCE) = nullptr;
+    SGpuWorkerLocal::get<QSim>(QSim::INSTANCE) = nullptr;
+}
 
 QSim* QSim::Create()
 {
-    LOG_IF(fatal, INSTANCE != nullptr) << " a QSim INSTANCE already exists " ;
-    assert( INSTANCE == nullptr ) ;
-    return new QSim  ;
+    LOG_IF(fatal, Get() != nullptr) << " a QSim INSTANCE already exists " ;
+    assert( Get() == nullptr ) ;
+    return retainWorkerComponent(new QSim)  ;
 }
 
 
@@ -122,14 +158,14 @@ void QSim::UploadComponents( const SSim* ssim  )
     if(getenv("QSim__UploadComponents_SIGINT")) std::raise(SIGINT);
 
     LOG(LEVEL) << "[ new QBase" ;
-    QBase* base = new QBase ;
+    QBase* base = retainWorkerComponent(new QBase) ;
     LOG(LEVEL) << "] new QBase : latency here of about 0.3s from first device access, if latency of >1s need to start nvidia-persistenced " ;
     LOG(LEVEL) << base->desc();
 
 
     unsigned skipahead_event_offset = SEventConfig::EventSkipahead()  ;
     LOG(LEVEL) << "[ new QRng skipahead_event_offset : " << skipahead_event_offset << " event.event_skipahead";
-    QRng* rng = new QRng(skipahead_event_offset)  ;  // loads and uploads RNG
+    QRng* rng = retainWorkerComponent(new QRng(skipahead_event_offset))  ;  // loads and uploads RNG
     LOG(LEVEL) << "] new QRng " << rng->desc()  ;
 
     LOG(LEVEL) << rng->desc();
@@ -144,21 +180,21 @@ void QSim::UploadComponents( const SSim* ssim  )
     else
     {
        // note that QOptical and QBnd are tightly coupled, perhaps add constraints to tie them together
-        QOptical* qopt = new QOptical(optical);
+        QOptical* qopt = retainWorkerComponent(new QOptical(optical));
         LOG(LEVEL) << qopt->desc();
 
-        QBnd* qbnd = new QBnd(bnd); // boundary texture with standard domain, used for standard fast property lookup
+        QBnd* qbnd = retainWorkerComponent(new QBnd(bnd)); // boundary texture with standard domain, used for standard fast property lookup
         LOG(LEVEL) << qbnd->desc();
     }
 
-    QDebug* debug_ = new QDebug ;
+    QDebug* debug_ = retainWorkerComponent(new QDebug) ;
     LOG(LEVEL) << debug_->desc() ;
 
     const NP* propcom = ssim->get(snam::PROPCOM);
     if( propcom )
     {
         LOG(LEVEL) << "[ QProp " ;
-        QProp<float>* prop = new QProp<float>(propcom) ;
+        QProp<float>* prop = retainWorkerComponent(new QProp<float>(propcom)) ;
         // property interpolation with per-property domains, eg used for Cerenkov RINDEX sampling
         LOG(LEVEL) << "] QProp " ;
         LOG(LEVEL) << prop->desc();
@@ -176,7 +212,7 @@ void QSim::UploadComponents( const SSim* ssim  )
     else
     {
         unsigned hd_factor = 20u ;  // 0,10,20
-        QScint* scint = new QScint( icdf, hd_factor); // custom high-definition inverse CDF for scintillation generation
+        QScint* scint = retainWorkerComponent(new QScint( icdf, hd_factor)); // custom high-definition inverse CDF for scintillation generation
         LOG(LEVEL) << scint->desc();
     }
 
@@ -192,7 +228,7 @@ void QSim::UploadComponents( const SSim* ssim  )
         if (wls_tc)
         {
             unsigned hd_factor = 20u;
-            QWls *qwls_ = new QWls(wls_icdf, wls_mat_map, wls_tc, hd_factor);
+            QWls *qwls_ = retainWorkerComponent(new QWls(wls_icdf, wls_mat_map, wls_tc, hd_factor));
             LOG(LEVEL) << qwls_->desc();
         }
         else
@@ -205,7 +241,7 @@ void QSim::UploadComponents( const SSim* ssim  )
     bool is_simtrace = SEventConfig::IsRGModeSimtrace() ;
     if(is_simtrace == false )
     {
-        QCerenkov* cerenkov = new QCerenkov  ;
+        QCerenkov* cerenkov = retainWorkerComponent(new QCerenkov)  ;
         LOG(LEVEL) << cerenkov->desc();
     }
     else
@@ -217,7 +253,7 @@ void QSim::UploadComponents( const SSim* ssim  )
 
 
     const NPFold* spmt_f = ssim->get_spmt_f() ;
-    QPMT<float>* qpmt = spmt_f ? new QPMT<float>(spmt_f) : nullptr ;
+    QPMT<float>* qpmt = spmt_f ? retainWorkerComponent(new QPMT<float>(spmt_f)) : nullptr ;
 
     bool has_PMT = spmt_f != nullptr && qpmt != nullptr ;
     bool MISSING_PMT = REQUIRE_PMT == true && has_PMT == false ;
@@ -252,7 +288,7 @@ void QSim::UploadComponents( const SSim* ssim  )
     }
     else
     {
-        QMultiFilm* mul = new QMultiFilm( multifilm );
+        QMultiFilm* mul = retainWorkerComponent(new QMultiFilm( multifilm ));
         LOG(LEVEL) << mul->desc();
     }
     LOG(LEVEL) << "] ssim " << ssim ;
@@ -280,9 +316,15 @@ singleton components.
 
 **/
 
+
+QSim::~QSim()
+{
+    delete sim;
+}
+
 QSim::QSim() :
     base(QBase::Get()),
-    qev(new QEvt),
+    qev(retainWorkerComponent(new QEvt)),
     sev(qev->sev),
     rng(QRng::Get()),
     scint(QScint::Get()),
@@ -368,7 +410,7 @@ void QSim::init()
 
     d_sim = QU::UploadArray<qsim>(sim, 1, "QSim::init.sim" );
 
-    INSTANCE = this ;
+    SGpuWorkerLocal::get<QSim>(INSTANCE) = this ;
     LOG(LEVEL) << desc() ;
     LOG(LEVEL) << descComponents() ;
 }
@@ -553,8 +595,8 @@ double QSim::simulate(int eventID, bool reset_)
         LOG_IF(info, ALLOC)
             << " [" << _QSim__ALLOC << "] "
             << " i " << std::setw(5) << i
-            << " SEventConfig::ALLOC " << ( SEventConfig::ALLOC  ? "YES" : "NO " )
-            << ( SEventConfig::ALLOC ? SEventConfig::ALLOC->desc() : "-" )
+            << " SEventConfig::ALLOC " << ( QU::GetAlloc()  ? "YES" : "NO " )
+            << ( QU::GetAlloc() ? QU::GetAlloc()->desc() : "-" )
             ;
 
         EventTimingProfile::Mark("QSim__simulate_PREL");
@@ -973,7 +1015,7 @@ std::string QSim::desc() const
     ss << "QSim::desc"
        << std::endl
        << " this 0x"            << std::hex << std::uint64_t(this)     << std::dec
-       << " INSTANCE 0x"        << std::hex << std::uint64_t(INSTANCE) << std::dec
+       << " INSTANCE 0x"        << std::hex << std::uint64_t(Get()) << std::dec
        << " QEvt.hh:qev 0x" << std::hex << std::uint64_t(qev)    << std::dec
        << " qsim.h:sim 0x"      << std::hex << std::uint64_t(sim)      << std::dec
        ;
@@ -989,7 +1031,7 @@ std::string QSim::descFull() const
        << "QSim::descFull"
        << std::endl
        << " this 0x"            << std::hex << std::uint64_t(this)     << std::dec
-       << " INSTANCE 0x"        << std::hex << std::uint64_t(INSTANCE) << std::dec
+       << " INSTANCE 0x"        << std::hex << std::uint64_t(Get()) << std::dec
        << " QEvt.hh:qev 0x" << std::hex << std::uint64_t(qev)    << std::dec
        << " qsim.h:sim 0x"      << std::hex << std::uint64_t(sim)      << std::dec
        << " qsim.h:d_sim 0x"    << std::hex << std::uint64_t(d_sim)    << std::dec

@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include <csignal>
 #include <cuda_runtime.h>
 #include <limits>
@@ -53,7 +54,7 @@ bool QEvt::LIFECYCLE = ssys::getenvbool(QEvt__LIFECYCLE) ;
 
 const plog::Severity QEvt::LEVEL = SLOG::EnvLevel("QEvt", "DEBUG");
 QEvt* QEvt::INSTANCE = nullptr ;
-QEvt* QEvt::Get(){ return INSTANCE ; }
+QEvt* QEvt::Get(){ return SGpuWorkerLocal::get<QEvt>(INSTANCE) ; }
 
 const bool QEvt::SEvt_NPFold_VERBOSE  = ssys::getenvbool("QEvt__SEvt_NPFold_VERBOSE") ;
 
@@ -109,7 +110,7 @@ QEvt::QEvt() :
 {
     LOG(LEVEL);
     LOG_IF(info, LIFECYCLE) ;
-    INSTANCE = this ;
+    SGpuWorkerLocal::get<QEvt>(INSTANCE) = this ;
     init();
 }
 
@@ -159,7 +160,7 @@ std::string QEvt::desc() const
 
 std::string QEvt::desc_alloc() const
 {
-    salloc* alloc = QU::alloc ;
+    salloc* alloc = QU::GetAlloc() ;
     std::stringstream ss ;
     ss << "[QEvt::desc_alloc " << std::endl ;
     ss << ( alloc ? "salloc::desc" : "NO-salloc" ) << std::endl ;
@@ -269,10 +270,16 @@ The former omission of gs deletion was reported by Ilker Parmaksiz.
 
 **/
 
+QEvt::~QEvt()
+{
+    clear();
+}
+
 void QEvt::clear()
 {
     delete gs ;
     gs = nullptr ;
+    input_photon.reset();
     photon_slot_offset = 0;
 }
 
@@ -516,7 +523,7 @@ void QEvt::setInputPhotonAndUpload()
 {
     LOG_IF(info, LIFECYCLE) ;
     LOG(LEVEL);
-    input_photon = sev->gatherInputPhoton();
+    input_photon.reset(sev->gatherInputPhoton());
     checkInputPhoton();
 
     int numph = input_photon->shape[0] ;
@@ -529,7 +536,7 @@ void QEvt::setInputPhotonSimtraceAndUpload()
 {
     LOG_IF(info, LIFECYCLE) ;
     LOG(LEVEL);
-    input_photon = sev->gatherInputPhoton();
+    input_photon.reset(sev->gatherInputPhoton());
     checkInputPhoton();
 
     int numph = input_photon->shape[0] ;
@@ -635,7 +642,7 @@ NP* QEvt::getGenstep() const
 }
 NP* QEvt::getInputPhoton() const
 {
-    return input_photon ;
+    return input_photon.get();
 }
 
 
@@ -1226,14 +1233,9 @@ NP* QEvt::FinalMerge(const NP* all, cudaStream_t stream ) // static
 {
     NP_future merge_result = FinalMerge_async<T>(all, stream );
 
-    cudaStream_t consumer ;
-    cudaStreamCreate(&consumer);
-
-    merge_result.wait(consumer);
-
-    NP* out = merge_result.arr ;
-
-    return out ;
+    QUDA_CHECK(cudaEventSynchronize(merge_result.ready));
+    QUDA_CHECK(cudaEventDestroy(merge_result.ready));
+    return merge_result.arr;
 }
 
 template NP* QEvt::FinalMerge<sphoton>(    const NP* all, cudaStream_t stream);
@@ -1281,8 +1283,6 @@ NP_future QEvt::FinalMerge_async(const NP* all, cudaStream_t stream ) // static
 
     // 4. use merge result to host alloc and download
 
-    static cudaStream_t dl_stream = []{ cudaStream_t s; cudaStreamCreate(&s); return s; }();
-
     NP_future result;
     result.arr = T::zeros( merge_result.count );
     cudaEventCreateWithFlags(&result.ready, cudaEventDisableTiming);
@@ -1290,13 +1290,13 @@ NP_future QEvt::FinalMerge_async(const NP* all, cudaStream_t stream ) // static
     if( merge_result.count > 0 && merge_result.ptr )
     {
         // normal path : work to do
-        cudaStreamWaitEvent(dl_stream, merge_result.ready, 0);
+        cudaStreamWaitEvent(stream, merge_result.ready, 0);
 
-        SPM::copy_device_to_host_async<T>( (T*)result.arr->bytes(), merge_result.ptr, merge_result.count, dl_stream );
+        SPM::copy_device_to_host_async<T>( (T*)result.arr->bytes(), merge_result.ptr, merge_result.count, stream );
 
-        cudaFreeAsync(merge_result.ptr, dl_stream);
+        cudaFreeAsync(merge_result.ptr, stream);
 
-        cudaEventRecord(result.ready, dl_stream);
+        cudaEventRecord(result.ready, stream);
     }
     else
     {
@@ -1361,7 +1361,7 @@ NP* QEvt::gatherComponent_(unsigned cmp) const
     NP* a = nullptr ;
     switch(cmp)
     {
-        case SCOMP_INPHOTON:      a = getInputPhoton()          ; break ;
+        case SCOMP_INPHOTON:      a = input_photon ? input_photon->copy() : nullptr; break;
         case SCOMP_PHOTON:        a = gatherPhoton()            ; break ;
         case SCOMP_PHOTONLITE:    a = gatherPhotonLite()        ; break ;
         case SCOMP_HIT:           a = gatherHit()               ; break ;
@@ -1469,7 +1469,7 @@ A: NO, dont think so : same buffers reused for all launches of all events so
 void QEvt::device_alloc_photon()
 {
     LOG_IF(info, LIFECYCLE) ;
-    SetAllocMeta( QU::alloc, evt );   // do this first as memory errors likely to happen in following lines
+    SetAllocMeta( QU::GetAlloc(), evt );   // do this first as memory errors likely to happen in following lines
 
     bool with_photon     = evt->with_photon();
     bool with_photonlite = evt->with_photonlite();

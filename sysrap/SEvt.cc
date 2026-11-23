@@ -1,5 +1,7 @@
 
 #include <limits>
+#include <memory>
+#include "SGpuWorkerLocal.hh"
 #include <array>
 #include <csignal>
 
@@ -80,10 +82,27 @@ const char* SEvt::descStage() const
 bool SEvt::IsDefined(unsigned val){ return val != UNDEF ; }
 
 stimer* SEvt::TIMER = new stimer ;
-void SEvt::TimerStart(){ TIMER->start(); }
-double SEvt::TimerDone(){ return TIMER->done() ; }
-uint64_t SEvt::TimerStartCount(){ return TIMER->start_count() ; }
-std::string SEvt::TimerDesc(){ return TIMER->desc() ; }
+namespace
+{
+stimer* timer()
+{
+    if (!SGpuWorkerLocal::active) return SEvt::TIMER;
+    static thread_local stimer worker;
+    return &worker;
+}
+
+NP* run_meta()
+{
+    if (!SGpuWorkerLocal::active) return SEvt::RUN_META;
+    static thread_local std::unique_ptr<NP> worker(SEvt::Init_RUN_META());
+    return worker.get();
+}
+}
+
+void SEvt::TimerStart(){ timer()->start(); }
+double SEvt::TimerDone(){ return timer()->done() ; }
+uint64_t SEvt::TimerStartCount(){ return timer()->start_count() ; }
+std::string SEvt::TimerDesc(){ return timer()->desc() ; }
 
 /**
 SEvt::Init_RUN_META
@@ -108,7 +127,8 @@ NP* SEvt::RUN_META = Init_RUN_META() ;
 
 std::string* SEvt::RunMetaString() // static
 {
-    return RUN_META ? &(RUN_META->meta) : nullptr ;
+    NP* meta = run_meta();
+    return meta ? &meta->meta : nullptr;
 }
 
 
@@ -273,6 +293,18 @@ void SEvt::init()
 
     initG4State();        // HMM: G4State not an every-event thing ? first event only ?
     LOG(LEVEL) << "]" ;
+}
+
+SEvt::~SEvt()
+{
+    delete photon_selector;
+    delete photonlite_selector;
+    delete evt;
+    delete dbg;
+    topfold->clear();
+    delete topfold;
+    extrafold->clear();
+    delete extrafold;
 }
 
 void SEvt::setFoldVerbose(bool v)
@@ -1213,12 +1245,12 @@ SEvt* SEvt::Get_ECPU(){ return SEvt::Get(ECPU) ; }
 SEvt* SEvt::Get(int idx)  // static
 {
     assert( idx == 0 || idx == 1 );
-    return INSTANCES[idx] ;
+    return SGpuWorkerLocal::get<SEvt>(INSTANCES)[idx] ;
 }
 void SEvt::Set(int idx, SEvt* inst) // static
 {
     assert( idx == 0 || idx == 1 );
-    INSTANCES[idx] = inst ;
+    SGpuWorkerLocal::get<SEvt>(INSTANCES)[idx] = inst ;
     LOG(LEVEL) << " idx " << idx  << " " << DescINSTANCE()  ;
 }
 
@@ -1242,7 +1274,7 @@ SEvt* SEvt::Create(int ins)  // static
     assert( ins == 0 || ins == 1);
     SEvt* ev = new SEvt ;
     ev->setInstance(ins) ;
-    INSTANCES[ins] = ev  ;
+    Set(ins, ev);
     assert( Get(ins) == ev );
     LOG(LEVEL) << " ins " << ins  << " " << DescINSTANCE()  ;
     return ev  ;
@@ -1548,7 +1580,7 @@ void SEvt::EndOfRun()
 template<typename T>
 void SEvt::SetRunMeta(const char* k, T v )
 {
-    RUN_META->set_meta<T>(k, v );
+    run_meta()->set_meta<T>(k, v );
 }
 
 template void SEvt::SetRunMeta<int>(      const char*, int  );
@@ -1609,7 +1641,10 @@ are not saved.
 void SEvt::SaveRunMeta(const char* base)
 {
     const char* dir = RunDir(base);
-    const char* name = "run.npy" ;
+    // Each GPU has its own run metadata. Preserve the default name for the shared backend.
+    const std::string worker_name = SGpuWorkerLocal::active
+        ? "run_gpu" + std::to_string(SEventConfig::DeviceIndex()) + ".npy" : "run.npy";
+    const char* name = worker_name.c_str();
 
     bool is_save_nothing = IsSaveNothing();
 
@@ -1626,11 +1661,11 @@ void SEvt::SaveRunMeta(const char* base)
 
     if(SAVE_RUNDIR)
     {
-        RUN_META->save(dir, name) ;
+        run_meta()->save(dir, name) ;
     }
     else
     {
-        RUN_META->save(name) ;
+        run_meta()->save(name) ;
     }
 }
 

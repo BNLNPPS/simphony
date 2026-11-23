@@ -68,6 +68,7 @@ bool QTex<T>::getNormalizedCoords() const
 template<typename T>
 QTex<T>::~QTex()
 {
+    delete meta;
 #if defined(MOCK_TEXTURE) || defined(MOCK_CUDA)
 #else
     cudaDestroyTextureObject(texObj);

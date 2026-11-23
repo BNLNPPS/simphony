@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include "SLOG.hh"
 #include "SSys.hh"
 #include "scuda.h"
@@ -16,8 +17,20 @@
 
 const plog::Severity QMultiFilm::LEVEL = SLOG::EnvLevel("QMultiFilm", "DEBUG"); 
 const QMultiFilm* QMultiFilm::INSTANCE = nullptr ; 
-const QMultiFilm* QMultiFilm::Get(){ return INSTANCE ;  }
+const QMultiFilm* QMultiFilm::Get(){ return SGpuWorkerLocal::get<QMultiFilm>(INSTANCE) ;  }
 
+
+
+QMultiFilm::~QMultiFilm()
+{
+    for (unsigned i = 0; i < 2; ++i) {
+        delete tex_nnvt_normal[i];
+        delete tex_nnvt_highqe[i];
+        delete tex_hama[i];
+    }
+    delete multifilm;
+    if (dsrc) delete src;
+}
 
 QMultiFilm::QMultiFilm(const NP* lut )
     :
@@ -28,7 +41,7 @@ QMultiFilm::QMultiFilm(const NP* lut )
 {
 
     makeMultiFilmAllTex();
-    INSTANCE = this ; 
+    SGpuWorkerLocal::get<QMultiFilm>(INSTANCE) = this ;
     init();
 }
 

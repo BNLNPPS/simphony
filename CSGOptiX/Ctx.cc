@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <mutex>
 
 #include "Ctx.h"
 
@@ -19,27 +20,35 @@
 
 const plog::Severity Ctx::LEVEL = SLOG::EnvLevel("Ctx", "DEBUG") ; 
 
-std::vector<std::string> Ctx::LOGLINES = {} ; 
+namespace
+{
+std::once_flag optix_initialized;
+}
 
-std::string Ctx::GetLOG()
+std::string Ctx::getLog() const
 {
     std::stringstream ss ; 
     ss << "[Ctx::GetLOG" << std::endl ; 
-    for(int i=0 ; i < int(LOGLINES.size()) ; i++) ss << LOGLINES[i] << std::endl ; 
+    std::lock_guard<std::mutex> lock(log_mutex);
+    for(int i=0 ; i < int(loglines.size()) ; i++) ss << loglines[i] << std::endl ;
     ss << "]Ctx::GetLOG" << std::endl ; 
     std::string str = ss.str(); 
     return str ; 
 }
 
 
-OptixDeviceContext Ctx::context = nullptr ;
 
-void Ctx::log_cb( unsigned int level, const char* tag, const char* message, void* /*cbdata */)  // static 
+
+void Ctx::log_cb( unsigned int level, const char* tag, const char* message, void* cbdata)  // static
 {
     std::stringstream ss ; 
     ss << "[" << std::setw(2) << level << "][" << std::setw( 12 ) << tag << "]: " << message ;
     std::string line = ss.str() ; 
-    LOGLINES.push_back(line); 
+    {
+        Ctx& ctx = *static_cast<Ctx*>(cbdata);
+        std::lock_guard<std::mutex> lock(ctx.log_mutex);
+        ctx.loglines.push_back(line);
+    }
     LOG(LEVEL) << line ; 
 }
 
@@ -51,17 +60,32 @@ Ctx::Ctx()
     CUDA_CHECK(cudaFree( 0 ) ); 
 
     CUcontext cuCtx = 0;  // zero means take the current context
-    OPTIX_CHECK( optixInit() );
+    std::call_once(optix_initialized, [] { OPTIX_CHECK(optixInit()); });
     OptixDeviceContextOptions options = {};
     options.logCallbackFunction       = &Ctx::log_cb;
     options.logCallbackLevel          = 4;
+    options.logCallbackData           = this;
     //options.validationMode = OPTIX_DEVICE_CONTEXT_VALIDATION_MODE_ALL ; 
 
     OPTIX_CHECK( optixDeviceContextCreate( cuCtx, &options, &context ) );
 
-    props = new Properties ;   // instanciation gets the properties
+    try
+    {
+        props = new Properties(context);
+    }
+    catch (...)
+    {
+        optixDeviceContextDestroy(context);
+        throw;
+    }
 }
 
+
+Ctx::~Ctx()
+{
+    delete props;
+    optixDeviceContextDestroy(context);
+}
 
 std::string Ctx::desc() const 
 {

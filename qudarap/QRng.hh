@@ -54,7 +54,9 @@ struct QUDARAP_API QRng
 
     void initMeta(); 
 
-    virtual ~QRng(); 
+    virtual ~QRng();
+    QRng(const QRng&) = delete;
+    QRng& operator=(const QRng&) = delete;
 
     std::string desc() const ; 
 

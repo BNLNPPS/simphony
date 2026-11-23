@@ -9,17 +9,17 @@
 #include <bitset>
 #include <cassert>
 
-Properties::Properties()
+Properties::Properties(OptixDeviceContext context_) : context(context_)
 {
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_TRACE_DEPTH                   , &limitMaxTraceDepth                 , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_TRAVERSABLE_GRAPH_DEPTH       , &limitMaxTraversableGraphDepth      , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_PRIMITIVES_PER_GAS            , &limitMaxPrimitivesPerGas           , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_INSTANCES_PER_IAS             , &limitMaxInstancesPerIas            , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_RTCORE_VERSION                          , &rtcoreVersion                      , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_INSTANCE_ID                   , &limitMaxInstanceId                 , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_NUM_BITS_INSTANCE_VISIBILITY_MASK , &limitNumBitsInstanceVisibilityMask , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_SBT_RECORDS_PER_GAS           , &limitMaxSbtRecordsPerGas           , sizeof(unsigned int)) );
-    OPTIX_CHECK( optixDeviceContextGetProperty(Ctx::context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_SBT_OFFSET                    , &limitMaxSbtOffset                  , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_TRACE_DEPTH                   , &limitMaxTraceDepth                 , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_TRAVERSABLE_GRAPH_DEPTH       , &limitMaxTraversableGraphDepth      , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_PRIMITIVES_PER_GAS            , &limitMaxPrimitivesPerGas           , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_INSTANCES_PER_IAS             , &limitMaxInstancesPerIas            , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_RTCORE_VERSION                          , &rtcoreVersion                      , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_INSTANCE_ID                   , &limitMaxInstanceId                 , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_NUM_BITS_INSTANCE_VISIBILITY_MASK , &limitNumBitsInstanceVisibilityMask , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_SBT_RECORDS_PER_GAS           , &limitMaxSbtRecordsPerGas           , sizeof(unsigned int)) );
+    OPTIX_CHECK( optixDeviceContextGetProperty(context, OPTIX_DEVICE_PROPERTY_LIMIT_MAX_SBT_OFFSET                    , &limitMaxSbtOffset                  , sizeof(unsigned int)) );
 }
 
 

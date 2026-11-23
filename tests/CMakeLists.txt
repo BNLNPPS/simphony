@@ -47,6 +47,19 @@ set_tests_properties(Simphony.Api.failed_initialization PROPERTIES
     TIMEOUT 120
 )
 
+add_executable(GpuWorkerTest GpuWorkerTest.cc)
+target_link_libraries(GpuWorkerTest PRIVATE simphony::simphony Geant4::G4gdml)
+set(GPU_WORKER_TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/gpu_workers")
+file(MAKE_DIRECTORY "${GPU_WORKER_TEST_DIR}")
+add_test(NAME Simphony.GpuWorkers COMMAND GpuWorkerTest "${PROJECT_SOURCE_DIR}/tests/geom/opticks_raindrop.gdml")
+set_tests_properties(Simphony.GpuWorkers PROPERTIES
+    WORKING_DIRECTORY "${GPU_WORKER_TEST_DIR}"
+    ENVIRONMENT "SIMPHONY_PTX_DIR=${PROJECT_BINARY_DIR}/ptx"
+    LABELS "api;gpu"
+    SKIP_RETURN_CODE 77
+    TIMEOUT 120
+)
+
 foreach(FRONTEND IN ITEMS GPUCerenkov GPURaytrace)
     foreach(OUTPUT_MODE IN ITEMS normal output_failure)
         set(TEST_NAME "Integration.${FRONTEND}.repeated_runs.${OUTPUT_MODE}")

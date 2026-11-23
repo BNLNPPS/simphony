@@ -3,9 +3,8 @@
  * Provides the public interface to the process-wide Simphony geometry and GPU runtime.
  *
  * Initialize once before simulating or saving geometry. The runtime supports
- * one geometry and one pending event; there is no shutdown or geometry-replacement
- * operation. State-changing calls are serialized, but callers must also
- * coordinate access to shared Geant4 and lower-level simulation state.
+ * one geometry. Each GPU transport can retain one event for hit retrieval.
+ * Dedicated GPU workers execute concurrently using the shared host geometry.
  */
 
 #pragma once
@@ -69,6 +68,16 @@ void initialize(
     const GeometryOptions&   options = {});
 
 /**
+ * Attaches a dedicated GPU transport to the calling thread after geometry-only
+ * initialization. The ordinal indexes the devices visible to CUDA. Each device
+ * can serve one worker. Submit, retrieve and reset its events on this thread.
+ */
+void initialize_gpu_worker(int cuda_ordinal);
+
+/** Releases the calling worker's transport and private CUDA context. */
+void shutdown_gpu_worker();
+
+/**
  * Queries initialization status.
  *
  * @return whether initialize() has completed successfully.
@@ -78,8 +87,7 @@ bool is_initialized() noexcept;
 /**
  * Queries GPU backend availability.
  *
- * @return whether this runtime has a GPU backend. False before initialization
- * and after geometry-only initialization; this is not a hardware probe.
+ * @return whether the calling thread can use a dedicated or process-wide GPU transport.
  */
 bool has_gpu() noexcept;
 

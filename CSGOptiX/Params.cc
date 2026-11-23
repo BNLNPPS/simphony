@@ -185,14 +185,13 @@ void Params::set_photon_slot_offset(unsigned long long photon_slot_offset_)
 }
 
 
-Params* Params::d_param = nullptr ;
-
-void Params::device_alloc()
+Params* Params::device_alloc()
 {
+    Params* d_param = nullptr;
     CUDA_CHECK( cudaMalloc( reinterpret_cast<void**>( &d_param ), sizeof( Params ) ) );
-    assert( d_param );
+    return d_param;
 }
-void Params::upload()
+void Params::upload(Params* d_param) const
 {
     assert( d_param );
     CUDA_CHECK( cudaMemcpy( reinterpret_cast<void*>( d_param ), this, sizeof( Params ), cudaMemcpyHostToDevice) );

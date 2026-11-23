@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 struct sevent ;
 struct quad4 ;
 struct sphoton ;
@@ -87,6 +89,9 @@ struct QUDARAP_API QEvt : public SCompProvider
     sevent* getDevicePtr() const ;
 
     QEvt();
+    ~QEvt();
+    QEvt(const QEvt&) = delete;
+    QEvt& operator=(const QEvt&) = delete;
 
 private:
     void init();
@@ -106,7 +111,7 @@ private:
     const NP*         gs ;
     unsigned long long photon_slot_offset;
 
-    NP*               input_photon ;
+    std::unique_ptr<NP> input_photon;
 public:
     int               upload_count ;
 

@@ -14,7 +14,10 @@ struct QUDARAP_API QBase
 
     static qbase* MakeInstance();
 
-    QBase();  
+    QBase();
+    ~QBase();
+    QBase(const QBase&) = delete;
+    QBase& operator=(const QBase&) = delete;
     void init(); 
     std::string desc() const ; 
 

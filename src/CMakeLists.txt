@@ -1,4 +1,5 @@
 find_package(Geant4 REQUIRED ui_all vis_all)
+find_package(CUDAToolkit REQUIRED)
 
 add_library(simphony SHARED
     api/simphony.cc
@@ -7,7 +8,7 @@ add_library(simphony SHARED
 )
 add_library(simphony::simphony ALIAS simphony)
 
-target_link_libraries(simphony PUBLIC U4 CSGOptiX)
+target_link_libraries(simphony PUBLIC U4 CSGOptiX PRIVATE CUDA::cuda_driver)
 target_include_directories(simphony PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/api>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>

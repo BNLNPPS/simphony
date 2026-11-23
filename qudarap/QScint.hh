@@ -26,7 +26,10 @@ struct QUDARAP_API QScint
     qscint*       d_scint ; 
 
 
-    QScint(const NP* icdf, unsigned hd_factor); 
+    QScint(const NP* icdf, unsigned hd_factor);
+    ~QScint();
+    QScint(const QScint&) = delete;
+    QScint& operator=(const QScint&) = delete;
 
     void init(); 
     std::string desc() const ; 

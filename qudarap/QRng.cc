@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include "SLOG.hh"
 #include <cstdlib>
 #include <sstream>
@@ -17,7 +18,7 @@
 
 const plog::Severity QRng::LEVEL = SLOG::EnvLevel("QRng", "DEBUG"); 
 const QRng* QRng::INSTANCE = nullptr ; 
-const QRng* QRng::Get(){ return INSTANCE ;  }
+const QRng* QRng::Get(){ return SGpuWorkerLocal::get<QRng>(INSTANCE) ;  }
 
 namespace
 {
@@ -69,7 +70,7 @@ QRng::QRng(unsigned skipahead_event_offset_) :
 
 void QRng::init()
 {
-    INSTANCE = this ; 
+    SGpuWorkerLocal::get<QRng>(INSTANCE) = this ;
     assert(parse_rc == 0 ); 
 
     initMeta(); 
@@ -110,6 +111,7 @@ void QRng::initMeta()
 
 QRng::~QRng()
 {
+    delete qr;
 }
 
 

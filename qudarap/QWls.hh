@@ -36,6 +36,9 @@ struct QUDARAP_API QWls
     qwls *d_wls;      // device copy of qwls struct
 
     QWls(const NP *wls_icdf, const NP *mat_map, const NP *time_constants, unsigned hd_factor);
+    ~QWls();
+    QWls(const QWls&) = delete;
+    QWls& operator=(const QWls&) = delete;
 
     std::string desc() const;
 };

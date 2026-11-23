@@ -49,7 +49,7 @@ struct PIP
     static std::string Desc_ModuleCompileOptions(const OptixModuleCompileOptions& module_compile_options ); 
     static std::string Desc_PipelineCompileOptions(const OptixPipelineCompileOptions& pipeline_compile_options ); 
 
-    static OptixModule CreateModule(const char* ptx_path, OptixPipelineCompileOptions& pipeline_compile_options );
+    static OptixModule CreateModule(OptixDeviceContext context, const char* ptx_path, OptixPipelineCompileOptions& pipeline_compile_options );
     void destroyModule(); 
 
 

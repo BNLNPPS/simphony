@@ -1556,9 +1556,14 @@ SCSGPrimSpec CSGFoundry::getPrimSpecHost(unsigned solidIdx) const
 }
 SCSGPrimSpec CSGFoundry::getPrimSpecDevice(unsigned solidIdx) const
 {
-    assert( d_prim );
+    return getPrimSpecDevice(solidIdx, d_prim);
+}
+
+SCSGPrimSpec CSGFoundry::getPrimSpecDevice(unsigned solidIdx, const CSGPrim* device_prims) const
+{
+    assert(device_prims);
     const CSGSolid* so = solid.data() + solidIdx ;  // get the primOffset from CPU side solid
-    SCSGPrimSpec ps = CSGPrim::MakeSpec( d_prim,  so->primOffset, so->numPrim ); ;
+    SCSGPrimSpec ps = CSGPrim::MakeSpec( device_prims,  so->primOffset, so->numPrim ); ;
     ps.device = true ;
     return ps ;
 }
@@ -3385,16 +3390,22 @@ void CSGFoundry::upload()
     LOG_IF(fatal, is_uploaded_0) << "HAVE ALREADY UPLOADED : THIS CANNOT BE DONE MORE THAN ONCE " ;
     assert(is_uploaded_0 == false);
 
-    // allocates and copies
-    d_prim = prim.size() > 0 ? CU::UploadArray<CSGPrim>(prim.data(), prim.size() ) : nullptr ;
-    d_node = node.size() > 0 ? CU::UploadArray<CSGNode>(node.data(), node.size() ) : nullptr ;
-    d_plan = plan.size() > 0 ? CU::UploadArray<float4>(plan.data(), plan.size() ) : nullptr ;
-    d_itra = itra.size() > 0 ? CU::UploadArray<qat4>(itra.data(), itra.size() ) : nullptr ;
+    const auto geometry = uploadGeometry();
+    d_prim = geometry.prim;
+    d_node = geometry.node;
+    d_plan = geometry.plan;
+    d_itra = geometry.itra;
+    assert(isUploaded());
+}
 
-    bool is_uploaded_1 = isUploaded();
-    LOG_IF(fatal, !is_uploaded_1) << "FAILED TO UPLOAD" ;
-    assert(is_uploaded_1 == true);
-
+CSGDeviceGeometry CSGFoundry::uploadGeometry() const
+{
+    return {
+        prim.empty() ? nullptr : CU::UploadArray<CSGPrim>(prim.data(), prim.size()),
+        node.empty() ? nullptr : CU::UploadArray<CSGNode>(node.data(), node.size()),
+        plan.empty() ? nullptr : CU::UploadArray<float4>(plan.data(), plan.size()),
+        itra.empty() ? nullptr : CU::UploadArray<qat4>(itra.data(), itra.size())
+    };
 }
 
 bool CSGFoundry::isUploaded() const

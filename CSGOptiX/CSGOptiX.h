@@ -31,6 +31,7 @@ struct SGLM ;
 struct SSim ;
 
 struct CSGFoundry ;
+struct CSGDeviceGeometry;
 
 template <typename T> struct Tran ;
 struct QSim ;
@@ -80,6 +81,7 @@ struct CSGOPTIX_API CSGOptiX : public SSimulator
 
     int               raygenmode ;
     Params*           params  ;
+    Params*           device_params = nullptr;
 
 
     Ctx* ctx ;
@@ -101,17 +103,20 @@ private:
     static void InitEvt(  CSGFoundry* fd  );
     static void InitMeta();
     static void InitSim(  SSim* ssim );
-    static void InitGeo(  CSGFoundry* fd );
+    static CSGDeviceGeometry InitGeo(CSGFoundry* fd);
 
 public:
     static CSGOptiX* Create(CSGFoundry* foundry );
 
 
+    CSGOptiX(const CSGOptiX&) = delete;
+    CSGOptiX& operator=(const CSGOptiX&) = delete;
     virtual ~CSGOptiX();
     CSGOptiX(const CSGFoundry* foundry );
 
 private:
-    void init();
+    CSGOptiX(const CSGFoundry* foundry, const CSGDeviceGeometry& geometry);
+    void init(const CSGDeviceGeometry& geometry);
     void initMeta();
     void initCtx();
     void initPIP();
@@ -119,7 +124,7 @@ private:
     void initCheckSim();
     void initStack();
     void initParams();
-    void initGeometry();
+    void initGeometry(const CSGDeviceGeometry& geometry);
     void initSimulate();
     void initRender();
     void initPIDXYZ();

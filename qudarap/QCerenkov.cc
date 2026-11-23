@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include <cassert>
 #include <sstream>
 
@@ -13,7 +14,7 @@
 const QCerenkov* QCerenkov::INSTANCE = nullptr;
 const QCerenkov* QCerenkov::Get()
 {
-    return INSTANCE;
+    return SGpuWorkerLocal::get<QCerenkov>(INSTANCE);
 }
 
 qcerenkov* QCerenkov::MakeInstance() // static
@@ -34,11 +35,17 @@ qcerenkov* QCerenkov::MakeInstance() // static
     return ck;
 }
 
+
+QCerenkov::~QCerenkov()
+{
+    delete cerenkov;
+}
+
 QCerenkov::QCerenkov() :
     cerenkov(MakeInstance()),
     d_cerenkov(QU::UploadArray<qcerenkov>(cerenkov, 1, "QCerenkov::QCerenkov/d_cerenkov.0"))
 {
-    INSTANCE = this;
+    SGpuWorkerLocal::get<QCerenkov>(INSTANCE) = this;
 }
 
 std::string QCerenkov::desc() const

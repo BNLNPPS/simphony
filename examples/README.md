@@ -37,10 +37,12 @@ the runtime; different inputs are rejected.
 
 After preparing gensteps in `SEvt`, call `simphony::simulate(event_id, false)`,
 retrieve results, and call `simphony::reset(event_id)` before the next launch.
-Async applications must serialize the entire genstep / launch / result / reset
-sequence because `SEvt` is process-wide. The `MC_Truth`, `async_gpu_launch`,
-and `async_gpu_std` directories show standalone builds against the installed
-package. Low-level event access still uses the installed SysRap headers.
+Applications sharing the default GPU transport must serialize that sequence.
+Applications using dedicated GPU threads can initialize the geometry with
+`GpuRequirement::Disabled`, call `initialize_gpu_worker(ordinal)` on each GPU
+thread, and call `shutdown_gpu_worker()` on that thread when done. The
+`MC_Truth`, `async_gpu_launch`, and `async_gpu_std` directories show standalone
+builds against the installed package.
 
 The DD4hep plugins use the same runtime. Build them in-tree when DD4hep is
 available or configure `dd4hepplugins/` against the installed package. The

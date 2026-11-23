@@ -24,6 +24,7 @@
 
 
 
+#include "SGpuWorkerLocal.hh"
 #include "SEventConfig.hh"
 #include "SRG.h"  // raygenmode
 #include "SRM.h"  // runningmode
@@ -166,6 +167,8 @@ bool        SEventConfig::GPU_Simulation(){  return _IntegrationMode == 1 || _In
 bool        SEventConfig::CPU_Simulation(){  return _IntegrationMode == 2 || _IntegrationMode == 3 ; }
 
 const char* SEventConfig::EventMode(){ return _EventMode ; }
+thread_local bool SGpuWorkerLocal::active = false;
+
 int SEventConfig::DeviceIndex()
 {
     const auto* context = CONTEXT.load();

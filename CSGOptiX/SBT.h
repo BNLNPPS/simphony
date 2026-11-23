@@ -46,11 +46,12 @@ struct SBT
     HitGroup*     check ;
 
     const CSGFoundry*  foundry ;
+    const CSGPrim* device_prims = nullptr;
     const SScene*      scene ;
 
-    CUdeviceptr   d_raygen ;
-    CUdeviceptr   d_miss ;
-    CUdeviceptr   d_hitgroup ;
+    CUdeviceptr   d_raygen = 0;
+    CUdeviceptr   d_miss = 0;
+    CUdeviceptr   d_hitgroup = 0;
 
     std::vector<OptixInstance> instances ;
 
@@ -78,7 +79,7 @@ struct SBT
     void destroyMiss();
     void updateMiss();
 
-    void setFoundry(const CSGFoundry* foundry);
+    void setFoundry(const CSGFoundry* foundry, const CSGPrim* prims);
     void createGeom();
 
     void createGAS();

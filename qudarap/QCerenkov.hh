@@ -16,5 +16,8 @@ struct QUDARAP_API QCerenkov
     qcerenkov* d_cerenkov;
 
     QCerenkov();
+    ~QCerenkov();
+    QCerenkov(const QCerenkov&) = delete;
+    QCerenkov& operator=(const QCerenkov&) = delete;
     std::string desc() const;
 };

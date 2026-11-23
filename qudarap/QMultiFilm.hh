@@ -42,7 +42,10 @@ struct QUDARAP_API QMultiFilm
     QTex<float4>* makeMultiFilmOneTex(int pmtcatIdx , int resIdx);
 
 
-    QMultiFilm(const NP* lut ); 
+    QMultiFilm(const NP* lut );
+    ~QMultiFilm();
+    QMultiFilm(const QMultiFilm&) = delete;
+    QMultiFilm& operator=(const QMultiFilm&) = delete;
 
     void init(); 
     void uploadMultifilmlut();

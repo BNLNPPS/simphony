@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 
 #include <sstream>
 
@@ -22,7 +23,15 @@ const plog::Severity QOptical::LEVEL = SLOG::EnvLevel("QOptical", "DEBUG");
 #endif
 
 const QOptical* QOptical::INSTANCE = nullptr ; 
-const QOptical* QOptical::Get(){ return INSTANCE ; }
+const QOptical* QOptical::Get(){ return SGpuWorkerLocal::get<QOptical>(INSTANCE) ; }
+
+
+QOptical::~QOptical()
+{
+#if !defined(MOCK_TEXTURE) && !defined(MOCK_CUDA)
+    delete buf;
+#endif
+}
 
 QOptical::QOptical(const NP* optical_)
     :
@@ -35,7 +44,7 @@ QOptical::QOptical(const NP* optical_)
 
 void QOptical::init()
 {
-    INSTANCE = this ; 
+    SGpuWorkerLocal::get<QOptical>(INSTANCE) = this ;
 
 #if defined(MOCK_TEXTURE) || defined(MOCK_CUDA)
 

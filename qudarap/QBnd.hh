@@ -61,7 +61,10 @@ struct QUDARAP_API QBnd
     qbnd*          qb ;    // formerly bnd 
     qbnd*          d_qb ;  // formerly d_bnd
 
-    QBnd(const NP* buf); 
+    QBnd(const NP* buf);
+    ~QBnd();
+    QBnd(const QBnd&) = delete;
+    QBnd& operator=(const QBnd&) = delete;
     void init(); 
 
     std::string desc() const ; 

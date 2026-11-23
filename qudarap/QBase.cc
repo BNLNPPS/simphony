@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include <sstream>
 #include <limits>
 
@@ -19,13 +20,19 @@ const plog::Severity QBase::LEVEL = SLOG::EnvLevel("QBase", "DEBUG");
 #endif
 
 const QBase* QBase::INSTANCE = nullptr ;
-const QBase* QBase::Get(){ return INSTANCE ; }
+const QBase* QBase::Get(){ return SGpuWorkerLocal::get<QBase>(INSTANCE) ; }
 
 qbase* QBase::MakeInstance() // static
 {
     qbase* base = new qbase ;
     base->pidx = ssys::getenvuint64spec("PIDX", "X40") ;  // X40 sentinel  0xffffffffff  (0x1<<40)-1
     return base ;
+}
+
+
+QBase::~QBase()
+{
+    delete base;
 }
 
 QBase::QBase()
@@ -53,7 +60,7 @@ Tried changing the visible devices but seems to make no difference::
 
 void QBase::init()
 {
-    INSTANCE = this ;
+    SGpuWorkerLocal::get<QBase>(INSTANCE) = this ;
 
 #if defined(MOCK_CURAND) || defined(MOCK_CUDA)
     d_base = base ;

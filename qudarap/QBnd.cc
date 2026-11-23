@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 
 #include <cuda_runtime.h>
 #include <sstream>
@@ -33,7 +34,7 @@ const plog::Severity QBnd::LEVEL = SLOG::EnvLevel("QBnd", "DEBUG");
 #endif
 
 const QBnd* QBnd::INSTANCE = nullptr ; 
-const QBnd* QBnd::Get(){ return INSTANCE ; }
+const QBnd* QBnd::Get(){ return SGpuWorkerLocal::get<QBnd>(INSTANCE) ; }
 
 /**
 QBnd::MakeInstance
@@ -76,6 +77,15 @@ Narrows the NP array if wide and creates GPU texture
 
 **/
 
+
+QBnd::~QBnd()
+{
+    delete tex;
+    delete qb;
+    delete sbn;
+    delete src;
+}
+
 QBnd::QBnd(const NP* buf)
     :
     dsrc(buf->ebyte == 8 ? buf : nullptr),
@@ -90,7 +100,7 @@ QBnd::QBnd(const NP* buf)
 
 void QBnd::init()
 {
-    INSTANCE = this ; 
+    SGpuWorkerLocal::get<QBnd>(INSTANCE) = this ;
 #if defined(MOCK_TEXTURE) || defined(MOCK_CUDA)
     d_qb = qb ;  
 #else

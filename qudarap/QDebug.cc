@@ -1,3 +1,4 @@
+#include "SGpuWorkerLocal.hh"
 #include <cuda_runtime.h>
 
 #include <sstream>
@@ -21,7 +22,7 @@
 
 const plog::Severity QDebug::LEVEL = SLOG::EnvLevel("QDebug", "DEBUG") ; 
 const QDebug* QDebug::INSTANCE = nullptr ; 
-const QDebug* QDebug::Get(){ return INSTANCE ; }
+const QDebug* QDebug::Get(){ return SGpuWorkerLocal::get<QDebug>(INSTANCE) ; }
 
 /**
 QDebug::MakeInstance
@@ -73,12 +74,18 @@ qdebug* QDebug::MakeInstance()   // static
     return dbg ; 
 }
 
+
+QDebug::~QDebug()
+{
+    delete dbg;
+}
+
 QDebug::QDebug()
     :
     dbg(MakeInstance()),
     d_dbg(QU::UploadArray<qdebug>(dbg, 1, "QDebug::QDebug/d_dbg" ))
 {
-    INSTANCE = this ; 
+    SGpuWorkerLocal::get<QDebug>(INSTANCE) = this ;
     LOG(LEVEL) << desc() ; 
 }
 

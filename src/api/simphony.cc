@@ -1,14 +1,19 @@
 #include "simphony.h"
 
 #include <atomic>
+#include <cuda.h>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 
 #include "CSGFoundry.h"
 #include "CSGOptiX.h"
+#include "QSim.hh"
 #include "SEventConfig.hh"
+#include "SEvt.hh"
+#include "SGpuWorkerLocal.hh"
 #include "SLOG.hh"
 #include "SSim.hh"
 #include "U4GDML.h"
@@ -16,17 +21,30 @@
 
 namespace
 {
-struct Runtime
+struct Transport
 {
-    std::mutex                mutex;
+    std::mutex         mutex;
+    CSGOptiX*          backend = nullptr;
+    std::optional<int> pending_event;
+};
+
+struct Worker : Transport
+{
+    CUcontext context = nullptr;
+    int       ordinal = -1;
+};
+
+thread_local Worker worker;
+
+struct Runtime : Transport
+{
     std::atomic<bool>         initialized{false};
     std::atomic<bool>         gpu_available{false};
     const G4VPhysicalVolume*  world = nullptr;
     simphony::GeometryOptions options;
     U4Tree*                   tree = nullptr;
     CSGFoundry*               foundry = nullptr;
-    CSGOptiX*                 backend = nullptr;
-    std::optional<int>        pending_event;
+    std::set<int>             worker_devices;
     bool                      initialization_failed = false;
 };
 
@@ -49,11 +67,42 @@ void require_initialized(const Runtime& state)
         throw std::logic_error("simphony is not initialized");
 }
 
-void require_gpu(const Runtime& state)
+Transport& event_transport()
 {
-    require_initialized(state);
+    require_initialized(runtime());
+    if (SGpuWorkerLocal::active) return worker;
+    return runtime();
+}
+
+void require_gpu(const Transport& state)
+{
     if (state.backend == nullptr)
         throw std::logic_error("simphony has no GPU backend");
+}
+
+void check_cuda(CUresult result, const char* operation)
+{
+    if (result == CUDA_SUCCESS) return;
+    const char* detail = nullptr;
+    cuGetErrorString(result, &detail);
+    throw std::runtime_error(std::string(operation) + ": " + (detail ? detail : "CUDA driver error"));
+}
+
+// Called on the owning thread while its private CUDA context is current.
+void release_worker(Runtime& state)
+{
+    delete worker.backend;
+    worker.backend = nullptr;
+    QSim::ReleaseWorkerComponents();
+    delete SEvt::Get_EGPU();
+    SEvt::Set(SEvt::EGPU, nullptr);
+    const CUresult result = cuCtxDestroy(worker.context);
+    state.worker_devices.erase(worker.ordinal);
+    worker.context = nullptr;
+    worker.ordinal = -1;
+    worker.pending_event.reset();
+    SGpuWorkerLocal::active = false;
+    check_cuda(result, "cuCtxDestroy");
 }
 } // namespace
 
@@ -121,6 +170,49 @@ void initialize(const G4VPhysicalVolume* world, const GeometryOptions& options)
     }
 }
 
+void initialize_gpu_worker(int cuda_ordinal)
+{
+    if (cuda_ordinal < 0) throw std::invalid_argument("CUDA device ordinal must be non-negative");
+    Runtime& state = runtime();
+    std::lock_guard lock(state.mutex);
+    require_initialized(state);
+    if (state.options.gpu != GpuRequirement::Disabled)
+        throw std::logic_error("GPU workers require geometry-only initialization");
+    if (SGpuWorkerLocal::active || state.worker_devices.count(cuda_ordinal))
+        throw std::logic_error("GPU worker thread or CUDA device already in use");
+
+    CUdevice device;
+    check_cuda(cuInit(0), "cuInit");
+    check_cuda(cuDeviceGet(&device, cuda_ordinal), "cuDeviceGet");
+    state.worker_devices.insert(cuda_ordinal);
+    try
+    {
+#if CUDA_VERSION >= 13000
+        check_cuda(cuCtxCreate(&worker.context, nullptr, 0, device), "cuCtxCreate");
+#else
+        check_cuda(cuCtxCreate(&worker.context, 0, device), "cuCtxCreate");
+#endif
+        worker.ordinal = cuda_ordinal;
+        SGpuWorkerLocal::active = true;
+        worker.backend = CSGOptiX::Create(state.foundry);
+        if (!worker.backend) throw std::runtime_error("GPU worker backend creation failed");
+    }
+    catch (...)
+    {
+        if (SGpuWorkerLocal::active) release_worker(state);
+        else state.worker_devices.erase(cuda_ordinal);
+        throw;
+    }
+}
+
+void shutdown_gpu_worker()
+{
+    if (!SGpuWorkerLocal::active) return;
+    Runtime& state = runtime();
+    std::lock_guard lock(state.mutex);
+    release_worker(state);
+}
+
 bool is_initialized() noexcept
 {
     return runtime().initialized.load(std::memory_order_acquire);
@@ -128,7 +220,7 @@ bool is_initialized() noexcept
 
 bool has_gpu() noexcept
 {
-    return runtime().gpu_available.load(std::memory_order_acquire);
+    return SGpuWorkerLocal::active || runtime().gpu_available.load(std::memory_order_acquire);
 }
 
 void simulate(int event_id, bool reset_after)
@@ -136,7 +228,7 @@ void simulate(int event_id, bool reset_after)
     if (event_id < 0)
         throw std::invalid_argument("simphony::simulate requires a non-negative event id");
 
-    Runtime&        state = runtime();
+    Transport&      state = event_transport();
     std::lock_guard lock(state.mutex);
     require_gpu(state);
 
@@ -153,7 +245,7 @@ void reset(int event_id)
     if (event_id < 0)
         throw std::invalid_argument("simphony::reset requires a non-negative event id");
 
-    Runtime&        state = runtime();
+    Transport&      state = event_transport();
     std::lock_guard lock(state.mutex);
     require_gpu(state);
 

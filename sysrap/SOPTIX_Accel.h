@@ -36,11 +36,11 @@ struct SOPTIX_Accel
     std::vector<OptixBuildInput> buildInputs ; 
 
     std::string desc() const ;
-    static SOPTIX_Accel* Create(OptixDeviceContext& context, const SOPTIX_BuildInput* _bi );  
-    static SOPTIX_Accel* Create(OptixDeviceContext& context, const std::vector<const SOPTIX_BuildInput*>& _bis );  
+    static SOPTIX_Accel* Create(OptixDeviceContext context, const SOPTIX_BuildInput* _bi );
+    static SOPTIX_Accel* Create(OptixDeviceContext context, const std::vector<const SOPTIX_BuildInput*>& _bis );
 private:
-    SOPTIX_Accel( OptixDeviceContext& context, const std::vector<const SOPTIX_BuildInput*>& _bis );  
-    void init(    OptixDeviceContext& context, const std::vector<const SOPTIX_BuildInput*>& _bis ); 
+    SOPTIX_Accel( OptixDeviceContext context, const std::vector<const SOPTIX_BuildInput*>& _bis );
+    void init(    OptixDeviceContext context, const std::vector<const SOPTIX_BuildInput*>& _bis );
 
 
 };
@@ -68,14 +68,14 @@ inline std::string SOPTIX_Accel::desc() const
 }
 
 
-inline SOPTIX_Accel* SOPTIX_Accel::Create( OptixDeviceContext& context, const SOPTIX_BuildInput* bi )
+inline SOPTIX_Accel* SOPTIX_Accel::Create( OptixDeviceContext context, const SOPTIX_BuildInput* bi )
 {
     std::vector<const SOPTIX_BuildInput*> _bis ; 
     _bis.push_back(bi); 
     return new SOPTIX_Accel( context, _bis  ); 
 }
 
-inline SOPTIX_Accel* SOPTIX_Accel::Create( OptixDeviceContext& context, const std::vector<const SOPTIX_BuildInput*>& _bis )
+inline SOPTIX_Accel* SOPTIX_Accel::Create( OptixDeviceContext context, const std::vector<const SOPTIX_BuildInput*>& _bis )
 {
     return new SOPTIX_Accel( context, _bis  ); 
 }
@@ -92,7 +92,7 @@ SOPTIX_Accel::SOPTIX_Accel
 **/
 
 
-inline SOPTIX_Accel::SOPTIX_Accel( OptixDeviceContext& context, const std::vector<const SOPTIX_BuildInput*>& _bis )     
+inline SOPTIX_Accel::SOPTIX_Accel( OptixDeviceContext context, const std::vector<const SOPTIX_BuildInput*>& _bis )
     :
     irc(Initialize()),
     buffer(0), 
@@ -103,7 +103,7 @@ inline SOPTIX_Accel::SOPTIX_Accel( OptixDeviceContext& context, const std::vecto
     init(context, _bis); 
 }
 
-inline void SOPTIX_Accel::init( OptixDeviceContext& context, const std::vector<const SOPTIX_BuildInput*>& _bis )
+inline void SOPTIX_Accel::init( OptixDeviceContext context, const std::vector<const SOPTIX_BuildInput*>& _bis )
 {
     if(SOPTIX_Options::Level()>0) std::cout << "[SOPTIX_Accel::init\n" ; 
 

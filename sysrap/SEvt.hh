@@ -306,9 +306,12 @@ struct SYSRAP_API SEvt : public SCompProvider
 
 private:
     SEvt();
+    SEvt(const SEvt&) = delete;
+    SEvt& operator=(const SEvt&) = delete;
     void init();
 
 public:
+    ~SEvt();
     void setFoldVerbose(bool v);
 
     static const char* GetSaveDir(int idx) ;

@@ -54,7 +54,9 @@ struct QUDARAP_API QProp
 
     QProp(const NP* a); 
 
-    virtual ~QProp(); 
+    virtual ~QProp();
+    QProp(const QProp&) = delete;
+    QProp& operator=(const QProp&) = delete;
     void init(); 
     void upload(); 
     void cleanup(); 
