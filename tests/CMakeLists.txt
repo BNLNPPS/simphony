@@ -11,6 +11,11 @@ set_tests_properties(Simphony.EventTimingValidator PROPERTIES
     TIMEOUT 30
 )
 
+add_executable(EventBufferTest EventBufferTest.cc)
+target_include_directories(EventBufferTest PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(EventBufferTest PRIVATE SysRap)
+add_test(NAME Simphony.EventBuffer COMMAND EventBufferTest)
+
 add_executable(SimphonyApiTest SimphonyApiTest.cc)
 target_link_libraries(SimphonyApiTest PRIVATE simphony::simphony Geant4::G4gdml)
 
