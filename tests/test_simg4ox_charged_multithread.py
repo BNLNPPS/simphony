@@ -5,6 +5,7 @@ import argparse
 import csv
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -15,7 +16,7 @@ import numpy as np
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=Path)
-    parser.add_argument("case", choices=("cerenkov", "scintillation", "zero"))
+    parser.add_argument("case", choices=("cerenkov", "scintillation", "zero", "oversized", "worker_failure"))
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     particle = "geantino" if args.case == "zero" else "e-"
@@ -23,8 +24,12 @@ def main():
     geometry = repo / "tests/geom" / (
         "opticks_raindrop_with_scintillation.gdml" if scintillation else "pfrich_min_FINAL.gdml"
     )
+    failure_pattern = {
+        "oversized": r"Event \d+ requires a launch larger than any visible GPU",
+        "worker_failure": r"GPU \d+ event \d+: Genstep upload exceeds the event genstep capacity",
+    }.get(args.case)
     baseline = {}
-    for threads in (2, 4):
+    for threads in ((2,) if failure_pattern else (2, 4)):
         output = Path.cwd() / f"{args.case}-t{threads}"
         output.mkdir(exist_ok=True)
         config_dir = output / "config"
@@ -32,11 +37,18 @@ def main():
         config = json.loads((repo / "config/dev_timing.json").read_text())
         config["torch"].update(pos=[0, 0, 0], mom=[0, 0.2, 0.8])
         config["event"].update(event_mode="Minimal", output_dir=str(output))
+        if args.case == "oversized":
+            # The backend slices between charged gensteps. A single step exceeding
+            # every device's launch capacity must fail before the run publishes hits.
+            config["event"]["maxslot"] = 1
+        if args.case == "worker_failure":
+            # Admit the event, then fail while its GPU worker uploads a multi-genstep slice.
+            config["event"]["max_genstep"] = 1
         (config_dir / "charged.json").write_text(json.dumps(config))
         macro = output / "run.mac"
         # Repeating a run must reset event-local buffers, GPU ordering, and timing.
         artifacts = ("events.csv", "events.manifest.json", "s_hits.npy", "g_hits.npy")
-        run_outputs = [output / f"run-{run}" for run in range(2)]
+        run_outputs = [] if failure_pattern else [output / f"run-{run}" for run in range(2)]
         for directory in (output, *run_outputs):
             directory.mkdir(exist_ok=True)
             for name in artifacts:
@@ -46,6 +58,8 @@ def main():
             # Geant4 11.4.2 multiple scattering changes first-run counts with
             # worker count. Isolate collection so every event can be compared.
             macro_lines.append("/process/inactivate msc")
+        if failure_pattern:
+            macro_lines.append("/run/beamOn 4")
         for run_output in run_outputs:
             macro_lines.extend((
                 "/run/beamOn 12",
@@ -63,10 +77,17 @@ def main():
         with (output / "stdout.log").open("w") as log:
             result = subprocess.run(command, cwd=output, env=env, stdout=log,
                                     stderr=subprocess.STDOUT, timeout=90)
+        if failure_pattern:
+            assert result.returncode == 1, f"{args.case} did not fail cleanly"
+            assert re.search(failure_pattern, (output / "stdout.log").read_text()), "Missing GPU failure context"
+            assert not any((output / name).exists() for name in artifacts), "Failed run published partial results"
+            return
         if result.returncode:
             raise AssertionError(f"Charged {threads}-worker run failed:\n"
                                  + (output / "stdout.log").read_text()[-5000:])
         for run, run_output in enumerate(run_outputs):
+            manifest = json.loads((run_output / "events.manifest.json").read_text())
+            assert manifest["run_id"] == run, "Incorrect Geant4 run number"
             validation = [sys.executable, str(repo / "tests/check_simg4ox_timing.py"),
                           str(run_output / "events.csv"), "--events", "12", "--threads", str(threads),
                           "--particle", particle]

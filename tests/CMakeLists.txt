@@ -120,7 +120,7 @@ add_simg4ox_integration_test(zero_genstep_profile)
 add_simg4ox_integration_test(particle_stacking_rejected)
 
 if(Geant4_multithreaded_FOUND)
-    foreach(CHARGED_CASE IN ITEMS cerenkov scintillation zero)
+    foreach(CHARGED_CASE IN ITEMS cerenkov scintillation zero oversized worker_failure)
         set(CHARGED_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/simg4ox_charged_mt/${CHARGED_CASE}")
         file(MAKE_DIRECTORY "${CHARGED_WORKDIR}")
         add_test(
@@ -284,4 +284,12 @@ endfunction()
 add_simg4ox_worker_timing_test(Integration.simg4ox_serial_control 1)
 if(Geant4_multithreaded_FOUND)
     add_simg4ox_worker_timing_test(Integration.simg4ox_multithread 2)
+    foreach(source IN ITEMS torch cerenkov scintillation zero)
+        set(test_name "Integration.simg4ox_native_multi_gpu.${source}")
+        add_test(NAME ${test_name}
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_simg4ox_native_multi_gpu.py
+                    $<TARGET_FILE:simg4ox> $<TARGET_FILE:SEventDeviceConfigTest> ${source})
+        set_tests_properties(${test_name} PROPERTIES
+            LABELS "integration;multi-gpu" SKIP_RETURN_CODE 77 RUN_SERIAL TRUE TIMEOUT 600)
+    endforeach()
 endif()

@@ -48,6 +48,8 @@ class TimingCheckTest(unittest.TestCase):
                 "primary_particle": "opticalphoton", "primary_multiplicity": 100,
                 "cpu_recorder_enabled": recorder_enabled, "torch_seed": 0,
             }
+            if rows[0]["dispatch_mode"] == "asynchronous":
+                manifest.update(dispatch_mode="asynchronous", num_gpus=2)
             path.with_suffix(".manifest.json").write_text(json.dumps(manifest))
             return subprocess.run(
                 [sys.executable, str(CHECKER), str(path), "--events", str(len(rows)),
@@ -69,6 +71,20 @@ class TimingCheckTest(unittest.TestCase):
         ])
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("GPU dispatch gate overlaps", result.stderr)
+
+    def test_asynchronous_overlap_is_valid_only_on_distinct_devices(self):
+        rows = [event_row(0, 0, 0.1, 0.2, 0.8, 0.9, 1.0),
+                event_row(1, 0.2, 0.3, 0.4, 0.8, 0.9, 1.0)]
+        for i, row in enumerate(rows):
+            submit = row["gpu_submit_time_offset_s"]
+            row.update(dispatch_mode="asynchronous", gpu_device_id=i, gpu_uuid=f"GPU-{i}",
+                       worker_id=0, cpu_end_time_offset_s=submit, gpu_wait_end_time_offset_s=submit,
+                       gpu_wait_runtime_s=0, gpu_service_start_offset_s=row["gpu_start_time_offset_s"],
+                       gpu_service_end_offset_s=0.8, gpu_cleanup_end_offset_s=0.9)
+        result = self.invoke(rows)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows[1].update(gpu_device_id=0, gpu_uuid="GPU-0")
+        self.assertIn("GPU dispatch gate overlaps", self.invoke(rows).stderr)
 
     def test_incorrect_primary_photon_count_is_rejected(self):
         row = event_row(0, 0, 0.3, 0.4, 0.6, 0.7, 0.8)

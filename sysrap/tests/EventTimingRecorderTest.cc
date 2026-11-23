@@ -489,6 +489,51 @@ void TestSharedOriginWorkerMerge(const fs::path& directory)
     ExpectMergeError([&] { first.BeginEvent(2); });
 }
 
+void TestQueuedEvent(const fs::path& directory)
+{
+    const auto output = directory / "queued.csv";
+    SetSequence({TimedSample(100, 0, 0), TimedSample(200, 10, 5), TimedSample(300, 20, 9),
+                 TimedSample(400, 30, 11), TimedSample(450, 40, 12), TimedSample(500, 50, 13),
+                 TimedSample(550, 60, 15), TimedSample(600, 70, 1), TimedSample(700, 80, 2),
+                 TimedSample(800, 90, 3), TimedSample(900, 100, 4)});
+    EventTimingRecorder master(output, &NextSample), producer(output, &NextSample), gpu(output, &NextSample);
+    master.BeginRun();
+    producer.SetWorkerId(3);
+    producer.BeginRunFrom(master);
+    gpu.BeginRunFrom(master);
+    producer.BeginEvent(7);
+    producer.SubmitGpu(3, 42);
+    auto first = producer.DetachQueuedEvent();
+    // This producer can fill the next event before any GPU has started event 7.
+    producer.BeginEvent(8);
+    producer.SubmitGpu(2, 30);
+    auto second = producer.DetachQueuedEvent();
+    assert(second.event_id == 8);
+    gpu.BeginQueuedEvent(first, 1, "GPU-test");
+    gpu.EndGpu();
+    gpu.ReleaseGpu();
+    gpu.EndEvent(5, 2);
+    master.Merge(producer);
+    master.Merge(gpu);
+    auto metadata = Metadata();
+    metadata.num_threads = 4;
+    metadata.gpu_threads = 2;
+    master.Write(metadata);
+
+    const auto row = ReadSingleRow(output);
+    assert(row.at("event_id") == "7" && row.at("worker_id") == "3");
+    assert(row.at("dispatch_mode") == "asynchronous" && row.at("gpu_device_id") == "1");
+    assert(row.at("gpu_uuid") == "GPU-test" && row.at("num_photons") == "42");
+    assert(row.at("num_gpu_hits") == "5" && row.at("num_g4_hits") == "2");
+    AssertNear(std::stod(row.at("cpu_end_time_offset_s")), 300e-9);
+    AssertNear(std::stod(row.at("end_offset_s")), 800e-9);
+    AssertNear(std::stod(row.at("gpu_wait_runtime_s")), 100e-9);
+    AssertNear(std::stod(row.at("gpu_service_start_offset_s")), 500e-9);
+    AssertNear(std::stod(row.at("thread_cpu_pre_s")), 4e-9);
+    AssertNear(std::stod(row.at("thread_cpu_post_s")), 2e-9);
+    assert(sequence_index == sequence.size());
+}
+
 void TestWorkerMergeGuards(const fs::path& directory)
 {
     const auto          output = directory / "merge-guards.csv";
@@ -564,6 +609,7 @@ int main()
     TestGpuReleaseClockInversion(directory);
     TestSharedOriginWorkerMerge(directory);
     TestWorkerMergeGuards(directory);
+    TestQueuedEvent(directory);
 
     fs::remove_all(directory);
     return 0;

@@ -371,6 +371,13 @@ std::filesystem::path TemporaryPath(const std::filesystem::path& destination)
     return destination.string() + ".tmp." + std::to_string(static_cast<long long>(::getpid())) + "." + std::to_string(sequence);
 }
 
+const char* DispatchMode(const EventTimingMetadata& metadata)
+{
+    if (metadata.gpu_threads)
+        return "asynchronous";
+    return metadata.num_threads > 1 ? "synchronous" : "blocking";
+}
+
 /**
  * Formats the current wall-clock time for the timeline manifest.
  *
@@ -1082,6 +1089,39 @@ void EventTimingRecorder::SubmitGpu(
     state_ = State::GpuQueued;
 }
 
+EventTimingRecorder::QueuedEvent EventTimingRecorder::DetachQueuedEvent()
+{
+    if (!enabled())
+        return {};
+    RequireState(State::GpuQueued, "detach queued event");
+    QueuedEvent event = ActiveRow();
+    event.producer_end = Capture();
+    RequireOrdered(event.gpu_submit, event.producer_end, "producer handoff");
+    rows_.pop_back();
+    state_ = State::Idle;
+    active_event_id_ = -1;
+    return event;
+}
+
+void EventTimingRecorder::BeginQueuedEvent(QueuedEvent event, int device, const std::string& uuid)
+{
+    if (!enabled())
+        return;
+    RequireState(State::Idle, "resume queued event");
+    if (!run_started_ || merged_ || device < 0 || uuid.empty())
+        throw std::logic_error("GPU service timing requires a ready recorder and device");
+    RequireOrdered(run_origin_, event.event_start, "queued event origin");
+    RequireOrdered(event.event_start, event.gpu_submit, "queued event submission");
+    RequireOrdered(event.gpu_submit, event.producer_end, "queued event handoff");
+    auto& row = rows_.emplace_back();
+    static_cast<QueuedEvent&>(row) = event;
+    row.gpu_device_id = device;
+    row.gpu_uuid = uuid;
+    active_event_id_ = event.event_id;
+    state_ = State::GpuQueued;
+    BeginGpu();
+}
+
 void EventTimingRecorder::BeginGpu()
 {
     if (!enabled())
@@ -1089,7 +1129,7 @@ void EventTimingRecorder::BeginGpu()
     RequireState(State::GpuQueued, "begin GPU work");
     const EventTimingSample sample = Capture();
     Row&                    row = ActiveRow();
-    RequireOrdered(row.gpu_submit, sample, "GPU start");
+    RequireOrdered(row.gpu_device_id >= 0 ? row.producer_end : row.gpu_submit, sample, "GPU start");
     row.gpu_start = sample;
     state_ = State::GpuRunning;
 }
@@ -1155,8 +1195,12 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
            "num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,"
            "process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s,"
            "gpu_release_time,gpu_release_time_offset_s,cpu_post_locked_runtime_s,"
-           "cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads\n";
+           "cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads";
+    if (metadata.gpu_threads)
+        csv << ",gpu_device_id,gpu_uuid,gpu_service_start_offset_s,gpu_service_end_offset_s,gpu_cleanup_end_offset_s";
+    csv << '\n';
 
+    const char* mode = DispatchMode(metadata);
     csv << std::setprecision(std::numeric_limits<double>::max_digits10);
     for (const Row& row : rows_)
     {
@@ -1174,7 +1218,9 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
         const double cpu_post_runtime = duration(row.gpu_end, row.event_end);
         const double gpu_queue = duration(row.gpu_submit, row.gpu_start);
         const double gpu_runtime = duration(row.gpu_start, row.gpu_end);
-        const double gpu_wait = duration(row.gpu_submit, row.gpu_end);
+        const auto&  producer_end = row.gpu_device_id >= 0 ? row.producer_end : row.event_end;
+        const auto&  wait_end = row.gpu_device_id >= 0 ? row.producer_end : row.gpu_end;
+        const double gpu_wait = duration(row.gpu_submit, wait_end);
         const double process_pre = CpuSeconds(
             row.event_start, row.gpu_submit, EventTimingCapture::ProcessCpu);
         const double process_post = CpuSeconds(
@@ -1184,21 +1230,21 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
         const double thread_post = CpuSeconds(
             row.gpu_end, row.event_end, EventTimingCapture::ThreadCpu);
 
-        csv << (metadata.num_threads > 1 ? "simg4ox_synchronous,synchronous," : "simg4ox_blocking,blocking,")
+        csv << "simg4ox_" << mode << ',' << mode << ','
             << row.event_id << ','
             << absolute(row.event_start) << ',' << absolute(row.event_end) << ','
-            << absolute(row.event_start) << ',' << absolute(row.event_end) << ','
+            << absolute(row.event_start) << ',' << absolute(producer_end) << ','
             << absolute(row.event_start) << ',' << absolute(row.gpu_submit) << ','
             << absolute(row.gpu_submit) << ',' << absolute(row.gpu_start) << ','
             << absolute(row.gpu_end) << ',' << absolute(row.gpu_submit) << ','
-            << absolute(row.gpu_end) << ',' << absolute(row.gpu_end) << ','
+            << absolute(wait_end) << ',' << absolute(row.gpu_end) << ','
             << absolute(row.event_end) << ','
             << offset(row.event_start) << ',' << offset(row.event_end) << ','
-            << offset(row.event_start) << ',' << offset(row.event_end) << ','
+            << offset(row.event_start) << ',' << offset(producer_end) << ','
             << offset(row.event_start) << ',' << offset(row.gpu_submit) << ','
             << offset(row.gpu_submit) << ',' << offset(row.gpu_start) << ','
             << offset(row.gpu_end) << ',' << offset(row.gpu_submit) << ','
-            << offset(row.gpu_end) << ',' << offset(row.gpu_end) << ','
+            << offset(wait_end) << ',' << offset(row.gpu_end) << ','
             << offset(row.event_end) << ','
             << duration(row.event_start, row.event_end) << ','
             << cpu_pre_runtime << ',' << cpu_post_runtime << ','
@@ -1214,7 +1260,16 @@ std::string EventTimingRecorder::SerializeCsv(const EventTimingMetadata& metadat
             << duration(row.gpu_end, row.gpu_release) << ','
             << duration(row.gpu_release, row.event_end) << ','
             << duration(row.gpu_start, row.gpu_release) << ','
-            << row.worker_id << ',' << metadata.num_threads << '\n';
+            << row.worker_id << ',' << metadata.num_threads;
+        if (metadata.gpu_threads)
+        {
+            csv << ',' << row.gpu_device_id << ',' << CsvField(row.gpu_uuid);
+            if (row.gpu_device_id >= 0)
+                csv << ',' << offset(row.gpu_start) << ',' << offset(row.gpu_end) << ',' << offset(row.gpu_release);
+            else
+                csv << ",,,";
+        }
+        csv << '\n';
     }
     return csv.str();
 }
@@ -1225,7 +1280,9 @@ std::string EventTimingRecorder::SerializeManifest(const EventTimingMetadata& me
     manifest.js["schema_version"] = 2;
     manifest.js["created_utc"] = UtcNow();
     manifest.js["application"] = "simg4ox";
-    manifest.js["dispatch_mode"] = metadata.num_threads > 1 ? "synchronous" : "blocking";
+    manifest.js["dispatch_mode"] = DispatchMode(metadata);
+    if (metadata.gpu_threads)
+        manifest.js["num_gpus"] = metadata.gpu_threads;
     manifest.js["clock"] = "std::chrono::steady_clock";
     manifest.js["geometry"] = metadata.geometry;
     manifest.js["config"] = metadata.config;
@@ -1242,13 +1299,15 @@ std::string EventTimingRecorder::SerializeManifest(const EventTimingMetadata& me
     manifest.js["cuda_driver_version"] = metadata.cuda_driver_version;
     manifest.js["cuda_runtime_version"] = metadata.cuda_runtime_version;
     manifest.js["event_count"] = rows_.size();
+    if (metadata.run_id >= 0)
+        manifest.js["run_id"] = metadata.run_id;
     manifest.js["num_threads"] = metadata.num_threads;
     manifest.js["cpu_recorder_enabled"] = metadata.cpu_recorder_enabled;
     manifest.js["torch_seed"] = metadata.torch_seed;
     manifest.js["torch_input_randomness"] = metadata.torch_seed == 0 ? "fixed-input timing repeats" : "not applicable";
     manifest.js["run_origin_steady_ns"] = run_origin_.steady_time_ns;
     manifest.js["process_cpu_scope"] = "whole process; MT intervals include other workers";
-    manifest.js["thread_cpu_scope"] = "calling event worker";
+    manifest.js["thread_cpu_scope"] = metadata.gpu_threads ? "pre: Geant4 worker; post: GPU service thread" : "calling event worker";
     manifest.js["gpu_release_boundary"] = "after hit collection and reset; optional for legacy callers";
     return manifest.js.dump(2) + '\n';
 }

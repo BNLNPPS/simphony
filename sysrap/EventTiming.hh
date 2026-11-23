@@ -423,6 +423,10 @@ struct EventTimingMetadata
     bool cpu_recorder_enabled{true};
     /** Torch input seed (fixed at zero), or -1 for non-torch sources. */
     long torch_seed{-1};
+    /** Number of asynchronous GPU service threads, or zero for direct dispatch. */
+    int gpu_threads{0};
+    /** Geant4 run number for this file of event-local IDs. */
+    int run_id{-1};
 };
 
 /**
@@ -446,6 +450,23 @@ struct EventTimingMetadata
 class SYSRAP_API EventTimingRecorder
 {
   public:
+    /** CPU-side boundaries owned by one submitted event while it is queued. */
+    struct QueuedEvent
+    {
+        int               event_id{-1};
+        int               worker_id{-1};
+        std::int64_t      num_gensteps{0};
+        std::int64_t      num_photons{0};
+        EventTimingSample event_start;
+        EventTimingSample gpu_submit;
+        EventTimingSample producer_end;
+    };
+
+    /** Release the producer recorder for its next event after SubmitGpu(). */
+    QueuedEvent DetachQueuedEvent();
+    /** Continue the detached event on this GPU service thread's idle recorder. */
+    void BeginQueuedEvent(QueuedEvent event, int device, const std::string& uuid);
+
     /** Callback used to inject deterministic timing samples in tests. */
     using SampleProvider = EventTimingSample (*)(EventTimingCapture);
 
@@ -556,16 +577,12 @@ class SYSRAP_API EventTimingRecorder
     };
 
     /** Captured boundaries and workload counts for one completed event. */
-    struct Row
+    struct Row : QueuedEvent
     {
-        int               event_id{-1};
-        int               worker_id{-1};
-        std::int64_t      num_gensteps{0};
-        std::int64_t      num_photons{0};
+        int               gpu_device_id{-1};
+        std::string       gpu_uuid;
         std::size_t       num_gpu_hits{0};
         std::size_t       num_g4_hits{0};
-        EventTimingSample event_start;
-        EventTimingSample gpu_submit;
         EventTimingSample gpu_start;
         EventTimingSample gpu_end;
         EventTimingSample gpu_release;

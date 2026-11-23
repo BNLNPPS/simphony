@@ -24,8 +24,8 @@ target_include_directories(consgeo PRIVATE
 )
 target_link_libraries(consgeo simphony_argparse)
 
-# simg4ox supports torch and charged primaries with serial/MT Geant4 and serialized OptiX launches
-add_executable(simg4ox simg4ox.cpp g4app.h)
+# simg4ox supports torch and charged primaries with serial/MT Geant4 and per-device GPU transport
+add_executable(simg4ox simg4ox.cpp g4app.h GpuEventPool.cc)
 target_compile_definitions(simg4ox PRIVATE SIMPHONY_VERSION="${PROJECT_VERSION}")
 
 target_link_libraries(simg4ox SysRap ${Geant4_LIBRARIES} simphony simphony_argparse)

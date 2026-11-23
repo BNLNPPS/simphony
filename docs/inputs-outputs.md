@@ -94,13 +94,12 @@ simg4ox -g tests/geom/opticks_raindrop.gdml -c dev \
     -m tests/run_mt.mac -s 42 --threads 4
 ```
 
-In MT mode, actions and sensitive detectors are worker-local. Completed events
-share one process-wide Opticks GPU context, so GPU launches are serialized in
-event-ID order while Geant4 CPU tracking remains multithreaded. Run-wide CPU
-and GPU hits are merged in event-ID order. Full CPU-side Opticks photon-history
-recording is available only with the serial run manager.
-Charged MT gensteps are event-local until their worker acquires the GPU gate.
-Both source modes support `--threads N`.
+In MT mode, each CPU worker collects torch photons or charged-particle gensteps
+in an event-owned buffer. At the event boundary it transfers the buffer to a
+bounded queue. One service thread per visible GPU transports the event and
+collects its hits. The run action waits for outstanding events and writes CPU
+and GPU hits in event-ID order. Full CPU-side photon-history recording uses
+the serial run manager.
 
 ## Defining primary particles
 

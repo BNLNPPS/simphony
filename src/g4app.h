@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <condition_variable>
 #include <cstring>
 #include <filesystem>
 #include <map>
@@ -14,8 +13,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include <cuda_runtime_api.h>
 
 #include "G4BooleanSolid.hh"
 #include "G4Cerenkov.hh"
@@ -56,7 +53,7 @@
 #include "G4VUserEventInformation.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
-#include "EventBuffer.h"
+#include "GpuEventPool.h"
 #include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/SEvt.hh"
@@ -180,9 +177,11 @@ struct DetectorConstruction : G4VUserDetectorConstruction
 {
     std::filesystem::path gdml_file_;
     G4GDMLParser          parser_;
+    bool                  multithreaded_;
 
-    DetectorConstruction(std::filesystem::path gdml_file) :
-        gdml_file_(std::move(gdml_file))
+    DetectorConstruction(std::filesystem::path gdml_file, bool multithreaded) :
+        gdml_file_(std::move(gdml_file)),
+        multithreaded_(multithreaded)
     {
     }
 
@@ -191,7 +190,7 @@ struct DetectorConstruction : G4VUserDetectorConstruction
         parser_.Read(gdml_file_.string(), false);
         G4VPhysicalVolume* world = parser_.GetWorldVolume();
 
-        simphony::initialize(world);
+        simphony::initialize(world, {.gpu = multithreaded_ ? simphony::GpuRequirement::Disabled : simphony::GpuRequirement::Required});
 
         return world;
     }
@@ -310,10 +309,8 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
             event->AddPrimaryVertex(vertex);
         }
 
-        // The Opticks CPU recorder is intentionally used only by the serial
-        // run manager. Its event instance is process-global and cannot be
-        // shared safely by Geant4 worker threads. Preserve MT event input on
-        // the G4Event until the event reaches the serialized GPU section.
+        // The serial recorder owns a process-wide event. Each MT producer instead
+        // keeps the optical input on its G4Event until submission to the GPU pool.
         if (sev)
         {
             input_photon = MakePhotonArray(sphotons);
@@ -382,10 +379,7 @@ struct Simg4oxRun : G4Run
 
 struct Simg4oxSharedState
 {
-    std::mutex              gpu_mutex;
-    std::condition_variable gpu_turn;
-    std::unique_ptr<NP>     input_photon;
-    G4int                   next_gpu_event{0};
+    std::unique_ptr<simphony::GpuEventPool>           pool;
     EventTimingRecorder*                              master_timing{nullptr};
     std::mutex                                        timing_mutex;
     std::vector<std::unique_ptr<EventTimingRecorder>> worker_timings;
@@ -413,27 +407,20 @@ struct Simg4oxSharedState
         for (auto& worker : worker_timings)
             master_timing->Merge(*worker);
     }
-
-    void BeginRun()
-    {
-        std::lock_guard lock(gpu_mutex);
-        next_gpu_event = 0;
-    }
 };
 
 struct EventAction : G4UserEventAction
 {
     SEvt*                               sev;
     std::shared_ptr<Simg4oxSharedState> shared_state;
-    bool                                order_gpu_events;
+    std::unique_ptr<NP>                 serial_input;
     bool                                particle_source;
     EventTimingRecorder*                timing;
 
-    EventAction(SEvt* sev, std::shared_ptr<Simg4oxSharedState> shared_state, bool order_gpu_events,
+    EventAction(SEvt* sev, std::shared_ptr<Simg4oxSharedState> shared_state,
                 bool particle_source, EventTimingRecorder* timing) :
         sev(sev),
         shared_state(std::move(shared_state)),
-        order_gpu_events(order_gpu_events),
         particle_source(particle_source),
         timing(timing)
     {
@@ -446,17 +433,6 @@ struct EventAction : G4UserEventAction
         // event opened before Geant4 transports its input photons.
         if (sev && !particle_source)
             sev->beginOfEvent(event->GetEventID());
-    }
-
-    static std::vector<sphoton> CollectGPUHits(SEvt* sev_gpu)
-    {
-        const size_t         num_gpu_hits = sev_gpu->getNumHit();
-        std::vector<sphoton> gpu_hits(num_gpu_hits);
-
-        for (size_t idx = 0; idx < num_gpu_hits; idx++)
-            sev_gpu->getHit(gpu_hits[idx], idx);
-
-        return gpu_hits;
     }
 
     static std::vector<sphoton> CollectG4Hits(const G4Event* event)
@@ -493,64 +469,6 @@ struct EventAction : G4UserEventAction
         return g4_hits;
     }
 
-    std::vector<sphoton> SimulateOnGPU(int event_id, bool has_gpu_work, std::optional<simphony::EventBuffer> input)
-    {
-        std::unique_lock lock(shared_state->gpu_mutex);
-        if (order_gpu_events)
-            shared_state->gpu_turn.wait(lock, [&] { return event_id == shared_state->next_gpu_event; });
-
-        if (timing)
-            timing->BeginGpu();
-
-        // The matched serial control and MT workers both preserve event-local
-        // torch input until acquisition of the process-global GPU event gate.
-        if (input && has_gpu_work)
-        {
-            if (const auto* photons = std::get_if<std::vector<sphoton>>(&input->records))
-            {
-                shared_state->input_photon = MakePhotonArray(*photons);
-                SEvt::SetInputPhoton(shared_state->input_photon.get());
-            }
-            else
-            {
-                SEvt* gpu_event = SEvt::Get_EGPU();
-                for (auto& genstep : std::get<std::vector<quad6>>(input->records))
-                    gpu_event->addGenstep(genstep);
-            }
-        }
-
-        std::vector<sphoton> gpu_hits;
-        if (has_gpu_work)
-        {
-            simphony::simulate(event_id, false);
-            cudaDeviceSynchronize();
-
-            if (timing)
-                timing->EndGpu();
-
-            SEvt*      sev_gpu = SEvt::Get_EGPU();
-            const auto num_gpu_photons = sev_gpu->getNumPhotonCollected();
-            G4cout << "EventAction::SimulateOnGPU: Event " << event_id
-                   << ": Simulated GPU photons: " << num_gpu_photons << G4endl;
-            gpu_hits = CollectGPUHits(sev_gpu);
-            // QSim::reset ends the EGPU event; particle-source mode must not
-            // end its aliased SEvt a second time.
-            simphony::reset(event_id);
-        }
-        else if (timing)
-            timing->EndGpu();
-
-        if (order_gpu_events)
-            ++shared_state->next_gpu_event;
-        if (timing)
-            timing->ReleaseGpu();
-        lock.unlock();
-        if (order_gpu_events)
-            shared_state->gpu_turn.notify_all();
-
-        return gpu_hits;
-    }
-
     void EndOfEventAction(const G4Event* event) override
     {
         const G4int event_id = event->GetEventID();
@@ -581,17 +499,36 @@ struct EventAction : G4UserEventAction
         if (timing)
             timing->SubmitGpu(num_gensteps, num_photons);
 
-        auto gpu_hits = SimulateOnGPU(event_id, particle_source ? num_gensteps > 0 : num_photons > 0, std::move(input));
-
-        G4cout << "EventAction::EndOfEventAction: Event " << event_id
-               << ": Collected GPU hits: " << gpu_hits.size() << G4endl;
-        G4cout << "EventAction::EndOfEventAction: Event " << event_id
-               << ": Collected G4  hits: " << g4_hits.size() << G4endl;
-
-        const size_t num_gpu_hits = gpu_hits.size();
+        const bool   has_gpu_work = particle_source ? num_gensteps > 0 : num_photons > 0;
+        auto*        run = static_cast<Simg4oxRun*>(G4RunManager::GetRunManager()->GetNonConstCurrentRun());
         const size_t num_g4_hits = g4_hits.size();
-        auto* run = static_cast<Simg4oxRun*>(G4RunManager::GetRunManager()->GetNonConstCurrentRun());
-        run->AddEvent(event_id, std::move(gpu_hits), std::move(g4_hits));
+        G4cout << "EventAction::EndOfEventAction: Event " << event_id
+               << ": Collected G4  hits: " << num_g4_hits << G4endl;
+        if (shared_state->pool && has_gpu_work)
+        {
+            run->AddEvent(event_id, {}, std::move(g4_hits));
+            shared_state->pool->Submit(std::move(*input), num_g4_hits, timing);
+            return;
+        }
+
+        if (timing)
+            timing->BeginGpu();
+        simphony::GpuEventResult result;
+        if (has_gpu_work)
+        {
+            result = simphony::SimulateGpuEvent(event_id, input ? &*input : nullptr, serial_input, timing);
+            G4cout << "EventAction::SimulateOnGPU: Event " << event_id
+                   << ": Simulated GPU photons: " << result.photons << G4endl;
+        }
+        else if (timing)
+            timing->EndGpu();
+
+        if (timing)
+            timing->ReleaseGpu();
+        const size_t num_gpu_hits = result.hits.size();
+        G4cout << "EventAction::EndOfEventAction: Event " << event_id
+               << ": Collected GPU hits: " << num_gpu_hits << G4endl;
+        run->AddEvent(event_id, std::move(result.hits), std::move(g4_hits));
         if (timing)
             timing->EndEvent(num_gpu_hits, num_g4_hits);
     }
@@ -892,21 +829,21 @@ struct RunAction : G4UserRunAction
                 timing->BeginRunFrom(*shared_state->master_timing);
             return;
         }
-        if (!G4Threading::IsWorkerThread())
+        G4OpticalParameters* optical = G4OpticalParameters::Instance();
+        if (particle_source &&
+            (optical->GetCerenkovStackPhotons() || optical->GetScintStackPhotons()))
         {
-            G4OpticalParameters* optical = G4OpticalParameters::Instance();
-            if (particle_source &&
-                (optical->GetCerenkovStackPhotons() || optical->GetScintStackPhotons()))
-            {
-                G4Exception(
-                    "RunAction::BeginOfRunAction", "ParticleSourceStackPhotons", FatalException,
-                    "Particle-source mode requires Cerenkov and scintillation photon stacking to remain disabled");
-                return;
-            }
-            shared_state->BeginRun();
-            if (timing)
-                timing->BeginRun();
+            G4Exception(
+                "RunAction::BeginOfRunAction", "ParticleSourceStackPhotons", FatalException,
+                "Particle-source mode requires Cerenkov and scintillation photon stacking to remain disabled");
+            return;
         }
+        if (timing_metadata.gpu_threads && !shared_state->pool)
+            shared_state->pool = std::make_unique<simphony::GpuEventPool>(timing_metadata.gpu_threads);
+        if (timing)
+            timing->BeginRun();
+        if (shared_state->pool)
+            shared_state->pool->BeginRun(timing);
     }
 
     void SaveHits(const std::vector<sphoton>& source, const char* name) const
@@ -927,7 +864,7 @@ struct RunAction : G4UserRunAction
             return;
 
         const auto* simg4ox_run = static_cast<const Simg4oxRun*>(run);
-        auto        gpu_hits = simg4ox_run->GPUHits();
+        auto        gpu_hits = shared_state->pool ? shared_state->pool->FinishRun(timing) : simg4ox_run->GPUHits();
         auto        g4_hits = simg4ox_run->G4Hits();
 
         SaveHits(gpu_hits, "s_hits.npy");
@@ -936,6 +873,7 @@ struct RunAction : G4UserRunAction
         G4cout << "RunAction::EndOfRunAction: Total G4  hits: " << g4_hits.size() << G4endl;
         if (timing)
         {
+            timing_metadata.run_id = run->GetRunID();
             shared_state->MergeTimings();
             timing->Write(timing_metadata);
             G4cout << "RunAction::EndOfRunAction: Event timing: " << timing->output() << G4endl;
@@ -989,7 +927,7 @@ struct ActionInitialization : G4VUserActionInitialization
 
         SetUserAction(new PrimaryGenerator(cfg, sev, primary, local_timing));
         SetUserAction(new RunAction(cfg, shared_state, primary.enabled, local_timing, timing_metadata));
-        SetUserAction(new EventAction(sev, shared_state, multithreaded, primary.enabled, local_timing));
+        SetUserAction(new EventAction(sev, shared_state, primary.enabled, local_timing));
         SetUserAction(new TrackingAction(sev));
 
         if (sev || primary.enabled)

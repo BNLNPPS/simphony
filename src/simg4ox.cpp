@@ -3,6 +3,7 @@
 #include <string>
 
 #include <argparse/argparse.hpp>
+#include <cuda_runtime_api.h>
 
 #include "FTFP_BERT.hh"
 #include "G4OpticalParameters.hh"
@@ -97,6 +98,7 @@ int main(int argc, char** argv)
     }
 
     const int num_threads = program.get<int>("--threads");
+    const bool multithreaded = num_threads > 1;
     if (num_threads < 1)
     {
         cerr << "--threads must be a positive integer" << endl;
@@ -146,6 +148,20 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    int gpu_threads = 0;
+    if (multithreaded)
+    {
+        const auto error = cudaGetDeviceCount(&gpu_threads);
+        if (error != cudaSuccess || gpu_threads == 0)
+        {
+            cerr << "MT optical transport requires a visible CUDA device";
+            if (error != cudaSuccess)
+                cerr << ": " << cudaGetErrorString(error);
+            cerr << endl;
+            return EXIT_FAILURE;
+        }
+    }
+
     EventTimingRecorder timing(cfg.event_timing_output);
     EventTimingMetadata timing_metadata;
     timing_metadata.geometry = std::filesystem::absolute(gdml_file).string();
@@ -157,6 +173,7 @@ int main(int argc, char** argv)
     timing_metadata.primary_momentum_gev_c = primary.enabled ? primary.momentum_gev_c : 0.0;
     timing_metadata.primary_multiplicity = primary.enabled ? primary.multiplicity : cfg.torch.numphoton;
     timing_metadata.num_threads = num_threads;
+    timing_metadata.gpu_threads = gpu_threads;
     timing_metadata.cpu_recorder_enabled = num_threads == 1 && !no_cpu_recorder;
     timing_metadata.torch_seed = primary.enabled ? -1 : 0;
 
@@ -198,7 +215,6 @@ int main(int argc, char** argv)
                << ", direction " << primary.direction.unit() << G4endl;
     }
 
-    const bool    multithreaded = num_threads > 1;
     G4RunManager* run_mgr = multithreaded
                                 ? G4RunManagerFactory::CreateRunManager(G4RunManagerType::MTOnly, true, num_threads)
                                 : G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly);
@@ -214,10 +230,10 @@ int main(int argc, char** argv)
     }
 
     G4cout << "simg4ox: Geant4 run manager: " << (multithreaded ? "MT" : "serial")
-           << ", CPU threads: " << configured_threads << G4endl;
+           << ", CPU threads: " << configured_threads << ", GPUs: " << (multithreaded ? gpu_threads : 1) << G4endl;
 
     run_mgr->SetUserInitialization(physics);
-    run_mgr->SetUserInitialization(new DetectorConstruction(gdml_file));
+    run_mgr->SetUserInitialization(new DetectorConstruction(gdml_file, multithreaded));
 
     auto shared_state = std::make_shared<Simg4oxSharedState>(timing.enabled() ? &timing : nullptr);
     run_mgr->SetUserInitialization(new ActionInitialization(
@@ -235,16 +251,24 @@ int main(int argc, char** argv)
     }
 
     G4UImanager* ui = G4UImanager::GetUIpointer();
-    ui->ApplyCommand("/control/execute " + macro_name);
-
-    if (interactive)
+    int          exit_status = EXIT_SUCCESS;
+    try
     {
-        uix->SessionStart();
+        if (ui->ApplyCommand("/control/execute " + macro_name) != 0)
+            exit_status = EXIT_FAILURE;
+        else if (interactive)
+            uix->SessionStart();
+    }
+    catch (const std::exception& error)
+    {
+        cerr << "simg4ox: " << error.what() << endl;
+        exit_status = EXIT_FAILURE;
     }
 
+    shared_state->pool.reset(); // Release device contexts while the Geant4 geometry is alive.
     delete uix;
     delete vis;
     delete run_mgr;
 
-    return EXIT_SUCCESS;
+    return exit_status;
 }

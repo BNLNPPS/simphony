@@ -66,12 +66,25 @@ def main() -> None:
             if missing:
                 raise AssertionError(f"Missing MT gate measurements: {sorted(missing)}")
 
-    previous_release = -math.inf
-    worker_end = {}
-    expected_dispatch = "synchronous" if args.threads > 1 else "blocking"
+    manifest_path = args.timing_csv.with_suffix(".manifest.json")
+    manifest = json.loads(manifest_path.read_text())
+    expected_dispatch = manifest["dispatch_mode"]
+    valid_modes = {"asynchronous", "synchronous"} if args.threads > 1 else {"blocking"}
+    if expected_dispatch not in valid_modes:
+        raise AssertionError("Manifest dispatch mode does not match thread count")
+    asynchronous = expected_dispatch == "asynchronous"
+    if asynchronous and manifest.get("num_gpus", 0) <= 0:
+        raise AssertionError("An asynchronous run must declare its GPU count")
+    services = {}
+    devices = {}
+    producers = {}
     for row in rows:
         event_id = int(row["event_id"])
-        ordered = [float(row[column]) for column in ORDERED_COLUMNS]
+        device = int(row["gpu_device_id"]) if asynchronous else 0
+        detached = asynchronous and device >= 0
+        # For detached events the producer waits only for a queue slot.
+        columns = tuple(c for c in ORDERED_COLUMNS if c != "gpu_wait_end_time_offset_s") if detached else ORDERED_COLUMNS
+        ordered = [float(row[column]) for column in columns]
         if not all(math.isfinite(value) for value in ordered):
             raise AssertionError(f"Event {event_id} contains non-finite timestamps")
         if any(later + 1e-9 < earlier for earlier, later in zip(ordered, ordered[1:])):
@@ -91,22 +104,40 @@ def main() -> None:
         for column, expected in identities.items():
             if not math.isclose(float(row[column]), expected, rel_tol=1e-6, abs_tol=1e-9):
                 raise AssertionError(f"Event {event_id} has inconsistent {column}")
-        expected_wait = float(row["gpu_queue_delay_s"]) + float(row["gpu_runtime_s"])
+        submit = float(row["gpu_submit_time_offset_s"])
+        gpu_start = float(row["gpu_start_time_offset_s"])
+        producer_end = float(row["cpu_end_time_offset_s"]) if detached else float(row["end_offset_s"])
+        if detached:
+            if not submit <= producer_end <= gpu_start or producer_end != float(row["gpu_wait_end_time_offset_s"]):
+                raise AssertionError(f"Event {event_id} has an invalid producer handoff")
+            expected_wait = producer_end - submit
+        else:
+            expected_wait = float(row["gpu_queue_delay_s"]) + float(row["gpu_runtime_s"])
         if not math.isclose(
             float(row["gpu_wait_runtime_s"]),
             expected_wait,
             rel_tol=1e-6,
             abs_tol=1e-9,
         ):
-            raise AssertionError(f"Event {event_id} blocking GPU wait does not span queue plus execution")
+            raise AssertionError(f"Event {event_id} GPU wait differs from its recorded bounds")
         release = float(row.get("gpu_release_time_offset_s", row["gpu_end_time_offset_s"]))
         gpu_end = float(row["gpu_end_time_offset_s"])
         event_end = float(row["end_offset_s"])
         if not math.isfinite(release) or not gpu_end <= release <= event_end:
             raise AssertionError(f"Event {event_id} has an invalid GPU gate release boundary")
-        if float(row["gpu_start_time_offset_s"]) + 1e-9 < previous_release:
-            raise AssertionError(f"Event {event_id} GPU dispatch gate overlaps the previous event")
-        previous_release = release
+        if detached:
+            uuid = row["gpu_uuid"]
+            if not uuid or device >= manifest["num_gpus"] or devices.setdefault(device, uuid) != uuid:
+                raise AssertionError(f"Event {event_id} has an invalid GPU identity")
+            service = [float(row[c]) for c in ("gpu_service_start_offset_s", "gpu_service_end_offset_s",
+                                               "gpu_cleanup_end_offset_s")]
+            if service != [gpu_start, gpu_end, release]:
+                raise AssertionError(f"Event {event_id} has inconsistent GPU service bounds")
+        elif asynchronous:
+            if device != -1 or int(row["num_photons"]) or row["gpu_uuid"]:
+                raise AssertionError(f"Event {event_id} has missing GPU service")
+        if device >= 0:
+            services.setdefault(device, []).append((gpu_start, release))
         for column, expected in (
             ("cpu_post_locked_runtime_s", release - gpu_end),
             ("cpu_post_unlocked_runtime_s", event_end - release),
@@ -122,9 +153,7 @@ def main() -> None:
             worker_id = int(row["worker_id"])
             if not 0 <= worker_id < args.threads:
                 raise AssertionError(f"Event {event_id} has an invalid worker ID")
-            if float(row["start_offset_s"]) + 1e-9 < worker_end.get(worker_id, -math.inf):
-                raise AssertionError(f"Event {event_id} overlaps a previous event on worker {worker_id}")
-            worker_end[worker_id] = event_end
+            producers.setdefault(worker_id, []).append((float(row["start_offset_s"]), producer_end))
         if args.expected_photons is not None and int(row["num_photons"]) != args.expected_photons:
             raise AssertionError(f"Event {event_id} expected {args.expected_photons} photons")
         if args.particle and row["primary_particle"] != args.particle:
@@ -132,12 +161,16 @@ def main() -> None:
         if args.require_photons and int(row["num_photons"]) <= 0:
             raise AssertionError(f"Event {event_id} did not produce GPU optical photons")
 
-    manifest_path = args.timing_csv.with_suffix(".manifest.json")
-    manifest = json.loads(manifest_path.read_text())
+    if len(set(devices.values())) != len(devices):
+        raise AssertionError("Multiple GPU workers used the same device UUID")
+    for label, groups in (("GPU dispatch gate", services), ("Geant4 producer", producers)):
+        for worker, spans in groups.items():
+            spans.sort()
+            if any(start + 1e-9 < end for (_, end), (start, _) in zip(spans, spans[1:])):
+                raise AssertionError(f"{label} overlaps on worker {worker}")
+
     if manifest["schema_version"] != 2:
         raise AssertionError("Manifest does not use the shared timeline schema version")
-    if manifest["dispatch_mode"] != expected_dispatch:
-        raise AssertionError("simg4ox timing manifest dispatch mode does not match thread count")
     if manifest.get("num_threads", 1) != args.threads:
         raise AssertionError("Manifest num_threads does not match configured workers")
     if args.expect_no_cpu_recorder and manifest.get("cpu_recorder_enabled") is not False:

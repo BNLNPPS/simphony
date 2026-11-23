@@ -67,26 +67,18 @@ agreement and whole-job throughput before choosing a production setting.
 
 ### Interpreting `simg4ox` MT timings
 
-`simg4ox --threads N` parallelizes Geant4 CPU tracking of its configured torch
-photons or charged primaries selected with `--particle`. It does not run multiple
-Simphony launches concurrently: the process-wide GPU event context requires
-launches to be serialized in event-ID order. Consequently, an end-to-end
-`simg4ox` wall-clock measurement includes
-parallel CPU work plus serialized GPU work and should not be interpreted as a
-pure GPU speed-up measurement.
+With `--threads N` and N greater than one, Geant4 workers collect torch photons
+or charged-particle gensteps into a growable buffer per event. At the event
+boundary a worker submits its buffer and can start another event. The queue
+holds one waiting event per visible GPU. A full queue blocks producers until
+a slot opens. A GPU service thread owns each device and transports one complete
+event at a time. The run action waits for the GPU work and merges hits in
+event-ID order.
 
-![Serial and multithreaded simg4ox event-processing timelines](assets/simg4ox-event-processing.svg)
-
-Use `--no-cpu-recorder` with the optical torch source to compare serial and MT
-execution with the same CPU recording behavior. Both paths then omit the full
-CPU SEvt history/stepping recorder while retaining normal Geant4 tracking,
-velocity handling, and sensitive-detector hit collection. MT always uses this
-recording mode. The flag is rejected with `--particle`. Charged MT workers collect
-Cerenkov/scintillation gensteps in event-local buffers and transfer them to EGPU
-only after acquiring the GPU gate. Each worker waits for its event's GPU result;
-other workers can continue charged tracking. Genstep staging under that gate is
-included in host-observed GPU service time. Serial charged collection retains
-its existing direct-to-EGPU path.
+Set `CUDA_VISIBLE_DEVICES=0` or `CUDA_VISIBLE_DEVICES=0,1` to compare one
+and two GPUs with the same CPU worker count. For a serial torch control,
+`--threads 1 --no-cpu-recorder` retains Geant4 tracking and hit collection
+with the same CPU recording settings as MT.
 
 For example, run 20 GeV/c electrons in pfRICH with four CPU workers:
 
@@ -110,53 +102,36 @@ separately. Changing worker counts does not imply identical photon histories.
 The supplied `tests/run_mt.mac` contains only five low-statistics events and is
 an integration check, not a benchmark. The integration script
 `tests/test_simg4ox_multithread.sh` also accepts `THREADS=1` for the matched
-serial control and validates the per-event photon counts and GPU gate.
+serial control and validates the per-event photon counts and timing.
 
 ## Per-event CPU/GPU timelines
 
 `simg4ox` can write event-level timing data suitable for CPU/GPU scheduling
 studies. Set `event_timing.output` in the selected JSON configuration to enable
 a CSV with one row per event and a JSON run manifest beside it; omit it or set
-it to an empty string to disable the recorder. The typed event recorder is
-independent of the optional detailed process profiler, which is controlled by
-`event_timing.profile.enabled`. The event CSV records:
+it to an empty string to disable the recorder. The recorder uses one monotonic clock origin for the run. Each CSV row
+identifies the event, Geant4 worker, photon and genstep counts, CPU and GPU
+hits, and elapsed and CPU times. The run manifest records the configuration
+and clock origin. The manifest's `run_id` identifies the Geant4 run when successive
+`/run/beamOn` calls reuse event IDs. Event IDs in the output follow Geant4 event order even when
+GPU completion order differs.
 
-- the basket-forming Geant4 interval before GPU dispatch and the CPU
-  collection/reset interval afterward;
-- GPU submission, start, completion, and dispatch-gate release timestamps,
-  including transfers and synchronization; gate release follows GPU hit
-  collection/reset and splits lock-held from remaining CPU post work;
-- wall-clock, process-CPU, and event-thread CPU durations; and
-- generated genstep/photon counts and CPU/GPU hit counts.
+Serial runs report `dispatch_mode=blocking`. MT runs report
+`dispatch_mode=asynchronous` and include `num_gpus` in the manifest.
+Use these CSV columns to reconstruct the MT timeline:
 
-The recorder samples the monotonic, process-CPU, and calling-thread CPU clocks
-at the run origin and six event boundaries: event start, GPU submission, GPU
-start, GPU end, GPU gate release, and event end. It does not inspect `/proc`.
-All timeline offsets use one monotonic run-local origin and are intended for
-interval comparison within one run, not as timestamps shared across jobs.
-In MT execution each worker owns a recorder initialized from the master's
-exact origin; the master merges completed rows once and sorts them by event
-ID. A recorder instance must not be called concurrently. Merge rejects
-incomplete events, duplicate event IDs, and different run origins.
+| Interval | Start column | End column |
+| --- | --- | --- |
+| Geant4 event production | `start_offset_s` | `gpu_submit_time_offset_s` |
+| Producer waiting for queue space | `gpu_submit_time_offset_s` | `cpu_end_time_offset_s` |
+| GPU service on `gpu_device_id` / `gpu_uuid` | `gpu_service_start_offset_s` | `gpu_service_end_offset_s` |
+| GPU hit collection and reset | `gpu_service_end_offset_s` | `gpu_cleanup_end_offset_s` |
 
-The appended `worker_id` column is the Geant4 worker index in MT and `-1` in
-serial execution; `num_threads` records the configured worker count. The
-manifest also records `num_threads`, `cpu_recorder_enabled`, `torch_seed`, and
-`run_origin_steady_ns`. Serial dispatch remains `blocking`; MT dispatch is
-`synchronous` because workers remain occupied through the GPU queue and
-GPU-dependent post work. GPU launches and lock-held cleanup remain serialized
-in event-ID order. With the CPU recorder disabled, host input-photon setup is
-performed after gate acquisition and included in the measured GPU service.
-
-Thread CPU intervals describe the calling event worker. Process CPU intervals
-include concurrent work by other threads and must not be summed as independent
-per-event CPU demand in MT runs.
-
-The exact event CSV header is:
-
-```text
-scenario,dispatch_mode,event_id,start_time,end_time,cpu_start_time,cpu_end_time,cpu_pre_start_time,cpu_pre_end_time,gpu_submit_time,gpu_start_time,gpu_end_time,gpu_wait_start_time,gpu_wait_end_time,cpu_post_start_time,cpu_post_end_time,start_offset_s,end_offset_s,cpu_start_time_offset_s,cpu_end_time_offset_s,cpu_pre_start_time_offset_s,cpu_pre_end_time_offset_s,gpu_submit_time_offset_s,gpu_start_time_offset_s,gpu_end_time_offset_s,gpu_wait_start_time_offset_s,gpu_wait_end_time_offset_s,cpu_post_start_time_offset_s,cpu_post_end_time_offset_s,runtime_s,cpu_pre_runtime_s,cpu_post_runtime_s,cpu_runtime_s,gpu_queue_delay_s,gpu_runtime_s,gpu_wait_runtime_s,primary_particle,primary_momentum_gev_c,primary_multiplicity,num_gensteps,num_photons,num_gpu_hits,num_g4_hits,process_cpu_pre_s,process_cpu_post_s,process_cpu_s,thread_cpu_pre_s,thread_cpu_post_s,thread_cpu_s,gpu_release_time,gpu_release_time_offset_s,cpu_post_locked_runtime_s,cpu_post_unlocked_runtime_s,gpu_gate_runtime_s,worker_id,num_threads
-```
+GPU service is host-observed and includes staging, transport and synchronization.
+Use a CUDA device trace to measure kernel execution. An empty event records
+device ID `-1` and empty GPU service columns. Thread CPU measurements cover
+Geant4 work before submission and GPU-worker cleanup after service. Process
+CPU measurements include all concurrently running threads.
 
 All `*_time`, `*_offset_s`, `*_runtime_s`, `*_delay_s`, and CPU values are
 seconds derived from monotonic or CPU clocks. Momentum is GeV/c; the remaining

@@ -80,9 +80,9 @@ torch configuration. `simg4ox` runs both G4 and GPU tracking for
 validation, while `GPUPhotonSourceMinimal` keeps only the GPU path.
 `GPUPhotonFileSource` reads user-defined photons from a text file.
 
-For `simg4ox`, multithreading applies to Geant4 CPU tracking. Its process-wide
-Opticks event context is protected by serializing GPU launches in event-ID
-order.
+With `simg4ox --threads N` and N greater than one, each Geant4 worker submits
+its complete optical payload at the event boundary. An available GPU thread
+handles transport and retrieves the hits.
 
 ### Example 1: simphox (External build smoke test)
 
@@ -191,12 +191,10 @@ the serial or MT run-manager type before Geant4 reads a macro. The example
 `tests/run_mt.mac` contains the remaining run initialization and event-count
 commands.
 
-In MT mode, Geant4 actions and sensitive detectors are worker-local and the
-run-wide results are merged in event-ID order. Opticks currently exposes one
-process-wide GPU event context, so GPU launches are serialized in that same
-order while Geant4 CPU tracking remains multi-threaded. Full CPU-side Opticks
-photon-history recording remains available in serial mode; both modes write
-the run-wide hit arrays below.
+In MT mode, Geant4 actions and sensitive detectors are worker-local. GPU
+threads process events independently and the run action merges hits in event-ID
+order. Set `CUDA_VISIBLE_DEVICES=0,1` before launching to select two cards.
+Serial mode also supports full CPU-side photon-history recording.
 
 **Output:**
 
