@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -55,6 +56,7 @@
 #include "G4VUserEventInformation.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
+#include "EventBuffer.h"
 #include "simphony.h"
 #include "sysrap/NP.hh"
 #include "sysrap/SEvt.hh"
@@ -217,10 +219,12 @@ struct DetectorConstruction : G4VUserDetectorConstruction
     }
 };
 
-struct PrimaryPhotonInfo : G4VUserEventInformation
+struct EventBufferInfo : G4VUserEventInformation
 {
-    explicit PrimaryPhotonInfo(std::vector<sphoton> photons) :
-        photons(std::move(photons))
+    simphony::EventBuffer buffer;
+
+    EventBufferInfo(int event_id, simphony::EventBuffer::Records records) :
+        buffer(event_id, std::move(records))
     {
     }
 
@@ -228,31 +232,12 @@ struct PrimaryPhotonInfo : G4VUserEventInformation
     {
     }
 
-    std::vector<sphoton> photons;
-};
-
-struct PrimaryGenstepInfo : G4VUserEventInformation
-{
-    std::vector<quad6> gensteps;
-
-    void Print() const override
+    static simphony::EventBuffer& Get(const G4Event* event)
     {
-    }
-
-    static PrimaryGenstepInfo& Get(const G4Event* event)
-    {
-        auto* info = dynamic_cast<PrimaryGenstepInfo*>(event->GetUserInformation());
+        auto* info = dynamic_cast<EventBufferInfo*>(event->GetUserInformation());
         if (!info)
-            throw std::runtime_error("Charged MT event is missing its genstep buffer");
-        return *info;
-    }
-
-    std::int64_t PhotonCount() const
-    {
-        std::int64_t count = 0;
-        for (const auto& genstep : gensteps)
-            count += genstep.numphoton();
-        return count;
+            throw std::runtime_error("Missing optical event buffer");
+        return info->buffer;
     }
 };
 
@@ -281,7 +266,7 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
         if (primary.enabled)
         {
             if (!sev)
-                event->SetUserInformation(new PrimaryGenstepInfo);
+                event->SetUserInformation(new EventBufferInfo(event->GetEventID(), std::vector<quad6>{}));
             G4ParticleDefinition* definition = G4ParticleTable::GetParticleTable()->FindParticle(primary.particle);
             if (!definition)
                 throw std::runtime_error("Unknown Geant4 particle: " + primary.particle);
@@ -335,7 +320,7 @@ struct PrimaryGenerator : G4VUserPrimaryGeneratorAction
             SEvt::SetInputPhoton(input_photon.get());
         }
         else
-            event->SetUserInformation(new PrimaryPhotonInfo(std::move(sphotons)));
+            event->SetUserInformation(new EventBufferInfo(event->GetEventID(), std::move(sphotons)));
     }
 };
 
@@ -508,21 +493,8 @@ struct EventAction : G4UserEventAction
         return g4_hits;
     }
 
-    std::vector<sphoton> SimulateOnGPU(const G4Event* event, bool has_gpu_work)
+    std::vector<sphoton> SimulateOnGPU(int event_id, bool has_gpu_work, std::optional<simphony::EventBuffer> input)
     {
-        const PrimaryPhotonInfo* primary_info = nullptr;
-        if (!sev && !particle_source)
-        {
-            primary_info = dynamic_cast<const PrimaryPhotonInfo*>(event->GetUserInformation());
-            if (!primary_info)
-            {
-                G4Exception("EventAction::SimulateOnGPU", "MissingPrimaryPhotonInfo", FatalException,
-                            "Optical event is missing its generated photons for GPU processing");
-                return {};
-            }
-        }
-
-        const G4int      event_id = event->GetEventID();
         std::unique_lock lock(shared_state->gpu_mutex);
         if (order_gpu_events)
             shared_state->gpu_turn.wait(lock, [&] { return event_id == shared_state->next_gpu_event; });
@@ -532,20 +504,19 @@ struct EventAction : G4UserEventAction
 
         // The matched serial control and MT workers both preserve event-local
         // torch input until acquisition of the process-global GPU event gate.
-        if (primary_info && has_gpu_work)
+        if (input && has_gpu_work)
         {
-            shared_state->input_photon = MakePhotonArray(primary_info->photons);
-            SEvt::SetInputPhoton(shared_state->input_photon.get());
-        }
-
-        if (particle_source && !sev && has_gpu_work)
-        {
-            // Workers collect only into their G4Event. EGPU, material mapping,
-            // and all global Opticks state are accessed exclusively under the
-            // same gate as launch, hit collection, and reset.
-            SEvt* gpu_event = SEvt::Get_EGPU();
-            for (auto& genstep : PrimaryGenstepInfo::Get(event).gensteps)
-                gpu_event->addGenstep(genstep);
+            if (const auto* photons = std::get_if<std::vector<sphoton>>(&input->records))
+            {
+                shared_state->input_photon = MakePhotonArray(*photons);
+                SEvt::SetInputPhoton(shared_state->input_photon.get());
+            }
+            else
+            {
+                SEvt* gpu_event = SEvt::Get_EGPU();
+                for (auto& genstep : std::get<std::vector<quad6>>(input->records))
+                    gpu_event->addGenstep(genstep);
+            }
         }
 
         std::vector<sphoton> gpu_hits;
@@ -585,18 +556,19 @@ struct EventAction : G4UserEventAction
         const G4int event_id = event->GetEventID();
         std::int64_t num_gensteps = 0;
         std::int64_t num_photons = 0;
-        if (particle_source && sev)
+        std::optional<simphony::EventBuffer> input;
+        if (!sev)
+        {
+            input.emplace(std::move(EventBufferInfo::Get(event)));
+            num_gensteps = static_cast<std::int64_t>(input->genstepCount());
+            num_photons = static_cast<std::int64_t>(input->photonCount());
+        }
+        else if (particle_source)
         {
             num_gensteps = sev->getNumGenstepFromGenstep();
             num_photons = sev->getNumPhotonFromGenstep();
         }
-        else if (particle_source)
-        {
-            const auto& input = PrimaryGenstepInfo::Get(event);
-            num_gensteps = static_cast<std::int64_t>(input.gensteps.size());
-            num_photons = input.PhotonCount();
-        }
-        else if (sev)
+        else
         {
             sev->addEventConfigArray();
             sev->gather();
@@ -604,20 +576,12 @@ struct EventAction : G4UserEventAction
             num_photons = sev->getNumPhotonCollected();
             sev->endOfEvent(event_id);
         }
-        else
-        {
-            const auto* input = dynamic_cast<const PrimaryPhotonInfo*>(event->GetUserInformation());
-            if (!input)
-                throw std::runtime_error("Optical event is missing its PrimaryPhotonInfo");
-            num_photons = static_cast<std::int64_t>(input->photons.size());
-            num_gensteps = num_photons > 0 ? 1 : 0; // One input-photon genstep.
-        }
 
         auto g4_hits = CollectG4Hits(event);
         if (timing)
             timing->SubmitGpu(num_gensteps, num_photons);
 
-        auto gpu_hits = SimulateOnGPU(event, particle_source ? num_gensteps > 0 : num_photons > 0);
+        auto gpu_hits = SimulateOnGPU(event_id, particle_source ? num_gensteps > 0 : num_photons > 0, std::move(input));
 
         G4cout << "EventAction::EndOfEventAction: Event " << event_id
                << ": Collected GPU hits: " << gpu_hits.size() << G4endl;
@@ -719,7 +683,7 @@ struct SteppingAction : G4UserSteppingAction
     {
         G4EventManager*    event_manager = G4EventManager::GetEventManager();
         std::vector<quad6>* gensteps = sev ? nullptr
-                                           : &PrimaryGenstepInfo::Get(event_manager->GetConstCurrentEvent()).gensteps;
+                                           : &std::get<std::vector<quad6>>(EventBufferInfo::Get(event_manager->GetConstCurrentEvent()).records);
         G4TrackingManager* tracking_manager = event_manager ? event_manager->GetTrackingManager() : nullptr;
         G4SteppingManager* stepping_manager =
             tracking_manager ? tracking_manager->GetSteppingManager() : nullptr;
